@@ -13,13 +13,13 @@
 /// USER CONSTANTS ///  User constants should be sufficient for basic program set up.
 /////////////////////
 
-const string SHIP_TAG = ""; // Label added to your terminal blocks to identify them as part of this ship
+const string SHIP_TAG = "TTc"; // Label added to your terminal blocks to identify them as part of this ship
 
 const string SOURCE = "[SRC]"; //Inventory that program will search for supplies (usually on a separate grid).
 
 const bool SMALL_SHIP = true; //Specifies if ship to be reloaded is a small ship. For large ships set to false.
 
-const string REF_BLOCK = "Connector [MCMG]"; //Name of reference block that program will reference for distance.
+const string REF_BLOCK = "Connector [MCMG] TTc"; //Name of reference block that program will reference for distance.
 											 //-- Recommended: Connector or Merge Block
 
 // TIMER CONSTANTS //
@@ -194,35 +194,37 @@ public void Save()
 ////////////
 
 public void Main(string argument){
-    
-	string[] argArray = argument.Split(' ');
-    string action = argArray[0];
+
+    resupply();
+
+    	string[] argArray = argument.Split(' ');
+        string action = argArray[0];
 
 
-    switch(action) 
-    { 
-        case ARGUMENT_A: 
-            Activate(TIMER_A); 
-            break; 
-        case ARGUMENT_B: 
-            Activate(TIMER_B); 
-            break;
-		case "ResetCount":
+        switch(action) 
+        { 
+            case ARGUMENT_A: 
+                Activate(TIMER_A); 
+                break; 
+            case ARGUMENT_B: 
+                Activate(TIMER_B); 
+                break;
+        		    case "ResetCount":
                 _loadCount = 0;
                 break;
-        case "SetCount":
+            case "SetCount":
                 if(argArray.Length > 1)
                 {
                     string qty = argArray[1];
                     _loadCount = int.Parse(qty);
                 }
                 break;
-			
-        default:
-			resupply();
-            break;
+            default:
+                break;
+        
     }
 }
+
 
 
 ////////////////
@@ -266,7 +268,7 @@ void reload(string dest, int ammo_qty, int missile_qty)
     for (int c = 0; c < dest_list.Count; c++)
     {
 		IMyTerminalBlock destBlock = dest_list[c];
-		if (destBlock.HasInventory && destBlock.CustomName.Contains(SHIP_TAG)){
+		if (destBlock.HasInventory){ //&& destBlock.CustomName.Contains(SHIP_TAG)
 
 			//Cycles through source inventories.
 			for (int d = 0; d < source_list.Count; d++){
@@ -307,7 +309,7 @@ void refuel(string dest, int fuel_qty)
     for (int c = 0; c < dest_list.Count; c++)
     {
 		IMyTerminalBlock destBlock = dest_list[c];
-		if (destBlock.HasInventory && destBlock.CustomName.Contains(SHIP_TAG)){
+		if (destBlock.HasInventory&& destBlock.CustomName.Contains(SHIP_TAG)){
 
 			//Cycles through source inventories.
 			for (int d = 0; d < source_list.Count; d++){
@@ -373,8 +375,9 @@ void resupply(){
 	//Small Reactor
 	    refuel(SS_RE, SS_FUEL);
 	//Large Reactor
-        refuel(SL_RE, SL_FUEL);
-	}else{
+     refuel(SL_RE, SL_FUEL);
+	}
+else{
 	
 	//WEAPONS
 	//Rocket Launcher
