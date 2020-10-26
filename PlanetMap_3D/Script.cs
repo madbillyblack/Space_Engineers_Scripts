@@ -25,6 +25,7 @@ const int ZOOM_MAX = 1000000000; // Max value for Depth of Field
 const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out.
 const int MARKER_WIDTH = 10; // Width of GPS Markers
 const float DIAMETER_MIN = 6; //Minimum Diameter For Distant Planets
+const int HASH_LIMIT = 125; //Minimum diameter size to print Hashmarks on planet.
 
 const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
 //const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=<name>\nLCD_Index=0\nReference_Name=<name>\n";
@@ -470,16 +471,9 @@ public class Waypoint
     public String marker;
     public bool isActive;
 
-    public Waypoint (String wayPointString)
+    public Waypoint()
     {
-        //this.designation = wayPointList.Count()+1;
-        String[] wayPointData = wayPointString.Split(';');
-			
-        this.SetName(wayPointData[0]);
-        this.SetLocation(StringToVector3(wayPointData[1]));
-        this.SetMarker(wayPointData[2]);
-        
-        this.isActive = true;
+
     }	
 	/*
     public void SetDesignation(int des)
@@ -603,7 +597,7 @@ public Program()
     {
         if(gpsEntries[g].Contains(";"))
         {
-           Waypoint waypoint = new Waypoint(gpsEntries[g]);
+           Waypoint waypoint = StringToWaypoint(gpsEntries[g]);
            _waypointList.Add(waypoint);
         }
     }
@@ -1174,6 +1168,7 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
     
     Vector2 offset = new Vector2( (float) Math.Sin(shipAngle), (float) Math.Cos(shipAngle) * -1);
     position += offset * shipLength/4;
+    position -= new Vector2(SHIP_SCALE/2 ,0); // Center width of ship over position
     
  
     
@@ -1375,6 +1370,14 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
         frame.Add(sprite);
 
 
+        // HashMarks
+        if(diameter > HASH_LIMIT && Vector3.Distance(planet.center, map.center) < 2*planet.radius)
+        {
+            DrawHashMarks(planet, diameter, lineColor, map, ref frame);
+        }
+
+
+
         // TITLE
         float fontMod = 1;
 
@@ -1415,6 +1418,118 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
     }
 }
 
+
+///////////////////////
+// DRAW HASHMARKS //   Makes series of low-profile waypoints to denote latitude and longitude on planets.
+///////////////////////
+public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map, ref MySpriteDrawFrame frame)
+{
+    List<Waypoint> hashMarks = new List<Waypoint>();
+    
+    //North Pole
+    Waypoint north = new Waypoint();
+    north.name = "N";
+    north.location = planet.center + new Vector3(0, (float) planet.radius, 0);
+    north.transformedLocation = transformVector(north.location, map);
+    hashMarks.Add(north);
+    
+    //South Pole
+    Waypoint south = new Waypoint();
+    south.name = "S";
+    south.location = planet.center - new Vector3(0, (float) planet.radius, 0);
+    south.transformedLocation = transformVector(north.location, map);
+    hashMarks.Add(south);
+    
+    float r1 = planet.radius * 0.95f;
+    float r2 = (float) Math.Sqrt(2)/2*r1;
+   
+    float r3 = r1/2;
+    
+    
+    String[] latitudes = new String[]{"45°S ", "", "45°N "};
+    String[] longitudes = new String[]{" 135°E"," 90°E"," 45°E"," 0°"," 45°W"," 90°W"," 135°W"," 180°"};
+    
+    float[] yCoords = new float[] {-r2,0,r2};
+    float[,] xCoords = new float[,]{{-r3,-r2,-r3,  0, r3,r2,r3, 0},{-r2,-r1,-r2, 0, r2,r1,r2,0},{-r3,-r2,-r3,  0, r3,r2,r3, 0}};
+    float[,] zCoords = new float[,]{{ r3,  0,-r3,-r2,-r3, 0,r3,r2},{ r2, 0,-r2,-r1,-r2,0,r2,r1},{ r3,  0,-r3,-r2,-r3, 0,r3,r2}};
+    
+    for(int m = 0; m < 3; m++)
+    {
+        String latitude = latitudes[m];
+        float yCoord = yCoords[m];
+        for(int n = 0; n < 8; n++)
+        {
+            Waypoint hashMark = new Waypoint();
+            hashMark.name = latitude + longitudes[n];
+            
+            float xCoord = xCoords[m,n];
+            float zCoord = zCoords[m,n];
+            
+            hashMark.location = new Vector3(xCoord, yCoord, zCoord);
+            hashMark.transformedLocation = transformVector(hashMark.location, map);
+            
+            if(hashMark.transformedLocation.GetDim(2) < planet.transformedCenter.GetDim(2))
+            {
+                hashMarks.Add(hashMark);
+            }
+        }
+    }
+    
+    for(int h = 0; h < hashMarks.Count; h++)
+    {
+        Waypoint hash = hashMarks[h];
+        Vector2 position = _viewport.Center + PlotObject(hash.transformedLocation, map);
+        
+        
+        // Print more detail for closer planets
+        if(diameter > 2 * HASH_LIMIT)
+        {
+            Vector2 hashOffset = new Vector2(0,20);
+            position -= hashOffset;
+            
+            var sprite = new MySprite()
+            {
+                Type = SpriteType.TEXT,
+                Data = "|",
+                Position = position,
+                RotationOrScale = 0.8f,
+                Color = lineColor,
+                Alignment = TextAlignment.CENTER,
+                FontId = "White"
+            };
+            frame.Add(sprite);
+            
+            position += hashOffset; 
+ 
+            sprite = new MySprite()
+            {
+                Type = SpriteType.TEXT,
+                Data = hash.name,
+                Position = position,
+                RotationOrScale = 0.5f,
+                Color = lineColor,
+                Alignment = TextAlignment.CENTER,
+                FontId = "White"
+            };
+            frame.Add(sprite); 
+            
+            
+        }
+        else
+        {
+            position += new Vector2(-2,2);
+            var sprite = new MySprite()
+            {
+                Type = SpriteType.TEXTURE,
+                Data = "Circle",
+                Position = position,
+                Size=  new Vector2(4,4), 
+                Color = lineColor,
+            };
+            frame.Add(sprite);
+        }
+    }
+}
 
 ///////////////////////
 // DRAW WAYPOINTS //
@@ -1532,7 +1647,7 @@ public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
     
     String color = "NONE";
     float distance = Vector2.Distance(shipPos, closest.mapPos);
-    float radius = closest.radius*map.depthOfField/closest.transformedCenter.GetDim(2);
+    float radius = 0.95f * closest.radius*map.depthOfField/closest.transformedCenter.GetDim(2);
     
     if(distance < radius && closest.transformedCenter.GetDim(2) < transformVector(_refBlock.GetPosition(), map).GetDim(2))
     {
@@ -1546,7 +1661,22 @@ public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
+///////////////////////////
+// STRING TO WAYPOINT //
+///////////////////////////
+public Waypoint StringToWaypoint(String argument)
+{
+    String[] wayPointData = argument.Split(';');
+    Waypoint waypoint = new Waypoint();
+			
+    waypoint.SetName(wayPointData[0]);
+    waypoint.SetLocation(StringToVector3(wayPointData[1]));
+    waypoint.SetMarker(wayPointData[2]);
+        
+    waypoint.isActive = true;
+    
+    return waypoint;
+}
 
 
 
