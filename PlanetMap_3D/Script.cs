@@ -20,6 +20,7 @@ const int MIN_SCALE = 125;
 const int SHIP_SCALE = 24;
 const int MAX_PITCH = 90; // Maximum (+/-) value of map pitch.
 const int ANGLE_STEP = 5; // Temporary step for rotation commands.
+const float MOVE_STEP = 5000; // Temporary step for translation (move) commands.
 const int ZOOM_MAX = 1000000000; // Max value for Depth of Field
 const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out.
 const int MARKER_WIDTH = 10; // Width of GPS Markers
@@ -730,18 +731,6 @@ public void Main(string argument)
             
             switch(command)
             {
-                case "FLIP_LEFT":
-                    flipLeft(myMap);
-                    break;
-                case "FLIP_RIGHT":
-                    flipRight(myMap);
-                    break;
-                case "FLIP_DOWN":
-                    flipDown(myMap);
-                    break;
-                case "FLIP_UP":
-                    flipUp(myMap);
-                    break;
                 case "ZOOM_IN":
                     zoomIn(myMap);
                     break;
@@ -760,6 +749,12 @@ public void Main(string argument)
                 case "MOVE_DOWN":
                     moveDown(myMap);
                     break;
+                case "MOVE_FORWARD":
+                    moveForward(myMap);
+                    break;
+                case "MOVE_BACKWARD":
+                    moveBackward(myMap);
+                    break;
                 case "TOGGLE_MODE":
                     ToggleMode(myMap);
                     break;
@@ -770,16 +765,16 @@ public void Main(string argument)
                     DefaultView(myMap);
                     break;
                 case "ROTATE_LEFT":
-                    myMap.yaw(-ANGLE_STEP);
-                    break;
-                case "ROTATE_RIGHT":
                     myMap.yaw(ANGLE_STEP);
                     break;
+                case "ROTATE_RIGHT":
+                    myMap.yaw(-ANGLE_STEP);
+                    break;
                 case "ROTATE_UP":
-                    myMap.pitch(ANGLE_STEP);
+                    myMap.pitch(-ANGLE_STEP);
                     break;
                 case "ROTATE_DOWN":
-                    myMap.pitch(-ANGLE_STEP);
+                    myMap.pitch(ANGLE_STEP);
                     break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
@@ -874,122 +869,6 @@ public void mapToParameters(StarMap map, IMyTerminalBlock mapBlock)
 }
 
 
-//////////////////
-// FLIP LEFT //       Changes Axis settings of LCD to flip the view to the left.
-//////////////////
-void flipLeft(StarMap map)
-{
-    String axes = map.viewPlane;
-
-    for(int p = 0; p<6; p++)
-    {
-        for(int q = 0; q<6; q++)
-        {
-            if(axes==AXIS[p,q])
-            {
-                p = wrapAdd(p,-1,6);
-                if(AXIS[p,q]=="E")
-                {
-                    p = wrapAdd(p,-1,6);
-                }
-                axes = AXIS[p,q];
-                map.viewPlane = axes;
-                return;
-            }
-        }
-    }
-    Echo("Invalid Axis Argument! Check Custom Data!");
-    return;
-}
-
-
-//////////////////
-// FLIP RIGHT //       Changes Axis settings of LCD to flip the view to the right.
-//////////////////
-void flipRight(StarMap map)
-{
-    String axes = map.viewPlane;
-
-    for(int p = 0; p<6; p++)
-    {
-        for(int q = 0; q<6; q++)
-        {
-            if(axes==AXIS[p,q])
-            {
-                p = wrapAdd(p,1,6);
-                if(AXIS[p,q]=="E")
-                {
-                    p = wrapAdd(p,1,6);
-                }
-                axes = AXIS[p,q];
-                map.viewPlane = axes;
-                return;
-            }
-        }
-    }
-    Echo("Invalid Axis Argument! Check Custom Data!");
-    return;
-}
-
-
-//////////////////
-// FLIP DOWN //       Changes Axis settings of LCD to flip the view down.
-//////////////////
-void flipDown(StarMap map)
-{
-    String axes = map.viewPlane;
-
-    for(int p = 0; p<6; p++)
-    {
-        for(int q = 0; q<6; q++)
-        {
-            if(axes==AXIS[p,q])
-            {
-                q = wrapAdd(q,-1,6);
-                if(AXIS[p,q]=="E")
-                {
-                    q = wrapAdd(q,-1,6);
-                }
-                axes = AXIS[p,q];
-                map.viewPlane = axes;
-                return;
-            }
-        }
-    }
-    Echo("Invalid Axis Argument! Check Custom Data!");
-    return;
-}
-
-
-/////////////
-// FLIP UP //       Changes Axis settings of LCD to flip the view up.
-/////////////
-void flipUp(StarMap map)
-{
-    String axes = map.viewPlane;
-
-    for(int p = 0; p<6; p++)
-    {
-        for(int q = 0; q<6; q++)
-        {
-            if(axes==AXIS[p,q])
-            {
-                q = wrapAdd(q,1,6);
-                if(AXIS[p,q]=="E")
-                {
-                    q = wrapAdd(q,1,6);
-                }
-                axes = AXIS[p,q];
-                map.viewPlane = axes;
-                return;
-            }
-        }
-    }
-    Echo("Invalid Axis Argument! Check Custom Data!");
-    return;
-}
-
-
 ////////////////
 // ZOOM IN //
 ////////////////
@@ -1038,45 +917,8 @@ void zoomOut(StarMap map)
 /////////////////
 void moveLeft(StarMap map)
 {
-    string mapMode = map.mode.ToUpper();
-
-
-    if(mapMode != "SHIP")
-    {
-        string[] axes = map.viewPlane.Split(' ');
-        string axis = axes[0];
-        int mapScale = map.scale;
-        int mod = 1;
-        int dim=0;
-
-        if(axis.StartsWith("-"))
-        {
-            mod = -1;
-            axis = axis.Substring(1);
-        }
-        switch(axis)
-        {
-            case "X":
-                dim = 0;
-                break;
-            case "Y":
-                dim = 1;
-                break;
-            case "Z":
-                dim = 2;
-                break;
-        }
-        Vector3 mapCenter = map.center;
-        float[] vec3 = new float[]{mapCenter.GetDim(0), mapCenter.GetDim(1), mapCenter.GetDim(2)};
-
-
-        if (mapScale < 1000000000/WIDTH)
-        {
-            vec3[dim] -= WIDTH*mapScale*mod/4;
-            mapCenter = new Vector3(vec3[0], vec3[1], vec3[2]);
-            map.center = mapCenter;
-        }
-    }
+    Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
+    map.center += rotateMovement(moveVector, map);
 }
 
 
@@ -1085,46 +927,8 @@ void moveLeft(StarMap map)
 //////////////////
 void moveRight(StarMap map)
 {
-    string mapMode = map.mode.ToUpper();
-
-
-    if(mapMode != "SHIP")
-    {
-        string[] axes = map.viewPlane.Split(' ');
-        string axis = axes[0];
-        int mapScale = map.scale;
-        int mod = 1;
-        int dim=0;
-
-        if(axis.StartsWith("-"))
-        {
-            mod = -1;
-            axis = axis.Substring(1);
-        }
-        switch(axis)
-        {
-            case "X":
-                dim = 0;
-                break;
-            case "Y":
-                dim = 1;
-                break;
-            case "Z":
-                dim = 2;
-                break;
-        }
-        Vector3 mapCenter = map.center;
-        float[] vec3 = new float[]{mapCenter.GetDim(0), mapCenter.GetDim(1), mapCenter.GetDim(2)};
-
-        
-        if (mapScale < 1000000000/WIDTH)
-        {
-            vec3[dim] += WIDTH*mapScale*mod/4;
-            mapCenter = new Vector3(vec3[0], vec3[1], vec3[2]);
-            map.center = mapCenter;
-        }
-
-    }
+    Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
+    map.center -= rotateMovement(moveVector, map);
 }
 
 
@@ -1133,45 +937,8 @@ void moveRight(StarMap map)
 //////////////////
 void moveUp(StarMap map)
 {
-    string mapMode = map.mode.ToUpper();
-
-
-    if(mapMode != "SHIP")
-    {
-        string[] axes = map.viewPlane.Split(' ');
-        string axis = axes[1];
-        int mapScale = map.scale;
-        int mod = 1;
-        int dim=0;
-
-        if(axis.StartsWith("-"))
-        {
-            mod = -1;
-            axis = axis.Substring(1);
-        }
-        switch(axis)
-        {
-            case "X":
-                dim = 0;
-                break; 
-            case "Y":
-                dim = 1;
-                break;
-            case "Z":
-                dim = 2;
-                break;
-        }
-        Vector3 mapCenter = map.center;
-        float[] vec3 = new float[]{mapCenter.GetDim(0), mapCenter.GetDim(1), mapCenter.GetDim(2)};
-
-
-        if (mapScale < 1000000000/HEIGHT)
-        {
-            vec3[dim] += HEIGHT*mapScale*mod/4;
-            mapCenter = new Vector3(vec3[0], vec3[1], vec3[2]);
-            map.center = mapCenter;
-        }
-    }
+    Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
+    map.center += rotateMovement(moveVector, map);
 }
 
 
@@ -1180,44 +947,28 @@ void moveUp(StarMap map)
 //////////////////
 void moveDown(StarMap map)
 {
-    string mapMode = map.mode.ToUpper();
+    Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
+    map.center -= rotateMovement(moveVector, map);
+}
 
 
-    if(mapMode != "SHIP")
-    {
-        string[] axes = map.viewPlane.Split(' ');
-        string axis = axes[1];
-        int mapScale = map.scale;
-        int mod = 1;
-        int dim=0;
+/////////////////////
+// MOVE FORWARD //
+/////////////////////
+void moveForward(StarMap map)
+{
+    Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
+    map.center += rotateMovement(moveVector, map);
+}
 
-        if(axis.StartsWith("-"))
-        {
-            mod = -1;
-            axis = axis.Substring(1);
-        }
-        switch(axis)
-        {
-            case "X":
-                dim = 0;
-                break;
-            case "Y":
-                dim = 1;
-                break;
-            case "Z":
-                dim = 2;
-                break;
-        }
-        Vector3 mapCenter = map.center;
-        float[] vec3 = new float[]{mapCenter.GetDim(0), mapCenter.GetDim(1), mapCenter.GetDim(2)};
 
-        if (mapScale < 1000000000/HEIGHT)
-        {
-            vec3[dim] -= HEIGHT*mapScale*mod/4;
-            mapCenter = new Vector3(vec3[0], vec3[1], vec3[2]);
-            map.center = mapCenter;
-        }
-    }
+//////////////////////
+// MOVE BACKWARD //
+//////////////////////
+void moveBackward(StarMap map)
+{
+    Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
+    map.center -= rotateMovement(moveVector, map);
 }
 
 
@@ -1339,64 +1090,70 @@ public void PlotShip(ref MySpriteDrawFrame frame, StarMap map)
 public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> displayPlanets)
 {
     Vector2 position = PlotObject(transformVector(_refBlock.GetPosition(), map),map);
-    Vector3 heading = transformHeading(map);
+    
+    // Get ships Direction Vector and align it with map
+    Vector3 heading = rotateVector(_refBlock.WorldMatrix.Forward, map);
     
     // SHIP COLORS
     Color bodyColor = Color.LightGray;
     Color aftColor = Color.DarkOrange;
     
-    String planetColor = obscureShip(position, displayPlanets, map);
-    switch(planetColor.ToUpper())
+    if(displayPlanets.Count > 0)
     {
-        case "RED":
-            aftColor = new Color(48,0,0);
-            bodyColor = new Color(64,0,0);
-            break;
-        case "GREEN":
-            aftColor = new Color(0,48,0);
-            bodyColor = new Color(0,64,0);
-            break;
-        case "BLUE":
-            aftColor = new Color(0,0,48);
-            bodyColor = new Color(0,0,64);
-            break;
-        case "YELLOW":
-            aftColor = new Color(127,127,39);
-            bodyColor = new Color(127,127,51);
-            break;
-        case "MAGENTA":
-            aftColor = new Color(96,0,96);
-            bodyColor = new Color(127,0,127);
-            break;
-        case "PURPLE":
-            aftColor = new Color(36,0,62);
-            bodyColor = new Color(48,0,96);
-            break;
-        case "CYAN":
-            aftColor = new Color(0,48,48);
-            bodyColor = new Color(0,64,64);
-            break;
-        case "ORANGE":
-            aftColor = new Color(48,24,0);
-            bodyColor = new Color(64,32,0);
-            break;
-        case "TAN":
-            aftColor = new Color(175,115,54);
-            bodyColor = new Color(205,133,63);
-            break;
-        case "GRAY":
-            aftColor = new Color(48,48,48);
-            bodyColor = new Color(64,64,64);
-            break;
-        case "GREY":
-            aftColor = new Color(48,48,48);
-            bodyColor = new Color(64,64,64);
-            break;
-        case "WHITE":
-            aftColor = new Color(100,150,150);
-            bodyColor = new Color(192,192,192);                
-            break;
+        String planetColor = obscureShip(position, displayPlanets, map);
+        switch(planetColor.ToUpper())
+        {
+            case "RED":
+                aftColor = new Color(48,0,0);
+                bodyColor = new Color(64,0,0);
+                break;
+            case "GREEN":
+                aftColor = new Color(0,48,0);
+                bodyColor = new Color(0,64,0);
+                break;
+            case "BLUE":
+                aftColor = new Color(0,0,48);
+                bodyColor = new Color(0,0,64);
+                break;
+            case "YELLOW":
+                aftColor = new Color(127,127,39);
+                bodyColor = new Color(127,127,51);
+                break;
+            case "MAGENTA":
+                aftColor = new Color(96,0,96);
+                bodyColor = new Color(127,0,127);
+                break;
+            case "PURPLE":
+                aftColor = new Color(36,0,62);
+                bodyColor = new Color(48,0,96);
+                break;
+            case "CYAN":
+                aftColor = new Color(0,48,48);
+                bodyColor = new Color(0,64,64);
+                break;
+            case "ORANGE":
+                aftColor = new Color(48,24,0);
+                bodyColor = new Color(64,32,0);
+                break;
+            case "TAN":
+                aftColor = new Color(175,115,54);
+                bodyColor = new Color(205,133,63);
+                break;
+            case "GRAY":
+                aftColor = new Color(48,48,48);
+                bodyColor = new Color(64,64,64);
+                break;
+            case "GREY":
+                aftColor = new Color(48,48,48);
+                bodyColor = new Color(64,64,64);
+                break;
+            case "WHITE":
+                aftColor = new Color(100,150,150);
+                bodyColor = new Color(192,192,192);                
+                break;
+        }
     }
+
     
     
     // Ship Heading
@@ -1926,7 +1683,6 @@ public int[] ParseAxis(String dimension)
 ////////////////////////
 // REPLACE COLUMN //
 ////////////////////////
-
 static void ReplaceColumn(double[,] matrix1, double[,] matrix2, double[] t, int column)
 {
     for (int i = 0; i<4; i++)
@@ -2019,6 +1775,91 @@ public void PlanetSort(List<Planet> planets)
         
     }
 }
+
+
+/////////////////////////
+// TRANSFORM VECTOR //     Transforms vector location of planet or waypoint for StarMap view.
+/////////////////////////
+ public Vector3 transformVector(Vector3 vectorIn, StarMap map)
+ {
+     //double x = vectorIn.GetDim(0);
+     //double y = vectorIn.GetDim(1);
+     //double z = vectorIn.GetDim(2);
+     
+     //double xC = map.center.GetDim(0);
+     //double yC = map.center.GetDim(1);
+     //double zC = map.center.GetDim(2);
+     
+     double xS = vectorIn.GetDim(0) - map.center.GetDim(0); //Vector X - Map X
+     double yS = vectorIn.GetDim(1) - map.center.GetDim(1); //Vector Y - Map Y
+     double zS = vectorIn.GetDim(2) - map.center.GetDim(2); //Vector Z - Map Z 
+     
+     double r = map.rotationalRadius;
+     
+     double cosAz = Math.Cos(toRadians(map.azimuth));
+     double sinAz = Math.Sin(toRadians(map.azimuth));
+     
+     double cosAlt = Math.Cos(toRadians(map.altitude));
+     double sinAlt = Math.Sin(toRadians(map.altitude));
+     
+     // Transformation Formulas from Matrix Calculations
+     double xT = cosAz * xS + sinAz * zS;
+     double yT = sinAz*sinAlt * xS + cosAlt * yS - sinAlt * cosAz * zS;
+     double zT = -sinAz * cosAlt * xS + sinAlt * yS + cosAz * cosAlt *zS + r;
+     
+     Vector3 vectorOut = new Vector3(xT,yT,zT);
+     //Echo("VectorOut: " + Vector3ToString(vectorOut));
+     return vectorOut;
+ }
+ 
+ 
+//////////////////////
+// ROTATE VECTOR //
+//////////////////////
+public Vector3 rotateVector(Vector3 vecIn, StarMap map)
+{
+  float x = vecIn.GetDim(0);
+  float y = vecIn.GetDim(1);
+  float z = vecIn.GetDim(2);
+  
+  float cosAz = (float) Math.Cos(toRadians(map.azimuth));
+  float sinAz = (float) Math.Sin(toRadians(map.azimuth));
+     
+  float cosAlt = (float) Math.Cos(toRadians(map.altitude));
+  float sinAlt = (float) Math.Sin(toRadians(map.altitude));
+  
+  float xT = cosAz * x + sinAz * z;
+  float yT = sinAz * sinAlt * x + cosAlt * y -sinAlt * cosAz * z;
+  float zT = -sinAz * cosAlt * x + sinAlt * y + cosAz * cosAlt * z;
+
+  Vector3 vecOut = new Vector3(xT, yT, zT);
+  return vecOut;
+}
+
+
+////////////////////////
+// ROTATE MOVEMENT //    Rotates Movement Vector for purpose of translation.
+////////////////////////
+public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
+{
+  float x = vecIn.GetDim(0);
+  float y = vecIn.GetDim(1);
+  float z = vecIn.GetDim(2);
+  
+  float cosAz = (float) Math.Cos(toRadians(-map.azimuth));
+  float sinAz = (float) Math.Sin(toRadians(-map.azimuth));
+     
+  float cosAlt = (float) Math.Cos(toRadians(-map.altitude));
+  float sinAlt = (float) Math.Sin(toRadians(-map.altitude));
+  
+  float xT = cosAz * x + sinAz * sinAlt * y + sinAz * cosAlt * z;
+  float yT = cosAlt * y - sinAlt * z;
+  float zT = -sinAz * x + cosAz * sinAlt * y + cosAz * cosAlt * z;
+  
+  Vector3 vecOut = new Vector3(xT, yT, zT);
+  return vecOut;    
+}
+
 
 
 // BORROWED FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2269,75 +2110,13 @@ public static int degreeAdd(int angle_A, int angle_B)
 
     return angleOut;
 }
-
-
-/////////////////////////
-// TRANSFORM VECTOR //     Transforms vector location of planet or waypoint for StarMap view.
-/////////////////////////
- public Vector3 transformVector(Vector3 vectorIn, StarMap map)
- {
-     //double x = vectorIn.GetDim(0);
-     //double y = vectorIn.GetDim(1);
-     //double z = vectorIn.GetDim(2);
-     
-     //double xC = map.center.GetDim(0);
-     //double yC = map.center.GetDim(1);
-     //double zC = map.center.GetDim(2);
-     
-     double xS = vectorIn.GetDim(0) + map.center.GetDim(0); //Vector X - Map X
-     double yS = vectorIn.GetDim(1) + map.center.GetDim(1); //Vector Y - Map Y
-     double zS = vectorIn.GetDim(2) + map.center.GetDim(2); //Vector Z - Map Z 
-     
-     double r = map.rotationalRadius;
-     
-     double cosAz = Math.Cos(toRadians(map.azimuth));
-     double sinAz = Math.Sin(toRadians(map.azimuth));
-     
-     double cosAlt = Math.Cos(toRadians(map.altitude));
-     double sinAlt = Math.Sin(toRadians(map.altitude));
-     
-     // Transformation Formulas from Matrix Calculations
-     double xT = cosAz * xS + sinAz * zS;
-     double yT = sinAz*sinAlt * xS + cosAlt * yS - sinAlt * cosAz * zS;
-     double zT = -sinAz * cosAlt * xS + sinAlt * yS + cosAz * cosAlt *zS + r;
-     
-     Vector3 vectorOut = new Vector3(xT,yT,zT);
-     //Echo("VectorOut: " + Vector3ToString(vectorOut));
-     return vectorOut;
- }
- 
- 
-//////////////////////////////
-// TRANSFORM HEADING //
-//////////////////////////////
-public Vector3 transformHeading(StarMap map)
-{
-  Vector3 vecIn = _refBlock.WorldMatrix.Forward;
-  float x = vecIn.GetDim(0);
-  float y = vecIn.GetDim(1);
-  float z = vecIn.GetDim(2);
-  
-  float cosAz = (float) Math.Cos(toRadians(map.azimuth));
-  float sinAz = (float) Math.Sin(toRadians(map.azimuth));
-     
-  float cosAlt = (float) Math.Cos(toRadians(map.altitude));
-  float sinAlt = (float) Math.Sin(toRadians(map.altitude));
-  
-  float xT = cosAz * x + sinAz * z;
-  float yT = sinAz * sinAlt * x + cosAlt * y -sinAlt * cosAz * z;
-  float zT = -sinAz * cosAlt * x + sinAlt * y + cosAz * cosAlt * z;
-  
-  //Vector2 vecOut = new Vector2(xT/zT, yT/zT);
-  Vector3 vecOut = new Vector3(xT, yT, zT);
-  return vecOut;
-}
  
  
  
- ///////////////////
- // UPDATE MAP //     Transform logged locations based on map parameters
- ///////////////////
- public void updateMap(StarMap map)
+///////////////////
+// UPDATE MAP //     Transform logged locations based on map parameters
+///////////////////
+public void updateMap(StarMap map)
  {
      Echo("Map Updated!");
      if(_planetList.Count > 0)
