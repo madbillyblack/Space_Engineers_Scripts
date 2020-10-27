@@ -3,6 +3,8 @@ string _lcdName;
 string _refName;
 string _previousCommand;
 int _lcdIndex;
+int _planetIndex = 0;
+bool _gpsActive = true;
 //string _planetLog;
 //string _gpsLog;
 //string _unchartedLog;
@@ -26,13 +28,14 @@ const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out.
 const int MARKER_WIDTH = 10; // Width of GPS Markers
 const float DIAMETER_MIN = 6; //Minimum Diameter For Distant Planets
 const int HASH_LIMIT = 125; //Minimum diameter size to print Hashmarks on planet.
+const int DV_RADIUS = 240000; //Default View Radius
+const int DV_DOF = 256; //Default Depth of Field
+const int DV_ALTITUDE = -15; //Default Altitude (angle)
 
 const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
 //const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=<name>\nLCD_Index=0\nReference_Name=<name>\n";
 const string DEFAULT_DISPLAY = "[mapDisplay]\nViewPlane=X Y\nCenter=(0,0,0)\nScale=1000\nMode=WORLD";
 
-const int HEIGHT = 128;
-const int WIDTH = 256;
 
 readonly String[,] AXIS = new String[6,6] {{"E","-X -Y", "-X -Z", "E", "-X Y", "-X Z"},
                                                                     {"-Y -X", "E", "-Y -Z", "-Y X", "E", "-Y Z"},
@@ -541,6 +544,19 @@ public class Waypoint
 
 public Program()
 {
+    if(Storage.Length > 0)
+    {
+      String[] loadData = Storage.Split('\n');
+      _planetIndex = int.Parse(loadData[0]);
+      _gpsActive = bool.Parse(loadData[1]);
+    }
+    else
+    {
+        _planetIndex = 0;
+        _gpsActive = true;
+    }
+    
+    
     string oldData = Me.CustomData;
     string newData = DEFAULT_SETTINGS;
 
@@ -659,12 +675,7 @@ public Program()
 
 public void Save()
 {
-    // Called when the program needs to save its state. Use
-    // this method to save your state to the Storage field
-    // or some other means. 
-    // 
-    // This method is optional and can be removed if not
-    // needed.
+    Storage = _planetIndex.ToString() + "\n" + _gpsActive.ToString();
 }
 
 // MAIN ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -769,6 +780,21 @@ public void Main(string argument)
                     break;
                 case "ROTATE_DOWN":
                     myMap.pitch(ANGLE_STEP);
+                    break;
+                case "GPS_ON":
+                    _gpsActive = true;
+                    break;
+                case "GPS_OFF":
+                    _gpsActive = false;
+                    break;
+                case "TOGGLE_GPS":
+                    toggleGPS();
+                    break;
+                case "NEXT_PLANET":
+                    NextPlanet(myMap);
+                    break;
+                case "PREVIOUS_PLANET":
+                    PreviousPlanet(myMap);
                     break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
@@ -985,13 +1011,7 @@ void ShipMode(StarMap map)
 }
 
 
-//////////////////
-// WORLD MODE //    Changes map object to WORLD mode.
-//////////////////
-void WorldMode(StarMap map)
-{
-    map.mode = "WORLD";
-}
+
 
 
 ///////////////////
@@ -1008,7 +1028,7 @@ void ToggleMode(StarMap map)
     else
     {
     //IF MAP IS IN SHIP MODE OR THE STRING IS NOT RECOGNIZED, SWITCH TO WORLD MODE.
-        WorldMode(map);
+        map.mode = "WORLD";
     }
 }
 
@@ -1018,15 +1038,71 @@ void ToggleMode(StarMap map)
 ////////////////////
 void DefaultView(StarMap map)
 {
-    WorldMode(map);
+    map.mode = "WORLD";
     
-    Vector3 origin = new Vector3(0,0,0);
-    map.center = origin;
-    map.depthOfField = 512;
-    map.rotationalRadius = 120000;
+    map.center = new Vector3(0,0,0);
+    map.depthOfField = DV_DOF;
+    map.rotationalRadius = DV_RADIUS;
     map.azimuth = 0;
-    map.altitude = 15;
+    map.altitude = DV_ALTITUDE;
 }
+
+
+//////////////////
+// TOGGLE GPS //
+//////////////////
+void toggleGPS()
+{
+    if(_gpsActive)
+    {
+        _gpsActive = false;
+    }
+    else
+    {
+        _gpsActive = true;
+    }
+}
+
+
+////////////////////
+// NEXT PLANET //
+////////////////////
+void NextPlanet(StarMap map)
+{
+    if(_planetList.Count > 1)
+    {
+        DefaultView(map);
+        
+        _planetIndex++;
+        if(_planetIndex >= _planetList.Count)
+        {
+            _planetIndex = 0;
+        }
+    }
+    
+    map.center = _planetList[_planetIndex].center;
+}
+
+
+////////////////////////
+// PREVIOUS PLANET //
+////////////////////////
+void PreviousPlanet(StarMap map)
+{
+    if(_planetList.Count > 1)
+    {
+        DefaultView(map);
+        
+        _planetIndex--;
+        if(_planetIndex < 0)
+        {
+            _planetIndex = _planetList.Count - 1;
+        } 
+    }
+    
+    map.center = _planetList[_planetIndex].center;
+}
+
 
 
 // DRAWING FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1426,19 +1502,29 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
 {
     List<Waypoint> hashMarks = new List<Waypoint>();
     
+    float planetDepth = planet.transformedCenter.GetDim(2);
+    
+    
     //North Pole
     Waypoint north = new Waypoint();
-    north.name = "N";
+    north.name = "N -";
     north.location = planet.center + new Vector3(0, (float) planet.radius, 0);
     north.transformedLocation = transformVector(north.location, map);
-    hashMarks.Add(north);
+    if(north.transformedLocation.GetDim(2) < planetDepth)
+    {
+        hashMarks.Add(north);
+    }
+    
     
     //South Pole
     Waypoint south = new Waypoint();
-    south.name = "S";
+    south.name = "S -";
     south.location = planet.center - new Vector3(0, (float) planet.radius, 0);
-    south.transformedLocation = transformVector(north.location, map);
-    hashMarks.Add(south);
+    south.transformedLocation = transformVector(south.location, map);
+    if(south.transformedLocation.GetDim(2) < planetDepth)
+    {
+        hashMarks.Add(south);
+    }
     
     float r1 = planet.radius * 0.95f;
     float r2 = (float) Math.Sqrt(2)/2*r1;
@@ -1446,8 +1532,8 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
     float r3 = r1/2;
     
     
-    String[] latitudes = new String[]{"45°S ", "", "45°N "};
-    String[] longitudes = new String[]{" 135°E"," 90°E"," 45°E"," 0°"," 45°W"," 90°W"," 135°W"," 180°"};
+    String[] latitudes = new String[]{"+", "|", "+"};
+    String[] longitudes = new String[]{"135°E","90°E","45°E","0°","45°W","90°W","135°W","180°"};
     
     float[] yCoords = new float[] {-r2,0,r2};
     float[,] xCoords = new float[,]{{-r3,-r2,-r3,  0, r3,r2,r3, 0},{-r2,-r1,-r2, 0, r2,r1,r2,0},{-r3,-r2,-r3,  0, r3,r2,r3, 0}};
@@ -1460,7 +1546,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
         for(int n = 0; n < 8; n++)
         {
             Waypoint hashMark = new Waypoint();
-            hashMark.name = latitude + longitudes[n];
+            hashMark.name = latitude + " " +longitudes[n]; 
             
             float xCoord = xCoords[m,n];
             float zCoord = zCoords[m,n];
@@ -1468,7 +1554,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
             hashMark.location = new Vector3(xCoord, yCoord, zCoord);
             hashMark.transformedLocation = transformVector(hashMark.location, map);
             
-            if(hashMark.transformedLocation.GetDim(2) < planet.transformedCenter.GetDim(2))
+            if(hashMark.transformedLocation.GetDim(2) < planetDepth)
             {
                 hashMarks.Add(hashMark);
             }
@@ -1484,15 +1570,18 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
         // Print more detail for closer planets
         if(diameter > 2 * HASH_LIMIT)
         {
-            Vector2 hashOffset = new Vector2(0,20);
+            String[] hashLabels = hash.name.Split(' ');
+            
+            
+            Vector2 hashOffset = new Vector2(0,10);
             position -= hashOffset;
             
             var sprite = new MySprite()
             {
                 Type = SpriteType.TEXT,
-                Data = "|",
+                Data = hashLabels[0],
                 Position = position,
-                RotationOrScale = 0.8f,
+                RotationOrScale = 0.5f,
                 Color = lineColor,
                 Alignment = TextAlignment.CENTER,
                 FontId = "White"
@@ -1504,9 +1593,9 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
             sprite = new MySprite()
             {
                 Type = SpriteType.TEXT,
-                Data = hash.name,
+                Data = hashLabels[1],
                 Position = position,
-                RotationOrScale = 0.5f,
+                RotationOrScale = 0.4f,
                 Color = lineColor,
                 Alignment = TextAlignment.CENTER,
                 FontId = "White"
@@ -2050,7 +2139,11 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
     DrawPlanets(displayPlanets, ref frame, map);
     
     //DRAW WAYPOINTS
-    DrawWaypoints(ref frame, map);
+    if(_gpsActive)
+    {
+        DrawWaypoints(ref frame, map);
+    }
+
 
     // DRAW SHIP
     DrawShip(ref frame, map, displayPlanets);
