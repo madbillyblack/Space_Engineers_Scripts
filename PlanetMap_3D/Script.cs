@@ -3,8 +3,11 @@ string _lcdName;
 string _refName;
 string _previousCommand;
 int _lcdIndex;
-int _planetIndex = 0;
-bool _gpsActive = true;
+int _azSpeed;
+int _planetIndex;
+bool _gpsActive;
+Vector3 _trackSpeed;
+Vector3 _origin = new Vector3(0,0,0);
 //string _planetLog;
 //string _gpsLog;
 //string _unchartedLog;
@@ -25,7 +28,7 @@ const int ANGLE_STEP = 5; // Temporary step for rotation commands.
 const float MOVE_STEP = 5000; // Temporary step for translation (move) commands.
 const int ZOOM_MAX = 1000000000; // Max value for Depth of Field
 const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out.
-const int MARKER_WIDTH = 10; // Width of GPS Markers
+const int MARKER_WIDTH = 8; // Width of GPS Markers
 const float DIAMETER_MIN = 6; //Minimum Diameter For Distant Planets
 const int HASH_LIMIT = 125; //Minimum diameter size to print Hashmarks on planet.
 const int DV_RADIUS = 240000; //Default View Radius
@@ -60,10 +63,11 @@ public class StarMap
     public int azimuth;
     public int rotationalRadius;
     public int depthOfField;
+    public int azSpeed; // Rotational velocity of Azimuth
     
     public StarMap()
     {
-        
+        this.azSpeed = 0;
     }
     
     public void SetViewPlane(string plane)
@@ -144,6 +148,16 @@ public class StarMap
     public int GetAltitude()
     {
         return this.altitude;
+    }
+    
+    public void SetAzSpeed(int value)
+    {
+        this.azSpeed = value;
+    }
+    
+    public int GetAzSpeed()
+    {
+        return this.azSpeed;
     }
     
     public void yaw(int angle)
@@ -549,13 +563,17 @@ public Program()
       String[] loadData = Storage.Split('\n');
       _planetIndex = int.Parse(loadData[0]);
       _gpsActive = bool.Parse(loadData[1]);
+      _azSpeed = int.Parse(loadData[2]);
+      _trackSpeed = StringToVector3(loadData[3]);
     }
     else
     {
         _planetIndex = 0;
         _gpsActive = true;
+        _azSpeed = 0;
+        _trackSpeed = new Vector3(0,0,0);
     }
-    
+
     
     string oldData = Me.CustomData;
     string newData = DEFAULT_SETTINGS;
@@ -675,7 +693,7 @@ public Program()
 
 public void Save()
 {
-    Storage = _planetIndex.ToString() + "\n" + _gpsActive.ToString();
+    Storage = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString() + "\n" + Vector3ToString(_trackSpeed);
 }
 
 // MAIN ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -723,9 +741,13 @@ public void Main(string argument)
         IMyTerminalBlock mapBlock = _mapBlocks[0] as IMyTerminalBlock;
         StarMap myMap = parametersToMap(mapBlock);
         
-        if (_previousCommand == "NEWLY LOADED")
+        myMap.azimuth = degreeAdd(myMap.azimuth, _azSpeed);
+        myMap.center += rotateMovement(_trackSpeed, myMap);
+        
+        if (_previousCommand == "NEWLY LOADED" || _azSpeed != 0 || _trackSpeed != _origin)
         {
             updateMap(myMap);
+            mapToParameters(myMap, mapBlock);
         }
 
         if (argument != "")
@@ -795,6 +817,34 @@ public void Main(string argument)
                     break;
                 case "PREVIOUS_PLANET":
                     PreviousPlanet(myMap);
+                    break;
+                case "SPIN_LEFT":
+                    _azSpeed += ANGLE_STEP;
+                    break;
+                case "SPIN_RIGHT":
+                    _azSpeed -= ANGLE_STEP;
+                    break;
+                case "STOP":
+                    _azSpeed = 0;
+                    _trackSpeed = _origin;
+                    break;
+                case "TRACK_LEFT":
+                    _trackSpeed += new Vector3(MOVE_STEP, 0, 0);
+                    break;
+                case "TRACK_RIGHT":
+                    _trackSpeed -= new Vector3(MOVE_STEP, 0, 0);
+                    break;
+                case "TRACK_UP":
+                    _trackSpeed += new Vector3(0,MOVE_STEP,0);
+                    break;
+                case "TRACK_DOWN":
+                    _trackSpeed -= new Vector3(0,MOVE_STEP,0);
+                    break;
+                case "TRACK_FORWARD":
+                    _trackSpeed += new Vector3(0,0,MOVE_STEP);
+                    break;
+                case "TRACK_BACKWARD":
+                    _trackSpeed -= new Vector3(0,0,MOVE_STEP);
                     break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
@@ -1245,14 +1295,25 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
     Vector2 offset = new Vector2( (float) Math.Sin(shipAngle), (float) Math.Cos(shipAngle) * -1);
     position += offset * shipLength/4;
     position -= new Vector2(SHIP_SCALE/2 ,0); // Center width of ship over position
+    Vector2 startPosition = position;
     
- 
+    //Outline
+    var sprite = new MySprite()
+    {
+        Type = SpriteType.TEXTURE,
+        Data = "Triangle",
+        Position = position,
+        Size=  new Vector2(SHIP_SCALE+8, shipLength+8),
+        RotationOrScale=shipAngle,
+        Color = Color.Black,
+    };
+    frame.Add(sprite);
     
     
     
     
     // Ship Body
-    var sprite = new MySprite()
+    sprite = new MySprite()
     {
         Type = SpriteType.TEXTURE,
         Data = "Triangle",
@@ -1291,9 +1352,6 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 ///////////////////
 public Vector2 PlotObject(Vector3 pos, StarMap map)
 {
-    Echo("Pos: " + Vector3ToString(pos));
-    Echo("DoF: " + map.depthOfField);
-    Echo("Z: " + pos.GetDim(2));
     float zFactor = map.depthOfField/pos.GetDim(2);
     
     float plotX = pos.GetDim(0)*zFactor;
@@ -1378,9 +1436,7 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
             
             
         Vector2 startPosition = _viewport.Center + planetPosition;
-        //Echo("StartPosition: " + startPosition);
-        //Echo("ViewPort: " + _viewport.Center);
-        //Echo("Planet: " + planetPosition);
+
         float diameter = ProjectDiameter(planet, map);//2*planet.radius*map.depthOfField/planet.transformedCenter.GetDim(2);
         
         Vector2 position = startPosition - new Vector2(diameter/2,0);
@@ -1447,7 +1503,7 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 
 
         // HashMarks
-        if(diameter > HASH_LIMIT && Vector3.Distance(planet.center, map.center) < 2*planet.radius)
+        if(diameter > HASH_LIMIT)// && Vector3.Distance(planet.center, map.center) < 2*planet.radius
         {
             DrawHashMarks(planet, diameter, lineColor, map, ref frame);
         }
@@ -1500,6 +1556,8 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 ///////////////////////
 public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map, ref MySpriteDrawFrame frame)
 {
+    Echo ("DIAMETER: " + diameter);
+    Echo("--> DRAW HASHMARKS");
     List<Waypoint> hashMarks = new List<Waypoint>();
     
     float planetDepth = planet.transformedCenter.GetDim(2);
@@ -1551,7 +1609,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
             float xCoord = xCoords[m,n];
             float zCoord = zCoords[m,n];
             
-            hashMark.location = new Vector3(xCoord, yCoord, zCoord);
+            hashMark.location = planet.center + new Vector3(xCoord, yCoord, zCoord);
             hashMark.transformedLocation = transformVector(hashMark.location, map);
             
             if(hashMark.transformedLocation.GetDim(2) < planetDepth)
@@ -1565,6 +1623,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
     {
         Waypoint hash = hashMarks[h];
         Vector2 position = _viewport.Center + PlotObject(hash.transformedLocation, map);
+        Echo("----> (" + position.X.ToString() + ", " +position.Y.ToString() +")");
         
         
         // Print more detail for closer planets
@@ -1618,6 +1677,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
             frame.Add(sprite);
         }
     }
+    //hashMarks.Clear();
 }
 
 ///////////////////////
@@ -1635,7 +1695,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
             Vector2 waypointPosition = PlotObject(waypoint.transformedLocation, map);
             Vector2 startPosition = _viewport.Center + waypointPosition;
             
-            float rotationMod = (float)Math.PI/4;
+            float rotationMod = 0; //(float)Math.PI/4;
             
             Vector2 position = startPosition - new Vector2(MARKER_WIDTH/2,0);
             
@@ -1647,11 +1707,11 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 Position = position,
                 RotationOrScale = rotationMod,
                 Size=  new Vector2(MARKER_WIDTH,MARKER_WIDTH), 
-                Color = Color.White,
+                Color = Color.Black,
             };
             frame.Add(sprite);
             
-            position += new Vector2(1,1);
+            position += new Vector2(1,0);
             
             sprite = new MySprite()
             {
@@ -1659,12 +1719,12 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 Data = "SquareHollow",
                 Position = position,
                 RotationOrScale = rotationMod,
-                Size=  new Vector2(MARKER_WIDTH,MARKER_WIDTH), 
+                Size=  new Vector2(MARKER_WIDTH+2,MARKER_WIDTH+2), 
                 Color = Color.White,
             };
             frame.Add(sprite);
             
-            position += new Vector2(-2,0);
+            position += new Vector2(1,0);
             
             sprite = new MySprite()
             {
@@ -1691,12 +1751,8 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 FontId = "White"
             };
             frame.Add(sprite);
-            
-        }
-        
-        
+        }    
     }
-    
 }
 
 
