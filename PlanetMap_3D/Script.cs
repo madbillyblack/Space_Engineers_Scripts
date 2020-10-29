@@ -6,6 +6,8 @@ int _lcdIndex;
 int _azSpeed;
 int _planetIndex;
 bool _gpsActive;
+bool _showMapParameters;
+bool _showPlanetNames;
 Vector3 _trackSpeed;
 Vector3 _origin = new Vector3(0,0,0);
 //string _planetLog;
@@ -558,20 +560,27 @@ public class Waypoint
 
 public Program()
 {
+    //Load Saved Variables
     if(Storage.Length > 0)
     {
+      //Previously Compiled
       String[] loadData = Storage.Split('\n');
       _planetIndex = int.Parse(loadData[0]);
       _gpsActive = bool.Parse(loadData[1]);
       _azSpeed = int.Parse(loadData[2]);
       _trackSpeed = StringToVector3(loadData[3]);
+      _showMapParameters = bool.Parse(loadData[4]);
+      _showPlanetNames = bool.Parse(loadData[5]);
     }
     else
     {
+        //Newly Compiled
         _planetIndex = 0;
         _gpsActive = true;
         _azSpeed = 0;
         _trackSpeed = new Vector3(0,0,0);
+        _showMapParameters = true;
+        _showPlanetNames = true;
     }
 
     
@@ -693,7 +702,10 @@ public Program()
 
 public void Save()
 {
-    Storage = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString() + "\n" + Vector3ToString(_trackSpeed);
+    String saveData = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString();
+    saveData = saveData + "\n" + Vector3ToString(_trackSpeed) + "\n" + _showMapParameters.ToString() + "\n" + _showPlanetNames.ToString();
+    
+    Storage = saveData;
 }
 
 // MAIN ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -810,7 +822,7 @@ public void Main(string argument)
                     _gpsActive = false;
                     break;
                 case "TOGGLE_GPS":
-                    toggleGPS();
+                    _gpsActive = !_gpsActive;
                     break;
                 case "NEXT_PLANET":
                     NextPlanet(myMap);
@@ -845,6 +857,24 @@ public void Main(string argument)
                     break;
                 case "TRACK_BACKWARD":
                     _trackSpeed -= new Vector3(0,0,MOVE_STEP);
+                    break;
+                case "SHOW_NAMES":
+                    _showPlanetNames = true;
+                    break;
+                case "HIDE_NAMES":
+                    _showPlanetNames = false;
+                    break;
+                case "TOGGLE_NAMES":
+                    _showPlanetNames = !_showPlanetNames;
+                    break;
+                case "SHOW_INFO":
+                    _showMapParameters = true;
+                    break;
+                case "HIDE_INFO":
+                    _showMapParameters = false;
+                    break;
+                case "TOGGLE_INFO":
+                    _showMapParameters = !_showMapParameters;
                     break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
@@ -1098,22 +1128,6 @@ void DefaultView(StarMap map)
 }
 
 
-//////////////////
-// TOGGLE GPS //
-//////////////////
-void toggleGPS()
-{
-    if(_gpsActive)
-    {
-        _gpsActive = false;
-    }
-    else
-    {
-        _gpsActive = true;
-    }
-}
-
-
 ////////////////////
 // NEXT PLANET //
 ////////////////////
@@ -1130,7 +1144,12 @@ void NextPlanet(StarMap map)
         }
     }
     
-    map.center = _planetList[_planetIndex].center;
+    Planet planet = _planetList[_planetIndex];
+    map.center = planet.center;
+    if(planet.radius < 40000)
+    {
+        map.depthOfField *= 4;
+    }
 }
 
 
@@ -1147,10 +1166,16 @@ void PreviousPlanet(StarMap map)
         if(_planetIndex < 0)
         {
             _planetIndex = _planetList.Count - 1;
-        } 
+        }
+
     }
     
-    map.center = _planetList[_planetIndex].center;
+    Planet planet = _planetList[_planetIndex];
+    map.center = planet.center;
+    if(planet.radius < 40000)
+    {
+        map.depthOfField *= 4;
+    }
 }
 
 
@@ -1509,44 +1534,48 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
         }
 
 
-
-        // TITLE
-        float fontMod = 1;
-
-        if(diameter < 50)
+        if(_showPlanetNames)
         {
-            fontMod =(float)0.5;
+            // PLANET NAME
+            float fontMod = 1;
+
+            if(diameter < 50)
+            {
+                fontMod =(float)0.5;
+            }
+
+            
+            position = startPosition;
+            
+            // Name Shadow
+            sprite = new MySprite()
+            {
+                Type = SpriteType.TEXT,
+                Data = planet.name,
+                Position = position,
+                RotationOrScale = fontMod*0.8f,
+                Color = Color.Black,
+                Alignment = TextAlignment.CENTER /* Center the text on the position */,
+                FontId = "White"
+            };
+            frame.Add(sprite);
+
+
+            position += new Vector2(-2,2);
+
+            // Name
+            sprite = new MySprite()
+            {
+                Type = SpriteType.TEXT,
+                Data = planet.name,
+                Position = position,
+                RotationOrScale = fontMod*0.8f,
+                Color = Color.Yellow,
+                Alignment = TextAlignment.CENTER /* Center the text on the position */,
+                FontId = "White"
+            };
+            frame.Add(sprite);    
         }
-
-
-        position = startPosition;
-
-        sprite = new MySprite()
-        {
-            Type = SpriteType.TEXT,
-            Data = planet.name,
-            Position = position,
-            RotationOrScale = fontMod*0.8f,
-            Color = Color.Black,
-            Alignment = TextAlignment.CENTER /* Center the text on the position */,
-            FontId = "White"
-        };
-        frame.Add(sprite);
-
-
-        position += new Vector2(-2,2);
-
-        sprite = new MySprite()
-        {
-            Type = SpriteType.TEXT,
-            Data = planet.name,
-            Position = position,
-            RotationOrScale = fontMod*0.8f,
-            Color = Color.Yellow,
-            Alignment = TextAlignment.CENTER /* Center the text on the position */,
-            FontId = "White"
-        };
-        frame.Add(sprite);                
     }
 }
 
@@ -2204,136 +2233,140 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
     // DRAW SHIP
     DrawShip(ref frame, map, displayPlanets);
 
-    // TOP BAR
-    var position = new Vector2(0,47);
-    sprite = new MySprite()
+    // MAP INFO
+    if(_showMapParameters)
     {
-        Type = SpriteType.TEXTURE,
-        Data = "SquareSimple",
-        Position = position,
-        Color = Color.Black,
-        Size= new Vector2(_viewport.Width,20),
-    };
-    frame.Add(sprite);
-    
-   // AZIMUTH READING
-    position += new Vector2(10,-8);
-    
-    string mapAz = "Az: " + map.azimuth + "°";
+        // TOP BAR
+        var position = new Vector2(0,47);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "SquareSimple",
+            Position = position,
+            Color = Color.Black,
+            Size= new Vector2(_viewport.Width,20),
+        };
+        frame.Add(sprite);
+        
+       // AZIMUTH READING
+        position += new Vector2(10,-8);
+        
+        string mapAz = "Az: " + map.azimuth + "°";
 
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXT,
-        Data = mapAz,
-        Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
-        Color = Color.White,
-        Alignment = TextAlignment.LEFT /* Center the text on the position */,
-        FontId = "White"
-    };
-    frame.Add(sprite);
-    
-    
-    // CENTER READING
-    string xCenter = abbreviateValue(map.center.GetDim(0));
-    string yCenter = abbreviateValue(map.center.GetDim(1));
-    string zCenter = abbreviateValue(map.center.GetDim(2));
-    string centerReading = "[" + xCenter + ", " + yCenter + ", " + zCenter + "]";
-    
-    position += new Vector2(_viewport.Width/2 -15, 0);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXT,
+            Data = mapAz,
+            Position = position,
+            RotationOrScale = 0.6f /* 80 % of the font's default size */,
+            Color = Color.White,
+            Alignment = TextAlignment.LEFT /* Center the text on the position */,
+            FontId = "White"
+        };
+        frame.Add(sprite);
+        
+        
+        // CENTER READING
+        string xCenter = abbreviateValue(map.center.GetDim(0));
+        string yCenter = abbreviateValue(map.center.GetDim(1));
+        string zCenter = abbreviateValue(map.center.GetDim(2));
+        string centerReading = "[" + xCenter + ", " + yCenter + ", " + zCenter + "]";
+        
+        position += new Vector2(_viewport.Width/2 -15, 0);
 
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXT,
-        Data = centerReading,
-        Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
-        Color = Color.White,
-        Alignment = TextAlignment.CENTER /* Center the text on the position */,
-        FontId = "White"
-    };
-    frame.Add(sprite);
-    
-    
-    // ALTITUDE READING
-    string mapAlt = "Alt: " + map.altitude*-1 + "°";
-    position += new Vector2(125 ,0);
-    
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXT,
-        Data = mapAlt,
-        Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
-        Color = Color.White,
-        Alignment = TextAlignment.RIGHT,
-        FontId = "White"
-    };
-    frame.Add(sprite);
-    
-    
-    // BOTTOM BAR
-    position = new Vector2(0,210);
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "SquareSimple",
-        Position = position,
-        Color = Color.Black,
-        Size= new Vector2(_viewport.Width,20),
-    };
-    frame.Add(sprite);
-    
-    // DEPTH OF FIELD READING
-    position += new Vector2(10,-8);
-    
-    string dofReading = "DoF:" + abbreviateValue((float)map.depthOfField);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXT,
+            Data = centerReading,
+            Position = position,
+            RotationOrScale = 0.6f /* 80 % of the font's default size */,
+            Color = Color.White,
+            Alignment = TextAlignment.CENTER /* Center the text on the position */,
+            FontId = "White"
+        };
+        frame.Add(sprite);
+        
+        
+        // ALTITUDE READING
+        string mapAlt = "Alt: " + map.altitude*-1 + "°";
+        position += new Vector2(125 ,0);
+        
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXT,
+            Data = mapAlt,
+            Position = position,
+            RotationOrScale = 0.6f /* 80 % of the font's default size */,
+            Color = Color.White,
+            Alignment = TextAlignment.RIGHT,
+            FontId = "White"
+        };
+        frame.Add(sprite);
+        
+        
+        // BOTTOM BAR
+        position = new Vector2(0,210);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "SquareSimple",
+            Position = position,
+            Color = Color.Black,
+            Size= new Vector2(_viewport.Width,20),
+        };
+        frame.Add(sprite);
+        
+        // DEPTH OF FIELD READING
+        position += new Vector2(10,-8);
+        
+        string dofReading = "DoF:" + abbreviateValue((float)map.depthOfField);
 
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXT,
-        Data = dofReading,
-        Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
-        Color = Color.White,
-        Alignment = TextAlignment.LEFT /* Center the text on the position */,
-        FontId = "White"
-    };
-    frame.Add(sprite);
-    
-    
-    // MODE READING
-    position += new Vector2(_viewport.Width/2 -15, 0);
-    string modeReading = map.mode;
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXT,
+            Data = dofReading,
+            Position = position,
+            RotationOrScale = 0.6f /* 80 % of the font's default size */,
+            Color = Color.White,
+            Alignment = TextAlignment.LEFT /* Center the text on the position */,
+            FontId = "White"
+        };
+        frame.Add(sprite);
+        
+        
+        // MODE READING
+        position += new Vector2(_viewport.Width/2 -15, 0);
+        string modeReading = map.mode;
 
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXT,
-        Data = modeReading,
-        Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
-        Color = Color.White,
-        Alignment = TextAlignment.CENTER /* Center the text on the position */,
-        FontId = "White"
-    };
-    frame.Add(sprite);
-    
-    
-    // RADIUS READING
-    string radius = "R:"+ abbreviateValue((float)map.rotationalRadius);
-    position += new Vector2(125 ,0);
-    
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXT,
-        Data = radius,
-        Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
-        Color = Color.White,
-        Alignment = TextAlignment.RIGHT,
-        FontId = "White"
-    };
-    frame.Add(sprite);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXT,
+            Data = modeReading,
+            Position = position,
+            RotationOrScale = 0.6f /* 80 % of the font's default size */,
+            Color = Color.White,
+            Alignment = TextAlignment.CENTER /* Center the text on the position */,
+            FontId = "White"
+        };
+        frame.Add(sprite);
+        
+        
+        // RADIUS READING
+        string radius = "R:"+ abbreviateValue((float)map.rotationalRadius);
+        position += new Vector2(125 ,0);
+        
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXT,
+            Data = radius,
+            Position = position,
+            RotationOrScale = 0.6f /* 80 % of the font's default size */,
+            Color = Color.White,
+            Alignment = TextAlignment.RIGHT,
+            FontId = "White"
+        };
+        frame.Add(sprite);
+    }
 }
 
 ///////////////////////////
