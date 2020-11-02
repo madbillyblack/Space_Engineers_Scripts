@@ -39,10 +39,14 @@ const int DV_RADIUS = 240000; //Default View Radius
 const int DV_DOF = 256; //Default Depth of Field
 const int DV_ALTITUDE = -15; //Default Altitude (angle)
 const int CYCLE_LENGTH = 5; // Number of runs for delayed cycle
+const int BAR_HEIGHT = 20; //Default height of parameter bars
+const int TOP_MARGIN = 8; // Margin for top and bottom of frame
+const int SIDE_MARGIN = 15; // Margin for sides of frame
 
 const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
 //const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=<name>\nLCD_Index=0\nReference_Name=<name>\n";
-const string DEFAULT_DISPLAY = "[mapDisplay]\nViewPlane=X Y\nCenter=(0,0,0)\nScale=1000\nMode=WORLD";
+string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=WORLD\nDepthOfField="+DV_DOF+"\nRotationalRadius="+DV_RADIUS
+                                +"\nAzimuth=0\nAltitude="+DV_ALTITUDE;
 
 
 readonly String[,] AXIS = new String[6,6] {{"E","-X -Y", "-X -Z", "E", "-X Y", "-X Z"},
@@ -59,10 +63,7 @@ readonly String[,] AXIS = new String[6,6] {{"E","-X -Y", "-X -Z", "E", "-X Y", "
 ////////////////
 public class StarMap
 {
-
-    public string viewPlane;
     public Vector3 center;
-    public int scale;
     public string mode;
     public int altitude;
     public int azimuth;
@@ -75,16 +76,6 @@ public class StarMap
         this.azSpeed = 0;
     }
     
-    public void SetViewPlane(string plane)
-    {
-        this.viewPlane = plane.ToUpper();
-    }
-    
-    public string GetViewPlane()
-    {
-        return this.viewPlane;
-    }
-    
     public void SetCenter(Vector3 coordinate)
     {
         this.center = coordinate;
@@ -93,16 +84,6 @@ public class StarMap
     public Vector3 GetCenter()
     {
         return this.center;
-    }
-    
-    public void SetScale(int inputScale)
-    {
-        this.scale = inputScale;
-    }
-    
-    public int GetScale()
-    {
-        return this.scale;
     }
     
     public void SetMode(string displayMode)
@@ -726,7 +707,6 @@ public void Main(string argument)
     {
         Echo("Planet Count: " + _planetList.Count);
         Planet planet = _planetList[_planetList.Count - 1];
-        Echo("Last Logged: " + planet.name);
     //    Echo("C: " + Vector3ToString(planet.center));
     //    Echo("R: " + planet.radius.ToString());
     }
@@ -739,7 +719,6 @@ public void Main(string argument)
     {
         Echo("GPS Count: " + _waypointList.Count);
         Waypoint waypoint = _waypointList[_waypointList.Count - 1];
-        Echo("Last Logged: " + waypoint.name);
     //    Echo("C: " + Vector3ToString(planet.center));
     //    Echo("R: " + planet.radius.ToString());
     }
@@ -802,9 +781,6 @@ public void Main(string argument)
                     break;
                 case "MOVE_BACKWARD":
                     moveBackward(myMap);
-                    break;
-                case "TOGGLE_MODE":
-                    ToggleMode(myMap);
                     break;
                 case "CENTER_MAP":
                     CenterMap(myMap);
@@ -894,6 +870,12 @@ public void Main(string argument)
                 case "PLANET_MODE":
                     myMap.mode = "PLANET";
                     break;
+                case "PREVIOUS_MODE":
+                    PreviousMode(myMap);
+                    break;
+                case "NEXT_MODE":
+                    NextMode(myMap);
+                    break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
                     break;
@@ -932,7 +914,7 @@ public StarMap parametersToMap(IMyTerminalBlock mapBlock)
     if(!mapBlock.CustomData.Contains("[mapDisplay]"))
     {
         string oldData = mapBlock.CustomData.Trim();
-        string newData = DEFAULT_DISPLAY;
+        string newData = _defaultDisplay;
         
         if(oldData.StartsWith("["))
         {
@@ -1101,31 +1083,40 @@ void CenterMap(StarMap map)
 
 
 /////////////////
-// SHIP MODE //    Changes map object to SHIP mode.
-/////////////////  (Possibly expand to take LCD argument for finding multiple maps across ship)
-void ShipMode(StarMap map)
+// NEXT MODE //
+/////////////////
+void NextMode(StarMap map)
 {
-    map.mode = "SHIP";
-}
-
-
-
-
-
-///////////////////
-// TOGGLE MODE //    Toggles MAP between "World" and "Ship" modes.
-///////////////////
-
-void ToggleMode(StarMap map)
-{
-    if(map.mode=="WORLD")
+    if(map.mode.ToUpper() == "WORLD")
     {
-    //IF MAP IS IN WORLD MODE, CHANGE TO SHIP MODE.
-        ShipMode(map);
+        map.mode = "SHIP";
+    }
+    else if(map.mode.ToUpper() == "SHIP")
+    {
+        map.mode = "PLANET";
     }
     else
     {
-    //IF MAP IS IN SHIP MODE OR THE STRING IS NOT RECOGNIZED, SWITCH TO WORLD MODE.
+        map.mode = "WORLD";
+    }
+}
+
+
+//////////////////////
+// PREVIOUS MODE //
+//////////////////////
+void PreviousMode(StarMap map)
+{
+    if(map.mode.ToUpper() == "PLANET")
+    {
+        map.mode = "SHIP";
+    }
+    else if(map.mode.ToUpper() == "WORLD")
+    {
+        map.mode = "PLANET";
+    }
+    else
+    {
         map.mode = "WORLD";
     }
 }
@@ -1142,6 +1133,7 @@ void ShipToPlanet(Planet planet, StarMap map)
     float azAngle = (float) Math.Atan2(shipVector.GetDim(2),shipVector.GetDim(0));
     float altAngle = (float) Math.Asin(shipVector.GetDim(1)/magnitude);
     
+    map.center = planet.center;
     map.azimuth = degreeAdd((int) toDegrees(azAngle),90);
     map.altitude = (int) toDegrees(-altAngle);
 }
@@ -1156,6 +1148,12 @@ void DefaultView(StarMap map)
     
     map.center = new Vector3(0,0,0);
     map.depthOfField = DV_DOF;
+    
+    if(_viewport.Width > 500)
+    {
+        map.depthOfField *= 2;
+    }
+    
     map.rotationalRadius = DV_RADIUS;
     map.azimuth = 0;
     map.altitude = DV_ALTITUDE;
@@ -1216,244 +1214,200 @@ void PreviousPlanet(StarMap map)
 
 // DRAWING FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////
-// PLOT SHIP //
-///////////////
-public void PlotShip(ref MySpriteDrawFrame frame, StarMap map)
-{
-    // DETERMINE ACTIVE AXES FROM VIEWPLANE
-    string [] axes = map.viewPlane.Split(' ');
-
-    // Convert Axes into numerical dimensions to asign to vertical and horizontal as well as +/- mods
-    int [] horz = ParseAxis(axes[0]);
-    int [] vert = ParseAxis(axes[1]);
-    
-    int hDimension = horz[0];
-    int hMod = horz[1];
-    
-    int vDimension = vert[0];
-    int vMod = vert[1];
-    
-    //Get the appropriate dimensions of the screen center.
-    Vector3 mapCenter = map.center;
-    float hMap = mapCenter.GetDim(hDimension);
-    float vMap = mapCenter.GetDim(vDimension);
-    
-    //Get appropriate dimentsions of ship position.
-    Vector3 shipPos = _refBlock.GetPosition();
-    float hShip = shipPos.GetDim(hDimension);
-    float vShip = shipPos.GetDim(vDimension);
-    
-    
-    //Get ship's directional vector and break it down to its relevent components.
-    Vector3 heading = _refBlock.WorldMatrix.Forward;
-    float adj = heading.GetDim(hDimension)*hMod;
-    float opp = heading.GetDim(vDimension)*vMod;
-    float angle = (float) Math.Atan2(opp,adj);
-    
-    int mapScale = map.scale;
-    
-    //Determine scaled coordinates of ship on map.
-    float hPlot = (hShip - hMap)*hMod/mapScale;
-    float vPlot = (vMap - vShip)*vMod/mapScale; //INVERTED BECAUSE OF DRAWFRAME COORDINATES
-    
-    Vector2 vecPlot = new Vector2(hPlot, vPlot);
-    //DrawShip(ref frame, vecPlot, angle);
-}
-
 
 /////////////////
 // DRAW SHIP //
 /////////////////
-
 public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> displayPlanets)
 {
-    Vector2 position = PlotObject(transformVector(_refBlock.GetPosition(), map),map);
-    
-    // Get ships Direction Vector and align it with map
-    Vector3 heading = rotateVector(_refBlock.WorldMatrix.Forward, map);
-    
-    // SHIP COLORS
-    Color bodyColor = Color.LightGray;
-    Color aftColor = new Color(180,60,0);
-    Color plumeColor = Color.Yellow;
-    
-    if(displayPlanets.Count > 0)
+    Vector3 transformedShip = transformVector(_refBlock.GetPosition(), map);
+    if(transformedShip.GetDim(2) >= map.depthOfField)
     {
-        String planetColor = obscureShip(position, displayPlanets, map);
-        switch(planetColor.ToUpper())
+        Vector2 position = PlotObject(transformedShip,map);
+        
+        // Get ships Direction Vector and align it with map
+        Vector3 heading = rotateVector(_refBlock.WorldMatrix.Forward, map);
+        
+        // SHIP COLORS
+        Color bodyColor = Color.LightGray;
+        Color aftColor = new Color(180,60,0);
+        Color plumeColor = Color.Yellow;
+        
+        if(displayPlanets.Count > 0)
         {
-            case "RED":
-                aftColor = new Color(48,0,0);
-                bodyColor = new Color(64,0,0);
-                plumeColor = aftColor;
-                break;
-            case "GREEN":
-                aftColor = new Color(0,48,0);
-                bodyColor = new Color(0,64,0);
-                plumeColor = aftColor;
-                break;
-            case "BLUE":
-                aftColor = new Color(0,0,48);
-                bodyColor = new Color(0,0,64);
-                plumeColor = aftColor;
-                break;
-            case "YELLOW":
-                aftColor = new Color(127,127,39);
-                bodyColor = new Color(127,127,51);
-                plumeColor = aftColor;
-                break;
-            case "MAGENTA":
-                aftColor = new Color(96,0,96);
-                bodyColor = new Color(127,0,127);
-                plumeColor = aftColor;
-                break;
-            case "PURPLE":
-                aftColor = new Color(36,0,62);
-                bodyColor = new Color(48,0,96);
-                plumeColor = aftColor;
-                break;
-            case "CYAN":
-                aftColor = new Color(0,48,48);
-                bodyColor = new Color(0,64,64);
-                plumeColor = aftColor;
-                break;
-            case "ORANGE":
-                aftColor = new Color(48,24,0);
-                bodyColor = new Color(64,32,0);
-                plumeColor = aftColor;
-                break;
-            case "TAN":
-                aftColor = new Color(175,115,54);
-                bodyColor = new Color(205,133,63);
-                plumeColor = aftColor;
-                break;
-            case "GRAY":
-                aftColor = new Color(48,48,48);
-                bodyColor = new Color(64,64,64);
-                plumeColor = aftColor;
-                break;
-            case "GREY":
-                aftColor = new Color(48,48,48);
-                bodyColor = new Color(64,64,64);
-                plumeColor = aftColor;
-                break;
-            case "WHITE":
-                aftColor = new Color(100,150,150);
-                bodyColor = new Color(192,192,192);
-                plumeColor = aftColor;
-                break;
+            String planetColor = obscureShip(position, displayPlanets, map);
+            switch(planetColor.ToUpper())
+            {
+                case "RED":
+                    aftColor = new Color(48,0,0);
+                    bodyColor = new Color(64,0,0);
+                    plumeColor = aftColor;
+                    break;
+                case "GREEN":
+                    aftColor = new Color(0,48,0);
+                    bodyColor = new Color(0,64,0);
+                    plumeColor = aftColor;
+                    break;
+                case "BLUE":
+                    aftColor = new Color(0,0,48);
+                    bodyColor = new Color(0,0,64);
+                    plumeColor = aftColor;
+                    break;
+                case "YELLOW":
+                    aftColor = new Color(127,127,39);
+                    bodyColor = new Color(127,127,51);
+                    plumeColor = aftColor;
+                    break;
+                case "MAGENTA":
+                    aftColor = new Color(96,0,96);
+                    bodyColor = new Color(127,0,127);
+                    plumeColor = aftColor;
+                    break;
+                case "PURPLE":
+                    aftColor = new Color(36,0,62);
+                    bodyColor = new Color(48,0,96);
+                    plumeColor = aftColor;
+                    break;
+                case "CYAN":
+                    aftColor = new Color(0,48,48);
+                    bodyColor = new Color(0,64,64);
+                    plumeColor = aftColor;
+                    break;
+                case "ORANGE":
+                    aftColor = new Color(48,24,0);
+                    bodyColor = new Color(64,32,0);
+                    plumeColor = aftColor;
+                    break;
+                case "TAN":
+                    aftColor = new Color(175,115,54);
+                    bodyColor = new Color(205,133,63);
+                    plumeColor = aftColor;
+                    break;
+                case "GRAY":
+                    aftColor = new Color(48,48,48);
+                    bodyColor = new Color(64,64,64);
+                    plumeColor = aftColor;
+                    break;
+                case "GREY":
+                    aftColor = new Color(48,48,48);
+                    bodyColor = new Color(64,64,64);
+                    plumeColor = aftColor;
+                    break;
+                case "WHITE":
+                    aftColor = new Color(100,150,150);
+                    bodyColor = new Color(192,192,192);
+                    plumeColor = aftColor;
+                    break;
+            }
         }
+
+        
+        
+        // Ship Heading
+        float headingX = heading.GetDim(0);
+        float headingY = heading.GetDim(1);
+        float headingZ = heading.GetDim(2);
+        
+        //Get the Ratio of direction Vector's apparent vs actual magnitudes.
+        float shipLength = (float) 1.33 * SHIP_SCALE *(float) Math.Sqrt(headingX * headingX + headingY * headingY) / (float) Math.Sqrt (headingX * headingX + headingY * headingY + headingZ * headingZ);
+        
+        
+        //float shipLength = heading.Length();//Math.Sqrt(headingX * headingX + headingY * headingY);
+        
+        float shipAngle = (float) Math.Atan2(headingX, headingY) * -1;//(float) Math.PI - 
+        
+        
+        
+
+        position += _viewport.Center;
+        
+        
+        Vector2 offset = new Vector2( (float) Math.Sin(shipAngle), (float) Math.Cos(shipAngle) * -1);
+        position += offset * shipLength/4;
+        position -= new Vector2(SHIP_SCALE/2 ,0); // Center width of ship over position
+        Vector2 startPosition = position;
+        
+        position -= new Vector2(2,0);
+        
+        //Outline
+        var sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Triangle",
+            Position = position,
+            Size=  new Vector2(SHIP_SCALE+4, shipLength+4),
+            RotationOrScale=shipAngle,
+            Color = Color.Black,
+        };
+        frame.Add(sprite);
+        
+        float aftHeight = SHIP_SCALE - shipLength/(float) 1.33;
+        
+        position = startPosition;
+        position -= offset * shipLength/2;
+        position -= new Vector2(2,0);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Circle",
+            Position = position,
+            Size=  new Vector2(SHIP_SCALE+4, aftHeight+4),
+            RotationOrScale=shipAngle,
+            Color = Color.Black,
+        };
+        frame.Add(sprite);
+        
+        
+        
+        position = startPosition;
+        // Ship Body
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Triangle",
+            Position = position,
+            Size=  new Vector2(SHIP_SCALE, shipLength),
+            RotationOrScale=shipAngle,
+            Color = bodyColor,
+        };
+        frame.Add(sprite);
+        
+        
+        // Aft Ellipse
+
+        
+        if(headingZ < 0)
+        {
+            aftColor = bodyColor;
+            plumeColor = bodyColor;
+        }
+        
+        position -= offset * shipLength/2;
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Circle",
+            Position = position,
+            Size=  new Vector2(SHIP_SCALE, aftHeight),
+            RotationOrScale=shipAngle,
+            Color = aftColor,
+        };
+        frame.Add(sprite);
+        
+        
+        position -= offset * shipLength/16;
+        position += new Vector2(SHIP_SCALE/6, 0);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Circle",
+            Position = position,
+            Size=  new Vector2(SHIP_SCALE*0.67f, aftHeight*0.67f),
+            RotationOrScale=shipAngle,
+            Color = plumeColor,
+        };
+        frame.Add(sprite);
     }
-
-    
-    
-    // Ship Heading
-    float headingX = heading.GetDim(0);
-    float headingY = heading.GetDim(1);
-    float headingZ = heading.GetDim(2);
-    
-    //Get the Ratio of direction Vector's apparent vs actual magnitudes.
-    float shipLength = (float) 1.33 * SHIP_SCALE *(float) Math.Sqrt(headingX * headingX + headingY * headingY) / (float) Math.Sqrt (headingX * headingX + headingY * headingY + headingZ * headingZ);
-    
-    
-    //float shipLength = heading.Length();//Math.Sqrt(headingX * headingX + headingY * headingY);
-    
-    float shipAngle = (float) Math.Atan2(headingX, headingY) * -1;//(float) Math.PI - 
-    
-    
-    
-
-    position += _viewport.Center;
-    
-    
-    Vector2 offset = new Vector2( (float) Math.Sin(shipAngle), (float) Math.Cos(shipAngle) * -1);
-    position += offset * shipLength/4;
-    position -= new Vector2(SHIP_SCALE/2 ,0); // Center width of ship over position
-    Vector2 startPosition = position;
-    
-    position -= new Vector2(2,0);
-    
-    //Outline
-    var sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "Triangle",
-        Position = position,
-        Size=  new Vector2(SHIP_SCALE+4, shipLength+4),
-        RotationOrScale=shipAngle,
-        Color = Color.Black,
-    };
-    frame.Add(sprite);
-    
-    float aftHeight = SHIP_SCALE - shipLength/(float) 1.33;
-    
-    position = startPosition;
-    position -= offset * shipLength/2;
-    position -= new Vector2(2,0);
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "Circle",
-        Position = position,
-        Size=  new Vector2(SHIP_SCALE+4, aftHeight+4),
-        RotationOrScale=shipAngle,
-        Color = Color.Black,
-    };
-    frame.Add(sprite);
-    
-    
-    
-    position = startPosition;
-    // Ship Body
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "Triangle",
-        Position = position,
-        Size=  new Vector2(SHIP_SCALE, shipLength),
-        RotationOrScale=shipAngle,
-        Color = bodyColor,
-    };
-    frame.Add(sprite);
-    
-    
-    // Aft Ellipse
-
-    
-    if(headingZ < 0)
-    {
-        aftColor = bodyColor;
-        plumeColor = bodyColor;
-    }
-    
-    position -= offset * shipLength/2;
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "Circle",
-        Position = position,
-        Size=  new Vector2(SHIP_SCALE, aftHeight),
-        RotationOrScale=shipAngle,
-        Color = aftColor,
-    };
-    frame.Add(sprite);
-    
-    
-    position -= offset * shipLength/16;
-    position += new Vector2(SHIP_SCALE/6, 0);
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "Circle",
-        Position = position,
-        Size=  new Vector2(SHIP_SCALE*0.67f, aftHeight*0.67f),
-        RotationOrScale=shipAngle,
-        Color = plumeColor,
-    };
-    frame.Add(sprite);
-    
-    
 }
 
 
@@ -1480,8 +1434,8 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 {
     PlanetSort(displayPlanets);
     
-    
-    Echo("DIPSLAYED PLANETS:");
+  
+    Echo("\nDIPSLAYED PLANETS:");
     for(int d = 0; d < displayPlanets.Count; d++)
     {
         Planet planet = displayPlanets[d];
@@ -1670,8 +1624,6 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 ///////////////////////
 public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map, ref MySpriteDrawFrame frame)
 {
-    Echo ("DIAMETER: " + diameter);
-    Echo("--> DRAW HASHMARKS");
     List<Waypoint> hashMarks = new List<Waypoint>();
     
     float planetDepth = planet.transformedCenter.GetDim(2);
@@ -1736,9 +1688,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
     for(int h = 0; h < hashMarks.Count; h++)
     {
         Waypoint hash = hashMarks[h];
-        Vector2 position = _viewport.Center + PlotObject(hash.transformedLocation, map);
-        Echo("----> (" + position.X.ToString() + ", " +position.Y.ToString() +")");
-        
+        Vector2 position = _viewport.Center + PlotObject(hash.transformedLocation, map);        
         
         // Print more detail for closer planets
         if(diameter > 2 * HASH_LIMIT)
@@ -1799,19 +1749,26 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
 ///////////////////////
 public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 {
+    float fontSize = 0.5f;
+    int markerSize = MARKER_WIDTH;
+    if(_viewport.Width > 500)
+    {
+        fontSize *= 1.5f;
+        markerSize *= 2;
+    }
     for(int w = 0; w < _waypointList.Count; w++)
     {
         Waypoint waypoint = _waypointList[w];
         if(waypoint.transformedLocation.GetDim(2) > map.depthOfField)
         {
-            Echo(waypoint.name);
+            //Echo(waypoint.name);
             
             Vector2 waypointPosition = PlotObject(waypoint.transformedLocation, map);
             Vector2 startPosition = _viewport.Center + waypointPosition;
             
             float rotationMod = 0; //(float)Math.PI/4;
             
-            Vector2 position = startPosition - new Vector2(MARKER_WIDTH/2,0);
+            Vector2 position = startPosition - new Vector2(markerSize/2,0);
             
             // PRINT MARKER
             var sprite = new MySprite()
@@ -1820,7 +1777,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 Data = "SquareHollow",
                 Position = position,
                 RotationOrScale = rotationMod,
-                Size=  new Vector2(MARKER_WIDTH,MARKER_WIDTH), 
+                Size=  new Vector2(markerSize,markerSize), 
                 Color = Color.Black,
             };
             frame.Add(sprite);
@@ -1833,7 +1790,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 Data = "SquareHollow",
                 Position = position,
                 RotationOrScale = rotationMod,
-                Size=  new Vector2(MARKER_WIDTH+2,MARKER_WIDTH+2), 
+                Size=  new Vector2(markerSize+2,markerSize+2), 
                 Color = Color.White,
             };
             frame.Add(sprite);
@@ -1846,20 +1803,20 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 Data = "SquareHollow",
                 Position = position,
                 RotationOrScale = rotationMod,
-                Size=  new Vector2(MARKER_WIDTH,MARKER_WIDTH), 
+                Size=  new Vector2(markerSize,markerSize), 
                 Color = Color.White,
             };
             frame.Add(sprite);
             
             // PRINT NAME
-            position += new Vector2(1.33f * MARKER_WIDTH,-0.75f * MARKER_WIDTH);
+            position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
             
             sprite = new MySprite()
             {
                 Type = SpriteType.TEXT,
                 Data = waypoint.name,
                 Position = position,
-                RotationOrScale = 0.5f,
+                RotationOrScale = fontSize,
                 Color = Color.White,
                 Alignment = TextAlignment.LEFT,
                 FontId = "White"
@@ -2020,50 +1977,6 @@ public string abbreviateValue(float valueIn)
         abbreviatedValue = valueIn.ToString("F0");
     }
     return abbreviatedValue;
-}
-
-
-//////////////////
-// PARSE AXIS //   Converts axis string to 2 element int array.  First element is Dimension of axis (X->0, Y->1, Z->2) Second element is a +/- modifier.
-//////////////////
-public int[] ParseAxis(String dimension)
-{
-    int[] axis = new int[2];
-    
-    switch(dimension.ToUpper())
-    {
-        case "X":
-            axis[0] = 0;
-            axis[1] = 1;
-            break;
-        case "-X":
-            axis[0] = 0;
-            axis[1] = -1;
-            break;
-        case "Y":
-            axis[0] = 1;
-            axis[1] = 1;        
-            break;
-        case "-Y":
-            axis[0] = 1;
-            axis[1] = -1;
-            break;
-        case "Z":
-            axis[0] = 2;
-            axis[1] = 1;
-            break;
-        case "-Z":
-            axis[0] = 2;
-            axis[1] = -1;
-            break;
-        default:
-            axis[0] = 3;
-            axis[1] = 3;
-            Echo("IMPROPER VIEWPLANE FORMAT!!!");
-            break;
-    }
-    
-    return axis;    
 }
 
 
@@ -2328,17 +2241,18 @@ public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
 /////////////////////
 public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 {
-    Echo("MAP DATA:");
+    Echo("\nMAP DATA:");
+    Echo("H: " + _viewport.Height + "  W: " + _viewport.Width);
     Echo("Center: " + map.center);
     Echo("Azimuth: " + map.azimuth);
     Echo("Altitude: " + map.altitude*-1);
     Echo("View Radius: " + map.rotationalRadius);
     Echo("Depth of Field: " + map.depthOfField);
     
-    
+
     Vector3 mapCenter = map.center;
     
-    
+    Color gridColor = new Color(0,64,0);
     // Create background sprite
     var sprite = new MySprite()
     {
@@ -2346,7 +2260,7 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
         Data = "Grid",
         Position = _viewport.Center,
         Size = _viewport.Size,
-        Color = Color.DarkGray,
+        Color = gridColor,
         Alignment = TextAlignment.CENTER
     };
     // Add the sprite to the frame
@@ -2387,40 +2301,62 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 /////////////////////
 public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 {
-    var position = new Vector2(0,47);
+    //DEFAULT SIZING / STRINGS
+    float fontSize = 0.6f;
+    int barHeight = BAR_HEIGHT;
+    String angleReading = map.altitude*-1 + "° " + map.azimuth + "°";
+    String shipMode = "S";
+    String planetMode = "P";
+    String worldMode = "W";
+    
+    if(_viewport.Width > 500)
+    {
+        fontSize *= 1.5f;
+        barHeight *= 2;
+        angleReading = "Alt:" + map.altitude + "°  Az:" + map.azimuth + "°";
+        shipMode = "SHIP";
+        planetMode = "PLANET";
+        worldMode = "WORLD";
+    }
+    
+    
+    
+    //TOP BAR
+    var position = new Vector2(0,_viewport.Width/2 - _viewport.Height/2 + barHeight/2);
     var sprite = new MySprite()
     {
         Type = SpriteType.TEXTURE,
         Data = "SquareSimple",
         Position = position,
         Color = Color.Black,
-        Size= new Vector2(_viewport.Width,20),
+        Size= new Vector2(_viewport.Width, barHeight),
     };
     frame.Add(sprite);
         
-    position += new Vector2(10,-8);
+        
+    //MODE    
+    position += new Vector2(SIDE_MARGIN,-TOP_MARGIN);
     
     string modeReading = "";
     switch(map.mode)
     {
         case "SHIP":
-            modeReading = "S";
+            modeReading = shipMode;
             break;
         case "PLANET":
-            modeReading = "P";
+            modeReading = planetMode;
             break;
         default:
-            modeReading = "W";
+            modeReading = worldMode;
             break;        
     }
     
-
     sprite = new MySprite()
     {
         Type = SpriteType.TEXT,
         Data = modeReading,
         Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
+        RotationOrScale = fontSize,
         Color = Color.White,
         Alignment = TextAlignment.LEFT /* Center the text on the position */,
         FontId = "White"
@@ -2434,14 +2370,14 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     string zCenter = abbreviateValue(map.center.GetDim(2));
     string centerReading = "[" + xCenter + ", " + yCenter + ", " + zCenter + "]";
         
-    position += new Vector2(_viewport.Width/2 -15, 0);
+    position += new Vector2(_viewport.Width/2 - SIDE_MARGIN, 0);
 
     sprite = new MySprite()
     {
         Type = SpriteType.TEXT,
         Data = centerReading,
         Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
+        RotationOrScale = fontSize,
         Color = Color.White,
         Alignment = TextAlignment.CENTER /* Center the text on the position */,
         FontId = "White"
@@ -2449,9 +2385,8 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     frame.Add(sprite);
         
         
-    // Running Indicator
-    string mapAlt = "Alt: " + map.altitude*-1 + "°";
-    position += new Vector2(120 ,5);
+    // RUNNING INDICATOR
+    position += new Vector2(_viewport.Width/2 - SIDE_MARGIN, TOP_MARGIN);
     
     Color lightColor = new Color(0,8,0);
     
@@ -2468,22 +2403,22 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
         frame.Add(sprite); 
     }
 
-    
-        
+
     // BOTTOM BAR
-    position = new Vector2(0,210);
+    position = new Vector2(0,_viewport.Width/2 + _viewport.Height/2 - barHeight/2);
     sprite = new MySprite()
     {
         Type = SpriteType.TEXTURE,
         Data = "SquareSimple",
         Position = position,
         Color = Color.Black,
-        Size= new Vector2(_viewport.Width,20),
+        Size= new Vector2(_viewport.Width, barHeight),
     };
     frame.Add(sprite);
         
+        
     // DEPTH OF FIELD READING
-    position += new Vector2(10,-8);
+    position += new Vector2(SIDE_MARGIN,-TOP_MARGIN);
         
     string dofReading = "DoF:" + abbreviateValue((float)map.depthOfField);
 
@@ -2492,7 +2427,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
         Type = SpriteType.TEXT,
         Data = dofReading,
         Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
+        RotationOrScale = fontSize,
         Color = Color.White,
         Alignment = TextAlignment.LEFT /* Center the text on the position */,
         FontId = "White"
@@ -2500,16 +2435,15 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     frame.Add(sprite);
         
         
-    // MODE READING
-    position += new Vector2(_viewport.Width/2, 0);
-    String angleReading = map.altitude*-1 + "° " + map.azimuth + "°";
+    // ANGLE READING
+    position += new Vector2(_viewport.Width/2 - SIDE_MARGIN, 0);
 
     sprite = new MySprite()
     {
         Type = SpriteType.TEXT,
         Data = angleReading,
         Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
+        RotationOrScale = fontSize,
         Color = Color.White,
         Alignment = TextAlignment.CENTER /* Center the text on the position */,
         FontId = "White"
@@ -2519,14 +2453,14 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
         
     // RADIUS READING
     string radius = "R:"+ abbreviateValue((float)map.rotationalRadius);
-    position += new Vector2(125 ,0);
+    position += new Vector2(_viewport.Width/2 - SIDE_MARGIN, 0);
         
     sprite = new MySprite()
     {
         Type = SpriteType.TEXT,
         Data = radius,
         Position = position,
-        RotationOrScale = 0.6f /* 80 % of the font's default size */,
+        RotationOrScale = fontSize,
         Color = Color.White,
         Alignment = TextAlignment.RIGHT,
         FontId = "White"
@@ -2611,12 +2545,12 @@ public void updateMap(StarMap map)
      Echo("Map Updated!");
      if(_planetList.Count > 0)
      {
-         Echo("RELATIVE COORDINATES:");
+         //Echo("RELATIVE COORDINATES:");
          for(int p = 0; p < _planetList.Count; p++)
          {
              Planet planet = _planetList[p];
              planet.transformedCenter = transformVector(planet.center, map);
-             Echo(planet.name + ": " + Vector3ToString(planet.transformedCenter));
+             //Echo(planet.name + ": " + Vector3ToString(planet.transformedCenter));
          }
      }
      
