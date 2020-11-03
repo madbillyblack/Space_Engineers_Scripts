@@ -35,13 +35,14 @@ const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out.
 const int MARKER_WIDTH = 8; // Width of GPS Markers
 const float DIAMETER_MIN = 6; //Minimum Diameter For Distant Planets
 const int HASH_LIMIT = 125; //Minimum diameter size to print Hashmarks on planet.
-const int DV_RADIUS = 240000; //Default View Radius
+const int DV_RADIUS = 262144; //Default View Radius
 const int DV_DOF = 256; //Default Depth of Field
 const int DV_ALTITUDE = -15; //Default Altitude (angle)
 const int CYCLE_LENGTH = 5; // Number of runs for delayed cycle
 const int BAR_HEIGHT = 20; //Default height of parameter bars
 const int TOP_MARGIN = 8; // Margin for top and bottom of frame
 const int SIDE_MARGIN = 15; // Margin for sides of frame
+const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 
 const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
 //const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=<name>\nLCD_Index=0\nReference_Name=<name>\n";
@@ -148,23 +149,29 @@ public class StarMap
     
     public void yaw(int angle)
     {
-        this.azimuth = degreeAdd(this.azimuth, angle);
+        if(this.mode.ToUpper() != "PLANET")
+        {
+           this.azimuth = degreeAdd(this.azimuth, angle); 
+        }  
     }
     
     public void pitch(int angle)
     {
-        int newAngle = degreeAdd(this.altitude, angle);
-        
-        if(newAngle > MAX_PITCH)
+        if(this.mode.ToUpper() != "PLANET")
         {
-            newAngle = MAX_PITCH;
-        }
-        else if(newAngle < -MAX_PITCH)
-        {
-            newAngle = -MAX_PITCH;
-        }
+            int newAngle = degreeAdd(this.altitude, angle);
         
-        this.altitude = newAngle;
+            if(newAngle > MAX_PITCH)
+            {
+                newAngle = MAX_PITCH;
+            }
+            else if(newAngle < -MAX_PITCH)
+            {
+                newAngle = -MAX_PITCH;
+            }
+            
+            this.altitude = newAngle;
+        }
     }
 }
 
@@ -738,9 +745,18 @@ public void Main(string argument)
         IMyTerminalBlock mapBlock = _mapBlocks[0] as IMyTerminalBlock;
         StarMap myMap = parametersToMap(mapBlock);
 
+        //Add rotational Speed
+        if(myMap.mode.ToUpper() != "PLANET")
+        {
+            myMap.azimuth = degreeAdd(myMap.azimuth, _azSpeed);
+        }
         
-        myMap.azimuth = degreeAdd(myMap.azimuth, _azSpeed);
-        myMap.center += rotateMovement(_trackSpeed, myMap);
+        //Add Translational Speed
+        if(myMap.mode.ToUpper() == "PLANET")
+        {
+            myMap.center += rotateMovement(_trackSpeed, myMap);
+        }
+        
         
         cycleExecute(myMap);
         
@@ -781,9 +797,6 @@ public void Main(string argument)
                     break;
                 case "MOVE_BACKWARD":
                     moveBackward(myMap);
-                    break;
-                case "CENTER_MAP":
-                    CenterMap(myMap);
                     break;
                 case "DEFAULT_VIEW":
                     DefaultView(myMap);
@@ -875,6 +888,15 @@ public void Main(string argument)
                     break;
                 case "NEXT_MODE":
                     NextMode(myMap);
+                    break;
+                case "DECREASE_RADIUS":
+                    reduceRadius(myMap);
+                    break;
+                case "INCREASE_RADIUS":
+                    increaseRadius(myMap);
+                    break;
+                case "CENTER":
+                    myMap.center = _refBlock.GetPosition();
                     break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
@@ -970,7 +992,7 @@ public void mapToParameters(StarMap map, IMyTerminalBlock mapBlock)
 
 
 ////////////////
-// ZOOM IN //
+// ZOOM IN //      Increase Map's Depth of Field
 ////////////////
 
 void zoomIn(StarMap map)
@@ -991,7 +1013,7 @@ void zoomIn(StarMap map)
 
 
 ////////////////
-// ZOOM OUT //
+// ZOOM OUT //    Decrease Map's Depth of Field
 ////////////////
 void zoomOut(StarMap map)
 { 
@@ -1012,13 +1034,44 @@ void zoomOut(StarMap map)
 }
 
 
+//////////////////////
+// REDUCE RADIUS //
+//////////////////////
+void reduceRadius(StarMap map)
+{
+    map.rotationalRadius /= 2;
+    
+    if(map.rotationalRadius < map.depthOfField)
+    {
+        map.rotationalRadius = map.depthOfField;
+    }
+}
+
+
+////////////////////////
+// INCREASE RADIUS //
+////////////////////////
+void increaseRadius(StarMap map)
+{
+    map.rotationalRadius *= 2;
+    
+    if(map.rotationalRadius > MAX_VALUE)
+    {
+        map.rotationalRadius =  MAX_VALUE;
+    }
+}
+
+
 /////////////////
 // MOVE LEFT //
 /////////////////
 void moveLeft(StarMap map)
 {
-    Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
-    map.center += rotateMovement(moveVector, map);
+    if(map.mode.ToUpper() == "WORLD")
+    {
+        Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
+        map.center += rotateMovement(moveVector, map);
+    }
 }
 
 
@@ -1027,8 +1080,11 @@ void moveLeft(StarMap map)
 //////////////////
 void moveRight(StarMap map)
 {
-    Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
-    map.center -= rotateMovement(moveVector, map);
+    if(map.mode.ToUpper() == "WORLD")
+    {
+        Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
+        map.center -= rotateMovement(moveVector, map);
+    }
 }
 
 
@@ -1037,8 +1093,11 @@ void moveRight(StarMap map)
 //////////////////
 void moveUp(StarMap map)
 {
-    Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
-    map.center += rotateMovement(moveVector, map);
+    if(map.mode.ToUpper() == "WORLD")
+    {
+        Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
+        map.center += rotateMovement(moveVector, map);
+    }
 }
 
 
@@ -1047,8 +1106,11 @@ void moveUp(StarMap map)
 //////////////////
 void moveDown(StarMap map)
 {
-    Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
-    map.center -= rotateMovement(moveVector, map);
+    if(map.mode.ToUpper() == "WORLD")
+    {
+        Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
+        map.center -= rotateMovement(moveVector, map);
+    }
 }
 
 
@@ -1057,8 +1119,11 @@ void moveDown(StarMap map)
 /////////////////////
 void moveForward(StarMap map)
 {
-    Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
-    map.center += rotateMovement(moveVector, map);
+    if(map.mode.ToUpper() == "WORLD")
+    {    
+        Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
+        map.center += rotateMovement(moveVector, map);
+    }
 }
 
 
@@ -1067,18 +1132,11 @@ void moveForward(StarMap map)
 //////////////////////
 void moveBackward(StarMap map)
 {
-    Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
-    map.center -= rotateMovement(moveVector, map);
-}
-
-
-//////////////////
-// CENTER MAP //   Centers Map on Ship Position
-//////////////////
-void CenterMap(StarMap map)
-{
-    Vector3 newCenter = _refBlock.GetPosition();
-    map.center = newCenter;
+    if(map.mode.ToUpper() == "WORLD")
+    {    
+        Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
+        map.center -= rotateMovement(moveVector, map);
+    }
 }
 
 
@@ -1151,7 +1209,7 @@ void DefaultView(StarMap map)
     
     if(_viewport.Width > 500)
     {
-        map.depthOfField *= 2;
+        map.depthOfField *= 4;
     }
     
     map.rotationalRadius = DV_RADIUS;
@@ -2216,7 +2274,12 @@ public void cycleExecute(StarMap map)
             
             ShipToPlanet(_planetList[0], map);
             _previousCommand = "NEWLY LOADED";
-        }    
+        }
+        else if(map.mode.ToUpper() == "SHIP")
+        {
+            map.center = _refBlock.GetPosition();
+            _previousCommand = "NEWLY LOADED";
+        }
     }
 }
 
