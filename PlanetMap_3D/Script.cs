@@ -1919,6 +1919,35 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
     for(int w = 0; w < _waypointList.Count; w++)
     {
         Waypoint waypoint = _waypointList[w];
+        
+        float rotationMod = 0;
+        Color markerColor = Color.White;
+        Vector2 markerScale = new Vector2(markerSize,markerSize);
+        
+        String markerShape = "";
+        switch(waypoint.marker.ToUpper())
+        {
+            case "STATION":
+                markerShape = "CircleHollow";
+                break;
+            case "BASE":
+                markerShape = "SemiCircle";
+                break;
+            case "LANDMARK":
+                markerShape = "Triangle";
+                markerColor = new Color(48,48,48);
+                break;
+            case "HAZARD":
+                markerShape = "SquareTapered";
+                markerColor = Color.Red;
+                rotationMod = (float)Math.PI/4;
+                break;
+            default:
+                markerShape = "SquareHollow";
+                break;
+        }
+        
+        
         if(waypoint.transformedLocation.GetDim(2) > map.depthOfField)
         {
             //Echo(waypoint.name);
@@ -1926,18 +1955,16 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
             Vector2 waypointPosition = PlotObject(waypoint.transformedLocation, map);
             Vector2 startPosition = _viewport.Center + waypointPosition;
             
-            float rotationMod = 0; //(float)Math.PI/4;
-            
             Vector2 position = startPosition - new Vector2(markerSize/2,0);
             
             // PRINT MARKER
             var sprite = new MySprite()
             {
                 Type = SpriteType.TEXTURE,
-                Data = "SquareHollow",
+                Data = markerShape,
                 Position = position,
                 RotationOrScale = rotationMod,
-                Size=  new Vector2(markerSize,markerSize), 
+                Size=  markerScale, 
                 Color = Color.Black,
             };
             frame.Add(sprite);
@@ -1947,11 +1974,11 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
             sprite = new MySprite()
             {
                 Type = SpriteType.TEXTURE,
-                Data = "SquareHollow",
+                Data = markerShape,
                 Position = position,
                 RotationOrScale = rotationMod,
-                Size=  new Vector2(markerSize+2,markerSize+2), 
-                Color = Color.White,
+                Size =  markerScale * 1.2f, 
+                Color = markerColor,
             };
             frame.Add(sprite);
             
@@ -1960,14 +1987,55 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
             sprite = new MySprite()
             {
                 Type = SpriteType.TEXTURE,
-                Data = "SquareHollow",
+                Data = markerShape,
                 Position = position,
                 RotationOrScale = rotationMod,
-                Size=  new Vector2(markerSize,markerSize), 
-                Color = Color.White,
+                Size=  markerScale, 
+                Color = markerColor,
             };
             frame.Add(sprite);
             
+            if(waypoint.marker.ToUpper() == "STATION")
+            {
+                position += new Vector2(markerSize/2 - markerSize/20, 0);
+                
+                sprite = new MySprite()
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = position,
+                    RotationOrScale = rotationMod,
+                    Size=  new Vector2(markerSize/10 ,markerSize), 
+                    Color = markerColor,
+                };
+                frame.Add(sprite);
+                
+                position = startPosition;
+            }
+            
+            if(waypoint.marker.ToUpper() == "HAZARD")
+            {
+                position += new Vector2(markerSize/2 - markerSize/20, -markerSize*0.85f);
+                
+                sprite = new MySprite()
+                {
+                    Type = SpriteType.TEXT,
+                    Data = "!",
+                    Position = position,
+                    RotationOrScale = fontSize*1.2f,
+                    Color = Color.White,
+                    Alignment = TextAlignment.CENTER, 
+                    FontId = "White"
+                };
+                frame.Add(sprite);
+                
+                position = startPosition;
+            }    
+        
+        
+        
+        
+        
             // PRINT NAME
             position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
             
