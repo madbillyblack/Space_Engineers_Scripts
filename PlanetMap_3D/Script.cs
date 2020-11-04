@@ -1278,18 +1278,120 @@ void PreviousPlanet(StarMap map)
 /////////////////
 public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> displayPlanets)
 {
+    // SHIP COLORS
+    Color bodyColor = Color.LightGray;
+    Color aftColor = new Color(180,60,0);
+    Color plumeColor = Color.Yellow;
+    
+    
     Vector3 transformedShip = transformVector(_refBlock.GetPosition(), map);
-    if(transformedShip.GetDim(2) >= map.depthOfField)
+    Vector2 shipPos = PlotObject(transformedShip,map);
+    float shipX = shipPos.X;
+    float shipY = shipPos.Y;
+    
+    bool offZ = transformedShip.GetDim(2) < map.depthOfField;
+    bool leftX = shipX < -_viewport.Width/2 || (offZ && shipX < 0);
+    bool rightX = shipX > _viewport.Width/2 || (offZ && shipX >= 0);
+    bool aboveY = shipY < -_viewport.Height/2 || (offZ && shipY < 0);
+    bool belowY = shipY > _viewport.Height/2 || (offZ && shipX >= 0);
+    bool offX = leftX || rightX;
+    bool offY = aboveY || belowY;
+    
+    int vertMod = 0;
+    if(_showMapParameters)
     {
-        Vector2 position = PlotObject(transformedShip,map);
+        vertMod = BAR_HEIGHT;
+        
+        if(_viewport.Width > 500)
+        {
+            vertMod *= 2; 
+        }
+    }
+    
+    if(offZ || offX || offY)
+    {
+        float posX;
+        float posY;
+        float rotation = 0;
+        int pointerScale = SHIP_SCALE/2;
+        
+        if(leftX)
+        {
+            posX = 0;
+            rotation = (float) Math.PI*3/2;
+        }
+        else if(rightX)
+        {
+            posX = _viewport.Width - pointerScale;
+            rotation = (float) Math.PI/2;
+        }
+        else
+        {
+            posX = _viewport.Width/2 + shipX - pointerScale/2;
+        }
+        
+        if(aboveY)
+        {
+            posY = 1.75f * SHIP_SCALE + vertMod;
+            rotation = 0;
+        }
+        else if(belowY)
+        {
+            posY = _viewport.Height + 1.25f * SHIP_SCALE - vertMod;
+            rotation = (float) Math.PI;
+        }
+        else
+        {
+            posY = _viewport.Height/2 + shipY + 1.5f * SHIP_SCALE;
+        }
+        
+        if(offX && offY)
+        {
+            rotation = (float) Math.Atan2(shipY, shipX);
+        }
+        
+        if(offZ)
+        {
+            bodyColor = Color.DarkRed;
+        }
+        else
+        {
+            bodyColor = Color.DodgerBlue;
+        }
+        
+        //OFF MAP POINTER
+        var sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Triangle",
+            Position = new Vector2(posX - 2, posY),
+            Size=  new Vector2(pointerScale + 4, pointerScale + 4),
+            RotationOrScale=rotation,
+            Color = Color.Black,
+        };
+        frame.Add(sprite);
+        
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Triangle",
+            Position = new Vector2(posX, posY),
+            Size=  new Vector2(pointerScale, pointerScale),
+            RotationOrScale=rotation,
+            Color = bodyColor,
+        };
+        frame.Add(sprite);
+        
+        
+        
+        //Echo("SHIP OFF SCREEN");
+    }
+    else
+    {
+        Vector2 position = shipPos;
         
         // Get ships Direction Vector and align it with map
         Vector3 heading = rotateVector(_refBlock.WorldMatrix.Forward, map);
-        
-        // SHIP COLORS
-        Color bodyColor = Color.LightGray;
-        Color aftColor = new Color(180,60,0);
-        Color plumeColor = Color.Yellow;
         
         if(displayPlanets.Count > 0)
         {
