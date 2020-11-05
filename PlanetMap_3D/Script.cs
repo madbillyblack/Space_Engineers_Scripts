@@ -752,7 +752,7 @@ public void Main(string argument)
         }
         
         //Add Translational Speed
-        if(myMap.mode.ToUpper() == "PLANET")
+        if(myMap.mode.ToUpper() == "WORLD")
         {
             myMap.center += rotateMovement(_trackSpeed, myMap);
         }
@@ -1289,14 +1289,6 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
     float shipX = shipPos.X;
     float shipY = shipPos.Y;
     
-    bool offZ = transformedShip.GetDim(2) < map.depthOfField;
-    bool leftX = shipX < -_viewport.Width/2 || (offZ && shipX < 0);
-    bool rightX = shipX > _viewport.Width/2 || (offZ && shipX >= 0);
-    bool aboveY = shipY < -_viewport.Height/2 || (offZ && shipY < 0);
-    bool belowY = shipY > _viewport.Height/2 || (offZ && shipX >= 0);
-    bool offX = leftX || rightX;
-    bool offY = aboveY || belowY;
-    
     int vertMod = 0;
     if(_showMapParameters)
     {
@@ -1307,6 +1299,17 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
             vertMod *= 2; 
         }
     }
+    
+    
+    bool offZ = transformedShip.GetDim(2) < map.depthOfField;
+    bool leftX = shipX < -_viewport.Width/2 || (offZ && shipX < 0);
+    bool rightX = shipX > _viewport.Width/2 || (offZ && shipX >= 0);
+    bool aboveY = shipY < -_viewport.Height/2 + vertMod || (offZ && shipY < 0);
+    bool belowY = shipY > _viewport.Height/2 - vertMod || (offZ && shipX >= 0);
+    bool offX = leftX || rightX;
+    bool offY = aboveY || belowY;
+    
+
     
     if(offZ || offX || offY)
     {
@@ -1332,17 +1335,17 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
         
         if(aboveY)
         {
-            posY = 1.75f * SHIP_SCALE + vertMod;
+            posY = vertMod + TOP_MARGIN  + (_viewport.Width - _viewport.Height)/2; //1.75f * SHIP_SCALE + 
             rotation = 0;
         }
         else if(belowY)
         {
-            posY = _viewport.Height + 1.25f * SHIP_SCALE - vertMod;
+            posY = _viewport.Height - vertMod - TOP_MARGIN  + (_viewport.Width - _viewport.Height)/2; //+ 1.25f * SHIP_SCALE 
             rotation = (float) Math.PI;
         }
         else
         {
-            posY = _viewport.Height/2 + shipY + 1.5f * SHIP_SCALE;
+            posY = _viewport.Height/2 + shipY + (_viewport.Width - _viewport.Height)/2; //2
         }
         
         if(offX && offY)
@@ -1924,6 +1927,9 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
         Color markerColor = Color.White;
         Vector2 markerScale = new Vector2(markerSize,markerSize);
         
+        Vector2 waypointPosition = PlotObject(waypoint.transformedLocation, map);
+        Vector2 startPosition = _viewport.Center + waypointPosition;
+        
         String markerShape = "";
         switch(waypoint.marker.ToUpper())
         {
@@ -1932,6 +1938,8 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 break;
             case "BASE":
                 markerShape = "SemiCircle";
+                markerScale *= 1.25f;
+                startPosition += new Vector2(0,markerSize);
                 break;
             case "LANDMARK":
                 markerShape = "Triangle";
@@ -1950,11 +1958,6 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
         
         if(waypoint.transformedLocation.GetDim(2) > map.depthOfField)
         {
-            //Echo(waypoint.name);
-            
-            Vector2 waypointPosition = PlotObject(waypoint.transformedLocation, map);
-            Vector2 startPosition = _viewport.Center + waypointPosition;
-            
             Vector2 position = startPosition - new Vector2(markerSize/2,0);
             
             // PRINT MARKER
@@ -2030,7 +2033,24 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 frame.Add(sprite);
                 
                 position = startPosition;
-            }    
+            }
+
+
+            if(waypoint.marker.ToUpper() == "BASE")
+            {
+                position += new Vector2(markerSize/6, -markerSize/12);
+                sprite = new MySprite()
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SemiCircle",
+                    Position = position,
+                    RotationOrScale = rotationMod,
+                    Size=  new Vector2(markerSize*1.15f,markerSize*1.15f), 
+                    Color = new Color(0,64,64),
+                };
+                frame.Add(sprite);
+                position += new Vector2(0.25f * markerSize,-0.33f * markerSize);
+            }
         
         
         
@@ -2110,16 +2130,34 @@ public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
 ///////////////////////////
 public Waypoint StringToWaypoint(String argument)
 {
-    String[] wayPointData = argument.Split(';');
     Waypoint waypoint = new Waypoint();
-			
-    waypoint.SetName(wayPointData[0]);
-    waypoint.SetLocation(StringToVector3(wayPointData[1]));
-    waypoint.SetMarker(wayPointData[2]);
-        
-    waypoint.isActive = true;
-    
+    String[] wayPointData = argument.Split(';');
+    if(wayPointData.Length > 3)
+    {
+        waypoint.SetName(wayPointData[0]);
+        waypoint.SetLocation(StringToVector3(wayPointData[1]));
+        waypoint.SetMarker(wayPointData[2]);    
+        waypoint.isActive = wayPointData[3].ToUpper() == "ACTIVE";
+    }
     return waypoint;
+}
+
+
+///////////////////////////
+// WAYPOINT TO STRING //
+///////////////////////////
+public String WaypointToString(Waypoint waypoint)
+{
+    String output = waypoint.name + ";" + Vector3ToString(waypoint.location) + ";" + waypoint.marker;
+    
+    String activity = "INACTIVE";
+    if(waypoint.isActive)
+    {
+        activity = "ACTIVE";
+    }
+    output += ";" + activity;
+    
+    return output;        
 }
 
 
@@ -2546,7 +2584,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     {
         fontSize *= 1.5f;
         barHeight *= 2;
-        angleReading = "Alt:" + map.altitude + "°  Az:" + map.azimuth + "°";
+        angleReading = "Alt:" + map.altitude*-1 + "°  Az:" + map.azimuth + "°";
         shipMode = "SHIP";
         planetMode = "PLANET";
         worldMode = "WORLD";
