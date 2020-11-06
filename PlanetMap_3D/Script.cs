@@ -197,14 +197,19 @@ public class Planet
 
     public Planet(String planetString)
     {
+        
+
         //this.designation = planetList.Count()+1;
         string[] planetData = planetString.Split(';');
+        
+        this.SetName(planetData[0]);
+        
         if(planetData.Length < 8)
         {
             return;
         }
 		        
-        this.SetName(planetData[0]);
+
         this.SetColor(planetData[3]);
 	        
         if(planetData[1] != "")
@@ -375,7 +380,8 @@ public class Planet
         }
 
         planetData[3] = this.GetColor();
-		        for(int c = 4; c<8; c++)
+        
+		for(int c = 4; c<8; c++)
         {
             if(this.GetPoint(c-3) != Vector3.Zero)
             {
@@ -770,7 +776,23 @@ public void Main(string argument)
         {
             string [] args = argument.Split(' ');
             string command = args[0].ToUpper();
+            string entityName = "";
+
             _previousCommand = "Command: " + argument;
+            
+            // If there are multiple words in the argument. Combine the latter words into the entity name.
+            if(args.Length > 1)
+            {
+                entityName = args[1];
+                if(args.Length > 2)
+                {
+                    for(int q = 2; q < args.Length;  q++)
+                    {
+                        entityName += " " + args[q];
+                    }
+                }
+            }
+            
             
             switch(command)
             {
@@ -898,6 +920,39 @@ public void Main(string argument)
                 case "CENTER":
                     myMap.center = _refBlock.GetPosition();
                     break;
+                case "DEACTIVATE":
+                    SetWaypointState(entityName, 0);
+                    break;
+                case "ACTIVATE":
+                    SetWaypointState(entityName, 1);
+                    break;
+                case "TOGGLE":
+                    SetWaypointState(entityName, 2);
+                    break;
+                case "DELETE":
+                    SetWaypointState(entityName, 3);
+                    break;
+                case "LOG_GPS":
+                    LogWaypoint(entityName, "GPS");
+                    break;
+                case "LOG_BASE":
+                    LogWaypoint(entityName, "BASE");
+                    break;
+                case "LOG_STATION":
+                    LogWaypoint(entityName, "STATION");
+                    break;                    
+                case "LOG_LANDMARK":
+                    LogWaypoint(entityName, "LANDMARK");
+                    break;
+                case "LOG_HAZARD":
+                    LogWaypoint(entityName, "HAZARD");
+                    break;
+                case "NEW_PLANET":
+                    NewPlanet(entityName);
+                    break;
+                case "LOG_NEXT":
+                    LogNext(entityName);
+                    break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
                     break;
@@ -968,6 +1023,53 @@ public StarMap parametersToMap(IMyTerminalBlock mapBlock)
 }
 
 
+////////////////////
+// DATA TO LOG //
+////////////////////
+public void DataToLog()
+{
+    MyIni mapIni = new MyIni();
+    
+    MyIniParseResult result;
+    if (!mapIni.TryParse(Me.CustomData, out result)) 
+        throw new Exception(result.ToString());
+    
+    if(_waypointList.Count > 0)
+    {
+        String waypointData = "";
+        for(int w = 0; w < _waypointList.Count; w++)
+        {
+            waypointData += WaypointToString(_waypointList[w]) + "\n";
+        }
+        mapIni.Set("Map Settings", "Waypoint_List",waypointData);
+    }
+    
+    String planetData = "";
+    if(_planetList.Count > 0)
+    {
+        for(int p = 0; p < _planetList.Count; p++)
+        {
+            planetData += _planetList[p].ToString() + "\n";
+        }
+    }
+    
+    if(_unchartedList.Count > 0)
+    {
+        for(int u = 0; u < _unchartedList.Count; u++)
+        {
+            planetData += _unchartedList[u].ToString() + "\n";
+        }
+    }
+    
+    if(planetData != "")
+    {
+        mapIni.Set("Map Settings", "Planet_List", planetData);
+    }
+    
+    Me.CustomData = mapIni.ToString();
+}
+
+
 ////////////////////////////
 // MAP TO PARAMETERS // Writes map object to CustomData of Display Block
 ////////////////////////////
@@ -988,6 +1090,154 @@ public void mapToParameters(StarMap map, IMyTerminalBlock mapBlock)
 
     
     mapBlock.CustomData = lcdIni.ToString();
+}
+
+
+/////////////////////
+// LOG WAYPOINT //
+/////////////////////
+public void LogWaypoint(String waypointName, String markerType)
+{
+    if(waypointName == "")
+    {
+        Echo("No Waypoint Name Provided! Please Try Again.");
+        return;
+    }
+    
+    Waypoint waypoint = new Waypoint();
+    waypoint.name = waypointName;
+    waypoint.location = _refBlock.GetPosition();
+    waypoint.marker = markerType;
+    waypoint.isActive = true;
+    
+    _waypointList.Add(waypoint);
+    DataToLog();
+}
+
+
+///////////////////////////
+// SET WAYPOINT STATE //
+///////////////////////////
+public void SetWaypointState(String waypointName, int state)
+{
+    if(waypointName == "")
+    {
+        Echo("No waypoint name provided for activation command!");
+        return;
+    }
+    
+    List<Waypoint> nameList = new List<Waypoint>();
+    for(int w = 0; w < _waypointList.Count; w++)
+    {
+        if(_waypointList[w].name.ToUpper() == waypointName.ToUpper())
+        {
+            nameList.Add(_waypointList[w]);
+        }        
+    }
+    
+    if(nameList.Count == 0)
+    {
+        Echo("No Waypoints found with name: " + waypointName + "!");
+        return;
+    }
+    
+    if(nameList.Count > 1)
+    {
+        Echo("Multiple Waypoints with name: " + waypointName + "!\nPlease rename additional waypoints!");
+    }
+    
+    Waypoint waypoint = nameList[0];
+    
+    //State Switch: 0 => Deactivate, 1 => Activate, 2 => Toggle
+    switch(state)
+    {
+        case 0:
+            waypoint.isActive = false;
+            break;
+        case 1:
+            waypoint.isActive = true;
+            break;
+        case 2:
+            waypoint.isActive = !waypoint.isActive;
+            break;
+        case 3:
+            _waypointList.Remove(waypoint);
+            break;
+        default:
+            Echo("Invalide waypoint state int!");
+            break;
+    }
+    
+    DataToLog();
+}
+
+
+///////////////////
+// NEW PLANET // 
+///////////////////
+public void NewPlanet(String planetName)
+{
+    planetName += ";;;;;;;";
+    Planet planet = new Planet(planetName);
+    planet.SetPoint(1, _refBlock.GetPosition());
+    
+    _unchartedList.Add(planet);
+    DataToLog();
+}
+
+
+/////////////////
+// LOG NEXT //
+/////////////////
+public void LogNext(String planetName)
+{
+    List<Planet> nameList = new List<Planet>();
+    if(_unchartedList.Count > 0)
+    {
+        for(int u = 0; u < _unchartedList.Count; u++)
+        {
+            if(_unchartedList[u].name.ToUpper() == planetName.ToUpper())
+            {
+                nameList.Add(_unchartedList[u]);
+            }
+        }
+        
+        if(nameList.Count == 0)
+        {
+            Echo("No Planet " + planetName + " Found!");
+            return;
+        }
+        
+        if(nameList.Count > 1)
+        {
+            Echo("Multiple instances of " + planetName + "Found!\nConsider renaming or deleting.");
+        }
+        
+        Planet planet = nameList[0];
+        String[] planetData = planet.ToString().Split(';');
+        
+        if(planetData[4] == "")
+        {
+            planet.SetPoint(1, _refBlock.GetPosition());
+        }
+        else if(planetData[5] == "")
+        {
+            planet.SetPoint(2, _refBlock.GetPosition());
+        }
+        else if(planetData[6] == "")
+        {
+            planet.SetPoint(3, _refBlock.GetPosition());
+        }
+        else
+        {
+            planet.SetPoint(4, _refBlock.GetPosition());
+            planet.CalculatePlanet();
+            _planetList.Add(planet);
+            _unchartedList.Remove(planet);
+        }
+        
+        DataToLog();
+    }
 }
 
 
@@ -1603,6 +1853,7 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
     {
         Planet planet = displayPlanets[d];
         Echo(planet.name);
+        //Echo(planet.ToString());
         
         Vector2 planetPosition = PlotObject(planet.transformedCenter, map);
         planet.mapPos = planetPosition;
@@ -1923,153 +2174,157 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
     {
         Waypoint waypoint = _waypointList[w];
         
-        float rotationMod = 0;
-        Color markerColor = Color.White;
-        Vector2 markerScale = new Vector2(markerSize,markerSize);
-        
-        Vector2 waypointPosition = PlotObject(waypoint.transformedLocation, map);
-        Vector2 startPosition = _viewport.Center + waypointPosition;
-        
-        String markerShape = "";
-        switch(waypoint.marker.ToUpper())
+        if(waypoint.isActive)
         {
-            case "STATION":
-                markerShape = "CircleHollow";
-                break;
-            case "BASE":
-                markerShape = "SemiCircle";
-                markerScale *= 1.25f;
-                startPosition += new Vector2(0,markerSize);
-                break;
-            case "LANDMARK":
-                markerShape = "Triangle";
-                markerColor = new Color(48,48,48);
-                break;
-            case "HAZARD":
-                markerShape = "SquareTapered";
-                markerColor = Color.Red;
-                rotationMod = (float)Math.PI/4;
-                break;
-            default:
-                markerShape = "SquareHollow";
-                break;
-        }
-        
-        
-        if(waypoint.transformedLocation.GetDim(2) > map.depthOfField)
-        {
-            Vector2 position = startPosition - new Vector2(markerSize/2,0);
+            float rotationMod = 0;
+            Color markerColor = Color.White;
+            Vector2 markerScale = new Vector2(markerSize,markerSize);
             
-            // PRINT MARKER
-            var sprite = new MySprite()
+            Vector2 waypointPosition = PlotObject(waypoint.transformedLocation, map);
+            Vector2 startPosition = _viewport.Center + waypointPosition;
+            
+            String markerShape = "";
+            switch(waypoint.marker.ToUpper())
             {
-                Type = SpriteType.TEXTURE,
-                Data = markerShape,
-                Position = position,
-                RotationOrScale = rotationMod,
-                Size=  markerScale, 
-                Color = Color.Black,
-            };
-            frame.Add(sprite);
+                case "STATION":
+                    markerShape = "CircleHollow";
+                    break;
+                case "BASE":
+                    markerShape = "SemiCircle";
+                    markerScale *= 1.25f;
+                    startPosition += new Vector2(0,markerSize);
+                    break;
+                case "LANDMARK":
+                    markerShape = "Triangle";
+                    markerColor = new Color(48,48,48);
+                    break;
+                case "HAZARD":
+                    markerShape = "SquareTapered";
+                    markerColor = Color.Red;
+                    rotationMod = (float)Math.PI/4;
+                    break;
+                default:
+                    markerShape = "SquareHollow";
+                    break;
+            }
             
-            position += new Vector2(1,0);
             
-            sprite = new MySprite()
+            if(waypoint.transformedLocation.GetDim(2) > map.depthOfField)
             {
-                Type = SpriteType.TEXTURE,
-                Data = markerShape,
-                Position = position,
-                RotationOrScale = rotationMod,
-                Size =  markerScale * 1.2f, 
-                Color = markerColor,
-            };
-            frame.Add(sprite);
-            
-            position += new Vector2(1,0);
-            
-            sprite = new MySprite()
-            {
-                Type = SpriteType.TEXTURE,
-                Data = markerShape,
-                Position = position,
-                RotationOrScale = rotationMod,
-                Size=  markerScale, 
-                Color = markerColor,
-            };
-            frame.Add(sprite);
-            
-            if(waypoint.marker.ToUpper() == "STATION")
-            {
-                position += new Vector2(markerSize/2 - markerSize/20, 0);
+                Vector2 position = startPosition - new Vector2(markerSize/2,0);
+                
+                // PRINT MARKER
+                var sprite = new MySprite()
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = markerShape,
+                    Position = position,
+                    RotationOrScale = rotationMod,
+                    Size=  markerScale, 
+                    Color = Color.Black,
+                };
+                frame.Add(sprite);
+                
+                position += new Vector2(1,0);
                 
                 sprite = new MySprite()
                 {
                     Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
+                    Data = markerShape,
                     Position = position,
                     RotationOrScale = rotationMod,
-                    Size=  new Vector2(markerSize/10 ,markerSize), 
+                    Size =  markerScale * 1.2f, 
                     Color = markerColor,
                 };
                 frame.Add(sprite);
                 
-                position = startPosition;
-            }
+                position += new Vector2(1,0);
+                
+                sprite = new MySprite()
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = markerShape,
+                    Position = position,
+                    RotationOrScale = rotationMod,
+                    Size=  markerScale, 
+                    Color = markerColor,
+                };
+                frame.Add(sprite);
+                
+                if(waypoint.marker.ToUpper() == "STATION")
+                {
+                    position += new Vector2(markerSize/2 - markerSize/20, 0);
+                    
+                    sprite = new MySprite()
+                    {
+                        Type = SpriteType.TEXTURE,
+                        Data = "SquareSimple",
+                        Position = position,
+                        RotationOrScale = rotationMod,
+                        Size=  new Vector2(markerSize/10 ,markerSize), 
+                        Color = markerColor,
+                    };
+                    frame.Add(sprite);
+                    
+                    position = startPosition;
+                }
+                
+                if(waypoint.marker.ToUpper() == "HAZARD")
+                {
+                    position += new Vector2(markerSize/2 - markerSize/20, -markerSize*0.85f);
+                    
+                    sprite = new MySprite()
+                    {
+                        Type = SpriteType.TEXT,
+                        Data = "!",
+                        Position = position,
+                        RotationOrScale = fontSize*1.2f,
+                        Color = Color.White,
+                        Alignment = TextAlignment.CENTER, 
+                        FontId = "White"
+                    };
+                    frame.Add(sprite);
+                    
+                    position = startPosition;
+                }
+
+
+                if(waypoint.marker.ToUpper() == "BASE")
+                {
+                    position += new Vector2(markerSize/6, -markerSize/12);
+                    sprite = new MySprite()
+                    {
+                        Type = SpriteType.TEXTURE,
+                        Data = "SemiCircle",
+                        Position = position,
+                        RotationOrScale = rotationMod,
+                        Size=  new Vector2(markerSize*1.15f,markerSize*1.15f), 
+                        Color = new Color(0,64,64),
+                    };
+                    frame.Add(sprite);
+                    position += new Vector2(0.25f * markerSize,-0.33f * markerSize);
+                    
+                }
             
-            if(waypoint.marker.ToUpper() == "HAZARD")
-            {
-                position += new Vector2(markerSize/2 - markerSize/20, -markerSize*0.85f);
+            
+            
+            
+            
+                // PRINT NAME
+                position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
                 
                 sprite = new MySprite()
                 {
                     Type = SpriteType.TEXT,
-                    Data = "!",
+                    Data = waypoint.name,
                     Position = position,
-                    RotationOrScale = fontSize*1.2f,
+                    RotationOrScale = fontSize,
                     Color = Color.White,
-                    Alignment = TextAlignment.CENTER, 
+                    Alignment = TextAlignment.LEFT,
                     FontId = "White"
                 };
                 frame.Add(sprite);
-                
-                position = startPosition;
             }
-
-
-            if(waypoint.marker.ToUpper() == "BASE")
-            {
-                position += new Vector2(markerSize/6, -markerSize/12);
-                sprite = new MySprite()
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SemiCircle",
-                    Position = position,
-                    RotationOrScale = rotationMod,
-                    Size=  new Vector2(markerSize*1.15f,markerSize*1.15f), 
-                    Color = new Color(0,64,64),
-                };
-                frame.Add(sprite);
-                position += new Vector2(0.25f * markerSize,-0.33f * markerSize);
-            }
-        
-        
-        
-        
-        
-            // PRINT NAME
-            position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
-            
-            sprite = new MySprite()
-            {
-                Type = SpriteType.TEXT,
-                Data = waypoint.name,
-                Position = position,
-                RotationOrScale = fontSize,
-                Color = Color.White,
-                Alignment = TextAlignment.LEFT,
-                FontId = "White"
-            };
-            frame.Add(sprite);
         }    
     }
 }
