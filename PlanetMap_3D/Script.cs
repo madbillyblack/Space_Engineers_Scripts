@@ -10,6 +10,7 @@ bool _showMapParameters;
 bool _showPlanetNames;
 bool _lightOn;
 int _cycleStep;
+string _statusMessage;
 Vector3 _trackSpeed;
 Vector3 _origin = new Vector3(0,0,0);
 //string _planetLog;
@@ -586,6 +587,8 @@ public Program()
     
     string oldData = Me.CustomData;
     string newData = DEFAULT_SETTINGS;
+    
+    _statusMessage = "";
 
     if(!oldData.Contains("[Map Settings]"))
     {
@@ -616,7 +619,7 @@ public Program()
     _refName = _mapLog.Get("Map Settings", "Reference_Name").ToString();
 
     string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
-    //Echo(planetData);
+
     string [] mapEntries = planetData.Split('\n');
     for(int p = 0; p < mapEntries.Length; p++)
     {
@@ -712,9 +715,13 @@ public void Save()
 
 public void Main(string argument)
 {
+    Echo("//////// PLANET MAP 3D ////////");
+    Echo(_previousCommand);
+    Echo(_statusMessage);
+    
     Echo("Active LCD: " + _lcdName);
     Echo("LCD Index: " + _lcdIndex);
-    Echo(_previousCommand);
+
 
     if(_planetList.Count > 0)
     {
@@ -777,7 +784,9 @@ public void Main(string argument)
             string [] args = argument.Split(' ');
             string command = args[0].ToUpper();
             string entityName = "";
-
+            
+            
+            _statusMessage = "";
             _previousCommand = "Command: " + argument;
             
             // If there are multiple words in the argument. Combine the latter words into the entity name.
@@ -900,6 +909,7 @@ public void Main(string argument)
                     myMap.mode = "WORLD";
                     break;
                 case "SHIP_MODE":
+                    CenterShip(myMap);
                     myMap.mode = "SHIP";
                     break;
                 case "PLANET_MODE":
@@ -917,8 +927,11 @@ public void Main(string argument)
                 case "INCREASE_RADIUS":
                     increaseRadius(myMap);
                     break;
-                case "CENTER":
+                case "CENTER_SHIP":
                     myMap.center = _refBlock.GetPosition();
+                    break;
+                case "CENTER_WORLD":
+                    CenterWorld(myMap);
                     break;
                 case "DEACTIVATE":
                     SetWaypointState(entityName, 0);
@@ -929,7 +942,7 @@ public void Main(string argument)
                 case "TOGGLE":
                     SetWaypointState(entityName, 2);
                     break;
-                case "DELETE":
+                case "DELETE_WAYPOINT":
                     SetWaypointState(entityName, 3);
                     break;
                 case "LOG_GPS":
@@ -947,11 +960,20 @@ public void Main(string argument)
                 case "LOG_HAZARD":
                     LogWaypoint(entityName, "HAZARD");
                     break;
+                case "LOG_ASTEROID":
+                    LogWaypoint(entityName, "ASTEROID");
+                    break;
                 case "NEW_PLANET":
                     NewPlanet(entityName);
                     break;
                 case "LOG_NEXT":
                     LogNext(entityName);
+                    break;
+                case "DELETE_PLANET":
+                    DeletePlanet(entityName);
+                    break;
+                case "COLOR_PLANET":
+                    SetPlanetColor(entityName);
                     break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
@@ -1100,7 +1122,7 @@ public void LogWaypoint(String waypointName, String markerType)
 {
     if(waypointName == "")
     {
-        Echo("No Waypoint Name Provided! Please Try Again.");
+        _statusMessage = "No Waypoint Name Provided! Please Try Again.\n";
         return;
     }
     
@@ -1122,7 +1144,7 @@ public void SetWaypointState(String waypointName, int state)
 {
     if(waypointName == "")
     {
-        Echo("No waypoint name provided for activation command!");
+        _statusMessage = "No waypoint name provided for activation command!\n";
         return;
     }
     
@@ -1137,13 +1159,13 @@ public void SetWaypointState(String waypointName, int state)
     
     if(nameList.Count == 0)
     {
-        Echo("No Waypoints found with name: " + waypointName + "!");
+        _statusMessage = "No waypoint " + waypointName + " found.\n";
         return;
     }
     
     if(nameList.Count > 1)
     {
-        Echo("Multiple Waypoints with name: " + waypointName + "!\nPlease rename additional waypoints!");
+        _statusMessage = "Multiple Waypoints with name: " + waypointName + "!\nPlease rename additional waypoints.\n";
     }
     
     Waypoint waypoint = nameList[0];
@@ -1162,9 +1184,10 @@ public void SetWaypointState(String waypointName, int state)
             break;
         case 3:
             _waypointList.Remove(waypoint);
+            _statusMessage = "Waypoint deleted: " + waypointName + " \n";
             break;
         default:
-            Echo("Invalide waypoint state int!");
+            _statusMessage = "Invalid waypoint state int!\n";
             break;
     }
     
@@ -1173,7 +1196,7 @@ public void SetWaypointState(String waypointName, int state)
 
 
 ///////////////////
-// NEW PLANET // 
+// NEW PLANET //  
 ///////////////////
 public void NewPlanet(String planetName)
 {
@@ -1184,6 +1207,44 @@ public void NewPlanet(String planetName)
     _unchartedList.Add(planet);
     DataToLog();
 }
+
+
+/////////////////////
+// DELETE PLANET //
+/////////////////////
+public void DeletePlanet(String planetName)
+{
+    if(_unchartedList.Count > 0)
+    {
+        for(int u = 0; u < _unchartedList.Count; u++)
+        {
+            if(_unchartedList[u].name.ToUpper() == planetName.ToUpper())
+            {
+                _unchartedList.Remove(_unchartedList[u]);
+                DataToLog();
+                _statusMessage = "Uncharted Planet Deleted: " + planetName + "\n";
+                return;
+            }
+        }
+    }
+    
+    if(_planetList.Count > 0)
+    {
+        for(int p = 0; p < _planetList.Count; p++)
+        {
+            if(_planetList[p].name.ToUpper() == planetName.ToUpper())
+            {
+                _planetList.Remove(_planetList[p]);
+                DataToLog();
+                _statusMessage = "Planet Deleted: " + planetName + "\n";
+                return;
+            }
+        }
+    }
+    
+    _statusMessage = "No planet " + planetName + " found!\n";
+}
+
 
 
 /////////////////
@@ -1204,13 +1265,13 @@ public void LogNext(String planetName)
         
         if(nameList.Count == 0)
         {
-            Echo("No Planet " + planetName + " Found!");
+            _statusMessage = "No planet " + planetName + " found!";
             return;
         }
         
         if(nameList.Count > 1)
         {
-            Echo("Multiple instances of " + planetName + "Found!\nConsider renaming or deleting.");
+            _statusMessage = "Multiple instances of " + planetName + " found!\nConsider renaming or deleting.\n";
         }
         
         Planet planet = nameList[0];
@@ -1239,6 +1300,60 @@ public void LogNext(String planetName)
         DataToLog();
     }
 }
+
+
+//////////////////
+// SET COLOR //
+//////////////////
+void SetPlanetColor(String argument)
+{
+    String[] args = argument.Split(' ');
+    String planetColor = args[0];
+    if(args.Length < 2)
+    {
+        _statusMessage = "Insufficient Argument.  COLOR_PLANET requires COLOR and PLANET NAME.\n";
+    }
+    else
+    {
+        String planetName = "";
+        for(int p = 1; p < args.Length; p++)
+        {
+            planetName += args[p] + " ";
+        }
+        planetName = planetName.Trim(' ').ToUpper();
+    
+        if(_unchartedList.Count > 0)
+        {
+            for(int u = 0; u < _unchartedList.Count; u++)
+            {
+                if(_unchartedList[u].name.ToUpper() == planetName)
+                {
+                    _unchartedList[u].color = planetColor;
+                    _statusMessage = planetName + " color changed to " + planetColor + ".\n";
+                    DataToLog();
+                    return;
+                }
+            }
+        }
+        
+        if(_planetList.Count > 0)
+        {
+            for(int p = 0; p < _planetList.Count; p++)
+            {
+                if(_planetList[p].name.ToUpper() == planetName)
+                {
+                    _planetList[p].color = planetColor;
+                    _statusMessage = planetName + " color changed to " + planetColor + ".\n";
+                    DataToLog();
+                    return;
+                }
+            }
+        }
+        
+        _statusMessage = "No planet " + planetName + " found.";
+    }
+}
+
 
 
 ////////////////
@@ -1390,6 +1505,43 @@ void moveBackward(StarMap map)
 }
 
 
+/////////////////////
+// CENTER WORLD //     Updates Map Center to the Average of all charted Planets
+/////////////////////
+void CenterWorld(StarMap map)
+{
+    if(map.mode == "WORLD")
+    {
+        map.altitude = -15;
+        map.azimuth = 45;
+        map.depthOfField = 256;
+        map.rotationalRadius = 4194304;
+        Vector3 worldCenter = new Vector3(0,0,0);
+        
+        if(_planetList.Count > 0)
+        {
+            for(int p = 0; p < _planetList.Count; p++)
+            {
+                worldCenter += _planetList[p].center;
+            }
+            
+            worldCenter /= _planetList.Count;
+        }
+        
+        map.center = worldCenter;
+    }
+}
+
+
+///////////////////
+// CENTER SHIP //
+///////////////////
+void CenterShip(StarMap map)
+{
+    DefaultView(map);
+    map.center = _refBlock.GetPosition();
+}
+
 /////////////////
 // NEXT MODE //
 /////////////////
@@ -1397,6 +1549,7 @@ void NextMode(StarMap map)
 {
     if(map.mode.ToUpper() == "WORLD")
     {
+        CenterShip(map);
         map.mode = "SHIP";
     }
     else if(map.mode.ToUpper() == "SHIP")
@@ -1417,6 +1570,7 @@ void PreviousMode(StarMap map)
 {
     if(map.mode.ToUpper() == "PLANET")
     {
+        CenterShip(map);
         map.mode = "SHIP";
     }
     else if(map.mode.ToUpper() == "WORLD")
@@ -1486,7 +1640,7 @@ void NextPlanet(StarMap map)
     
     Planet planet = _planetList[_planetIndex];
     map.center = planet.center;
-    if(planet.radius < 40000)
+    if(planet.radius < 30000)
     {
         map.depthOfField *= 4;
     }
@@ -1512,7 +1666,7 @@ void PreviousPlanet(StarMap map)
     
     Planet planet = _planetList[_planetIndex];
     map.center = planet.center;
-    if(planet.radius < 40000)
+    if(planet.radius < 30000)
     {
         map.depthOfField *= 4;
     }
@@ -1634,10 +1788,6 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
             Color = bodyColor,
         };
         frame.Add(sprite);
-        
-        
-        
-        //Echo("SHIP OFF SCREEN");
     }
     else
     {
@@ -1684,6 +1834,11 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
                 case "CYAN":
                     aftColor = new Color(0,48,48);
                     bodyColor = new Color(0,64,64);
+                    plumeColor = aftColor;
+                    break;
+                case "LIGHTBLUE":
+                    aftColor = new Color(48,48,144);
+                    bodyColor = new Color(64,64,192);
                     plumeColor = aftColor;
                     break;
                 case "ORANGE":
@@ -1853,7 +2008,6 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
     {
         Planet planet = displayPlanets[d];
         Echo(planet.name);
-        //Echo(planet.ToString());
         
         Vector2 planetPosition = PlotObject(planet.transformedCenter, map);
         planet.mapPos = planetPosition;
@@ -1890,6 +2044,10 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
                 surfaceColor = new Color(0,32,32);
                 lineColor = new Color(0,64,64);
                 break;
+            case "LIGHTBLUE":
+                surfaceColor = new Color(32,32,96);
+                lineColor = new Color(64,64,192);
+                break;
             case "ORANGE":
                 surfaceColor = new Color(32,16,0);
                 lineColor = new Color(64,32,0);
@@ -1899,15 +2057,15 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
                 lineColor = new Color(205,133,63);
                 break;
             case "GRAY":
-                surfaceColor = new Color(32,32,32);
-                lineColor = new Color(64,64,64);
+                surfaceColor = new Color(16,16,16);
+                lineColor = new Color(32,32,32);
                 break;
             case "GREY":
-                surfaceColor = new Color(32,32,32);
-                lineColor = new Color(64,64,64);
+                surfaceColor = new Color(16,16,16);
+                lineColor = new Color(32,32,32);
                 break;
             case "WHITE":
-                surfaceColor = new Color(75,100,100);
+                surfaceColor = new Color(64,64,64);
                 lineColor = new Color(192,192,192);                
                 break;
         }
@@ -2108,9 +2266,19 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
         if(diameter > 2 * HASH_LIMIT)
         {
             String[] hashLabels = hash.name.Split(' ');
+            float textMod = 1;
+            int pitchMod = 1;
+            if(map.altitude > 0)
+            {
+                pitchMod = -1;
+            }
             
+            if(diameter > 3 * HASH_LIMIT)
+            {
+                textMod = 1.5f;
+            }
             
-            Vector2 hashOffset = new Vector2(0,10);
+            Vector2 hashOffset = new Vector2(0,10*textMod*pitchMod);
             position -= hashOffset;
             
             var sprite = new MySprite()
@@ -2118,7 +2286,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
                 Type = SpriteType.TEXT,
                 Data = hashLabels[0],
                 Position = position,
-                RotationOrScale = 0.5f,
+                RotationOrScale = 0.5f * textMod,
                 Color = lineColor,
                 Alignment = TextAlignment.CENTER,
                 FontId = "White"
@@ -2132,7 +2300,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
                 Type = SpriteType.TEXT,
                 Data = hashLabels[1],
                 Position = position,
-                RotationOrScale = 0.4f,
+                RotationOrScale = 0.4f * textMod,
                 Color = lineColor,
                 Alignment = TextAlignment.CENTER,
                 FontId = "White"
@@ -2201,6 +2369,12 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 case "HAZARD":
                     markerShape = "SquareTapered";
                     markerColor = Color.Red;
+                    rotationMod = (float)Math.PI/4;
+                    break;
+                case "ASTEROID":
+                    markerShape = "SquareTapered";
+                    markerColor = new Color(48,32,32);
+                    markerScale *= 0.9f;
                     rotationMod = (float)Math.PI/4;
                     break;
                 default:
@@ -2306,6 +2480,38 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                     
                 }
             
+                if(waypoint.marker.ToUpper() == "ASTEROID")
+                {
+                    position += new Vector2(markerSize/2 - markerSize/20, 0);
+                    
+                    sprite = new MySprite()
+                    {
+                        Type = SpriteType.TEXTURE,
+                        Data = "SquareTapered",
+                        Position = position,
+                        RotationOrScale = rotationMod,
+                        Size=  markerScale, 
+                        Color = new Color(32,32,32),
+                    };
+                    frame.Add(sprite);
+                    
+                    position -= new Vector2(markerSize - markerSize/10,0);
+                    
+                    sprite = new MySprite()
+                    {
+                        Type = SpriteType.TEXTURE,
+                        Data = "SquareTapered",
+                        Position = position,
+                        RotationOrScale = rotationMod,
+                        Size=  markerScale, 
+                        Color = new Color(32,32,32),
+                    };
+                    frame.Add(sprite);
+                    
+                    position = startPosition;
+                    
+                    
+                }
             
             
             
@@ -2330,6 +2536,212 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 }
 
 
+
+///////////////////////////
+// DRAW SURFACE POINTS //
+///////////////////////////
+public void DrawSurfacePoint(Vector3 surfacePoint, int pointNumber, ref MySpriteDrawFrame frame, StarMap map)
+{
+    Color pointColor;
+    switch(pointNumber)
+    {
+        case 1:
+            pointColor = new Color(32,0,48);
+            break;
+        case 2:
+            pointColor = new Color(64,0,96);
+            break;
+        case 3:
+            pointColor = new Color(128,0,192);
+            break;
+        default:
+            pointColor = Color.Red;
+            break;
+    }
+    
+    Vector3 pointTransformed = transformVector(surfacePoint, map);
+    if(pointTransformed.Z > map.depthOfField)
+    {
+        float markerScale = MARKER_WIDTH * 2;
+        float textSize = 0.6f;
+       
+        if(_viewport.Width > 500)
+        {
+            markerScale *= 1.5f;
+            textSize *= 1.5f;
+        }
+       
+        Vector2 startPosition = _viewport.Center + PlotObject(pointTransformed, map);
+        Vector2 position =  startPosition + new Vector2(-markerScale/2,0);
+        
+        Vector2 markerSize = new Vector2(markerScale, markerScale);
+        
+        
+        position += new Vector2(-markerScale * 0.025f, markerScale *0.05f);
+        
+        var sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "Circle",
+            Position = position,
+            Size=  markerSize*1.1f, 
+            Color = Color.Black,
+        };
+        frame.Add(sprite);
+        
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "CircleHollow",
+            Position = position,
+            Size=  markerSize, 
+            Color = pointColor,
+        };
+        frame.Add(sprite);
+        
+        position = startPosition - new Vector2(0, markerScale/2);
+        
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXT,
+            Data = "?",
+            Position = position,
+            RotationOrScale = textSize,
+            Color = pointColor,
+            Alignment = TextAlignment.CENTER,
+            FontId = "White"
+        };
+        frame.Add(sprite);  
+    }
+}
+
+
+///////////////////////
+// PLOT UNCHARTED //
+///////////////////////
+public void PlotUncharted(ref MySpriteDrawFrame frame, StarMap map)
+{
+    if(_unchartedList.Count > 0)
+    {
+        for(int u = 0; u < _unchartedList.Count; u++)
+        {
+            Planet planet = _unchartedList[u];
+            String[] planetData = planet.ToString().Split(';');
+            
+            for(int p = 4; p < 8; p++)
+            if(planetData[p] != "")
+            {
+                int pointNumber = p-3;
+                DrawSurfacePoint(planet.GetPoint(pointNumber),pointNumber, ref frame, map);
+            }
+        }
+    }
+}
+
+
+//////////////////
+// DRAW AXES //
+//////////////////
+public void DrawAxes(ref MySpriteDrawFrame frame, StarMap map)
+{
+    Vector3 xVec = new Vector3(10,0,0);
+    //Vector3 yVec = new Vector3(0,1,0);
+    Vector3 zVec = new Vector3(0,0,10);
+    
+    
+    
+    
+    //Vector2 xPlot = PlotObject(rotateMovement(xVec, map),map);
+    //Vector2 yPlot = PlotObject(rotateMovement(yVec, map), map);
+    //Vector2 zPlot = PlotObject(rotateMovement(xVec, map),map);
+    
+    float xRotation = PlotAngle(xVec,map);//(float) Math.Atan2(xPlot.Y, xPlot.X);// + (float) Math.PI/2
+    float zRotation = PlotAngle(zVec,map);//(float) Math.Atan2(zPlot.Y, zPlot.X);
+    
+    Color xColor = new Color(0, 32, 0);
+    Color yColor = new Color(32, 0, 0);
+    Color zColor = new Color(0, 0, 32);
+    
+
+    //Y Axis        
+    Vector2 position = _viewport.Center - new Vector2(1,0);
+    var sprite = new MySprite()
+    {
+        Type = SpriteType.TEXTURE,
+        Data = "SquareSimple",  
+        Position = position,
+        Size=  new Vector2(2,_viewport.Height), 
+        Color = yColor,
+    };
+    frame.Add(sprite);
+    
+    //X Axis
+    position += new Vector2(1,0);
+    sprite = new MySprite()
+    {
+        Type = SpriteType.TEXTURE,
+        Data = "SquareSimple",
+        Position = position,
+        Size=  new Vector2(2,_viewport.Width),
+        RotationOrScale = xRotation,
+        Color = xColor,
+    };
+    frame.Add(sprite);
+    
+    //Z Axis
+    bool hideZ = map.altitude == 0 && (map.azimuth == 0 || map.azimuth == 180);
+    if(!hideZ)
+    {
+        position -= new Vector2(2,0);
+        sprite = new MySprite()
+        {
+            Type = SpriteType.TEXTURE,
+            Data = "SquareSimple",
+            Position = position,
+            Size=  new Vector2(2,_viewport.Width),
+            RotationOrScale = zRotation,
+            Color = zColor,
+        };
+        frame.Add(sprite);
+    }
+    
+   /* //Test Dot
+    position = _viewport.Center;
+    position += xPlot;
+    sprite = new MySprite()
+    {
+        Type = SpriteType.TEXTURE,
+        Data = "SquareSimple",
+        Position = position,
+        Size=  new Vector2(8,8),
+        RotationOrScale = (float) Math.PI/4,
+        Color = xColor,
+    };
+    frame.Add(sprite);   */
+}
+
+//////////////////
+// PLOT ANGLE //     Represent 3D direction vector as 2D angle (radians).
+//////////////////
+float PlotAngle(Vector3 directionVector, StarMap map)
+{
+    float x = directionVector.X;
+    float y = directionVector.Y;
+    float z = directionVector.Z;
+    
+    
+    float cosAz = (float) Math.Cos(toRadians(map.azimuth));
+    float sinAz = (float) Math.Sin(toRadians(map.azimuth));
+    float cosAlt = (float) Math.Cos(toRadians(map.altitude));
+    float sinAlt = (float) Math.Sin(toRadians(map.altitude));
+    
+    float sideA = cosAz * x + sinAz * sinAlt * y + sinAz * cosAlt * z;
+    float sideB = cosAlt * y - sinAlt * z;
+    
+    return (float) Math.Atan2(sideA, sideB);
+}
+
+
 /////////////////////////
 // PROJECT DIAMETER //
 /////////////////////////
@@ -2346,7 +2758,6 @@ float ProjectDiameter(Planet planet, StarMap map)
     
     return diameter;
 }
-
 
 
 /////////////////////
@@ -2434,7 +2845,6 @@ public static Vector3 StringToVector3(string sVector)
     // Remove the parentheses
     if (sVector.StartsWith ("(") && sVector.EndsWith (")"))
     {
-        //Echo(sVector);
         sVector = sVector.Substring(1, sVector.Length-2);
     }
 
@@ -2662,7 +3072,6 @@ public void SortByNearest(List<Planet> planets)
      double zT = -sinAz * cosAlt * xS + sinAlt * yS + cosAz * cosAlt *zS + r;
      
      Vector3 vectorOut = new Vector3(xT,yT,zT);
-     //Echo("VectorOut: " + Vector3ToString(vectorOut));
      return vectorOut;
  }
  
@@ -2696,9 +3105,9 @@ public Vector3 rotateVector(Vector3 vecIn, StarMap map)
 ////////////////////////
 public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
 {
-  float x = vecIn.GetDim(0);
-  float y = vecIn.GetDim(1);
-  float z = vecIn.GetDim(2);
+  float x = vecIn.X;
+  float y = vecIn.Y;
+  float z = vecIn.Z;
   
   float cosAz = (float) Math.Cos(toRadians(-map.azimuth));
   float sinAz = (float) Math.Sin(toRadians(-map.azimuth));
@@ -2767,13 +3176,13 @@ public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
 /////////////////////
 public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 {
-    Echo("\nMAP DATA:");
-    Echo("H: " + _viewport.Height + "  W: " + _viewport.Width);
-    Echo("Center: " + map.center);
-    Echo("Azimuth: " + map.azimuth);
-    Echo("Altitude: " + map.altitude*-1);
-    Echo("View Radius: " + map.rotationalRadius);
-    Echo("Depth of Field: " + map.depthOfField);
+//    Echo("\nMAP DATA:");
+//    Echo("H: " + _viewport.Height + "  W: " + _viewport.Width);
+//    Echo("Center: " + map.center);
+//    Echo("Azimuth: " + map.azimuth);
+//    Echo("Altitude: " + map.altitude*-1);
+//    Echo("View Radius: " + map.rotationalRadius);
+//    Echo("Depth of Field: " + map.depthOfField);
     
 
     Vector3 mapCenter = map.center;
@@ -2792,6 +3201,10 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
     // Add the sprite to the frame
     frame.Add(sprite);
 
+    //DRAW AXES
+    //DrawAxes(ref frame, map);
+
+
     //DRAW PLANETS
     List<Planet> displayPlanets = new List<Planet>();
     
@@ -2804,10 +3217,11 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
     }
     DrawPlanets(displayPlanets, ref frame, map);
     
-    //DRAW WAYPOINTS
+    //DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
     if(_gpsActive)
     {
         DrawWaypoints(ref frame, map);
+        PlotUncharted(ref frame, map);
     }
 
 
