@@ -47,7 +47,7 @@ const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 
 const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
 //const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=<name>\nLCD_Index=0\nReference_Name=<name>\n";
-string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=WORLD\nDepthOfField="+DV_DOF+"\nRotationalRadius="+DV_RADIUS
+string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nDepthOfField="+DV_DOF+"\nRotationalRadius="+DV_RADIUS
                                 +"\nAzimuth=0\nAltitude="+DV_ALTITUDE;
 
 
@@ -765,7 +765,7 @@ public void Main(string argument)
         }
         
         //Add Translational Speed
-        if(myMap.mode.ToUpper() == "WORLD")
+        if(myMap.mode.ToUpper() == "FREE" || myMap.mode.ToUpper() == "WORLD")
         {
             myMap.center += rotateMovement(_trackSpeed, myMap);
         }
@@ -906,14 +906,17 @@ public void Main(string argument)
                     _showMapParameters = !_showMapParameters;
                     break;
                 case "WORLD_MODE":
-                    myMap.mode = "WORLD";
+                    CenterWorld(myMap);
                     break;
                 case "SHIP_MODE":
                     CenterShip(myMap);
                     myMap.mode = "SHIP";
                     break;
                 case "PLANET_MODE":
-                    myMap.mode = "PLANET";
+                    PlanetMode(myMap);
+                    break;
+                case "FREE_MODE":
+                    myMap.mode = "FREE";
                     break;
                 case "PREVIOUS_MODE":
                     PreviousMode(myMap);
@@ -929,9 +932,6 @@ public void Main(string argument)
                     break;
                 case "CENTER_SHIP":
                     myMap.center = _refBlock.GetPosition();
-                    break;
-                case "CENTER_WORLD":
-                    CenterWorld(myMap);
                     break;
                 case "DEACTIVATE":
                     SetWaypointState(entityName, 0);
@@ -1432,7 +1432,7 @@ void increaseRadius(StarMap map)
 /////////////////
 void moveLeft(StarMap map)
 {
-    if(map.mode.ToUpper() == "WORLD")
+    if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
     {
         Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
         map.center += rotateMovement(moveVector, map);
@@ -1445,7 +1445,7 @@ void moveLeft(StarMap map)
 //////////////////
 void moveRight(StarMap map)
 {
-    if(map.mode.ToUpper() == "WORLD")
+    if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
     {
         Vector3 moveVector = new Vector3(MOVE_STEP,0,0);
         map.center -= rotateMovement(moveVector, map);
@@ -1458,7 +1458,7 @@ void moveRight(StarMap map)
 //////////////////
 void moveUp(StarMap map)
 {
-    if(map.mode.ToUpper() == "WORLD")
+    if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
     {
         Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
         map.center += rotateMovement(moveVector, map);
@@ -1471,7 +1471,7 @@ void moveUp(StarMap map)
 //////////////////
 void moveDown(StarMap map)
 {
-    if(map.mode.ToUpper() == "WORLD")
+    if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
     {
         Vector3 moveVector = new Vector3(0,MOVE_STEP,0);
         map.center -= rotateMovement(moveVector, map);
@@ -1484,7 +1484,7 @@ void moveDown(StarMap map)
 /////////////////////
 void moveForward(StarMap map)
 {
-    if(map.mode.ToUpper() == "WORLD")
+    if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
     {    
         Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
         map.center += rotateMovement(moveVector, map);
@@ -1497,7 +1497,7 @@ void moveForward(StarMap map)
 //////////////////////
 void moveBackward(StarMap map)
 {
-    if(map.mode.ToUpper() == "WORLD")
+    if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
     {    
         Vector3 moveVector = new Vector3(0,0,MOVE_STEP);
         map.center -= rotateMovement(moveVector, map);
@@ -1542,23 +1542,60 @@ void CenterShip(StarMap map)
     map.center = _refBlock.GetPosition();
 }
 
+
+///////////////////
+// PLANET MODE //
+///////////////////
+void PlanetMode(StarMap map)
+{
+    map.depthOfField = DV_DOF;
+    
+    if(_viewport.Width > 500)
+    {
+        map.depthOfField *= 4;
+    }
+    
+    if(_planetList.Count > 0)
+    {
+        SortByNearest(_planetList);
+        ShipToPlanet(_planetList[0], map);
+        
+        
+        if(_planetList[0].radius < 30000)
+        {
+            map.depthOfField *= 4;
+        }
+    }
+    
+    map.rotationalRadius = DV_RADIUS;
+    
+
+    map.mode = "PLANET";
+}
+
 /////////////////
 // NEXT MODE //
 /////////////////
 void NextMode(StarMap map)
 {
-    if(map.mode.ToUpper() == "WORLD")
+    if(map.mode.ToUpper() == "FREE")
     {
         CenterShip(map);
         map.mode = "SHIP";
     }
     else if(map.mode.ToUpper() == "SHIP")
     {
-        map.mode = "PLANET";
+        PlanetMode(map);
+    }
+    else if(map.mode.ToUpper()=="PLANET")
+    {
+        map.mode = "WORLD";
+        CenterWorld(map);
     }
     else
     {
-        map.mode = "WORLD";
+        map.mode = "FREE";
+        CenterShip(map);
     }
 }
 
@@ -1575,11 +1612,17 @@ void PreviousMode(StarMap map)
     }
     else if(map.mode.ToUpper() == "WORLD")
     {
-        map.mode = "PLANET";
+        PlanetMode(map);
+    }
+    else if(map.mode.ToUpper() == "FREE")
+    {
+        map.mode = "WORLD";        
+        CenterWorld(map);
     }
     else
     {
-        map.mode = "WORLD";
+        map.mode = "FREE";
+        CenterShip(map);
     }
 }
 
@@ -1606,7 +1649,7 @@ void ShipToPlanet(Planet planet, StarMap map)
 ////////////////////
 void DefaultView(StarMap map)
 {
-    map.mode = "WORLD";
+    map.mode = "FREE";
     
     map.center = new Vector3(0,0,0);
     map.depthOfField = DV_DOF;
@@ -3247,6 +3290,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     String angleReading = map.altitude*-1 + "° " + map.azimuth + "°";
     String shipMode = "S";
     String planetMode = "P";
+    String freeMode = "F";
     String worldMode = "W";
     
     if(_viewport.Width > 500)
@@ -3256,6 +3300,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
         angleReading = "Alt:" + map.altitude*-1 + "°  Az:" + map.azimuth + "°";
         shipMode = "SHIP";
         planetMode = "PLANET";
+        freeMode = "FREE";
         worldMode = "WORLD";
     }
     
@@ -3286,8 +3331,11 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
         case "PLANET":
             modeReading = planetMode;
             break;
-        default:
+        case "WORLD":
             modeReading = worldMode;
+            break;
+        default:
+            modeReading = freeMode;
             break;        
     }
     
