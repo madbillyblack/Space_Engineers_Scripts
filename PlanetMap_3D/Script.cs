@@ -658,6 +658,7 @@ public Program()
         GridTerminalSystem.SearchBlocksOfName(_lcdName, _mapBlocks);
         IMyTextSurfaceProvider mapBlock = _mapBlocks[0] as IMyTextSurfaceProvider;
         _drawingSurface = mapBlock.GetSurface(_lcdIndex);
+        PrepareTextSurfaceForSprites(_drawingSurface);
         Echo("MAP BLOCKS:");
         Echo(_mapBlocks[0].CustomName);
         
@@ -667,7 +668,7 @@ public Program()
     
     if(_refName == "" || _refName == "<name>")
     {
-        Echo("WARNING: No Reference Block Specified!\nMay Result in false orientation!");
+        _statusMessage = "WARNING: No Reference Block Name Specified!\nMay result in false orientation!";
         _refBlock = Me as IMyTerminalBlock;
     }
     else
@@ -681,7 +682,7 @@ public Program()
         }
         else
         {
-            Echo("No Block containing " + _refName + " found.");
+            _statusMessage = "WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!";
             _refBlock = Me as IMyTerminalBlock;
         }
     }
@@ -2557,22 +2558,23 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                 }
             
             
-            
-            
-                // PRINT NAME
-                position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
-                
-                sprite = new MySprite()
+                if(_showPlanetNames)
                 {
-                    Type = SpriteType.TEXT,
-                    Data = waypoint.name,
-                    Position = position,
-                    RotationOrScale = fontSize,
-                    Color = Color.White,
-                    Alignment = TextAlignment.LEFT,
-                    FontId = "White"
-                };
-                frame.Add(sprite);
+                    // PRINT NAME
+                    position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
+                    
+                    sprite = new MySprite()
+                    {
+                        Type = SpriteType.TEXT,
+                        Data = waypoint.name,
+                        Position = position,
+                        RotationOrScale = fontSize,
+                        Color = Color.White,
+                        Alignment = TextAlignment.LEFT,
+                        FontId = "White"
+                    };
+                    frame.Add(sprite);
+                }    
             }
         }    
     }
@@ -3186,9 +3188,15 @@ public void cycleExecute(StarMap map)
         {
             //Sort Planets by proximity to ship.
             SortByNearest(_planetList);
+            Planet planet = _planetList[0];
             
-            ShipToPlanet(_planetList[0], map);
+            ShipToPlanet(planet, map);
             _previousCommand = "NEWLY LOADED";
+            
+            if(Vector3.Distance(_refBlock.GetPosition(), planet.center) > 5 * planet.radius/3)
+            {
+                map.mode = "SHIP";
+            }
         }
         else if(map.mode.ToUpper() == "SHIP")
         {
@@ -3209,6 +3217,7 @@ public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
 {
     // Set the sprite display mode
     textSurface.ContentType = ContentType.SCRIPT;
+    textSurface.ScriptBackgroundColor = new Color(0,0,0);
     // Make sure no built-in script has been selected
     textSurface.Script = "";
 }
