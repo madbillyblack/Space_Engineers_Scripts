@@ -1,8 +1,12 @@
 MyIni _mapLog = new MyIni();
 string _lcdName;
 string _refName;
+string _dataName;
 string _previousCommand;
 int _lcdIndex;
+int _dataIndex;
+int _pageIndex;
+int _scrollIndex = 0;
 int _azSpeed;
 int _planetIndex;
 bool _gpsActive;
@@ -11,17 +15,17 @@ bool _showPlanetNames;
 bool _lightOn;
 int _cycleStep;
 string _statusMessage;
+string _activePlanet;
 Vector3 _trackSpeed;
 Vector3 _origin = new Vector3(0,0,0);
-//string _planetLog;
-//string _gpsLog;
-//string _unchartedLog;
 List<IMyTerminalBlock> _mapBlocks = new List<IMyTerminalBlock>();
+List<IMyTerminalBlock> _dataBlocks = new List<IMyTerminalBlock>();
 List<Planet> _planetList = new List<Planet>();
 List<Planet> _unchartedList = new List<Planet>();
 List<Waypoint> _waypointList = new List<Waypoint>();
 
 IMyTextSurface _drawingSurface;
+IMyTextSurface _dataSurface;
 IMyTerminalBlock _refBlock;
 RectangleF _viewport;
 
@@ -44,25 +48,17 @@ const int BAR_HEIGHT = 20; //Default height of parameter bars
 const int TOP_MARGIN = 8; // Margin for top and bottom of frame
 const int SIDE_MARGIN = 15; // Margin for sides of frame
 const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
+const int DATA_PAGES = 3;  // Number of Data Display Pages
 
-const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
-//const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=<name>\nLCD_Index=0\nReference_Name=<name>\n";
+const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nData_Index=0\nReference_Name=[Reference]\nData_Name=[Map Data]\nPlanet_List=\nWaypoint_List=\n";
 string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nDepthOfField="+DV_DOF+"\nRotationalRadius="+DV_RADIUS
                                 +"\nAzimuth=0\nAltitude="+DV_ALTITUDE;
 
 
-readonly String[,] AXIS = new String[6,6] {{"E","-X -Y", "-X -Z", "E", "-X Y", "-X Z"},
-                                                                    {"-Y -X", "E", "-Y -Z", "-Y X", "E", "-Y Z"},
-                                                                    {"-Z -X", "-Z -Y", "E", "-Z X", "-Z Y", "E"},
-                                                                    {"E", "X -Y", "X -Z", "E", "X Y", "X Z"},
-                                                                    {"Y -X", "E", "Y -Z", "Y X", "E", "Y Z"},
-                                                                    {"Z -X", "Z -Y", "E", "Z X", "Z Y", "E"}};
-
 // CLASSES //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////
+
 // STAR MAP //
-////////////////
 public class StarMap
 {
     public Vector3 center;
@@ -177,9 +173,8 @@ public class StarMap
 }
 
 
-/////////////
+
 // PLANET //
-/////////////
 public class Planet
 {
     //public int designation;
@@ -248,12 +243,7 @@ public class Planet
         }
         
     }
-    /*
-    public void SetDesignation(int des)
-    {
-        	designation = des;
-    }
-    */
+
     public void SetName(String arg)
     {
         name = arg;
@@ -302,12 +292,6 @@ public class Planet
     {
         this.mapPos = position;
     }
-    /*
-    public int GetDesignation()
-    {
-        return designation;
-    }
-    */
 	
     public String GetName()
     {
@@ -402,9 +386,9 @@ public class Planet
     public void SetMajorAxes()
     {
     //USE RADIUS AND CENTER OF PLANET TO SET POINTS 1, 2 & 3 TO BE ALONG X,Y & Z AXES FROM PLANET CENTER
-        float xCenter = center.GetDim(0);
-        float yCenter = center.GetDim(1);
-        float zCenter = center.GetDim(2);
+        float xCenter = center.X;
+        float yCenter = center.Y;
+        float zCenter = center.Z;
 
         Vector3 xMajor = new Vector3(xCenter + radius, yCenter, zCenter);
         Vector3 yMajor = new Vector3(xCenter, yCenter + radius, zCenter);
@@ -476,12 +460,10 @@ public class Planet
     }
 }
 
-////////////////
+
 // WAYPOINT //
-////////////////
 public class Waypoint
 {
-	//public int designation;
     public String name;
     public Vector3 location;
     public Vector3 transformedLocation;
@@ -492,12 +474,7 @@ public class Waypoint
     {
 
     }	
-	/*
-    public void SetDesignation(int des)
-    {
-        designation = des;
-    }
-	*/
+
     public void SetName(String arg)
     {
         name = arg;
@@ -522,12 +499,7 @@ public class Waypoint
     {
         isActive =false;
     }
-    /*
-    public int GetDesignation()
-    {
-        return designation;
-    }
-	*/
+
     public String GetName()
     {
         return name;
@@ -542,13 +514,6 @@ public class Waypoint
     {
         return marker;
     }
-    /*
-    public override String ToString()
-    {
-        String wpString = "G" + this.GetDesignation() + "|" + this.GetName() + "|" + Vector3ToString(this.GetLocation());
-        return wpString;
-    }
-    */
 }
 
 
@@ -569,6 +534,7 @@ public Program()
       _trackSpeed = StringToVector3(loadData[3]);
       _showMapParameters = bool.Parse(loadData[4]);
       _showPlanetNames = bool.Parse(loadData[5]);
+      _pageIndex = int.Parse(loadData[6]);
     }
     else
     {
@@ -579,11 +545,13 @@ public Program()
         _trackSpeed = new Vector3(0,0,0);
         _showMapParameters = true;
         _showPlanetNames = true;
+        _pageIndex = 0;
     }
 
     // Start with indicator light on.
     _lightOn = true;
     _cycleStep = CYCLE_LENGTH;
+    
     
     string oldData = Me.CustomData;
     string newData = DEFAULT_SETTINGS;
@@ -610,13 +578,19 @@ public Program()
         throw new Exception(result.ToString());
 
     //Name of screen to print map to.
-    _lcdName =  _mapLog.Get("Map Settings", "LCD_Name" ).ToString();
+    _lcdName =  _mapLog.Get("Map Settings", "LCD_Name").ToString();
 
     //Index of screen to print map to.
     _lcdIndex = _mapLog.Get("Map Settings","LCD_Index").ToUInt16();
     
+    //Index of screen to print map data to.
+    _dataIndex = _mapLog.Get("Map Settings","Data_Index").ToUInt16();
+    
     //Name of reference block
     _refName = _mapLog.Get("Map Settings", "Reference_Name").ToString();
+    
+    //Name of Data Display Block
+    _dataName = _mapLog.Get("Map Settings", "Data_Name").ToString();
 
     string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
 
@@ -656,14 +630,33 @@ public Program()
     else
     {
         GridTerminalSystem.SearchBlocksOfName(_lcdName, _mapBlocks);
-        IMyTextSurfaceProvider mapBlock = _mapBlocks[0] as IMyTextSurfaceProvider;
-        _drawingSurface = mapBlock.GetSurface(_lcdIndex);
-        PrepareTextSurfaceForSprites(_drawingSurface);
-        Echo("MAP BLOCKS:");
-        Echo(_mapBlocks[0].CustomName);
-        
-        StarMap myMap = parametersToMap(_mapBlocks[0]);
-        updateMap(myMap);
+        if(_mapBlocks.Count > 0)
+        {
+            IMyTextSurfaceProvider mapBlock = _mapBlocks[0] as IMyTextSurfaceProvider;
+            _drawingSurface = mapBlock.GetSurface(_lcdIndex);
+            PrepareTextSurfaceForSprites(_drawingSurface);
+            Echo("MAP BLOCKS:");
+            Echo(_mapBlocks[0].CustomName);
+            
+            StarMap myMap = parametersToMap(_mapBlocks[0]);
+            updateMap(myMap);            
+        }
+        else
+        {
+            _statusMessage = "No valid Map Blocks Found!";
+        }
+    }
+    
+    if(_dataName != "" || _dataName != "<name>")
+    {
+        GridTerminalSystem.SearchBlocksOfName(_dataName, _dataBlocks);
+        if(_dataBlocks.Count > 0)
+        {
+            IMyTextSurfaceProvider dataBlock = _dataBlocks[0] as IMyTextSurfaceProvider;
+            _dataSurface = dataBlock.GetSurface(_dataIndex);
+            _dataSurface.ContentType = ContentType.TEXT_AND_IMAGE;
+        }
+
     }
     
     if(_refName == "" || _refName == "<name>")
@@ -707,7 +700,8 @@ public Program()
 public void Save()
 {
     String saveData = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString();
-    saveData = saveData + "\n" + Vector3ToString(_trackSpeed) + "\n" + _showMapParameters.ToString() + "\n" + _showPlanetNames.ToString();
+    saveData += "\n" + Vector3ToString(_trackSpeed) + "\n" + _showMapParameters.ToString() + "\n" + _showPlanetNames.ToString();
+    saveData += "\n" + _pageIndex.ToString();
     
     Storage = saveData;
 }
@@ -728,8 +722,6 @@ public void Main(string argument)
     {
         Echo("Planet Count: " + _planetList.Count);
         Planet planet = _planetList[_planetList.Count - 1];
-    //    Echo("C: " + Vector3ToString(planet.center));
-    //    Echo("R: " + planet.radius.ToString());
     }
     else
     {
@@ -740,8 +732,6 @@ public void Main(string argument)
     {
         Echo("GPS Count: " + _waypointList.Count);
         Waypoint waypoint = _waypointList[_waypointList.Count - 1];
-    //    Echo("C: " + Vector3ToString(planet.center));
-    //    Echo("R: " + planet.radius.ToString());
     }
     else
     {
@@ -976,6 +966,22 @@ public void Main(string argument)
                 case "COLOR_PLANET":
                     SetPlanetColor(entityName);
                     break;
+                case "NEXT_PAGE":
+                    NextPage();
+                    break;
+                case "PREVIOUS_PAGE":
+                    PreviousPage();
+                    break;
+                case "SCROLL_DOWN":
+                    _scrollIndex++;
+                    break;
+                case "SCROLL_UP":
+                    _scrollIndex--;
+                    if(_scrollIndex < 0)
+                    {
+                        _scrollIndex = 0;
+                    }
+                    break;
                 default:
                     _previousCommand = "UNRECOGNIZED COMMAND!";
                     break;
@@ -998,14 +1004,18 @@ public void Main(string argument)
     {
         Echo("No Displays found!");
     }   
+    
+    if(_dataBlocks.Count > 0)
+    {
+        DisplayData();
+    }
 }
 
 
 // VIEW FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////
+
 // PARAMETERS TO MAP //
-////////////////////////////
 public StarMap parametersToMap(IMyTerminalBlock mapBlock)
 {
     MyIni lcdIni = new MyIni();
@@ -1046,9 +1056,8 @@ public StarMap parametersToMap(IMyTerminalBlock mapBlock)
 }
 
 
-////////////////////
+
 // DATA TO LOG //
-////////////////////
 public void DataToLog()
 {
     MyIni mapIni = new MyIni();
@@ -1093,9 +1102,8 @@ public void DataToLog()
 }
 
 
-////////////////////////////
+
 // MAP TO PARAMETERS // Writes map object to CustomData of Display Block
-////////////////////////////
 public void mapToParameters(StarMap map, IMyTerminalBlock mapBlock)
 {
     MyIni lcdIni = new MyIni();
@@ -1116,9 +1124,8 @@ public void mapToParameters(StarMap map, IMyTerminalBlock mapBlock)
 }
 
 
-/////////////////////
+
 // LOG WAYPOINT //
-/////////////////////
 public void LogWaypoint(String waypointName, String markerType)
 {
     if(waypointName == "")
@@ -1138,9 +1145,8 @@ public void LogWaypoint(String waypointName, String markerType)
 }
 
 
-///////////////////////////
+
 // SET WAYPOINT STATE //
-///////////////////////////
 public void SetWaypointState(String waypointName, int state)
 {
     if(waypointName == "")
@@ -1196,9 +1202,8 @@ public void SetWaypointState(String waypointName, int state)
 }
 
 
-///////////////////
-// NEW PLANET //  
-///////////////////
+
+// NEW PLANET //
 public void NewPlanet(String planetName)
 {
     planetName += ";;;;;;;";
@@ -1210,9 +1215,8 @@ public void NewPlanet(String planetName)
 }
 
 
-/////////////////////
+
 // DELETE PLANET //
-/////////////////////
 public void DeletePlanet(String planetName)
 {
     if(_unchartedList.Count > 0)
@@ -1248,9 +1252,8 @@ public void DeletePlanet(String planetName)
 
 
 
-/////////////////
+
 // LOG NEXT //
-/////////////////
 public void LogNext(String planetName)
 {
     List<Planet> nameList = new List<Planet>();
@@ -1303,9 +1306,8 @@ public void LogNext(String planetName)
 }
 
 
-//////////////////
+
 // SET COLOR //
-//////////////////
 void SetPlanetColor(String argument)
 {
     String[] args = argument.Split(' ');
@@ -1357,10 +1359,7 @@ void SetPlanetColor(String argument)
 
 
 
-////////////////
 // ZOOM IN //      Increase Map's Depth of Field
-////////////////
-
 void zoomIn(StarMap map)
 { 
     int doF = map.depthOfField;
@@ -1378,9 +1377,8 @@ void zoomIn(StarMap map)
 }
 
 
-////////////////
+
 // ZOOM OUT //    Decrease Map's Depth of Field
-////////////////
 void zoomOut(StarMap map)
 { 
     int doF = map.depthOfField;
@@ -1400,9 +1398,8 @@ void zoomOut(StarMap map)
 }
 
 
-//////////////////////
+
 // REDUCE RADIUS //
-//////////////////////
 void reduceRadius(StarMap map)
 {
     map.rotationalRadius /= 2;
@@ -1414,9 +1411,8 @@ void reduceRadius(StarMap map)
 }
 
 
-////////////////////////
+
 // INCREASE RADIUS //
-////////////////////////
 void increaseRadius(StarMap map)
 {
     map.rotationalRadius *= 2;
@@ -1428,9 +1424,8 @@ void increaseRadius(StarMap map)
 }
 
 
-/////////////////
+
 // MOVE LEFT //
-/////////////////
 void moveLeft(StarMap map)
 {
     if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
@@ -1441,9 +1436,8 @@ void moveLeft(StarMap map)
 }
 
 
-//////////////////
+
 // MOVE RIGHT //
-//////////////////
 void moveRight(StarMap map)
 {
     if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
@@ -1454,9 +1448,8 @@ void moveRight(StarMap map)
 }
 
 
-//////////////////
+
 // MOVE UP //
-//////////////////
 void moveUp(StarMap map)
 {
     if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
@@ -1467,9 +1460,8 @@ void moveUp(StarMap map)
 }
 
 
-//////////////////
+
 // MOVE DOWN //
-//////////////////
 void moveDown(StarMap map)
 {
     if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
@@ -1480,9 +1472,8 @@ void moveDown(StarMap map)
 }
 
 
-/////////////////////
+
 // MOVE FORWARD //
-/////////////////////
 void moveForward(StarMap map)
 {
     if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
@@ -1493,9 +1484,8 @@ void moveForward(StarMap map)
 }
 
 
-//////////////////////
+
 // MOVE BACKWARD //
-//////////////////////
 void moveBackward(StarMap map)
 {
     if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
@@ -1506,9 +1496,8 @@ void moveBackward(StarMap map)
 }
 
 
-/////////////////////
+
 // CENTER WORLD //     Updates Map Center to the Average of all charted Planets
-/////////////////////
 void CenterWorld(StarMap map)
 {
     if(map.mode == "WORLD")
@@ -1534,9 +1523,8 @@ void CenterWorld(StarMap map)
 }
 
 
-///////////////////
+
 // CENTER SHIP //
-///////////////////
 void CenterShip(StarMap map)
 {
     DefaultView(map);
@@ -1544,9 +1532,8 @@ void CenterShip(StarMap map)
 }
 
 
-///////////////////
+
 // PLANET MODE //
-///////////////////
 void PlanetMode(StarMap map)
 {
     map.depthOfField = DV_DOF;
@@ -1574,9 +1561,9 @@ void PlanetMode(StarMap map)
     map.mode = "PLANET";
 }
 
-/////////////////
+
+
 // NEXT MODE //
-/////////////////
 void NextMode(StarMap map)
 {
     if(map.mode.ToUpper() == "FREE")
@@ -1601,9 +1588,7 @@ void NextMode(StarMap map)
 }
 
 
-//////////////////////
 // PREVIOUS MODE //
-//////////////////////
 void PreviousMode(StarMap map)
 {
     if(map.mode.ToUpper() == "PLANET")
@@ -1628,16 +1613,14 @@ void PreviousMode(StarMap map)
 }
 
 
-//////////////////////
 // SHIP TO PLANET //   Aligns the map so that the ship appears above the center of the planet.
-//////////////////////
 void ShipToPlanet(Planet planet, StarMap map)
 {    
     Vector3 shipVector = _refBlock.GetPosition() - planet.center;
     float magnitude = Vector3.Distance(_refBlock.GetPosition(), planet.center);
     
-    float azAngle = (float) Math.Atan2(shipVector.GetDim(2),shipVector.GetDim(0));
-    float altAngle = (float) Math.Asin(shipVector.GetDim(1)/magnitude);
+    float azAngle = (float) Math.Atan2(shipVector.Z,shipVector.X);
+    float altAngle = (float) Math.Asin(shipVector.Y/magnitude);
     
     map.center = planet.center;
     map.azimuth = degreeAdd((int) toDegrees(azAngle),90);
@@ -1645,9 +1628,8 @@ void ShipToPlanet(Planet planet, StarMap map)
 }
 
 
-////////////////////
+
 // DEFAULT VIEW //
-////////////////////
 void DefaultView(StarMap map)
 {
     map.mode = "FREE";
@@ -1666,9 +1648,8 @@ void DefaultView(StarMap map)
 }
 
 
-////////////////////
+
 // NEXT PLANET //
-////////////////////
 void NextPlanet(StarMap map)
 {
     if(_planetList.Count > 1)
@@ -1691,9 +1672,8 @@ void NextPlanet(StarMap map)
 }
 
 
-////////////////////////
+
 // PREVIOUS PLANET //
-////////////////////////
 void PreviousPlanet(StarMap map)
 {
     if(_planetList.Count > 1)
@@ -1721,9 +1701,7 @@ void PreviousPlanet(StarMap map)
 // DRAWING FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/////////////////
 // DRAW SHIP //
-/////////////////
 public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> displayPlanets)
 {
     // SHIP COLORS
@@ -1749,7 +1727,7 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
     }
     
     
-    bool offZ = transformedShip.GetDim(2) < map.depthOfField;
+    bool offZ = transformedShip.Z < map.depthOfField;
     bool leftX = shipX < -_viewport.Width/2 || (offZ && shipX < 0);
     bool rightX = shipX > _viewport.Width/2 || (offZ && shipX >= 0);
     bool aboveY = shipY < -_viewport.Height/2 + vertMod || (offZ && shipY < 0);
@@ -1916,9 +1894,9 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
         
         
         // Ship Heading
-        float headingX = heading.GetDim(0);
-        float headingY = heading.GetDim(1);
-        float headingZ = heading.GetDim(2);
+        float headingX = heading.X;
+        float headingY = heading.Y;
+        float headingZ = heading.Z;
         
         //Get the Ratio of direction Vector's apparent vs actual magnitudes.
         float shipLength = (float) 1.33 * SHIP_SCALE *(float) Math.Sqrt(headingX * headingX + headingY * headingY) / (float) Math.Sqrt (headingX * headingX + headingY * headingY + headingZ * headingZ);
@@ -2023,15 +2001,14 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 }
 
 
-///////////////////
+
 // PLOT OBJECT //
-///////////////////
 public Vector2 PlotObject(Vector3 pos, StarMap map)
 {
-    float zFactor = map.depthOfField/pos.GetDim(2);
+    float zFactor = map.depthOfField/pos.Z;
     
-    float plotX = pos.GetDim(0)*zFactor;
-    float plotY = pos.GetDim(1)*zFactor;
+    float plotX = pos.X*zFactor;
+    float plotY = pos.Y*zFactor;
     
     Vector2 mapPos = new Vector2(-plotX, -plotY);
     return mapPos;
@@ -2039,9 +2016,7 @@ public Vector2 PlotObject(Vector3 pos, StarMap map)
 
 
 
-//////////////////////
 // DRAW PLANETS //
-//////////////////////
 public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame, StarMap map)
 {
     PlanetSort(displayPlanets);
@@ -2117,7 +2092,7 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
             
         Vector2 startPosition = _viewport.Center + planetPosition;
 
-        float diameter = ProjectDiameter(planet, map);//2*planet.radius*map.depthOfField/planet.transformedCenter.GetDim(2);
+        float diameter = ProjectDiameter(planet, map);
         
         Vector2 position = startPosition - new Vector2(diameter/2,0);
 
@@ -2235,14 +2210,13 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 }
 
 
-///////////////////////
+
 // DRAW HASHMARKS //   Makes series of low-profile waypoints to denote latitude and longitude on planets.
-///////////////////////
 public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map, ref MySpriteDrawFrame frame)
 {
     List<Waypoint> hashMarks = new List<Waypoint>();
     
-    float planetDepth = planet.transformedCenter.GetDim(2);
+    float planetDepth = planet.transformedCenter.Z;
     
     
     //North Pole
@@ -2250,7 +2224,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
     north.name = "N -";
     north.location = planet.center + new Vector3(0, (float) planet.radius, 0);
     north.transformedLocation = transformVector(north.location, map);
-    if(north.transformedLocation.GetDim(2) < planetDepth)
+    if(north.transformedLocation.Z < planetDepth)
     {
         hashMarks.Add(north);
     }
@@ -2261,7 +2235,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
     south.name = "S -";
     south.location = planet.center - new Vector3(0, (float) planet.radius, 0);
     south.transformedLocation = transformVector(south.location, map);
-    if(south.transformedLocation.GetDim(2) < planetDepth)
+    if(south.transformedLocation.Z < planetDepth)
     {
         hashMarks.Add(south);
     }
@@ -2294,7 +2268,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
             hashMark.location = planet.center + new Vector3(xCoord, yCoord, zCoord);
             hashMark.transformedLocation = transformVector(hashMark.location, map);
             
-            if(hashMark.transformedLocation.GetDim(2) < planetDepth)
+            if(hashMark.transformedLocation.Z < planetDepth)
             {
                 hashMarks.Add(hashMark);
             }
@@ -2370,9 +2344,9 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
     //hashMarks.Clear();
 }
 
-///////////////////////
+
+
 // DRAW WAYPOINTS //
-///////////////////////
 public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 {
     float fontSize = 0.5f;
@@ -2427,7 +2401,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
             }
             
             
-            if(waypoint.transformedLocation.GetDim(2) > map.depthOfField)
+            if(waypoint.transformedLocation.Z > map.depthOfField)
             {
                 Vector2 position = startPosition - new Vector2(markerSize/2,0);
                 
@@ -2582,9 +2556,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 
 
 
-///////////////////////////
 // DRAW SURFACE POINTS //
-///////////////////////////
 public void DrawSurfacePoint(Vector3 surfacePoint, int pointNumber, ref MySpriteDrawFrame frame, StarMap map)
 {
     Color pointColor;
@@ -2661,9 +2633,7 @@ public void DrawSurfacePoint(Vector3 surfacePoint, int pointNumber, ref MySprite
 }
 
 
-///////////////////////
 // PLOT UNCHARTED //
-///////////////////////
 public void PlotUncharted(ref MySpriteDrawFrame frame, StarMap map)
 {
     if(_unchartedList.Count > 0)
@@ -2684,115 +2654,11 @@ public void PlotUncharted(ref MySpriteDrawFrame frame, StarMap map)
 }
 
 
-//////////////////
-// DRAW AXES //
-//////////////////
-public void DrawAxes(ref MySpriteDrawFrame frame, StarMap map)
-{
-    Vector3 xVec = new Vector3(10,0,0);
-    //Vector3 yVec = new Vector3(0,1,0);
-    Vector3 zVec = new Vector3(0,0,10);
-    
-    
-    
-    
-    //Vector2 xPlot = PlotObject(rotateMovement(xVec, map),map);
-    //Vector2 yPlot = PlotObject(rotateMovement(yVec, map), map);
-    //Vector2 zPlot = PlotObject(rotateMovement(xVec, map),map);
-    
-    float xRotation = PlotAngle(xVec,map);//(float) Math.Atan2(xPlot.Y, xPlot.X);// + (float) Math.PI/2
-    float zRotation = PlotAngle(zVec,map);//(float) Math.Atan2(zPlot.Y, zPlot.X);
-    
-    Color xColor = new Color(0, 32, 0);
-    Color yColor = new Color(32, 0, 0);
-    Color zColor = new Color(0, 0, 32);
-    
 
-    //Y Axis        
-    Vector2 position = _viewport.Center - new Vector2(1,0);
-    var sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "SquareSimple",  
-        Position = position,
-        Size=  new Vector2(2,_viewport.Height), 
-        Color = yColor,
-    };
-    frame.Add(sprite);
-    
-    //X Axis
-    position += new Vector2(1,0);
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "SquareSimple",
-        Position = position,
-        Size=  new Vector2(2,_viewport.Width),
-        RotationOrScale = xRotation,
-        Color = xColor,
-    };
-    frame.Add(sprite);
-    
-    //Z Axis
-    bool hideZ = map.altitude == 0 && (map.azimuth == 0 || map.azimuth == 180);
-    if(!hideZ)
-    {
-        position -= new Vector2(2,0);
-        sprite = new MySprite()
-        {
-            Type = SpriteType.TEXTURE,
-            Data = "SquareSimple",
-            Position = position,
-            Size=  new Vector2(2,_viewport.Width),
-            RotationOrScale = zRotation,
-            Color = zColor,
-        };
-        frame.Add(sprite);
-    }
-    
-   /* //Test Dot
-    position = _viewport.Center;
-    position += xPlot;
-    sprite = new MySprite()
-    {
-        Type = SpriteType.TEXTURE,
-        Data = "SquareSimple",
-        Position = position,
-        Size=  new Vector2(8,8),
-        RotationOrScale = (float) Math.PI/4,
-        Color = xColor,
-    };
-    frame.Add(sprite);   */
-}
-
-//////////////////
-// PLOT ANGLE //     Represent 3D direction vector as 2D angle (radians).
-//////////////////
-float PlotAngle(Vector3 directionVector, StarMap map)
-{
-    float x = directionVector.X;
-    float y = directionVector.Y;
-    float z = directionVector.Z;
-    
-    
-    float cosAz = (float) Math.Cos(toRadians(map.azimuth));
-    float sinAz = (float) Math.Sin(toRadians(map.azimuth));
-    float cosAlt = (float) Math.Cos(toRadians(map.altitude));
-    float sinAlt = (float) Math.Sin(toRadians(map.altitude));
-    
-    float sideA = cosAz * x + sinAz * sinAlt * y + sinAz * cosAlt * z;
-    float sideB = cosAlt * y - sinAlt * z;
-    
-    return (float) Math.Atan2(sideA, sideB);
-}
-
-
-/////////////////////////
 // PROJECT DIAMETER //
-/////////////////////////
 float ProjectDiameter(Planet planet, StarMap map)
 {
-    float viewAngle = (float) Math.Asin(planet.radius/planet.transformedCenter.GetDim(2));
+    float viewAngle = (float) Math.Asin(planet.radius/planet.transformedCenter.Z);
     
     float diameter = (float) Math.Tan(Math.Abs(viewAngle)) * 2 * map.depthOfField;
     
@@ -2805,9 +2671,8 @@ float ProjectDiameter(Planet planet, StarMap map)
 }
 
 
-/////////////////////
+
 // OBSCURE SHIP //
-/////////////////////
 public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
 {
     //Get Nearest Planet on Screen
@@ -2822,23 +2687,157 @@ public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
     
     String color = "NONE";
     float distance = Vector2.Distance(shipPos, closest.mapPos);
-    float radius = 0.95f * closest.radius*map.depthOfField/closest.transformedCenter.GetDim(2);
+    float radius = 0.95f * closest.radius*map.depthOfField/closest.transformedCenter.Z;
     
-    if(distance < radius && closest.transformedCenter.GetDim(2) < transformVector(_refBlock.GetPosition(), map).GetDim(2))
+    if(distance < radius && closest.transformedCenter.Z < transformVector(_refBlock.GetPosition(), map).Z)
     {
         color = closest.color;
     }
 
     return color;
-}   
+}  
 
+
+ 
+// DATA DISPLAY FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// DISPLAY DATA // Page selection interface for Data Display
+
+
+void DisplayData()
+{
+    switch(_pageIndex)
+    {
+        case 0:
+            DisplayPlanetData();
+            break;
+        case 1:
+            DisplayWaypointData();
+            break;
+        case 2:
+            DisplayMapData();
+            break;
+    }
+}
+
+
+
+// DISPLAY PLANET DATA //
+
+void DisplayPlanetData()
+{
+    string output = "// PLANET LIST ///////////////////////////////////////////////////////////////\n";
+    List<string> planetData = new List<string>();
+    
+    if(_planetList.Count > 0)
+    {
+        for(int p = 0; p < _planetList.Count; p++)
+        {
+            Planet planet = _planetList[p];
+            float surfaceDistance = (Vector3.Distance(planet.center, _refBlock.GetPosition()) - planet.radius)/1000;
+            if(surfaceDistance < 0)
+            {
+                surfaceDistance = 0;
+            }
+            string planetEntry = "  " + planet.name + "    R: " + abbreviateValue(planet.radius) + "m    dist: " + surfaceDistance.ToString("N1") + "km";
+            
+            planetData.Add(planetEntry);
+        }
+    }
+    
+    if(_unchartedList.Count > 0)
+    {
+        string unchartedHeader = "\n----Uncharted Planets----";
+        planetData.Add(unchartedHeader);
+        for(int u = 0; u < _unchartedList.Count; u++)
+        {
+            Planet uncharted = _unchartedList[u];
+            float unchartedDistance = Vector3.Distance(_refBlock.GetPosition(), uncharted.GetPoint(1))/1000;
+            
+            string unchartedEntry = "  " + uncharted.name + "    dist: " + unchartedDistance.ToString("N1") + "km";
+            
+            planetData.Add(unchartedEntry);
+        }
+    }
+    
+    if(planetData.Count > 0 && _scrollIndex < planetData.Count)
+    {
+        for(int d = _scrollIndex; d < planetData.Count; d++)
+        {
+            output +=  planetData[d] + "\n";
+        }
+    }
+    
+    _dataSurface.WriteText(output);
+}
+
+
+// DISPLAY WAYPOINT DATA //
+void DisplayWaypointData()
+{
+    string output = "// WAYPOINT LIST ////////////////////////////////////////////////////////////////\n";
+    
+    List<string> waypointData = new List<string>();
+    
+    if(_waypointList.Count > 0)
+    {
+        
+        for(int w = 0; w < _waypointList.Count; w++)
+        {
+            Waypoint waypoint = _waypointList[w];
+            float distance = Vector3.Distance(_refBlock.GetPosition(), waypoint.location)/1000;
+            string waypointEntry = "   " + waypoint.name + "     " + waypoint.marker + "     dist: " + distance.ToString("N1") + "km";
+            waypointData.Add(waypointEntry);
+        }
+    }
+   
+    if(waypointData.Count > 0 && _scrollIndex < waypointData.Count)
+    {
+        for(int d = _scrollIndex; d < waypointData.Count; d++)
+        {
+            output +=  waypointData[d] + "\n";
+        }
+    }
+   
+    _dataSurface.WriteText(output);
+}
+
+
+// DISPLAY MAP DATA //
+void DisplayMapData()
+{
+    _dataSurface.WriteText("// MAP DATA ///////////////////////////////////////////////////////////////\n");
+}
+
+
+// NEXT PAGE //
+void NextPage()
+{
+    _pageIndex++;
+    if(_pageIndex >= DATA_PAGES)
+    {
+        _pageIndex = 0;
+    }
+}
+
+
+
+// PREVIOUS PAGE //
+void PreviousPage()
+{
+    if(_pageIndex == 0)
+    {
+        _pageIndex = DATA_PAGES;
+    }
+    _pageIndex--;
+}
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-///////////////////////////
 // STRING TO WAYPOINT //
-///////////////////////////
 public Waypoint StringToWaypoint(String argument)
 {
     Waypoint waypoint = new Waypoint();
@@ -2854,9 +2853,7 @@ public Waypoint StringToWaypoint(String argument)
 }
 
 
-///////////////////////////
 // WAYPOINT TO STRING //
-///////////////////////////
 public String WaypointToString(Waypoint waypoint)
 {
     String output = waypoint.name + ";" + Vector3ToString(waypoint.location) + ";" + waypoint.marker;
@@ -2872,19 +2869,15 @@ public String WaypointToString(Waypoint waypoint)
 }
 
 
-//////////////////////////
 // VECTOR3 TO STRING //
-//////////////////////////
 public static string Vector3ToString(Vector3 vec3)
 {
-	String newData = "(" + vec3.GetDim(0)+"," + vec3.GetDim(1) + "," + vec3.GetDim(2) + ")";
+	String newData = "(" + vec3.X+"," + vec3.Y + "," + vec3.Z + ")";
 	return newData;
 }
 
 
-//////////////////////////
 // STRING TO VECTOR3 //
-//////////////////////////
 public static Vector3 StringToVector3(string sVector)
 {
     // Remove the parentheses
@@ -2906,30 +2899,7 @@ public static Vector3 StringToVector3(string sVector)
 }
 
 
-/////////////////         Allows you to cycle continuously through an array or matrix. If you move past
-// WRAP ADD //           either end of the array, it returns you to the other side. (i.e. From last index to
-/////////////////         first if you're going in the positive direction)
-
-public int wrapAdd(int i, int mod, int length) // mod is the direction you want to move in the array.  Should be 1 or -1.
-{
-    int iNew = i+mod;
-
-    if(iNew<0)
-    {
-        iNew = length - 1;
-    }
-    else if(iNew >= length)
-    {
-        iNew = 0;
-    }
-
-    return iNew;    
-}
-
-
-//////////////////////////
 // ABBREVIATE VALUE //   Abbreviates float value to k/M/G notation (i.e. 1000 = 1k). Returns string.
-//////////////////////////
 public string abbreviateValue(float valueIn)
 {
     string abbreviatedValue;
@@ -2956,9 +2926,7 @@ public string abbreviateValue(float valueIn)
 }
 
 
-////////////////////////
 // REPLACE COLUMN //
-////////////////////////
 static void ReplaceColumn(double[,] matrix1, double[,] matrix2, double[] t, int column)
 {
     for (int i = 0; i<4; i++)
@@ -2975,24 +2943,20 @@ static void ReplaceColumn(double[,] matrix1, double[,] matrix2, double[] t, int 
 }
 
 
-///////////////
 // T-VALUE //
-///////////////
 public static double TValue(Vector3 vec3)
 {
     double result;
-	double x = vec3.GetDim(0);
-	double y = vec3.GetDim(1);
-	double z = vec3.GetDim(2);
+	double x = vec3.X;
+	double y = vec3.Y;
+	double z = vec3.Z;
 	
     result = -1*(x*x + y*y + z*z);
     return result;
 }
 
 
-////////////
 // Det4 //        Gets determinant of a 4x4 Matrix
-////////////
 public static double Det4(double[,] q)
 {
 	double a = q[0,0];
@@ -3022,9 +2986,7 @@ public static double Det4(double[,] q)
 }
 
 
-////////////////////
-// PLANET SORT //    Sorts Planets List by Transformed Z-Coordinate from largest to smallest.
-////////////////////    For the purpose of sprite printing.
+// PLANET SORT //  Sorts Planets List by Transformed Z-Coordinate from largest to smallest. For the purpose of sprite printing.
 public void PlanetSort(List<Planet> planets)
 {
     int length = planets.Count;
@@ -3036,7 +2998,7 @@ public void PlanetSort(List<Planet> planets)
             Planet planetA = planets[p-1];
             Planet planetB = planets[p];
             
-            if(planetA.transformedCenter.GetDim(2) < planetB.transformedCenter.GetDim(2))
+            if(planetA.transformedCenter.Z < planetB.transformedCenter.Z)
             {
                 planets[p-1] = planetB;
                 planets[p] = planetA;
@@ -3053,9 +3015,7 @@ public void PlanetSort(List<Planet> planets)
 }
 
 
-///////////////////////
 // SORT BY NEAREST //    Sorts Planets by nearest to farthest.
-///////////////////////
 public void SortByNearest(List<Planet> planets)
 {
     int length = planets.Count;
@@ -3086,22 +3046,12 @@ public void SortByNearest(List<Planet> planets)
 }
 
 
-/////////////////////////
 // TRANSFORM VECTOR //     Transforms vector location of planet or waypoint for StarMap view.
-/////////////////////////
  public Vector3 transformVector(Vector3 vectorIn, StarMap map)
- {
-     //double x = vectorIn.GetDim(0);
-     //double y = vectorIn.GetDim(1);
-     //double z = vectorIn.GetDim(2);
-     
-     //double xC = map.center.GetDim(0);
-     //double yC = map.center.GetDim(1);
-     //double zC = map.center.GetDim(2);
-     
-     double xS = vectorIn.GetDim(0) - map.center.GetDim(0); //Vector X - Map X
-     double yS = vectorIn.GetDim(1) - map.center.GetDim(1); //Vector Y - Map Y
-     double zS = vectorIn.GetDim(2) - map.center.GetDim(2); //Vector Z - Map Z 
+ {     
+     double xS = vectorIn.X - map.center.X; //Vector X - Map X
+     double yS = vectorIn.Y - map.center.Y; //Vector Y - Map Y
+     double zS = vectorIn.Z - map.center.Z; //Vector Z - Map Z 
      
      double r = map.rotationalRadius;
      
@@ -3121,14 +3071,12 @@ public void SortByNearest(List<Planet> planets)
  }
  
  
-//////////////////////
 // ROTATE VECTOR //
-//////////////////////
 public Vector3 rotateVector(Vector3 vecIn, StarMap map)
 {
-  float x = vecIn.GetDim(0);
-  float y = vecIn.GetDim(1);
-  float z = vecIn.GetDim(2);
+  float x = vecIn.X;
+  float y = vecIn.Y;
+  float z = vecIn.Z;
   
   float cosAz = (float) Math.Cos(toRadians(map.azimuth));
   float sinAz = (float) Math.Sin(toRadians(map.azimuth));
@@ -3145,9 +3093,7 @@ public Vector3 rotateVector(Vector3 vecIn, StarMap map)
 }
 
 
-////////////////////////
 // ROTATE MOVEMENT //    Rotates Movement Vector for purpose of translation.
-////////////////////////
 public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
 {
   float x = vecIn.X;
@@ -3169,9 +3115,7 @@ public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
 }
 
 
-//////////////////////
-// CYCLE EXECUTE //      Wait specified number of cycles to execute cyclial commands
-//////////////////////
+// CYCLE EXECUTE // Wait specified number of cycles to execute cyclial commands
 public void cycleExecute(StarMap map)
 {
     _cycleStep--;
@@ -3208,11 +3152,8 @@ public void cycleExecute(StarMap map)
 
 // BORROWED FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/////////////////////
-// PREPARE TEXT //  Not mine.  From Malware on   GitHub
-// SURFACE FOR  //
-//      SPRITES      //
-////////////////////
+
+// PREPARE TEXT SURFACE FOR SPRITES //
 public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
 {
     // Set the sprite display mode
@@ -3223,20 +3164,9 @@ public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
 }
 
 
-/////////////////////
-// DRAW SPRITES // Also from Malware
-/////////////////////
+// DRAW SPRITES //
 public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 {
-//    Echo("\nMAP DATA:");
-//    Echo("H: " + _viewport.Height + "  W: " + _viewport.Width);
-//    Echo("Center: " + map.center);
-//    Echo("Azimuth: " + map.azimuth);
-//    Echo("Altitude: " + map.altitude*-1);
-//    Echo("View Radius: " + map.rotationalRadius);
-//    Echo("Depth of Field: " + map.depthOfField);
-    
-
     Vector3 mapCenter = map.center;
     
     Color gridColor = new Color(0,64,0);
@@ -3253,16 +3183,13 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
     // Add the sprite to the frame
     frame.Add(sprite);
 
-    //DRAW AXES
-    //DrawAxes(ref frame, map);
-
 
     //DRAW PLANETS
     List<Planet> displayPlanets = new List<Planet>();
     
     for(int p = 0; p < _planetList.Count; p++)
     {
-        if(_planetList[p].transformedCenter.GetDim(2) > map.depthOfField)
+        if(_planetList[p].transformedCenter.Z > map.depthOfField)
         {
             displayPlanets.Add(_planetList[p]);
         }
@@ -3288,9 +3215,7 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 }
 
 
-/////////////////////
 // DRAW MAP INFO //
-/////////////////////
 public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 {
     //DEFAULT SIZING / STRINGS
@@ -3312,7 +3237,6 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
         freeMode = "FREE";
         worldMode = "WORLD";
     }
-    
     
     
     //TOP BAR
@@ -3362,9 +3286,9 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
         
         
     // CENTER READING
-    string xCenter = abbreviateValue(map.center.GetDim(0));
-    string yCenter = abbreviateValue(map.center.GetDim(1));
-    string zCenter = abbreviateValue(map.center.GetDim(2));
+    string xCenter = abbreviateValue(map.center.X);
+    string yCenter = abbreviateValue(map.center.Y);
+    string zCenter = abbreviateValue(map.center.Z);
     string centerReading = "[" + xCenter + ", " + yCenter + ", " + zCenter + "]";
         
     position += new Vector2(_viewport.Width/2 - SIDE_MARGIN, 0);
@@ -3467,10 +3391,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 }
 
 
-
-///////////////////////////
 // MULTIPLY MATRICES //     Get the dot product of two different square matrices.
-///////////////////////////
 public double[,] MultiplyMatrices(double[,] matrixA, double[,] matrixB, int matrixSize)
 {
     double[,] matrixOut = new double[matrixSize, matrixSize];
@@ -3493,9 +3414,7 @@ public double[,] MultiplyMatrices(double[,] matrixA, double[,] matrixB, int matr
     return matrixOut;
 }
 
-///////////////////
 // TO RADIANS //  Converts Degree Value to Radians
-///////////////////
 public double toRadians(int angle)
 {
     double radianValue = (double) angle * Math.PI/180;
@@ -3503,9 +3422,7 @@ public double toRadians(int angle)
 }
 
 
-//////////////////
 // TO DEGREES //
-//////////////////
 public float toDegrees(float angle)
 {
     float degreeValue = angle * 180/(float) Math.PI;
@@ -3513,9 +3430,7 @@ public float toDegrees(float angle)
 }
 
 
-///////////////////
 // DEGREE ADD //    Adds two degree angles.  Sets Rollover at +/- 180°
-///////////////////
 public static int degreeAdd(int angle_A, int angle_B)
 {
     int angleOut = angle_A + angle_B;
@@ -3533,21 +3448,16 @@ public static int degreeAdd(int angle_A, int angle_B)
 }
  
  
- 
-///////////////////
-// UPDATE MAP //     Transform logged locations based on map parameters
-///////////////////
+// UPDATE MAP // Transform logged locations based on map parameters
 public void updateMap(StarMap map)
  {
      Echo("Map Updated!");
      if(_planetList.Count > 0)
      {
-         //Echo("RELATIVE COORDINATES:");
          for(int p = 0; p < _planetList.Count; p++)
          {
              Planet planet = _planetList[p];
              planet.transformedCenter = transformVector(planet.center, map);
-             //Echo(planet.name + ": " + Vector3ToString(planet.transformedCenter));
          }
      }
      
