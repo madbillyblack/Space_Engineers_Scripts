@@ -593,11 +593,11 @@ public Program()
     string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
 
     string [] mapEntries = planetData.Split('\n');
-    for(int p = 0; p < mapEntries.Length; p++)
+    foreach(string planetString in mapEntries)
     {
-        if(mapEntries[p].Contains(";"))
+        if(planetString.Contains(";"))
         {
-            Planet planet = new Planet(mapEntries[p]);
+            Planet planet = new Planet(planetString);
             if(planet.isCharted)
             {
                 _planetList.Add(planet);
@@ -611,11 +611,11 @@ public Program()
 
     string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
     string [] gpsEntries = waypointData.Split('\n');
-    for(int g = 0; g < gpsEntries.Length; g++)
+    foreach(string waypointString in gpsEntries)
     {
-        if(gpsEntries[g].Contains(";"))
+        if(waypointString.Contains(";"))
         {
-           Waypoint waypoint = StringToWaypoint(gpsEntries[g]);
+           Waypoint waypoint = StringToWaypoint(waypointString);
            _waypointList.Add(waypoint);
         }
     }
@@ -922,13 +922,13 @@ public void Main(string argument)
                 case "CENTER_SHIP":
                     myMap.center = _myPos;
                     break;
-                case "DEACTIVATE":
+                case "WAYPOINT_OFF":
                     SetWaypointState(entityName, 0);
                     break;
-                case "ACTIVATE":
+                case "WAYPOINT_ON":
                     SetWaypointState(entityName, 1);
                     break;
-                case "TOGGLE":
+                case "TOGGLE_WAYPOINT":
                     SetWaypointState(entityName, 2);
                     break;
                 case "DELETE_WAYPOINT":
@@ -1065,9 +1065,9 @@ public void DataToLog()
     if(_waypointList.Count > 0)
     {
         String waypointData = "";
-        for(int w = 0; w < _waypointList.Count; w++)
+        foreach(Waypoint waypoint in _waypointList)
         {
-            waypointData += WaypointToString(_waypointList[w]) + "\n";
+            waypointData += WaypointToString(waypoint) + "\n";
         }
         mapIni.Set("Map Settings", "Waypoint_List",waypointData);
     }
@@ -1075,17 +1075,17 @@ public void DataToLog()
     String planetData = "";
     if(_planetList.Count > 0)
     {
-        for(int p = 0; p < _planetList.Count; p++)
+        foreach(Planet planet in _planetList)
         {
-            planetData += _planetList[p].ToString() + "\n";
+            planetData += planet.ToString() + "\n";
         }
     }
 
     if(_unchartedList.Count > 0)
     {
-        for(int u = 0; u < _unchartedList.Count; u++)
+        foreach(Planet uncharted in _unchartedList)
         {
-            planetData += _unchartedList[u].ToString() + "\n";
+            planetData += uncharted.ToString() + "\n";
         }
     }
 
@@ -1127,7 +1127,15 @@ public void LogWaypoint(String waypointName, String markerType)
         return;
     }
 
-    Waypoint waypoint = new Waypoint();
+    Waypoint waypoint = GetWaypoint(waypointName);
+
+    if(waypoint != null)
+    {
+        _statusMessage = "Waypoint " + waypointName + " already exists! Please choose different name.\n";
+        return;
+    }    
+    
+    waypoint = new Waypoint();
     waypoint.name = waypointName;
     waypoint.location = _myPos;
     waypoint.marker = markerType;
@@ -1141,33 +1149,13 @@ public void LogWaypoint(String waypointName, String markerType)
 // SET WAYPOINT STATE //
 public void SetWaypointState(String waypointName, int state)
 {
-    if(waypointName == "")
+    Waypoint waypoint = GetWaypoint(waypointName);
+    
+    if(waypoint == null)
     {
-        _statusMessage = "No waypoint name provided for activation command!\n";
+        _statusMessage = "No waypoint " + waypointName + " found.";
         return;
     }
-
-    List<Waypoint> nameList = new List<Waypoint>();
-    for(int w = 0; w < _waypointList.Count; w++)
-    {
-        if(_waypointList[w].name.ToUpper() == waypointName.ToUpper())
-        {
-            nameList.Add(_waypointList[w]);
-        }
-    }
-
-    if(nameList.Count == 0)
-    {
-        _statusMessage = "No waypoint " + waypointName + " found.\n";
-        return;
-    }
-
-    if(nameList.Count > 1)
-    {
-        _statusMessage = "Multiple Waypoints with name: " + waypointName + "!\nPlease rename additional waypoints.\n";
-    }
-
-    Waypoint waypoint = nameList[0];
 
     //State Switch: 0 => Deactivate, 1 => Activate, 2 => Toggle
     switch(state)
@@ -1194,12 +1182,19 @@ public void SetWaypointState(String waypointName, int state)
 }
 
 
-
 // NEW PLANET //
 public void NewPlanet(String planetName)
 {
+    Planet planet = GetPlanet(planetName);
+    
+    if(planet != null)
+    {
+        _statusMessage = "Planet " + planetName + " already exists! Please choose different name.\n";
+        return;
+    }
+
     planetName += ";;;;;;;";
-    Planet planet = new Planet(planetName);
+    planet = new Planet(planetName);
     planet.SetPoint(1, _myPos);
 
     _unchartedList.Add(planet);
@@ -1210,88 +1205,60 @@ public void NewPlanet(String planetName)
 // DELETE PLANET //
 public void DeletePlanet(String planetName)
 {
-    if(_unchartedList.Count > 0)
+    Planet alderaan = GetPlanet(planetName);
+
+    if(alderaan == null)
     {
-        for(int u = 0; u < _unchartedList.Count; u++)
-        {
-            if(_unchartedList[u].name.ToUpper() == planetName.ToUpper())
-            {
-                _unchartedList.Remove(_unchartedList[u]);
-                DataToLog();
-                _statusMessage = "Uncharted Planet Deleted: " + planetName + "\n";
-                return;
-            }
-        }
+        _statusMessage = "No planet " + planetName + " found!\n";
+        return;
     }
 
-    if(_planetList.Count > 0)
-    {
-        for(int p = 0; p < _planetList.Count; p++)
-        {
-            if(_planetList[p].name.ToUpper() == planetName.ToUpper())
-            {
-                _planetList.Remove(_planetList[p]);
-                DataToLog();
-                _statusMessage = "Planet Deleted: " + planetName + "\n";
-                return;
-            }
-        }
-    }
-
-    _statusMessage = "No planet " + planetName + " found!\n";
+    _unchartedList.Remove(alderaan);
+    _planetList.Remove(alderaan);
+    DataToLog();
+    _statusMessage = "Planet " + planetName + " deleted.\n";
 }
 
 
 // LOG NEXT //
 public void LogNext(String planetName)
 {
-    List<Planet> nameList = new List<Planet>();
-    if(_unchartedList.Count > 0)
+    Planet planet = GetPlanet(planetName);
+    
+    if(planet == null)
     {
-        for(int u = 0; u < _unchartedList.Count; u++)
-        {
-            if(_unchartedList[u].name.ToUpper() == planetName.ToUpper())
-            {
-                nameList.Add(_unchartedList[u]);
-            }
-        }
+        _statusMessage = "No planet " + planetName + " found.";
+        return;
+    }
 
-        if(nameList.Count == 0)
-        {
-            _statusMessage = "No planet " + planetName + " found!";
-            return;
-        }
+    String[] planetData = planet.ToString().Split(';');
 
-        if(nameList.Count > 1)
+    if(planetData[4] == "")
+    {
+        planet.SetPoint(1, _myPos);
+    }
+    else if(planetData[5] == "")
+    {
+        planet.SetPoint(2, _myPos);
+    }
+    else if(planetData[6] == "")
+    {
+        planet.SetPoint(3, _myPos);
+    }
+    else
+    {
+        planet.SetPoint(4, _myPos);
+        
+        if(!planet.isCharted)
         {
-            _statusMessage = "Multiple instances of " + planetName + " found!\nConsider renaming or deleting.\n";
-        }
-
-        Planet planet = nameList[0];
-        String[] planetData = planet.ToString().Split(';');
-
-        if(planetData[4] == "")
-        {
-            planet.SetPoint(1, _myPos);
-        }
-        else if(planetData[5] == "")
-        {
-            planet.SetPoint(2, _myPos);
-        }
-        else if(planetData[6] == "")
-        {
-            planet.SetPoint(3, _myPos);
-        }
-        else
-        {
-            planet.SetPoint(4, _myPos);
-            planet.CalculatePlanet();
             _planetList.Add(planet);
             _unchartedList.Remove(planet);
         }
 
-        DataToLog();
+        planet.CalculatePlanet();
     }
+
+    DataToLog();
 }
 
 
@@ -1313,34 +1280,16 @@ void SetPlanetColor(String argument)
         }
         planetName = planetName.Trim(' ').ToUpper();
 
-        if(_unchartedList.Count > 0)
+        Planet planet = GetPlanet(planetName);
+        
+        if(planet != null)
         {
-            for(int u = 0; u < _unchartedList.Count; u++)
-            {
-                if(_unchartedList[u].name.ToUpper() == planetName)
-                {
-                    _unchartedList[u].color = planetColor;
-                    _statusMessage = planetName + " color changed to " + planetColor + ".\n";
-                    DataToLog();
-                    return;
-                }
-            }
+            planet.color = planetColor;
+            _statusMessage = planetName + " color changed to " + planetColor + ".\n";
+            DataToLog();
+            return;
         }
-
-        if(_planetList.Count > 0)
-        {
-            for(int p = 0; p < _planetList.Count; p++)
-            {
-                if(_planetList[p].name.ToUpper() == planetName)
-                {
-                    _planetList[p].color = planetColor;
-                    _statusMessage = planetName + " color changed to " + planetColor + ".\n";
-                    DataToLog();
-                    return;
-                }
-            }
-        }
-
+        
         _statusMessage = "No planet " + planetName + " found.";
     }
 }
@@ -1461,9 +1410,9 @@ void CenterWorld(StarMap map)
 
         if(_planetList.Count > 0)
         {
-            for(int p = 0; p < _planetList.Count; p++)
+            foreach(Planet planet in _planetList)
             {
-                worldCenter += _planetList[p].center;
+                worldCenter += planet.center;
             }
 
             worldCenter /= _planetList.Count;
@@ -1631,6 +1580,51 @@ void PreviousPlanet(StarMap map)
     SelectPlanet(_planetList[_planetIndex], map);
 }
 
+// GET PLANET //
+Planet GetPlanet(string planetName)
+{
+    if(_unchartedList.Count > 0)
+    {
+        foreach(Planet uncharted in _unchartedList)
+        {
+            if(uncharted.name.ToUpper() == planetName.ToUpper())
+            {
+                return uncharted;
+            }
+        }
+    }
+
+    if(_planetList.Count > 0)
+    {
+        foreach(Planet planet in _planetList)
+        {
+            if(planet.name.ToUpper()== planetName.ToUpper())
+            {
+                return planet;
+            }
+        }
+    }
+
+    return null;
+}
+
+
+// GET WAYPOINT //
+Waypoint GetWaypoint(string waypointName)
+{
+    if(_waypointList.Count > 0)
+    {
+        foreach(Waypoint waypoint in _waypointList)
+        {
+            if(waypoint.name.ToUpper() == waypointName.ToUpper())
+            {
+                return waypoint;
+            }
+        }
+    }
+
+    return null;
+}
 
 // NEXT WAYPOINT //
 void NextWaypoint(StarMap map)
@@ -1854,6 +1848,11 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
                     bodyColor = new Color(205,133,63);
                     plumeColor = aftColor;
                     break;
+                case "RUST":
+                    aftColor = new Color(48,15,12);
+                    bodyColor = new Color(128,40,32);
+                    plumeColor = aftColor;
+                    break;
                 case "GRAY":
                     aftColor = new Color(48,48,48);
                     bodyColor = new Color(64,64,64);
@@ -1989,9 +1988,8 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
     PlanetSort(displayPlanets);
 
     Echo("\nDIPSLAYED PLANETS:");
-    for(int d = 0; d < displayPlanets.Count; d++)
+    foreach(Planet planet in displayPlanets)
     {
-        Planet planet = displayPlanets[d];
         Echo(planet.name);
 
         Vector2 planetPosition = PlotObject(planet.transformedCenter, map);
@@ -2040,6 +2038,10 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
             case "TAN":
                 surfaceColor = new Color(153,100,48);
                 lineColor = new Color(205,133,63);
+                break;
+            case "RUST":
+                surfaceColor = new Color(64,20,16);
+                lineColor = new Color(128,40,32);
                 break;
             case "GRAY":
                 surfaceColor = new Color(16,16,16);
@@ -2227,9 +2229,8 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
         }
     }
 
-    for(int h = 0; h < hashMarks.Count; h++)
+    foreach(Waypoint hash in hashMarks)
     {
-        Waypoint hash = hashMarks[h];
         Vector2 position = _viewport.Center + PlotObject(hash.transformedLocation, map);        
 
         // Print more detail for closer planets
@@ -2304,10 +2305,8 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
         fontSize *= 1.5f;
         markerSize *= 2;
     }
-    for(int w = 0; w < _waypointList.Count; w++)
+    foreach(Waypoint waypoint in _waypointList)
     {
-        Waypoint waypoint = _waypointList[w];
-
         if(waypoint.isActive)
         {
             float rotationMod = 0;
@@ -2578,9 +2577,8 @@ public void PlotUncharted(ref MySpriteDrawFrame frame, StarMap map)
 {
     if(_unchartedList.Count > 0)
     {
-        for(int u = 0; u < _unchartedList.Count; u++)
+        foreach(Planet planet in _unchartedList)
         {
-            Planet planet = _unchartedList[u];
             String[] planetData = planet.ToString().Split(';');
 
             for(int p = 4; p < 8; p++)
@@ -2615,11 +2613,11 @@ public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
 {
     //Get Nearest Planet on Screen
     Planet closest = planets[0];
-    for(int p = 0; p < planets.Count; p++)
+    foreach(Planet planet in planets)
     {
-        if(Vector2.Distance(shipPos, planets[p].mapPos) < Vector2.Distance(shipPos, closest.mapPos))
+        if(Vector2.Distance(shipPos, planet.mapPos) < Vector2.Distance(shipPos, closest.mapPos))
         {
-            closest = planets[p];
+            closest = planet;
         }
     }
 
@@ -2665,9 +2663,8 @@ void DisplayPlanetData()
 
     if(_planetList.Count > 0)
     {
-        for(int p = 0; p < _planetList.Count; p++)
+        foreach(Planet planet in _planetList)
         {
-            Planet planet = _planetList[p];
             float surfaceDistance = (Vector3.Distance(planet.center, _myPos) - planet.radius)/1000;
             if(surfaceDistance < 0)
             {
@@ -2693,9 +2690,8 @@ void DisplayPlanetData()
     {
         string unchartedHeader = "\n----Uncharted Planets----";
         planetData.Add(unchartedHeader);
-        for(int u = 0; u < _unchartedList.Count; u++)
+        foreach(Planet uncharted in _unchartedList)
         {
-            Planet uncharted = _unchartedList[u];
             float unchartedDistance = Vector3.Distance(_myPos, uncharted.GetPoint(1))/1000;
 
             string unchartedEntry = "  " + uncharted.name + "    dist: " + unchartedDistance.ToString("N1") + "km";
@@ -2720,9 +2716,8 @@ void DisplayWaypointData()
 
     if(_waypointList.Count > 0)
     {
-        for(int w = 0; w < _waypointList.Count; w++)
+        foreach(Waypoint waypoint in _waypointList)
         {
-            Waypoint waypoint = _waypointList[w];
             float distance = Vector3.Distance(_myPos, waypoint.location)/1000;
             string status = "Active";
             if(!waypoint.isActive)
@@ -3227,11 +3222,11 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
     //DRAW PLANETS
     List<Planet> displayPlanets = new List<Planet>();
 
-    for(int p = 0; p < _planetList.Count; p++)
+    foreach(Planet planet in _planetList)
     {
-        if(_planetList[p].transformedCenter.Z > map.depthOfField)
+        if(planet.transformedCenter.Z > map.depthOfField)
         {
-            displayPlanets.Add(_planetList[p]);
+            displayPlanets.Add(planet);
         }
     }
     DrawPlanets(displayPlanets, ref frame, map);
@@ -3463,18 +3458,16 @@ public void updateMap(StarMap map)
     Echo("Map Updated!");
     if(_planetList.Count > 0)
     {
-        for(int p = 0; p < _planetList.Count; p++)
+        foreach(Planet planet in _planetList)
         {
-            Planet planet = _planetList[p];
             planet.transformedCenter = transformVector(planet.center, map);
         }
     }
 
     if(_waypointList.Count > 0)
     {
-        for(int w = 0; w < _waypointList.Count; w++)
+        foreach(Waypoint waypoint in _waypointList)
         {
-            Waypoint waypoint = _waypointList[w];
             waypoint.transformedLocation = transformVector(waypoint.location, map);
         }
     }
