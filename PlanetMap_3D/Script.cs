@@ -1,9 +1,9 @@
 MyIni _mapLog = new MyIni();
-string _lcdName;
+string _mapTag;
 string _refName;
 string _dataName;
 string _previousCommand;
-int _lcdIndex;
+int _mapIndex;
 int _dataIndex;
 int _pageIndex;
 int _scrollIndex = 0;
@@ -16,6 +16,7 @@ bool _showNames;
 bool _lightOn;
 int _cycleStep;
 int _sortCounter = 0;
+float _brightnessMod;
 static string _statusMessage;
 string _activePlanet ="";
 string _activeWaypoint = "";
@@ -39,13 +40,13 @@ const int SHIP_SCALE = 24;
 const int MAX_PITCH = 90; // Maximum (+/-) value of map pitch.
 const int ANGLE_STEP = 5; // Temporary step for rotation commands.
 const float MOVE_STEP = 5000; // Temporary step for translation (move) commands.
-const int ZOOM_MAX = 1000000000; // Max value for Depth of Field
+const int ZOOM_MAX = 1000000000; // Max value for Focal Length
 const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out.
 const int MARKER_WIDTH = 8; // Width of GPS Markers
 const float DIAMETER_MIN = 6; //Minimum Diameter For Distant Planets
 const int HASH_LIMIT = 125; //Minimum diameter size to print Hashmarks on planet.
 const int DV_RADIUS = 262144; //Default View Radius
-const int DV_DOF = 256; //Default Depth of Field
+const int DV_FOCAL = 256; //Default Focal Length
 const int DV_ALTITUDE = -15; //Default Altitude (angle)
 const int CYCLE_LENGTH = 5; // Number of runs for delayed cycle
 const int BAR_HEIGHT = 20; //Default height of parameter bars
@@ -53,9 +54,9 @@ const int TOP_MARGIN = 8; // Margin for top and bottom of frame
 const int SIDE_MARGIN = 15; // Margin for sides of frame
 const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 3;  // Number of Data Display Pages
-
-const string DEFAULT_SETTINGS = "[Map Settings]\nLCD_Name=[MAP]\nLCD_Index=0\nData_Index=0\nReference_Name=[Reference]\nData_Name=[Map Data]\nPlanet_List=\nWaypoint_List=\n";
-string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nDepthOfField="+DV_DOF+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="+DV_ALTITUDE;
+const int BRIGHTNESS_LIMIT = 4;
+const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
+string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="+DV_ALTITUDE;
 
 
 // CLASSES //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,7 +70,7 @@ public class StarMap
     public int altitude;
     public int azimuth;
     public int rotationalRadius;
-    public int depthOfField;
+    public int focalLength;
     public int azSpeed; // Rotational velocity of Azimuth
 
     public StarMap()
@@ -107,14 +108,14 @@ public class StarMap
         return this.rotationalRadius;
     }
 
-    public void SetDepthOfField(int value)
+    public void SetFocalLength(int value)
     {
-        this.depthOfField = value;
+        this.focalLength = value;
     }
 
-    public int GetDepthOfField()
+    public int GetFocalLength()
     {
-        return this.depthOfField;
+        return this.focalLength;
     }
 
     public void SetAzimuth(int value)
@@ -534,6 +535,7 @@ public Program()
       _showMapParameters = bool.Parse(loadData[4]);
       _showNames = bool.Parse(loadData[5]);
       _pageIndex = int.Parse(loadData[6]);
+      _brightnessMod = float.Parse(loadData[7]);
     }
     else
     {
@@ -545,6 +547,7 @@ public Program()
         _showMapParameters = true;
         _showNames = true;
         _pageIndex = 0;
+        _brightnessMod = 1;
     }
 
     // Start with indicator light on.
@@ -576,10 +579,10 @@ public Program()
         throw new Exception(result.ToString());
 
     //Name of screen to print map to.
-    _lcdName =  _mapLog.Get("Map Settings", "LCD_Name").ToString();
+    _mapTag =  _mapLog.Get("Map Settings", "MAP_Tag").ToString();
 
     //Index of screen to print map to.
-    _lcdIndex = _mapLog.Get("Map Settings","LCD_Index").ToUInt16();
+    _mapIndex = _mapLog.Get("Map Settings","MAP_Index").ToUInt16();
 
     //Index of screen to print map data to.
     _dataIndex = _mapLog.Get("Map Settings","Data_Index").ToUInt16();
@@ -588,7 +591,7 @@ public Program()
     _refName = _mapLog.Get("Map Settings", "Reference_Name").ToString();
 
     //Name of Data Display Block
-    _dataName = _mapLog.Get("Map Settings", "Data_Name").ToString();
+    _dataName = _mapLog.Get("Map Settings", "Data_Tag").ToString();
 
     string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
 
@@ -611,6 +614,7 @@ public Program()
 
     string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
     string [] gpsEntries = waypointData.Split('\n');
+    
     foreach(string waypointString in gpsEntries)
     {
         if(waypointString.Contains(";"))
@@ -620,29 +624,14 @@ public Program()
         }
     }
 
-
-    if(_lcdName == "" || _lcdName == "<name>")
+    if(_mapTag == "" || _mapTag == "<name>")
     {
        Echo("No LCD specified!!!");
     }
     else
     {
-        GridTerminalSystem.SearchBlocksOfName(_lcdName, _mapBlocks);
-        if(_mapBlocks.Count > 0)
-        {
-            IMyTextSurfaceProvider mapBlock = _mapBlocks[0] as IMyTextSurfaceProvider;
-            _drawingSurface = mapBlock.GetSurface(_lcdIndex);
-            PrepareTextSurfaceForSprites(_drawingSurface);
-            Echo("MAP BLOCKS:");
-            Echo(_mapBlocks[0].CustomName);
-
-            StarMap myMap = parametersToMap(_mapBlocks[0]);
-            updateMap(myMap);            
-        }
-        else
-        {
-            _statusMessage = "No valid Map Blocks Found!";
-        }
+        GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
+        activateMap();
     }
 
     if(_dataName != "" || _dataName != "<name>")
@@ -677,12 +666,6 @@ public Program()
         }
     }
 
-    // Calculate the viewport offset by centering the surface size onto the texture size
-    _viewport = new RectangleF(
-        (_drawingSurface.TextureSize - _drawingSurface.SurfaceSize) / 2f,
-        _drawingSurface.SurfaceSize
-    );
-
     _previousCommand = "NEWLY LOADED";
 
      // Set the continuous update frequency of this script
@@ -694,7 +677,7 @@ public void Save()
 {
     String saveData = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString();
     saveData += "\n" + Vector3ToString(_trackSpeed) + "\n" + _showMapParameters.ToString() + "\n" + _showNames.ToString();
-    saveData += "\n" + _pageIndex.ToString();
+    saveData += "\n" + _pageIndex.ToString() + "\n" + _brightnessMod.ToString();
 
     Storage = saveData;
 }
@@ -709,8 +692,7 @@ public void Main(string argument)
     Echo(_previousCommand);
     Echo(_statusMessage);
     
-    Echo("Active LCD: " + _lcdName);
-    Echo("LCD Index: " + _lcdIndex);
+    Echo("MAP Index: " + _mapIndex);
 
     if(_planetList.Count > 0)
     {
@@ -731,7 +713,7 @@ public void Main(string argument)
     {
         Echo("No Waypoints Logged!");
     }
-
+    
     if(_mapBlocks.Count >0)
     {
         // Begin a new frame
@@ -976,12 +958,18 @@ public void Main(string argument)
                 case "SCROLL_UP":
                     _scrollIndex--;
                     if(_scrollIndex < 0)
-                    {
                         _scrollIndex = 0;
-                    }
                     break;
                 case "SCROLL_HOME":
                     _scrollIndex = 0;
+                    break;
+                case "BRIGHTEN":
+                    if(_brightnessMod < BRIGHTNESS_LIMIT)
+                        _brightnessMod += 0.25f;
+                    break;
+                case "DARKEN":
+                    if(_brightnessMod > 1)
+                        _brightnessMod -= 0.25f;
                     break;
                 default:
                     _statusMessage = "UNRECOGNIZED COMMAND!";
@@ -992,17 +980,17 @@ public void Main(string argument)
             mapToParameters(myMap, mapBlock);
         }
 
-
         // All sprites must be added to the frame here
         DrawSprites(ref frame, myMap);
-
 
         // We are done with the frame, send all the sprites to the text panel
         frame.Dispose();
     }
     else
     {
-        Echo("No Displays found!");
+        _statusMessage = "NO MAP DISPLAY FOUND!\nPlease add tag " + _mapTag + " to desired block.\n";
+        GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
+        activateMap();
     }
 
     if(_dataBlocks.Count > 0)
@@ -1043,7 +1031,7 @@ public StarMap parametersToMap(IMyTerminalBlock mapBlock)
     StarMap map = new StarMap();
 
     map.center = StringToVector3(lcdIni.Get("mapDisplay","Center").ToString());
-    map.depthOfField = lcdIni.Get("mapDisplay","DepthOfField").ToInt32();
+    map.focalLength = lcdIni.Get("mapDisplay","FocalLength").ToInt32();
     map.rotationalRadius = lcdIni.Get("mapDisplay","RotationalRadius").ToInt32();
     map.azimuth = lcdIni.Get("mapDisplay", "Azimuth").ToInt32();
     map.altitude = lcdIni.Get("mapDisplay", "Altitude").ToInt32();
@@ -1108,7 +1096,7 @@ public void mapToParameters(StarMap map, IMyTerminalBlock mapBlock)
         throw new Exception(result.ToString());
 
     lcdIni.Set("mapDisplay", "Center", Vector3ToString(map.center));
-    lcdIni.Set("mapDisplay", "DepthOfField", map.depthOfField);
+    lcdIni.Set("mapDisplay", "FocalLength", map.focalLength);
     lcdIni.Set("mapDisplay", "RotationalRadius", map.rotationalRadius);
     lcdIni.Set("mapDisplay", "Azimuth", map.azimuth);
     lcdIni.Set("mapDisplay", "Altitude", map.altitude);
@@ -1295,10 +1283,10 @@ void SetPlanetColor(String argument)
 }
 
 
-// ZOOM IN // Increase Map's Depth of Field
+// ZOOM IN // Increase Map's Focal Length
 void zoomIn(StarMap map)
 { 
-    int doF = map.depthOfField;
+    int doF = map.focalLength;
     int newScale = doF*ZOOM_STEP;
     if (newScale < ZOOM_MAX)
     {
@@ -1309,14 +1297,14 @@ void zoomIn(StarMap map)
         doF = ZOOM_MAX;
     }
 
-    map.depthOfField = doF;
+    map.focalLength = doF;
 }
 
 
-// ZOOM OUT //    Decrease Map's Depth of Field
+// ZOOM OUT //    Decrease Map's Focal Length
 void zoomOut(StarMap map)
 { 
-    int doF = map.depthOfField;
+    int doF = map.focalLength;
     int newScale = doF/ZOOM_STEP;
     
     // Make sure no rollover error.
@@ -1329,7 +1317,7 @@ void zoomOut(StarMap map)
         doF = 1;
     }
 
-    map.depthOfField = doF;
+    map.focalLength = doF;
 }
 
 
@@ -1338,9 +1326,9 @@ void reduceRadius(StarMap map)
 {
     map.rotationalRadius /= 2;
 
-    if(map.rotationalRadius < map.depthOfField)
+    if(map.rotationalRadius < map.focalLength)
     {
-        map.rotationalRadius = map.depthOfField;
+        map.rotationalRadius = map.focalLength;
     }
 }
 
@@ -1404,7 +1392,7 @@ void CenterWorld(StarMap map)
     {
         map.altitude = -15;
         map.azimuth = 45;
-        map.depthOfField = 256;
+        map.focalLength = 256;
         map.rotationalRadius = 4194304;
         Vector3 worldCenter = new Vector3(0,0,0);
 
@@ -1434,11 +1422,11 @@ void CenterShip(StarMap map)
 // PLANET MODE //
 void PlanetMode(StarMap map)
 {
-    map.depthOfField = DV_DOF;
+    map.focalLength = DV_FOCAL;
 
     if(_viewport.Width > 500)
     {
-        map.depthOfField *= 4;
+        map.focalLength *= 4;
     }
 
     if(_planetList.Count > 0)
@@ -1450,8 +1438,12 @@ void PlanetMode(StarMap map)
 
         if(planet.radius < 30000)
         {
-            map.depthOfField *= 4;
+            map.focalLength *= 4;
         }
+    }
+    else
+    {
+        map.mode = "FREE";
     }
 
     map.rotationalRadius = DV_RADIUS;
@@ -1513,16 +1505,19 @@ void PreviousMode(StarMap map)
 
 // SHIP TO PLANET //   Aligns the map so that the ship appears above the center of the planet.
 void ShipToPlanet(Planet planet, StarMap map)
-{    
-    Vector3 shipVector = _myPos - planet.center;
-    float magnitude = Vector3.Distance(_myPos, planet.center);
+{
+    if(_planetList.Count > 0)
+    {
+        Vector3 shipVector = _myPos - planet.center;
+        float magnitude = Vector3.Distance(_myPos, planet.center);
 
-    float azAngle = (float) Math.Atan2(shipVector.Z,shipVector.X);
-    float altAngle = (float) Math.Asin(shipVector.Y/magnitude);
+        float azAngle = (float) Math.Atan2(shipVector.Z,shipVector.X);
+        float altAngle = (float) Math.Asin(shipVector.Y/magnitude);
 
-    map.center = planet.center;
-    map.azimuth = degreeAdd((int) toDegrees(azAngle),90);
-    map.altitude = (int) toDegrees(-altAngle);
+        map.center = planet.center;
+        map.azimuth = degreeAdd((int) toDegrees(azAngle),90);
+        map.altitude = (int) toDegrees(-altAngle);
+    }
 }
 
 
@@ -1532,11 +1527,11 @@ void DefaultView(StarMap map)
     map.mode = "FREE";
 
     map.center = new Vector3(0,0,0);
-    map.depthOfField = DV_DOF;
+    map.focalLength = DV_FOCAL;
 
     if(_viewport.Width > 500)
     {
-        map.depthOfField *= 4;
+        map.focalLength *= 4;
     }
 
     map.rotationalRadius = DV_RADIUS;
@@ -1673,7 +1668,7 @@ void SelectPlanet(Planet planet, StarMap map)
     _activePlanet = planet.name;
     if(planet.radius < 30000)
     {
-        map.depthOfField *= 4;
+        map.focalLength *= 4;
     }
 }
 
@@ -1704,7 +1699,7 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
         }
     }
 
-    bool offZ = transformedShip.Z < map.depthOfField;
+    bool offZ = transformedShip.Z < map.focalLength;
     bool leftX = shipX < -_viewport.Width/2 || (offZ && shipX < 0);
     bool rightX = shipX > _viewport.Width/2 || (offZ && shipX >= 0);
     bool aboveY = shipY < -_viewport.Height/2 + vertMod || (offZ && shipY < 0);
@@ -1718,6 +1713,18 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
         float posY;
         float rotation = 0;
         int pointerScale = SHIP_SCALE/2;
+
+
+        if(offZ)
+        {
+            bodyColor = Color.DarkRed;
+            shipX *= -1;
+            shipY *= -1;
+        }
+        else
+        {
+            bodyColor = Color.DodgerBlue;
+        }
 
         if(leftX)
         {
@@ -1736,12 +1743,12 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 
         if(aboveY)
         {
-            posY = vertMod + TOP_MARGIN  + (_viewport.Width - _viewport.Height)/2; //1.75f * SHIP_SCALE + 
+            posY = vertMod + TOP_MARGIN  + _viewport.Center.Y - _viewport.Height/2; //1.75f * SHIP_SCALE + 
             rotation = 0;
         }
         else if(belowY)
         {
-            posY = _viewport.Height - vertMod - TOP_MARGIN  + (_viewport.Width - _viewport.Height)/2; //+ 1.25f * SHIP_SCALE 
+            posY = _viewport.Center.Y + _viewport.Height/2 - vertMod - TOP_MARGIN; //+ 1.25f * SHIP_SCALE 
             rotation = (float) Math.PI;
         }
         else
@@ -1754,14 +1761,6 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
             rotation = (float) Math.Atan2(shipY, shipX);
         }
 
-        if(offZ)
-        {
-            bodyColor = Color.DarkRed;
-        }
-        else
-        {
-            bodyColor = Color.DodgerBlue;
-        }
 
         //OFF MAP POINTER
         var sprite = new MySprite()
@@ -1871,6 +1870,11 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
             }
         }
 
+        aftColor *= _brightnessMod;
+        bodyColor *= _brightnessMod;
+        plumeColor *= _brightnessMod;
+
+
         // Ship Heading
         float headingX = heading.X;
         float headingY = heading.Y;
@@ -1972,7 +1976,7 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 // PLOT OBJECT //
 public Vector2 PlotObject(Vector3 pos, StarMap map)
 {
-    float zFactor = map.depthOfField/pos.Z;
+    float zFactor = map.focalLength/pos.Z;
 
     float plotX = pos.X*zFactor;
     float plotY = pos.Y*zFactor;
@@ -1987,7 +1991,7 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 {
     PlanetSort(displayPlanets);
 
-    Echo("\nDIPSLAYED PLANETS:");
+    Echo("\nDISPLAYED PLANETS:");
     foreach(Planet planet in displayPlanets)
     {
         Echo(planet.name);
@@ -2056,6 +2060,9 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
                 lineColor = new Color(192,192,192);                
                 break;
         }
+
+        surfaceColor *= _brightnessMod;
+        lineColor *= _brightnessMod;
 
         Vector2 startPosition = _viewport.Center + planetPosition;
 
@@ -2158,7 +2165,7 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
                 Data = planet.name,
                 Position = position,
                 RotationOrScale = fontMod*0.8f,
-                Color = Color.Yellow,
+                Color = Color.Yellow*_brightnessMod,
                 Alignment = TextAlignment.CENTER /* Center the text on the position */,
                 FontId = "White"
             };
@@ -2347,9 +2354,11 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                     break;
             }
             
-            if(waypoint.transformedLocation.Z > map.depthOfField)
+            if(waypoint.transformedLocation.Z > map.focalLength)
             {
                 Vector2 position = startPosition - new Vector2(markerSize/2,0);
+
+                markerColor *= _brightnessMod;
 
                 // PRINT MARKER
                 var sprite = new MySprite()
@@ -2436,7 +2445,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                         Position = position,
                         RotationOrScale = rotationMod,
                         Size=  new Vector2(markerSize*1.15f,markerSize*1.15f), 
-                        Color = new Color(0,64,64),
+                        Color = new Color(0,64,64)*_brightnessMod,
                     };
                     frame.Add(sprite);
                     position += new Vector2(0.25f * markerSize,-0.33f * markerSize);
@@ -2453,7 +2462,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                         Position = position,
                         RotationOrScale = rotationMod,
                         Size=  markerScale, 
-                        Color = new Color(32,32,32),
+                        Color = new Color(32,32,32)*_brightnessMod,
                     };
                     frame.Add(sprite);
 
@@ -2466,7 +2475,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                         Position = position,
                         RotationOrScale = rotationMod,
                         Size=  markerScale, 
-                        Color = new Color(32,32,32),
+                        Color = new Color(32,32,32)*_brightnessMod,
                     };
                     frame.Add(sprite);
 
@@ -2484,7 +2493,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
                         Data = waypoint.name,
                         Position = position,
                         RotationOrScale = fontSize,
-                        Color = Color.White,
+                        Color = Color.White*_brightnessMod,
                         Alignment = TextAlignment.LEFT,
                         FontId = "White"
                     };
@@ -2517,7 +2526,7 @@ public void DrawSurfacePoint(Vector3 surfacePoint, int pointNumber, ref MySprite
     }
 
     Vector3 pointTransformed = transformVector(surfacePoint, map);
-    if(pointTransformed.Z > map.depthOfField)
+    if(pointTransformed.Z > map.focalLength)
     {
         float markerScale = MARKER_WIDTH * 2;
         float textSize = 0.6f;
@@ -2597,7 +2606,7 @@ float ProjectDiameter(Planet planet, StarMap map)
 {
     float viewAngle = (float) Math.Asin(planet.radius/planet.transformedCenter.Z);
 
-    float diameter = (float) Math.Tan(Math.Abs(viewAngle)) * 2 * map.depthOfField;
+    float diameter = (float) Math.Tan(Math.Abs(viewAngle)) * 2 * map.focalLength;
 
     if(diameter < DIAMETER_MIN)
     {
@@ -2623,7 +2632,7 @@ public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
 
     String color = "NONE";
     float distance = Vector2.Distance(shipPos, closest.mapPos);
-    float radius = 0.95f * closest.radius*map.depthOfField/closest.transformedCenter.Z;
+    float radius = 0.95f * closest.radius*map.focalLength/closest.transformedCenter.Z;
 
     if(distance < radius && closest.transformedCenter.Z < transformVector(_myPos, map).Z)
     {
@@ -2777,8 +2786,9 @@ void DisplayMapData()
         mapData.Add(hidden);
         mapData.Add("   Center: " + Vector3ToString(map.center));
         mapData.Add("   Azimuth: " + map.azimuth + "°   Altitude: " + map.altitude * -1 + "°");
-        mapData.Add("   Depth of Field: " + abbreviateValue(map.depthOfField));
+        mapData.Add("   Focal Length: " + abbreviateValue(map.focalLength));
         mapData.Add("   Rotational Radius: " + abbreviateValue(map.rotationalRadius));
+        mapData.Add("   Brightness: " + _brightnessMod);
         mapData.Add("   Dimensions: " + _viewport.Height + " x " + _viewport.Width);
 
         output += ScrollToString(mapData);
@@ -3154,7 +3164,7 @@ public void cycleExecute(StarMap map)
         //Toggle Indicator LightGray
         _lightOn = !_lightOn;
 
-        if(map.mode.ToUpper() == "PLANET")
+        if(map.mode.ToUpper() == "PLANET" && _planetList.Count > 0)
         {
             //Sort Planets by proximity to ship.
             SortByNearest(_planetList);
@@ -3224,7 +3234,7 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 
     foreach(Planet planet in _planetList)
     {
-        if(planet.transformedCenter.Z > map.depthOfField)
+        if(planet.transformedCenter.Z > map.focalLength)
         {
             displayPlanets.Add(planet);
         }
@@ -3274,7 +3284,9 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     }
 
     //TOP BAR
-    var position = new Vector2(0,_viewport.Width/2 - _viewport.Height/2 + barHeight/2);
+    var position = _viewport.Center;
+    position -= new Vector2(_viewport.Width/ 2, _viewport.Height/2 - barHeight/2);
+
     var sprite = new MySprite()
     {
         Type = SpriteType.TEXTURE,
@@ -3356,7 +3368,14 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     }
 
     // BOTTOM BAR
-    position = new Vector2(0,_viewport.Width/2 + _viewport.Height/2 - barHeight/2);
+    position = _viewport.Center;
+    position -= new Vector2(_viewport.Width/ 2, barHeight/2 - _viewport.Height/2);
+    
+    if(_viewport.Width == 1024)
+    {
+        position = new Vector2(0, _viewport.Height - barHeight/2);
+    }
+    
     sprite = new MySprite()
     {
         Type = SpriteType.TEXTURE,
@@ -3367,10 +3386,10 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
     };
     frame.Add(sprite);
         
-    // DEPTH OF FIELD READING
+    // FOCAL LENGTH READING
     position += new Vector2(SIDE_MARGIN,-TOP_MARGIN);
 
-    string dofReading = "DoF:" + abbreviateValue((float)map.depthOfField);
+    string dofReading = "FL:" + abbreviateValue((float)map.focalLength);
 
     sprite = new MySprite()
     {
@@ -3455,7 +3474,6 @@ public static int degreeAdd(int angle_A, int angle_B)
 // UPDATE MAP // Transform logged locations based on map parameters
 public void updateMap(StarMap map)
 {
-    Echo("Map Updated!");
     if(_planetList.Count > 0)
     {
         foreach(Planet planet in _planetList)
@@ -3470,5 +3488,25 @@ public void updateMap(StarMap map)
         {
             waypoint.transformedLocation = transformVector(waypoint.location, map);
         }
+    }
+}
+
+// ACTIVATE MAP // activates tagged map screen without having to recompile.
+void activateMap()
+{
+    if(_mapBlocks.Count > 0)
+    {
+        IMyTextSurfaceProvider mapBlock = _mapBlocks[0] as IMyTextSurfaceProvider;
+        _drawingSurface = mapBlock.GetSurface(_mapIndex);
+        PrepareTextSurfaceForSprites(_drawingSurface);
+        _statusMessage = "MAP BLOCKS: " + _mapBlocks[0].CustomName;
+        StarMap myMap = parametersToMap(_mapBlocks[0]);
+        updateMap(myMap);
+
+        // Calculate the viewport offset by centering the surface size onto the texture size
+        _viewport = new RectangleF(
+        (_drawingSurface.TextureSize - _drawingSurface.SurfaceSize) / 2f,
+            _drawingSurface.SurfaceSize
+        );
     }
 }
