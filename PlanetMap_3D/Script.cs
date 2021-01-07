@@ -110,6 +110,7 @@ public class StarMap
 	public int dAz;
 	public IMyTextSurface drawingSurface;
 	public RectangleF viewport;
+	public IMyTerminalBlock block;
 	//public MySpriteDrawFrame frame;
 
 	public StarMap()
@@ -517,7 +518,7 @@ public Program()
 		{
 			IMyTextSurfaceProvider mapBlock = _mapBlocks[m] as IMyTextSurfaceProvider;
 			StarMap map = parametersToMap(mapBlock as IMyTerminalBlock);
-			activateMap(mapBlock, map);
+			activateMap(map);
 			//_mapList.Add(map);
 			//updateMap(map);
 		}
@@ -633,7 +634,7 @@ public void Main(string argument)
 		if (_previousCommand == "NEWLY LOADED" || _azSpeed != 0 || _trackSpeed != _origin)
 		{
 			updateMap(myMap);
-			mapToParameters(myMap, mapBlock);
+			mapToParameters(myMap);
 		}
 
 		if (argument != "")
@@ -907,7 +908,7 @@ public void Main(string argument)
 			}
 
 			updateMap(myMap);
-			mapToParameters(myMap, mapBlock);
+			mapToParameters(myMap);
 		}
 
 		// All sprites must be added to the frame here
@@ -959,6 +960,7 @@ public StarMap parametersToMap(IMyTerminalBlock mapBlock)
 		throw new Exception(result.ToString());
 
 	StarMap map = new StarMap();
+	map.block = mapBlock;
 
 	map.center = StringToVector3(lcdIni.Get("mapDisplay","Center").ToString());
 	map.focalLength = lcdIni.Get("mapDisplay","FocalLength").ToInt32();
@@ -1018,13 +1020,14 @@ public List<StarMap> parametersToMaps(IMyTerminalBlock mapBlock)
 	List<string> fLengths = StringToEntries(lcdIni.Get("mapDisplay","FocalLength").ToString(), ',', iLength, DV_FOCAL.ToString());
 	List<string> radii = StringToEntries(lcdIni.Get("mapDisplay","RotationalRadius").ToString(), ',', iLength, DV_RADIUS.ToString());
 	List<string> azimuths = StringToEntries(lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', iLength, "0");
-	List<string> altitudes = StringToEntries(lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', iLength, "15");
+	List<string> altitudes = StringToEntries(lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', iLength, DV_ALTITUDE.ToString());
 	List<string> modes = StringToEntries(lcdIni.Get("mapDisplay","Mode").ToString(), ',', iLength, "FREE");
 	
 	//assemble maps by position in string lists.
 	for(int i = 0; i < iLength; i++)
 	{
 		StarMap map = new StarMap();
+		map.block = mapBlock;
 		map.center = StringToVector3(centers[i]);
 		map.focalLength = int.Parse(fLengths[i]);
 		map.rotationalRadius = int.Parse(radii[i]);
@@ -1084,22 +1087,43 @@ public void DataToLog()
 
 
 // MAP TO PARAMETERS // Writes map object to CustomData of Display Block
-public void mapToParameters(StarMap map, IMyTerminalBlock mapBlock)
+public void mapToParameters(StarMap map)
 {
 	MyIni lcdIni = new MyIni();
 
 	MyIniParseResult result;
-	if (!lcdIni.TryParse(mapBlock.CustomData, out result)) 
+	if (!lcdIni.TryParse(map.block.CustomData, out result)) 
 		throw new Exception(result.ToString());
-
-	lcdIni.Set("mapDisplay", "Center", Vector3ToString(map.center));
-	lcdIni.Set("mapDisplay", "FocalLength", map.focalLength);
-	lcdIni.Set("mapDisplay", "RotationalRadius", map.rotationalRadius);
-	lcdIni.Set("mapDisplay", "Azimuth", map.azimuth);
-	lcdIni.Set("mapDisplay", "Altitude", map.altitude);
-	lcdIni.Set("mapDisplay", "Mode", map.mode);
-
-	mapBlock.CustomData = lcdIni.ToString();
+	
+	int i = map.index;
+	
+	// Read the old Ini Data and split into string arrays. Insert the new data into the arrays.
+	string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), ';', i);
+	string newModes = InsertEntry(map.mode, lcdIni.Get("mapDisplay", "Mode").ToString(), ',', i);
+	string newFocal = InsertEntry(map.focalLength.ToString(), lcdIni.Get("mapDisplay", "FocalLength").ToString(), ',', i);
+	string newRadius = InsertEntry(map.rotationalRadius.ToString(), lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', i);
+	string newAzimuth = InsertEntry(map.azimuth.ToString(), lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', i);
+	string newAltitude = InsertEntry(map.altitude.ToString(), lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', i);
+	string newIndexes = InsertEntry(map.index.ToString(), lcdIni.Get("mapDisplay", "Indexes").ToString(), ',', i);
+	string newDX = InsertEntry(map.dX.ToString(), lcdIni.Get("mapDisplay", "dX").ToString(), ',', i);
+	string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), ',', i);
+	string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), ',', i);
+	string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), ',', i);
+	
+	// Update the Ini Data.
+	lcdIni.Set("mapDisplay", "Center", newCenters);
+	lcdIni.Set("mapDisplay", "Mode", newModes);
+	lcdIni.Set("mapDisplay", "FocalLength", newFocal);
+	lcdIni.Set("mapDisplay", "RotationalRadius", newRadius);
+	lcdIni.Set("mapDisplay", "Azimuth", newAzimuth);
+	lcdIni.Set("mapDisplay", "Altitude", newAltitude);
+	lcdIni.Set("mapDisplay", "Indexes", newIndexes);
+	lcdIni.Set("mapDisplay", "dX", newDX);
+	lcdIni.Set("mapDisplay", "dY", newDY);
+	lcdIni.Set("mapDisplay", "dZ", newDZ);
+	lcdIni.Set("mapDisplay", "dAz", newDAz);
+	
+	map.block.CustomData = lcdIni.ToString();
 }
 
 
@@ -2957,6 +2981,37 @@ void PreviousPage()
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// INSERT ENTRY //
+public string InsertEntry(string entry, string oldString, char separator, int index)
+{
+	string newString;
+	
+	string[] entries = oldString.Split(separator);
+	
+	// If there's only one entry in the string return entry.
+	if(entries.Length == 1 && index == 0)
+	{
+		return entry;
+	}
+	
+	// If index is out of bounds, log error and return original string.
+	if(index >= entries.Length)
+	{
+		_statusMessage = "INSERT INDEX Out of Bounds: " + oldString + " " + index + " " + entry;
+		return oldString;
+	}
+	
+	//Insert entry into the old string.
+	entries[index] = entry;
+	
+	newString = entries[0];
+	for(int n = 1; n < entries.Length; n++)
+	{
+		newString += separator + entries[n];
+	}
+	
+	return newString;	
+}
 
 // STRING TO ENTRIES //		Splits string into a list of variable length, by a separator character.  If the list is shorter than 
 					//		the desired length,the remainder is filled with copies of the place holder.
@@ -3648,11 +3703,12 @@ public void updateMap(StarMap map)
 }
 
 // ACTIVATE MAP // activates tagged map screen without having to recompile.
-void activateMap(IMyTextSurfaceProvider mapBlock, StarMap map)
+void activateMap(StarMap map)
 {
 	//if(_mapBlocks.Count > 0)
 	//{
-		map.drawingSurface = mapBlock.GetSurface(_mapIndex);
+		IMyTextSurfaceProvider mapBlock = map.block as IMyTextSurfaceProvider;
+		map.drawingSurface = mapBlock.GetSurface(map.index);
 		PrepareTextSurfaceForSprites(map.drawingSurface);
 		//_statusMessage = "MAP BLOCKS: " + mapBlock.CustomName;
 		//map = parametersToMap(mapBlock);
