@@ -609,13 +609,6 @@ public void Main(string argument)
 		IMyTerminalBlock mapBlock = _mapBlocks[0] as IMyTerminalBlock;
 		//StarMap myMap = parametersToMap(mapBlock);
 		StarMap myMap = _mapList[0];
-		
-		_drawingSurface = myMap.drawingSurface;
-		
-		// Begin a new frame
-		MySpriteDrawFrame frame = _drawingSurface.DrawFrame();
-		
-
 
 		//Add rotational Speed
 		if(myMap.mode.ToUpper() != "PLANET")
@@ -910,12 +903,19 @@ public void Main(string argument)
 			updateMap(myMap);
 			mapToParameters(myMap);
 		}
-
-		// All sprites must be added to the frame here
-		DrawSprites(ref frame, myMap);
-
-		// We are done with the frame, send all the sprites to the text panel
-		frame.Dispose();
+		foreach(StarMap map in _mapList)
+		{
+			_drawingSurface = map.drawingSurface;
+		
+			// Begin a new frame
+			MySpriteDrawFrame frame = map.drawingSurface.DrawFrame();
+			
+			// All sprites must be added to the frame here
+			DrawSprites(ref frame, map);
+			
+			// We are done with the frame, send all the sprites to the text panel
+			frame.Dispose();
+		}
 	}
 	else
 	{
@@ -2305,10 +2305,11 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 // DRAW HASHMARKS //   Makes series of low-profile waypoints to denote latitude and longitude on planets.
 public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map, ref MySpriteDrawFrame frame)
 {
+	Echo("Map " + map.number + ": " + planet.name);
 	List<Waypoint> hashMarks = new List<Waypoint>();
-
-	float planetDepth = planet.transformedCoords[map.number].Z;
 	
+	float planetDepth = planet.transformedCoords[map.number].Z;
+	Echo(Vector3ToString(planet.transformedCoords[map.number]));
 	//North Pole
 	Waypoint north = new Waypoint();
 	north.name = "N -";
@@ -2362,14 +2363,15 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
 			}
 		}
 	}
-
+	Echo("--- 1 ---");
 	foreach(Waypoint hash in hashMarks)
 	{
-		Vector2 position = map.viewport.Center + PlotObject(hash.transformedCoords[map.number], map);		
+		Vector2 position = map.viewport.Center + PlotObject(hash.transformedCoords[0], map);		
 
 		// Print more detail for closer planets
 		if(diameter > 2 * HASH_LIMIT)
 		{
+			Echo("--- 2 ---");
 			String[] hashLabels = hash.name.Split(' ');
 			float textMod = 1;
 			int pitchMod = 1;
@@ -3519,7 +3521,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 		Position = position,
 		RotationOrScale = fontSize,
 		Color = Color.White,
-		Alignment = TextAlignment.LEFT /* Center the text on the position */,
+		Alignment = TextAlignment.LEFT,
 		FontId = "White"
 	};
 	frame.Add(sprite);
@@ -3539,7 +3541,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 		Position = position,
 		RotationOrScale = fontSize,
 		Color = Color.White,
-		Alignment = TextAlignment.CENTER /* Center the text on the position */,
+		Alignment = TextAlignment.CENTER,
 		FontId = "White"
 	};
 	frame.Add(sprite);
@@ -3561,6 +3563,24 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 		};
 		frame.Add(sprite); 
 	}
+	
+	// MAP ID
+	position -= new Vector2(5,7);
+	
+	string mapID = "[" + map.number + "]";
+	
+	sprite = new MySprite()
+	{
+		Type = SpriteType.TEXT,
+		Data = mapID,
+		Position = position,
+		RotationOrScale = fontSize,
+		Color = Color.White,
+		Alignment = TextAlignment.RIGHT,
+		FontId = "White"
+	};
+	frame.Add(sprite);
+	
 
 	// BOTTOM BAR
 	position = map.viewport.Center;
