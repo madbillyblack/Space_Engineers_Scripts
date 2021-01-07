@@ -641,7 +641,11 @@ public void Main(string argument)
 			_previousCommand = "Command: " + argument;
 
 			// If there are multiple words in the argument. Combine the latter words into the entity name.
-			if(args.Length > 1)
+			if(args.Length == 1)
+			{
+				entityName = "0";
+			}
+			else if(args.Length > 1)
 			{
 				entityName = args[1];
 				if(args.Length > 2)
@@ -656,10 +660,10 @@ public void Main(string argument)
 			switch(command)
 			{
 				case "ZOOM_IN":
-					zoomIn(myMap);
+					zoomIn(entityName);
 					break;
 				case "ZOOM_OUT":
-					zoomOut(myMap);
+					zoomOut(entityName);
 					break;
 				case "MOVE_LEFT":
 					moveCenter("LEFT", myMap);
@@ -1402,40 +1406,62 @@ void SetPlanetColor(String argument)
 
 
 // ZOOM IN // Increase Map's Focal Length
-void zoomIn(StarMap map)
-{ 
-	int doF = map.focalLength;
-	int newScale = doF*ZOOM_STEP;
-	if (newScale < ZOOM_MAX)
+void zoomIn(string mapArg)
+{
+	List<StarMap> maps = ArgToMaps(mapArg);
+	
+	if(maps.Count == 0)
 	{
-		doF = newScale;
+		_statusMessage = "No matching Maps found!";
+		return;
 	}
-	else
+	
+	foreach(StarMap map in maps)
 	{
-		doF = ZOOM_MAX;
-	}
+		int doF = map.focalLength;
+		int newScale = doF*ZOOM_STEP;
+		if (newScale < ZOOM_MAX)
+		{
+			doF = newScale;
+		}
+		else
+		{
+			doF = ZOOM_MAX;
+		}
 
-	map.focalLength = doF;
+		map.focalLength = doF;
+	}
 }
 
 
 // ZOOM OUT //	  Decrease Map's Focal Length
-void zoomOut(StarMap map)
-{ 
-	int doF = map.focalLength;
-	int newScale = doF/ZOOM_STEP;
+void zoomOut(string mapArg)
+{
+	List<StarMap> maps = ArgToMaps(mapArg);
 	
-	// Make sure no rollover error.
-	if (newScale > 1)
+	if(maps.Count == 0)
 	{
-		doF = newScale;
+		_statusMessage = "No matching Maps found!";
+		return;
 	}
-	else
+	
+	foreach(StarMap map in maps)	
 	{
-		doF = 1;
-	}
+		int doF = map.focalLength;
+		int newScale = doF/ZOOM_STEP;
+		
+		// Make sure no rollover error.
+		if (newScale > 1)
+		{
+			doF = newScale;
+		}
+		else
+		{
+			doF = 1;
+		}
 
-	map.focalLength = doF;
+		map.focalLength = doF;
+	}
 }
 
 
@@ -2305,11 +2331,10 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 // DRAW HASHMARKS //   Makes series of low-profile waypoints to denote latitude and longitude on planets.
 public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map, ref MySpriteDrawFrame frame)
 {
-	Echo("Map " + map.number + ": " + planet.name);
 	List<Waypoint> hashMarks = new List<Waypoint>();
 	
 	float planetDepth = planet.transformedCoords[map.number].Z;
-	Echo(Vector3ToString(planet.transformedCoords[map.number]));
+
 	//North Pole
 	Waypoint north = new Waypoint();
 	north.name = "N -";
@@ -2363,7 +2388,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
 			}
 		}
 	}
-	Echo("--- 1 ---");
+
 	foreach(Waypoint hash in hashMarks)
 	{
 		Vector2 position = map.viewport.Center + PlotObject(hash.transformedCoords[0], map);		
@@ -2371,7 +2396,7 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
 		// Print more detail for closer planets
 		if(diameter > 2 * HASH_LIMIT)
 		{
-			Echo("--- 2 ---");
+
 			String[] hashLabels = hash.name.Split(' ');
 			float textMod = 1;
 			int pitchMod = 1;
@@ -2982,6 +3007,45 @@ void PreviousPage()
 
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// ARG TO MAPS //
+
+public List<StarMap> ArgToMaps(string arg)
+{
+	if(arg.ToUpper() == "ALL")
+	{
+		return _mapList;
+	}
+	
+	List<StarMap> mapsToEdit = new List<StarMap>();
+	
+	string[] args = arg.Split(',');
+	
+	foreach(string argValue in args)
+	{
+		int number;
+		
+		bool success = Int32.TryParse(argValue, out number);
+		if(success)
+		{
+			if(number < _mapList.Count)
+			{
+				mapsToEdit.Add(_mapList[number]);
+			}
+			else
+			{
+				_statusMessage = "screenID " + argValue + " outside range of Map List!";
+			}
+		}
+		else
+		{
+			_statusMessage = "Invalid screenID: " + argValue;
+		}
+	}
+	
+	return mapsToEdit;
+}
+
 
 // INSERT ENTRY //
 public string InsertEntry(string entry, string oldString, char separator, int index)
