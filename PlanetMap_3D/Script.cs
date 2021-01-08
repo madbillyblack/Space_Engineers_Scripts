@@ -45,7 +45,9 @@ const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 4;  // Number of Data Display Pages
 const string SLASHES = " //////////////////////////////////////////////////////////////";
 const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
-string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="+DV_ALTITUDE+"\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0";
+string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
+							+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="
+							+DV_ALTITUDE+"\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True";
 
 
 // GLOBALS //
@@ -60,7 +62,6 @@ int _pageIndex;
 int _scrollIndex = 0;
 int _azSpeed;
 int _planetIndex;
-int _waypointIndex;
 bool _gpsActive;
 bool _showMapParameters;
 bool _showShip;
@@ -83,7 +84,6 @@ List<Planet> _unchartedList = new List<Planet>();
 List<Waypoint> _waypointList = new List<Waypoint>();
 List<StarMap> _mapList = new List<StarMap>();
 
-IMyTextSurface _drawingSurface;
 IMyTextSurface _dataSurface;
 IMyTerminalBlock _refBlock;
 //RectangleF _viewport;
@@ -111,11 +111,20 @@ public class StarMap
 	public IMyTextSurface drawingSurface;
 	public RectangleF viewport;
 	public IMyTerminalBlock block;
+	public bool showGPS;
+	public bool showNames;
+	public bool showShip;
+	public bool showInfo;
+	public int planetIndex;
+	public int waypointIndex;
+	
 	//public MySpriteDrawFrame frame;
 
 	public StarMap()
 	{
 		this.azSpeed = 0;
+		this.planetIndex = 0;
+		this.waypointIndex = 0;
 	}
 
 	public void yaw(int angle)
@@ -517,10 +526,15 @@ public Program()
 		for(int m = 0; m < _mapBlocks.Count; m++)
 		{
 			IMyTextSurfaceProvider mapBlock = _mapBlocks[m] as IMyTextSurfaceProvider;
-			StarMap map = parametersToMap(mapBlock as IMyTerminalBlock);
-			activateMap(map);
-			//_mapList.Add(map);
-			//updateMap(map);
+			List<StarMap> maps = parametersToMaps(mapBlock as IMyTerminalBlock);
+			
+			if(maps.Count > 0)
+			{
+				foreach(StarMap map in maps)
+				{
+					activateMap(map);
+				}
+			}
 		}
 	}
 
@@ -607,7 +621,6 @@ public void Main(string argument)
 	if(_mapBlocks.Count >0)
 	{
 		IMyTerminalBlock mapBlock = _mapBlocks[0] as IMyTerminalBlock;
-		//StarMap myMap = parametersToMap(mapBlock);
 		StarMap myMap = _mapList[0];
 
 		//Add rotational Speed
@@ -622,12 +635,12 @@ public void Main(string argument)
 			myMap.center += rotateMovement(_trackSpeed, myMap);
 		}
 		
-		cycleExecute(myMap);
+		CycleExecute(myMap);
 
 		if (_previousCommand == "NEWLY LOADED" || _azSpeed != 0 || _trackSpeed != _origin)
 		{
 			updateMap(myMap);
-			mapToParameters(myMap);
+			MapToParameters(myMap);
 		}
 
 		if (argument != "")
@@ -657,67 +670,75 @@ public void Main(string argument)
 				}
 			}
 			
+			List<StarMap> maps = ArgToMaps(cmdArg);
+			
 			switch(command)
 			{
 				case "ZOOM_IN":
-					zoomIn(cmdArg);
+					Zoom(maps, true);
 					break;
 				case "ZOOM_OUT":
-					zoomOut(cmdArg);
+					Zoom(maps, false);
 					break;
 				case "MOVE_LEFT":
-					moveCenter("LEFT", cmdArg);
+					MoveCenter("LEFT", maps);
 					break;
 				case "MOVE_RIGHT":
-					moveCenter("RIGHT", cmdArg);
+					MoveCenter("RIGHT", maps);
 					break;
 				case "MOVE_UP":
-					moveCenter("UP", cmdArg);
+					MoveCenter("UP", maps);
 					break;
 				case "MOVE_DOWN":
-					moveCenter("DOWN", cmdArg);
+					MoveCenter("DOWN", maps);
 					break;
 				case "MOVE_FORWARD":
-					moveCenter("FORWARD", cmdArg);
+					MoveCenter("FORWARD", maps);
 					break;
 				case "MOVE_BACKWARD":
-					moveCenter("BACKWARD", cmdArg);
+					MoveCenter("BACKWARD", maps);
 					break;
 				case "DEFAULT_VIEW":
-					DefaultView(myMap);
+					MapsToDefault(maps);
 					break;
 				case "ROTATE_LEFT":
-					myMap.yaw(ANGLE_STEP);
+					RotateMaps("LEFT", maps);
 					break;
 				case "ROTATE_RIGHT":
-					myMap.yaw(-ANGLE_STEP);
+					RotateMaps("RIGHT", maps);
 					break;
 				case "ROTATE_UP":
-					myMap.pitch(-ANGLE_STEP);
+					RotateMaps("UP", maps);
 					break;
 				case "ROTATE_DOWN":
-					myMap.pitch(ANGLE_STEP);
+					RotateMaps("DOWN", maps);
 					break;
 				case "GPS_ON":
-					_gpsActive = true;
+					Show("GPS", maps, 1);
 					break;
 				case "GPS_OFF":
-					_gpsActive = false;
+					Show("GPS", maps, 0);
+					break;
+				case "SHOW_GPS":
+					Show("GPS", maps, 1);
+					break;
+				case "HIDE_GPS":
+					Show("GPS", maps, 0);
 					break;
 				case "TOGGLE_GPS":
-					_gpsActive = !_gpsActive;
+					Show("GPS", maps, 3);
 					break;
 				case "NEXT_PLANET":
-					NextPlanet(myMap);
+					CyclePlanets(maps, true);
 					break;
 				case "PREVIOUS_PLANET":
-					PreviousPlanet(myMap);
+					CyclePlanets(maps, false);
 					break;
 				case "NEXT_WAYPOINT":
-					NextWaypoint(myMap);
+					CycleWaypoints(maps, true);
 					break;
 				case "PREVIOUS_WAYPOINT":
-					PreviousWaypoint(myMap);
+					CycleWaypoints(maps, false);
 					break;
 				case "SPIN_LEFT":
 					_azSpeed += ANGLE_STEP/2;
@@ -748,43 +769,43 @@ public void Main(string argument)
 					_trackSpeed -= new Vector3(0,0,MOVE_STEP);
 					break;
 				case "SHOW_NAMES":
-					_showNames = true;
+					Show("NAMES", maps, 1);
 					break;
 				case "HIDE_NAMES":
-					_showNames = false;
+					Show("NAMES", maps, 0);
 					break;
 				case "TOGGLE_NAMES":
-					_showNames = !_showNames;
+					Show("NAMES", maps, 3);
 					break;
 				case "SHOW_INFO":
-					_showMapParameters = true;
+					Show("INFO", maps, 1);
 					break;
 				case "HIDE_INFO":
-					_showMapParameters = false;
+					Show("INFO", maps, 0);
 					break;
 				case "TOGGLE_INFO":
-					_showMapParameters = !_showMapParameters;
+					Show("INFO", maps, 3);
 					break;
 				case "SHOW_SHIP":
-					_showShip = true;
+					Show("SHIP", maps, 1);
 					break;
 				case "HIDE_SHIP":
-					_showShip = false;
+					Show("SHIP", maps, 0);
 					break;
 				case "TOGGLE_SHIP":
-					_showShip = !_showShip;
+					Show("SHIP", maps, 3);
 					break;
 				case "WORLD_MODE":
-					ChangeMode("WORLD", cmdArg);
+					ChangeMode("WORLD", maps);
 					break;
 				case "SHIP_MODE":
-					ChangeMode("SHIP", cmdArg);
+					ChangeMode("SHIP", maps);
 					break;
 				case "PLANET_MODE":
-					ChangeMode("PLANET", cmdArg);
+					ChangeMode("PLANET", maps);
 					break;
 				case "FREE_MODE":
-					ChangeMode("FREE", cmdArg);
+					ChangeMode("FREE", maps);
 					break;
 				case "PREVIOUS_MODE":
 					PreviousMode(myMap);
@@ -900,17 +921,28 @@ public void Main(string argument)
 					break;
 			}
 			
-			foreach(StarMap cmdMap in _mapList)
+			if(maps.Count > 0)
 			{
-				updateMap(cmdMap);
-				mapToParameters(cmdMap);
+				foreach(StarMap cmdMap in maps)
+				{
+					updateMap(cmdMap);
+					MapToParameters(cmdMap);
+				}
 			}
-
 		}
 		foreach(StarMap map in _mapList)
 		{
-			_drawingSurface = map.drawingSurface;
-		
+			if(map.mode != "PLANET")
+			{
+				map.azimuth = degreeAdd(map.azimuth, map.dAz);
+				
+				if(map.mode != "SHIP")
+				{
+					Vector3 deltaC = new Vector3(map.dX, map.dY, map.dZ);
+					map.center += rotateMovement(deltaC, map);
+				}
+			}
+			
 			// Begin a new frame
 			MySpriteDrawFrame frame = map.drawingSurface.DrawFrame();
 			
@@ -937,44 +969,34 @@ public void Main(string argument)
 
 // VIEW FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// PARAMETERS TO MAP //
-public StarMap parametersToMap(IMyTerminalBlock mapBlock)
+
+// SHOW //
+void Show(string attribute, List<StarMap> maps, int state)
 {
-	MyIni lcdIni = new MyIni();
-	
-	if(!mapBlock.CustomData.Contains("[mapDisplay]"))
+	if(NoMaps(maps))
+		return;
+		
+	foreach(StarMap map in maps)
 	{
-		string oldData = mapBlock.CustomData.Trim();
-		string newData = _defaultDisplay;
-
-		if(oldData.StartsWith("["))
+		switch(attribute)
 		{
-			newData += "\n\n" + oldData;
+			case "GPS":
+				map.showGPS = setState(map.showGPS, state);
+				break;
+			case "NAMES":
+				map.showNames = setState(map.showNames, state);
+				break;
+			case "SHIP":
+				map.showShip = setState(map.showShip, state);
+				break;
+			case "INFO":
+				map.showInfo = setState(map.showInfo, state);
+				break;
 		}
-		else if(oldData != "")
-		{
-			newData += "\n---\n"+ oldData;
-		}
-
-		mapBlock.CustomData = newData;
 	}
-
-	MyIniParseResult result;
-	if (!lcdIni.TryParse(mapBlock.CustomData, out result)) 
-		throw new Exception(result.ToString());
-
-	StarMap map = new StarMap();
-	map.block = mapBlock;
-
-	map.center = StringToVector3(lcdIni.Get("mapDisplay","Center").ToString());
-	map.focalLength = lcdIni.Get("mapDisplay","FocalLength").ToInt32();
-	map.rotationalRadius = lcdIni.Get("mapDisplay","RotationalRadius").ToInt32();
-	map.azimuth = lcdIni.Get("mapDisplay", "Azimuth").ToInt32();
-	map.altitude = lcdIni.Get("mapDisplay", "Altitude").ToInt32();
-	map.mode = lcdIni.Get("mapDisplay","Mode").ToString();
-
-	return map;
 }
+
+
 
 
 // PARAMETERS TO MAPS //
@@ -1026,18 +1048,27 @@ public List<StarMap> parametersToMaps(IMyTerminalBlock mapBlock)
 	List<string> azimuths = StringToEntries(lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', iLength, "0");
 	List<string> altitudes = StringToEntries(lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', iLength, DV_ALTITUDE.ToString());
 	List<string> modes = StringToEntries(lcdIni.Get("mapDisplay","Mode").ToString(), ',', iLength, "FREE");
+	List<string> gpsBools = StringToEntries(lcdIni.Get("mapDisplay","GPS").ToString(), ',', iLength, "true");
+	List<string> nameBools = StringToEntries(lcdIni.Get("mapDisplay","Names").ToString(), ',', iLength, "true");
+	List<string> shipBools = StringToEntries(lcdIni.Get("mapDisplay","Ship").ToString(), ',', iLength, "true");
+	List<string> infoBools = StringToEntries(lcdIni.Get("mapDisplay","Info").ToString(), ',', iLength, "true");
 	
 	//assemble maps by position in string lists.
 	for(int i = 0; i < iLength; i++)
 	{
 		StarMap map = new StarMap();
+		map.index = int.Parse(indexStrings[i]);
 		map.block = mapBlock;
 		map.center = StringToVector3(centers[i]);
 		map.focalLength = int.Parse(fLengths[i]);
 		map.rotationalRadius = int.Parse(radii[i]);
 		map.azimuth = int.Parse(azimuths[i]);	
 		map.altitude = int.Parse(altitudes[i]);
-		map.mode = modes[i];		
+		map.mode = modes[i];
+		map.showGPS = bool.Parse(gpsBools[i]);
+		map.showNames = bool.Parse(nameBools[i]);
+		map.showShip = bool.Parse(shipBools[i]);
+		map.showInfo = bool.Parse(infoBools[i]);
 		
 		mapsOut.Add(map);
 	}
@@ -1091,7 +1122,7 @@ public void DataToLog()
 
 
 // MAP TO PARAMETERS // Writes map object to CustomData of Display Block
-public void mapToParameters(StarMap map)
+public void MapToParameters(StarMap map)
 {
 	MyIni lcdIni = new MyIni();
 
@@ -1099,20 +1130,42 @@ public void mapToParameters(StarMap map)
 	if (!lcdIni.TryParse(map.block.CustomData, out result)) 
 		throw new Exception(result.ToString());
 	
-	int i = map.index;
+	int i = 0;
+	
+	string blockIndex = lcdIni.Get("mapDisplay", "Indexes").ToString();
+	string[] indexes = blockIndex.Split(',');
+	
+	int entries = indexes.Length;
+	
+	if(entries > 0)
+	{
+		for(int j = 0; j < entries; j++)
+		{
+			if(map.index.ToString() == indexes[j])
+			{
+				i = j;  //This is the array position of the screen index for this map.
+			}
+		}
+	}
+	
+	
 	
 	// Read the old Ini Data and split into string arrays. Insert the new data into the arrays.
-	string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), ';', i);
-	string newModes = InsertEntry(map.mode, lcdIni.Get("mapDisplay", "Mode").ToString(), ',', i);
-	string newFocal = InsertEntry(map.focalLength.ToString(), lcdIni.Get("mapDisplay", "FocalLength").ToString(), ',', i);
-	string newRadius = InsertEntry(map.rotationalRadius.ToString(), lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', i);
-	string newAzimuth = InsertEntry(map.azimuth.ToString(), lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', i);
-	string newAltitude = InsertEntry(map.altitude.ToString(), lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', i);
-	string newIndexes = InsertEntry(map.index.ToString(), lcdIni.Get("mapDisplay", "Indexes").ToString(), ',', i);
-	string newDX = InsertEntry(map.dX.ToString(), lcdIni.Get("mapDisplay", "dX").ToString(), ',', i);
-	string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), ',', i);
-	string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), ',', i);
-	string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), ',', i);
+	string newIndexes = InsertEntry(map.index.ToString(), blockIndex, ',', i, entries, "0");
+	string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), ';', i, entries, "(0,0,0)");
+	string newModes = InsertEntry(map.mode, lcdIni.Get("mapDisplay", "Mode").ToString(), ',', i, entries, "FREE");
+	string newFocal = InsertEntry(map.focalLength.ToString(), lcdIni.Get("mapDisplay", "FocalLength").ToString(), ',', i, entries, DV_FOCAL.ToString());
+	string newRadius = InsertEntry(map.rotationalRadius.ToString(), lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', i, entries, DV_RADIUS.ToString());
+	string newAzimuth = InsertEntry(map.azimuth.ToString(), lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', i, entries, "0");
+	string newAltitude = InsertEntry(map.altitude.ToString(), lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', i, entries, DV_ALTITUDE.ToString());
+	string newDX = InsertEntry(map.dX.ToString(), lcdIni.Get("mapDisplay", "dX").ToString(), ',', i, entries, "0");
+	string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), ',', i, entries, "0");
+	string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), ',', i, entries, "0");
+	string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), ',', i, entries, "0");
+	string newGPS = InsertEntry(map.showGPS.ToString(), lcdIni.Get("mapDisplay", "GPS").ToString(), ',', i, entries, "True");
+	string newNames = InsertEntry(map.showNames.ToString(), lcdIni.Get("mapDisplay", "Names").ToString(), ',', i, entries, "True");
+	string newShip = InsertEntry(map.showGPS.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), ',', i, entries, "True");	
+	string newInfo = InsertEntry(map.showGPS.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), ',', i, entries, "True");
 	
 	// Update the Ini Data.
 	lcdIni.Set("mapDisplay", "Center", newCenters);
@@ -1126,6 +1179,10 @@ public void mapToParameters(StarMap map)
 	lcdIni.Set("mapDisplay", "dY", newDY);
 	lcdIni.Set("mapDisplay", "dZ", newDZ);
 	lcdIni.Set("mapDisplay", "dAz", newDAz);
+	lcdIni.Set("mapDisplay", "GPS", newGPS);
+	lcdIni.Set("mapDisplay", "Names", newNames);
+	lcdIni.Set("mapDisplay", "Ship", newShip);
+	lcdIni.Set("mapDisplay", "Info", newInfo);
 	
 	map.block.CustomData = lcdIni.ToString();
 }
@@ -1187,6 +1244,10 @@ public void LogWaypoint(String waypointName, Vector3 position, String markerType
 
 	_waypointList.Add(waypoint);
 	DataToLog();
+	foreach(StarMap map in _mapList)
+	{
+		updateMap(map);
+	}
 }
 
 
@@ -1405,59 +1466,38 @@ void SetPlanetColor(String argument)
 }
 
 
-// ZOOM IN // Increase Map's Focal Length
-void zoomIn(string mapArg)
+// ZOOM // Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
+void Zoom(List<StarMap> maps, bool zoomIn)
 {
-	List<StarMap> maps = ArgToMaps(mapArg);
-	
-	if(maps.Count == 0)
-	{
-		_statusMessage = "No matching Maps found!";
+	if(NoMaps(maps))
 		return;
-	}
 	
 	foreach(StarMap map in maps)
 	{
 		int doF = map.focalLength;
-		int newScale = doF*ZOOM_STEP;
-		if (newScale < ZOOM_MAX)
+		int newScale;
+		
+		if(zoomIn)
 		{
-			doF = newScale;
+			newScale = doF*ZOOM_STEP;
 		}
 		else
+		{
+			newScale = doF/ZOOM_STEP;
+		}
+		
+		
+		if(newScale > ZOOM_MAX)
 		{
 			doF = ZOOM_MAX;
 		}
-
-		map.focalLength = doF;
-	}
-}
-
-
-// ZOOM OUT //	  Decrease Map's Focal Length
-void zoomOut(string mapArg)
-{
-	List<StarMap> maps = ArgToMaps(mapArg);
-	
-	if(maps.Count == 0)
-	{
-		_statusMessage = "No matching Maps found!";
-		return;
-	}
-	
-	foreach(StarMap map in maps)	
-	{
-		int doF = map.focalLength;
-		int newScale = doF/ZOOM_STEP;
-		
-		// Make sure no rollover error.
-		if (newScale > 1)
+		else if(newScale < 1)
 		{
-			doF = newScale;
+			doF = 1;
 		}
 		else
 		{
-			doF = 1;
+			doF = newScale;
 		}
 
 		map.focalLength = doF;
@@ -1490,15 +1530,10 @@ void increaseRadius(StarMap map)
 
 
 // MOVE CENTER //
-void moveCenter(string movement, string mapArg)
+void MoveCenter(string movement, List<StarMap> maps)
 {
-	List<StarMap> maps = ArgToMaps(mapArg);
-	
-	if(maps.Count == 0)
-	{
-		_statusMessage = "No matching Maps found!";
+	if(NoMaps(maps))
 		return;
-	}
 	
 	float x = 0;
 	float y = 0;
@@ -1527,7 +1562,6 @@ void moveCenter(string movement, string mapArg)
 		}
 		Vector3 moveVector = new Vector3(x,y,z);
 	
-	
 	foreach(StarMap map in maps)	
 	{
 		if(map.mode == "FREE" || map.mode == "WORLD")
@@ -1537,6 +1571,56 @@ void moveCenter(string movement, string mapArg)
 		else
 		{
 			_statusMessage = "Translation controls locked in PLANET and SHIP modes.";
+		}
+	}
+}
+
+
+void TrackCenter(List<StarMap> maps, int axis, int speed)
+{
+	if(NoMaps(maps))
+		return;	
+		
+	foreach(StarMap map in maps)
+	{
+		switch(axis)
+		{
+			case 0:
+				map.dX += speed;
+				break;
+			case 1:
+				map.dY += speed;
+				break;
+			case 2:
+				map.dZ += speed;
+				break;
+		}
+	}
+}
+
+
+// ROTATE MAPS //
+void RotateMaps(string direction, List<StarMap> maps)
+{
+	if(NoMaps(maps))
+		return;
+	
+	foreach(StarMap map in maps)
+	{
+		switch(direction)
+		{
+			case "LEFT":
+				map.yaw(ANGLE_STEP);
+				break;
+			case "RIGHT":
+				map.yaw(-ANGLE_STEP);
+				break;
+			case "UP":
+				map.pitch(-ANGLE_STEP);
+				break;
+			case "DOWN":
+				map.pitch(ANGLE_STEP);
+				break;
 		}
 	}
 }
@@ -1580,6 +1664,10 @@ void CenterShip(StarMap map)
 void PlanetMode(StarMap map)
 {
 	map.focalLength = DV_FOCAL;
+	map.dAz = 0;
+	map.dX = 0;
+	map.dY = 0;
+	map.dZ = 0;
 
 	if(map.viewport.Width > 500)
 	{
@@ -1609,15 +1697,10 @@ void PlanetMode(StarMap map)
 
 
 // CHANGE MODE //
-void ChangeMode(string mapMode, string mapArg)
+void ChangeMode(string mapMode, List<StarMap> maps)
 {
-	List<StarMap> maps = ArgToMaps(mapArg);
-	
-	if(maps.Count == 0)
-	{
-		_statusMessage = "No matching Maps found!";
+	if(NoMaps(maps))
 		return;
-	}
 	
 	foreach(StarMap map in maps)
 	{
@@ -1628,6 +1711,10 @@ void ChangeMode(string mapMode, string mapArg)
 		else if (mapMode == "WORLD")
 		{
 			CenterWorld(map);
+		}
+		else if(mapMode == "PLANET")
+		{
+			PlanetMode(map);
 		}
 		
 		map.mode = mapMode;
@@ -1723,40 +1810,59 @@ void DefaultView(StarMap map)
 }
 
 
-// NEXT PLANET //
-void NextPlanet(StarMap map)
-{
-	if(_planetList.Count > 1)
+// MAPS TO DEFAULT //
+void MapsToDefault(List<StarMap> maps)
+{	
+	if(maps.Count < 1)
+		return;
+	
+	foreach(StarMap map in maps)
 	{
 		DefaultView(map);
-
-		_planetIndex++;
-		if(_planetIndex >= _planetList.Count)
-		{
-			_planetIndex = 0;
-		}
 	}
-
-	SelectPlanet(_planetList[_planetIndex], map);
 }
 
 
-// PREVIOUS PLANET //
-void PreviousPlanet(StarMap map)
+// CYCLE PLANETS //
+void CyclePlanets(List<StarMap> maps, bool next)
 {
-	if(_planetList.Count > 1)
+	int planetCount = _planetList.Count;
+	
+	if(planetCount < 1)
+	{
+		_statusMessage = "No Planets Logged!";
+		return;
+	}
+	
+	if(NoMaps(maps))
+		return;
+		
+	foreach(StarMap map in maps)
 	{
 		DefaultView(map);
-
-		_planetIndex--;
-		if(_planetIndex < 0)
+		
+		if(next)
 		{
-			_planetIndex = _planetList.Count - 1;
+			map.planetIndex++;
 		}
+		else
+		{
+			map.planetIndex--;
+		}
+		
+		if(map.planetIndex < 0)
+		{
+			map.planetIndex = planetCount - 1;
+		}
+		else if(map.planetIndex >= planetCount)
+		{
+			map.planetIndex = 0;
+		}
+		
+		SelectPlanet(_planetList[map.planetIndex], map);
 	}
-
-	SelectPlanet(_planetList[_planetIndex], map);
 }
+
 
 // GET PLANET //
 Planet GetPlanet(string planetName)
@@ -1804,41 +1910,44 @@ Waypoint GetWaypoint(string waypointName)
 	return null;
 }
 
-// NEXT WAYPOINT //
-void NextWaypoint(StarMap map)
+
+// CYCLE WAYPOINTS //
+void CycleWaypoints(List<StarMap> maps, bool next)
 {
-	if(_waypointList.Count > 1)
+	int gpsCount = _waypointList.Count;
+	
+	if(gpsCount < 1)
 	{
-		DefaultView(map);
-
-		_waypointIndex++;
-		if(_waypointIndex >= _waypointList.Count)
-		{
-			_waypointIndex = 0;
-		}
-
-		Waypoint waypoint = _waypointList[_waypointIndex];
-		_activeWaypoint = waypoint.name;
-		map.center = waypoint.position;
+		_statusMessage = "No Waypoints Logged!";
+		return;
 	}
-}
-
-
-// PREVIOUS WAYPOINT //
-void PreviousWaypoint(StarMap map)
-{
-	if(_waypointList.Count > 1)
+	
+	if(NoMaps(maps))
+		return;
+		
+	foreach(StarMap map in maps)
 	{
 		DefaultView(map);
-
-		_waypointIndex--;
-		if(_waypointIndex < 0)
+		
+		if(next)
 		{
-			_waypointIndex = _waypointList.Count - 1;
+			map.waypointIndex++;
 		}
-
-		Waypoint waypoint = _waypointList[_waypointIndex];
-		_activeWaypoint = waypoint.name;
+		else
+		{
+			map.waypointIndex--;
+		}
+		
+		if(map.waypointIndex < 0)
+		{
+			map.waypointIndex = gpsCount - 1;
+		}
+		else if(map.waypointIndex >= gpsCount)
+		{
+			map.waypointIndex = 0;
+		}
+		
+		Waypoint waypoint = _waypointList[map.waypointIndex];
 		map.center = waypoint.position;
 	}
 }
@@ -2323,7 +2432,7 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 			DrawHashMarks(planet, diameter, lineColor, map, ref frame);
 		}
 
-		if(_showNames)
+		if(map.showNames)
 		{
 			// PLANET NAME
 			float fontMod = 1;
@@ -2675,7 +2784,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 					position = startPosition;					 
 				}
 
-				if(_showNames)
+				if(map.showNames)
 				{
 					// PRINT NAME
 					position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
@@ -2954,7 +3063,7 @@ void DisplayMapData()
 
 	if(_mapBlocks.Count > 0)
 	{
-		StarMap map = parametersToMap(_mapBlocks[0]);
+		StarMap map = _mapList[0];
 		output += ": " + _mapBlocks[0].CustomName + SLASHES;
 
 		if(_statusMessage != "")
@@ -3047,8 +3156,27 @@ void PreviousPage()
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// ARG TO MAPS //
+// SET STATE // Sets specified boolean to true, false, or toggle
+bool setState(bool attribute, int state)
+{
+	switch(state)
+	{
+		case 0:
+			attribute = false;
+			break;
+		case 1:
+			attribute = true;
+			break;
+		case 3:
+			attribute = !attribute;
+			break;
+	}
+	
+	return attribute;
+}
 
+
+// ARG TO MAPS //
 public List<StarMap> ArgToMaps(string arg)
 {
 	if(arg.ToUpper() == "ALL")
@@ -3076,41 +3204,49 @@ public List<StarMap> ArgToMaps(string arg)
 				_statusMessage = "screenID " + argValue + " outside range of Map List!";
 			}
 		}
-		else
-		{
-			_statusMessage = "Invalid screenID: " + argValue;
-		}
 	}
 	
 	return mapsToEdit;
 }
 
 
+public bool NoMaps(List<StarMap> maps)
+{
+	if(maps.Count < 1)
+	{
+		_statusMessage = "No relevant maps found! Check arguments!";
+		return true;
+	}
+	
+	return false;
+}
+
+
 // INSERT ENTRY //
-public string InsertEntry(string entry, string oldString, char separator, int index)
+public string InsertEntry(string entry, string oldString, char separator, int index, int length, string placeHolder)
 {
 	string newString;
 	
-	string[] entries = oldString.Split(separator);
+	List<string> entries = StringToEntries(oldString, separator, length, placeHolder);
 	
 	// If there's only one entry in the string return entry.
-	if(entries.Length == 1 && index == 0)
+	if(entries.Count == 1 && length == 0)
 	{
 		return entry;
 	}
 	
 	// If index is out of bounds, log error and return original string.
-	if(index >= entries.Length)
-	{
-		_statusMessage = "INSERT INDEX Out of Bounds: " + oldString + " " + index + " " + entry;
-		return oldString;
-	}
+//	if(index >= entries.Length)
+//	{
+//		_statusMessage = "INSERT INDEX Out of Bounds: " + oldString + " " + index + " " + entry;
+//		return oldString;
+//	}
 	
 	//Insert entry into the old string.
 	entries[index] = entry;
 	
 	newString = entries[0];
-	for(int n = 1; n < entries.Length; n++)
+	for(int n = 1; n < entries.Count; n++)
 	{
 		newString += separator + entries[n];
 	}
@@ -3448,7 +3584,7 @@ public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
 
 
 // CYCLE EXECUTE // Wait specified number of cycles to execute cyclial commands
-public void cycleExecute(StarMap map)
+public void CycleExecute(StarMap map)
 {
 	_cycleStep--;
 
@@ -3538,7 +3674,7 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 	DrawPlanets(displayPlanets, ref frame, map);
 
 	//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
-	if(_gpsActive)
+	if(map.showGPS)
 	{
 		DrawWaypoints(ref frame, map);
 		PlotUncharted(ref frame, map);
@@ -3546,14 +3682,14 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 
 
 	// DRAW SHIP
-	if(_showShip)
+	if(map.showShip)
 	{
 		DrawShip(ref frame, map, displayPlanets);
 	}
 
 
 	// MAP INFO
-	if(_showMapParameters)
+	if(map.showInfo)
 	{
 		drawMapInfo(ref frame, map);
 	}
