@@ -634,7 +634,7 @@ public void Main(string argument)
 		{
 			string [] args = argument.Split(' ');
 			string command = args[0].ToUpper();
-			string entityName = "";
+			string cmdArg = "";
 			
 			_statusMessage = "";
 			_activeWaypoint = "";
@@ -643,16 +643,16 @@ public void Main(string argument)
 			// If there are multiple words in the argument. Combine the latter words into the entity name.
 			if(args.Length == 1)
 			{
-				entityName = "0";
+				cmdArg = "0";
 			}
 			else if(args.Length > 1)
 			{
-				entityName = args[1];
+				cmdArg = args[1];
 				if(args.Length > 2)
 				{
 					for(int q = 2; q < args.Length;	 q++)
 					{
-						entityName += " " + args[q];
+						cmdArg += " " + args[q];
 					}
 				}
 			}
@@ -660,28 +660,28 @@ public void Main(string argument)
 			switch(command)
 			{
 				case "ZOOM_IN":
-					zoomIn(entityName);
+					zoomIn(cmdArg);
 					break;
 				case "ZOOM_OUT":
-					zoomOut(entityName);
+					zoomOut(cmdArg);
 					break;
 				case "MOVE_LEFT":
-					moveCenter("LEFT", myMap);
+					moveCenter("LEFT", cmdArg);
 					break;
 				case "MOVE_RIGHT":
-					moveCenter("RIGHT", myMap);
+					moveCenter("RIGHT", cmdArg);
 					break;
 				case "MOVE_UP":
-					moveCenter("UP", myMap);
+					moveCenter("UP", cmdArg);
 					break;
 				case "MOVE_DOWN":
-					moveCenter("DOWN", myMap);
+					moveCenter("DOWN", cmdArg);
 					break;
 				case "MOVE_FORWARD":
-					moveCenter("FORWARD", myMap);
+					moveCenter("FORWARD", cmdArg);
 					break;
 				case "MOVE_BACKWARD":
-					moveCenter("BACKWARD", myMap);
+					moveCenter("BACKWARD", cmdArg);
 					break;
 				case "DEFAULT_VIEW":
 					DefaultView(myMap);
@@ -775,20 +775,16 @@ public void Main(string argument)
 					_showShip = !_showShip;
 					break;
 				case "WORLD_MODE":
-					CenterWorld(myMap);
-					_activePlanet = "";
+					ChangeMode("WORLD", cmdArg);
 					break;
 				case "SHIP_MODE":
-					CenterShip(myMap);
-					myMap.mode = "SHIP";
-					_activePlanet = "";
+					ChangeMode("SHIP", cmdArg);
 					break;
 				case "PLANET_MODE":
-					PlanetMode(myMap);
+					ChangeMode("PLANET", cmdArg);
 					break;
 				case "FREE_MODE":
-					myMap.mode = "FREE";
-					_activePlanet = "";
+					ChangeMode("FREE", cmdArg);
 					break;
 				case "PREVIOUS_MODE":
 					PreviousMode(myMap);
@@ -806,73 +802,73 @@ public void Main(string argument)
 					myMap.center = _myPos;
 					break;
 				case "WAYPOINT_OFF":
-					SetWaypointState(entityName, 0);
+					SetWaypointState(cmdArg, 0);
 					break;
 				case "WAYPOINT_ON":
-					SetWaypointState(entityName, 1);
+					SetWaypointState(cmdArg, 1);
 					break;
 				case "TOGGLE_WAYPOINT":
-					SetWaypointState(entityName, 2);
+					SetWaypointState(cmdArg, 2);
 					break;
 				case "DELETE_WAYPOINT":
-					SetWaypointState(entityName, 3);
+					SetWaypointState(cmdArg, 3);
 					break;
 				case "LOG_WAYPOINT":
-					LogWaypoint(entityName, _myPos, "WAYPOINT");
+					LogWaypoint(cmdArg, _myPos, "WAYPOINT");
 					break;
 				case "LOG_BASE":
-					LogWaypoint(entityName, _myPos, "BASE");
+					LogWaypoint(cmdArg, _myPos, "BASE");
 					break;
 				case "LOG_STATION":
-					LogWaypoint(entityName, _myPos, "STATION");
+					LogWaypoint(cmdArg, _myPos, "STATION");
 					break;					  
 				case "LOG_LANDMARK":
-					LogWaypoint(entityName, _myPos, "LANDMARK");
+					LogWaypoint(cmdArg, _myPos, "LANDMARK");
 					break;
 				case "LOG_HAZARD":
-					LogWaypoint(entityName, _myPos, "HAZARD");
+					LogWaypoint(cmdArg, _myPos, "HAZARD");
 					break;
 				case "LOG_ASTEROID":
-					LogWaypoint(entityName, _myPos, "ASTEROID");
+					LogWaypoint(cmdArg, _myPos, "ASTEROID");
 					break;
 				case "PASTE_WAYPOINT":
-					ClipboardToLog(entityName, "WAYPOINT");
+					ClipboardToLog(cmdArg, "WAYPOINT");
 					break;
 				case "PASTE_BASE":
-					ClipboardToLog(entityName, "BASE");
+					ClipboardToLog(cmdArg, "BASE");
 					break;
 				case "PASTE_STATION":
-					ClipboardToLog(entityName, "STATION");
+					ClipboardToLog(cmdArg, "STATION");
 					break;
 				case "PASTE_LANDMARK":
-					ClipboardToLog(entityName, "LANDMARK");
+					ClipboardToLog(cmdArg, "LANDMARK");
 					break;
 				case "PASTE_ASTEROID":
-					ClipboardToLog(entityName, "ASTEROID");
+					ClipboardToLog(cmdArg, "ASTEROID");
 					break;
 				case "PASTE_HAZARD":
-					ClipboardToLog(entityName, "HAZARD");
+					ClipboardToLog(cmdArg, "HAZARD");
 					break;
 				case "EXPORT_WAYPOINT":
-					_clipboard = LogToClipboard(entityName);
+					_clipboard = LogToClipboard(cmdArg);
 					break;
 				case "NEW_PLANET":
-					NewPlanet(entityName);
+					NewPlanet(cmdArg);
 					break;
 				case "LOG_NEXT":
-					LogNext(entityName);
+					LogNext(cmdArg);
 					break;
 				case "DELETE_PLANET":
-					DeletePlanet(entityName);
+					DeletePlanet(cmdArg);
 					break;
 				case "COLOR_PLANET":
-					SetPlanetColor(entityName);
+					SetPlanetColor(cmdArg);
 					break;
 				case "PLOT_JUMP":
-					PlotJumpPoint(entityName);
+					PlotJumpPoint(cmdArg);
 					break;
 				case "PROJECT":
-					ProjectPoint(entityName);
+					ProjectPoint(cmdArg);
 					break;
 				case "NEXT_PAGE":
 					NextPage();
@@ -903,9 +899,13 @@ public void Main(string argument)
 					_statusMessage = "UNRECOGNIZED COMMAND!";
 					break;
 			}
+			
+			foreach(StarMap cmdMap in _mapList)
+			{
+				updateMap(cmdMap);
+				mapToParameters(cmdMap);
+			}
 
-			updateMap(myMap);
-			mapToParameters(myMap);
 		}
 		foreach(StarMap map in _mapList)
 		{
@@ -1490,41 +1490,54 @@ void increaseRadius(StarMap map)
 
 
 // MOVE CENTER //
-void moveCenter(string movement, StarMap map)
+void moveCenter(string movement, string mapArg)
 {
-	if(map.mode.ToUpper() == "FREE" || map.mode.ToUpper() == "WORLD")
+	List<StarMap> maps = ArgToMaps(mapArg);
+	
+	if(maps.Count == 0)
 	{
-		float x = 0;
-		float y = 0;
-		float z = 0;
+		_statusMessage = "No matching Maps found!";
+		return;
+	}
+	
+	float x = 0;
+	float y = 0;
+	float z = 0;
 
-		switch(movement)
-		{
-			case "LEFT":
-				x = MOVE_STEP;
-				break;
-			case "RIGHT":
-				x = -MOVE_STEP;
-				break;
-			case "UP":
-				y = MOVE_STEP;
-				break;
-			case "DOWN":
-				y = -MOVE_STEP;
-				break;
-			case "FORWARD":
-				z = MOVE_STEP;
-				break;
-			case "BACKWARD":
-				z = -MOVE_STEP;
-				break;
+	switch(movement)
+	{
+		case "LEFT":
+			x = MOVE_STEP;
+			break;
+		case "RIGHT":
+			x = -MOVE_STEP;
+			break;
+		case "UP":
+			y = MOVE_STEP;
+			break;
+		case "DOWN":
+			y = -MOVE_STEP;
+			break;
+		case "FORWARD":
+			z = MOVE_STEP;
+			break;
+		case "BACKWARD":
+			z = -MOVE_STEP;
+			break;
 		}
 		Vector3 moveVector = new Vector3(x,y,z);
-		map.center += rotateMovement(moveVector, map);
-	}
-	else
+	
+	
+	foreach(StarMap map in maps)	
 	{
-		_statusMessage = "Translation controls locked in PLANET and SHIP modes.";
+		if(map.mode == "FREE" || map.mode == "WORLD")
+		{
+			map.center += rotateMovement(moveVector, map);
+		}
+		else
+		{
+			_statusMessage = "Translation controls locked in PLANET and SHIP modes.";
+		}
 	}
 }
 
@@ -1594,6 +1607,32 @@ void PlanetMode(StarMap map)
 	map.mode = "PLANET";
 }
 
+
+// CHANGE MODE //
+void ChangeMode(string mapMode, string mapArg)
+{
+	List<StarMap> maps = ArgToMaps(mapArg);
+	
+	if(maps.Count == 0)
+	{
+		_statusMessage = "No matching Maps found!";
+		return;
+	}
+	
+	foreach(StarMap map in maps)
+	{
+		if(mapMode == "SHIP")
+		{
+			CenterShip(map);
+		}
+		else if (mapMode == "WORLD")
+		{
+			CenterWorld(map);
+		}
+		
+		map.mode = mapMode;
+	}
+}
 
 // NEXT MODE //
 void NextMode(StarMap map)
