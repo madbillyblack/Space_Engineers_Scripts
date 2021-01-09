@@ -21,7 +21,7 @@ const int MARKER_WIDTH = 8; // Width of GPS Markers
 // View Controls
 const int ANGLE_STEP = 5; // Basic angle in degrees of step rotations.
 const int MAX_PITCH = 90; // Maximum (+/-) value of map pitch. [Not recommended above 90]
-const float MOVE_STEP = 5000; // Step size for translation (move) commands.
+const int MOVE_STEP = 5000; // Step size for translation (move) commands.
 const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out (multiplied).
 const int ZOOM_MAX = 1000000000; // Max value for Focal Length
 
@@ -83,6 +83,7 @@ List<Planet> _planetList = new List<Planet>();
 List<Planet> _unchartedList = new List<Planet>();
 List<Waypoint> _waypointList = new List<Waypoint>();
 List<StarMap> _mapList = new List<StarMap>();
+Planet _nearestPlanet;
 
 IMyTextSurface _dataSurface;
 IMyTerminalBlock _refBlock;
@@ -90,7 +91,6 @@ IMyTerminalBlock _refBlock;
 
 
 // CLASSES //////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 // STAR MAP //
 public class StarMap
@@ -131,7 +131,7 @@ public class StarMap
 	{
 		if(this.mode.ToUpper() != "PLANET")
 		{
-		   this.azimuth = degreeAdd(this.azimuth, angle); 
+		   this.azimuth = DegreeAdd(this.azimuth, angle); 
 		}
 		else
 		{
@@ -143,7 +143,7 @@ public class StarMap
 	{
 		if(this.mode.ToUpper() != "PLANET")
 		{
-			int newAngle = degreeAdd(this.altitude, angle);
+			int newAngle = DegreeAdd(this.altitude, angle);
 
 			if(newAngle > MAX_PITCH)
 			{
@@ -442,10 +442,6 @@ public Program()
 		_showShip = true;
 	}
 
-	// Start with indicator light on.
-	_lightOn = true;
-	_cycleStep = CYCLE_LENGTH;
-
 	string oldData = Me.CustomData;
 	string newData = DEFAULT_SETTINGS;
 
@@ -571,7 +567,12 @@ public Program()
 	}
 
 	_previousCommand = "NEWLY LOADED";
-
+	
+	// Start with indicator light on.
+	_lightOn = false;
+	_cycleStep = 0;
+	CycleExecute();
+	
 	 // Set the continuous update frequency of this script
 	Runtime.UpdateFrequency = UpdateFrequency.Update10;
 }
@@ -595,10 +596,12 @@ public void Main(string argument)
 	Echo("//////// PLANET MAP 3D ////////");
 	Echo(_previousCommand);
 	Echo(_statusMessage);
-	
-	Echo("MAP Index: " + _mapIndex);
+	Echo("MAP Count: " + _mapList.Count);
 
-	if(_planetList.Count > 0)
+	bool hasPlanets = _planetList.Count > 0;
+
+
+	if(hasPlanets)
 	{
 		Echo("Planet Count: " + _planetList.Count);
 		Planet planet = _planetList[_planetList.Count - 1];
@@ -618,15 +621,17 @@ public void Main(string argument)
 		Echo("No Waypoints Logged!");
 	}
 	
-	if(_mapBlocks.Count >0)
+	if(_mapList.Count > 0)
 	{
-		IMyTerminalBlock mapBlock = _mapBlocks[0] as IMyTerminalBlock;
+		CycleExecute();
+				
+/*		//IMyTerminalBlock mapBlock = _mapBlocks[0] as IMyTerminalBlock;
 		StarMap myMap = _mapList[0];
 
 		//Add rotational Speed
 		if(myMap.mode.ToUpper() != "PLANET")
 		{
-			myMap.azimuth = degreeAdd(myMap.azimuth, _azSpeed);
+			myMap.azimuth = DegreeAdd(myMap.azimuth, _azSpeed);
 		}
 
 		//Add Translational Speed
@@ -635,14 +640,14 @@ public void Main(string argument)
 			myMap.center += rotateMovement(_trackSpeed, myMap);
 		}
 		
-		CycleExecute(myMap);
+
 
 		if (_previousCommand == "NEWLY LOADED" || _azSpeed != 0 || _trackSpeed != _origin)
 		{
-			updateMap(myMap);
+			UpdateMap(myMap);
 			MapToParameters(myMap);
 		}
-
+*/
 		if (argument != "")
 		{
 			string [] args = argument.Split(' ');
@@ -741,32 +746,31 @@ public void Main(string argument)
 					CycleWaypoints(maps, false);
 					break;
 				case "SPIN_LEFT":
-					_azSpeed += ANGLE_STEP/2;
+					SpinMaps(maps, ANGLE_STEP/2);
 					break;
 				case "SPIN_RIGHT":
-					_azSpeed -= ANGLE_STEP/2;
+					SpinMaps(maps, -ANGLE_STEP/2);
 					break;
 				case "STOP":
-					_azSpeed = 0;
-					_trackSpeed = _origin;
+					StopMaps(maps);
 					break;
 				case "TRACK_LEFT":
-					_trackSpeed += new Vector3(MOVE_STEP, 0, 0);
+					TrackCenter(maps, 0, MOVE_STEP);
 					break;
 				case "TRACK_RIGHT":
-					_trackSpeed -= new Vector3(MOVE_STEP, 0, 0);
+					TrackCenter(maps, 0, -MOVE_STEP);
 					break;
 				case "TRACK_UP":
-					_trackSpeed += new Vector3(0,MOVE_STEP,0);
+					TrackCenter(maps, 1, MOVE_STEP);
 					break;
 				case "TRACK_DOWN":
-					_trackSpeed -= new Vector3(0,MOVE_STEP,0);
+					TrackCenter(maps, 1, -MOVE_STEP);;
 					break;
 				case "TRACK_FORWARD":
-					_trackSpeed += new Vector3(0,0,MOVE_STEP);
+					TrackCenter(maps, 2, MOVE_STEP);
 					break;
 				case "TRACK_BACKWARD":
-					_trackSpeed -= new Vector3(0,0,MOVE_STEP);
+					TrackCenter(maps, 2, -MOVE_STEP);
 					break;
 				case "SHOW_NAMES":
 					Show("NAMES", maps, 1);
@@ -808,19 +812,19 @@ public void Main(string argument)
 					ChangeMode("FREE", maps);
 					break;
 				case "PREVIOUS_MODE":
-					PreviousMode(myMap);
+					CycleMode(maps, false);
 					break;
 				case "NEXT_MODE":
-					NextMode(myMap);
+					CycleMode(maps, true);
 					break;
 				case "DECREASE_RADIUS":
-					reduceRadius(myMap);
+					AdjustRadius(maps, false);
 					break;
 				case "INCREASE_RADIUS":
-					increaseRadius(myMap);
+					AdjustRadius(maps, true);
 					break;
 				case "CENTER_SHIP":
-					myMap.center = _myPos;
+					MapsToShip(maps);
 					break;
 				case "WAYPOINT_OFF":
 					SetWaypointState(cmdArg, 0);
@@ -925,22 +929,43 @@ public void Main(string argument)
 			{
 				foreach(StarMap cmdMap in maps)
 				{
-					updateMap(cmdMap);
+					UpdateMap(cmdMap);
 					MapToParameters(cmdMap);
 				}
 			}
 		}
 		foreach(StarMap map in _mapList)
 		{
-			if(map.mode != "PLANET")
+			if(map.mode == "CHASE")
 			{
-				map.azimuth = degreeAdd(map.azimuth, map.dAz);
+				AlignShip(map);
+			}
+			else if(map.mode == "PLANET")
+			{
+				if(hasPlanets)
+				{
+					ShipToPlanet(_nearestPlanet, map);
+				}
+				else
+				{
+					map.mode = "SHIP";
+				}
+			}
+			else
+			{
+				map.azimuth = DegreeAdd(map.azimuth, map.dAz);
 				
 				if(map.mode != "SHIP")
 				{
 					Vector3 deltaC = new Vector3(map.dX, map.dY, map.dZ);
 					map.center += rotateMovement(deltaC, map);
 				}
+				else
+				{
+					map.center = _myPos;
+				}
+				
+				UpdateMap(map);
 			}
 			
 			// Begin a new frame
@@ -995,8 +1020,6 @@ void Show(string attribute, List<StarMap> maps, int state)
 		}
 	}
 }
-
-
 
 
 // PARAMETERS TO MAPS //
@@ -1065,10 +1088,10 @@ public List<StarMap> parametersToMaps(IMyTerminalBlock mapBlock)
 		map.azimuth = int.Parse(azimuths[i]);	
 		map.altitude = int.Parse(altitudes[i]);
 		map.mode = modes[i];
-		map.showGPS = bool.Parse(gpsBools[i]);
-		map.showNames = bool.Parse(nameBools[i]);
-		map.showShip = bool.Parse(shipBools[i]);
-		map.showInfo = bool.Parse(infoBools[i]);
+		map.showGPS = ParseBool(gpsBools[i]);
+		map.showNames = ParseBool(nameBools[i]);
+		map.showShip = ParseBool(shipBools[i]);
+		map.showInfo = ParseBool(infoBools[i]);
 		
 		mapsOut.Add(map);
 	}
@@ -1203,6 +1226,8 @@ void ClipboardToLog(string clipboard, string markerType)
 }
 
 
+
+// LOG TO CLIPBOARD //
 string LogToClipboard(string waypointName)
 {
 	Waypoint waypoint = GetWaypoint(waypointName);
@@ -1246,7 +1271,7 @@ public void LogWaypoint(String waypointName, Vector3 position, String markerType
 	DataToLog();
 	foreach(StarMap map in _mapList)
 	{
-		updateMap(map);
+		UpdateMap(map);
 	}
 }
 
@@ -1505,26 +1530,35 @@ void Zoom(List<StarMap> maps, bool zoomIn)
 }
 
 
-// REDUCE RADIUS //
-void reduceRadius(StarMap map)
+// ADJUST RADIUS //
+void AdjustRadius(List<StarMap> maps, bool increase)
 {
-	map.rotationalRadius /= 2;
-
-	if(map.rotationalRadius < map.focalLength)
+	if(NoMaps(maps))
+		return;
+		
+	foreach(StarMap map in maps)
 	{
-		map.rotationalRadius = map.focalLength;
-	}
-}
-
-
-// INCREASE RADIUS //
-void increaseRadius(StarMap map)
-{
-	map.rotationalRadius *= 2;
-
-	if(map.rotationalRadius > MAX_VALUE)
-	{
-		map.rotationalRadius =	MAX_VALUE;
+		int radius = map.rotationalRadius;
+		
+		if(increase)
+		{
+			radius *= 2;
+		}
+		else
+		{
+			radius /= 2;
+		}
+		
+		if(radius < map.focalLength)
+		{
+			radius = map.focalLength;
+		}
+		else if(radius > MAX_VALUE)
+		{
+			radius = MAX_VALUE;
+		}
+		
+		map.rotationalRadius = radius;	
 	}
 }
 
@@ -1535,6 +1569,7 @@ void MoveCenter(string movement, List<StarMap> maps)
 	if(NoMaps(maps))
 		return;
 	
+	float step = (float) MOVE_STEP;
 	float x = 0;
 	float y = 0;
 	float z = 0;
@@ -1542,22 +1577,22 @@ void MoveCenter(string movement, List<StarMap> maps)
 	switch(movement)
 	{
 		case "LEFT":
-			x = MOVE_STEP;
+			x = step;
 			break;
 		case "RIGHT":
-			x = -MOVE_STEP;
+			x = -step;
 			break;
 		case "UP":
-			y = MOVE_STEP;
+			y = step;
 			break;
 		case "DOWN":
-			y = -MOVE_STEP;
+			y = -step;
 			break;
 		case "FORWARD":
-			z = MOVE_STEP;
+			z = step;
 			break;
 		case "BACKWARD":
-			z = -MOVE_STEP;
+			z = -step;
 			break;
 		}
 		Vector3 moveVector = new Vector3(x,y,z);
@@ -1576,6 +1611,7 @@ void MoveCenter(string movement, List<StarMap> maps)
 }
 
 
+// TRACK CENTER //		Adjust translational speed of map.
 void TrackCenter(List<StarMap> maps, int axis, int speed)
 {
 	if(NoMaps(maps))
@@ -1626,29 +1662,68 @@ void RotateMaps(string direction, List<StarMap> maps)
 }
 
 
+// SPIN MAPS //		Adjust azimuth speed of maps.
+void SpinMaps(List<StarMap> maps, int deltaAz)
+{
+	if(NoMaps(maps))
+		return;
+		
+	foreach(StarMap map in maps)
+	{
+		map.dAz += deltaAz;
+	}
+}
+
+
+// STOP MAPS //		Halt all translational and azimuthal speed in maps.
+void StopMaps(List<StarMap> maps)
+{
+	if(NoMaps(maps))
+		return;
+		
+	foreach(StarMap map in maps)
+	{
+		map.dX = 0;
+		map.dY = 0;
+		map.dZ = 0;
+		map.dAz = 0;
+	}
+}
+
+
+// MAPS TO SHIP //		Centers maps on ship
+void MapsToShip(List<StarMap> maps)
+{
+	if(NoMaps(maps))
+		return;
+	
+	foreach(StarMap map in maps)
+	{
+		map.center = _myPos;
+	}
+}
+
+
 // CENTER WORLD //	   Updates Map Center to the Average of all charted Planets
 void CenterWorld(StarMap map)
 {
-	if(map.mode == "WORLD")
+	map.altitude = -15;
+	map.azimuth = 45;
+	map.focalLength = 256;
+	map.rotationalRadius = 4194304;
+	Vector3 worldCenter = new Vector3(0,0,0);
+
+	if(_planetList.Count > 0)
 	{
-		map.altitude = -15;
-		map.azimuth = 45;
-		map.focalLength = 256;
-		map.rotationalRadius = 4194304;
-		Vector3 worldCenter = new Vector3(0,0,0);
-
-		if(_planetList.Count > 0)
+		foreach(Planet planet in _planetList)
 		{
-			foreach(Planet planet in _planetList)
-			{
-				worldCenter += planet.position;
-			}
-
-			worldCenter /= _planetList.Count;
+			worldCenter += planet.position;
 		}
 
-		map.center = worldCenter;
+		worldCenter /= _planetList.Count;
 	}
+
+	map.center = worldCenter;
 }
 
 
@@ -1658,6 +1733,15 @@ void CenterShip(StarMap map)
 	DefaultView(map);
 	map.center = _myPos;
 }
+
+
+// ALIGN SHIP //
+void AlignShip(StarMap map)
+{
+	Vector3 heading = _refBlock.WorldMatrix.Forward;
+	map.azimuth = (int) ToDegrees((float) Math.Atan2(heading.X, heading.Z));
+}
+
 
 
 // PLANET MODE //
@@ -1696,6 +1780,26 @@ void PlanetMode(StarMap map)
 }
 
 
+// SET MAP MODE //
+void SetMapMode(StarMap map, string mapMode)
+{
+	if(mapMode == "SHIP"  || mapMode == "CHASE")
+	{
+		CenterShip(map);
+	}
+	else if (mapMode == "WORLD")
+	{
+		CenterWorld(map);
+	}
+	else if(mapMode == "PLANET")
+	{
+		PlanetMode(map);
+	}
+	
+	map.mode = mapMode;
+}
+
+
 // CHANGE MODE //
 void ChangeMode(string mapMode, List<StarMap> maps)
 {
@@ -1704,73 +1808,58 @@ void ChangeMode(string mapMode, List<StarMap> maps)
 	
 	foreach(StarMap map in maps)
 	{
-		if(mapMode == "SHIP")
+		SetMapMode(map, mapMode);
+	}
+}
+
+
+// CYCLE MODE //
+void CycleMode(List<StarMap> maps, bool cycleUp)
+{
+	if(NoMaps(maps))
+		return;
+		
+	_activePlanet = "";
+	string[] modes = {"FREE", "SHIP", "CHASE", "PLANET", "WORLD"};
+	int length = modes.Length;
+
+	foreach(StarMap map in maps)
+	{
+		int modeIndex = 0;
+		for(int i = 0; i < length; i++)
 		{
-			CenterShip(map);
-		}
-		else if (mapMode == "WORLD")
-		{
-			CenterWorld(map);
-		}
-		else if(mapMode == "PLANET")
-		{
-			PlanetMode(map);
+			// Find Current Map Mode
+			if(map.mode.ToUpper() == modes[i])
+			{
+				modeIndex = i;
+			}
 		}
 		
-		map.mode = mapMode;
-	}
-}
-
-// NEXT MODE //
-void NextMode(StarMap map)
-{
-	_activePlanet = "";
-	if(map.mode.ToUpper() == "FREE")
-	{
-		CenterShip(map);
-		map.mode = "SHIP";
-	}
-	else if(map.mode.ToUpper() == "SHIP")
-	{
-		PlanetMode(map);
-	}
-	else if(map.mode.ToUpper()=="PLANET")
-	{
-		map.mode = "WORLD";
-		CenterWorld(map);
-	}
-	else
-	{
-		map.mode = "FREE";
-		CenterShip(map);
+		// Cycle Mode Up/Down by 1
+		if(cycleUp)
+		{
+			modeIndex++;
+		}
+		else
+		{
+			modeIndex--;
+		}
+		
+		if(modeIndex >= length)
+		{
+			modeIndex = 0;
+		}
+		else if(modeIndex < 0)
+		{
+			modeIndex = length - 1;
+		}
+		
+		SetMapMode(map, modes[modeIndex]);
 	}
 }
 
 
-// PREVIOUS MODE //
-void PreviousMode(StarMap map)
-{
-	_activePlanet = "";
-	if(map.mode.ToUpper() == "PLANET")
-	{
-		CenterShip(map);
-		map.mode = "SHIP";
-	}
-	else if(map.mode.ToUpper() == "WORLD")
-	{
-		PlanetMode(map);
-	}
-	else if(map.mode.ToUpper() == "FREE")
-	{
-		map.mode = "WORLD";		   
-		CenterWorld(map);
-	}
-	else
-	{
-		map.mode = "FREE";
-		CenterShip(map);
-	}
-}
+
 
 
 // SHIP TO PLANET //   Aligns the map so that the ship appears above the center of the planet.
@@ -1785,8 +1874,8 @@ void ShipToPlanet(Planet planet, StarMap map)
 		float altAngle = (float) Math.Asin(shipVector.Y/magnitude);
 
 		map.center = planet.position;
-		map.azimuth = degreeAdd((int) toDegrees(azAngle),90);
-		map.altitude = (int) toDegrees(-altAngle);
+		map.azimuth = DegreeAdd((int) ToDegrees(azAngle),90);
+		map.altitude = (int) ToDegrees(-altAngle);
 	}
 }
 
@@ -3156,6 +3245,19 @@ void PreviousPage()
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// PARSE BOOL //
+bool ParseBool(string val)
+{
+	string uVal = val.ToUpper();
+	if(uVal == "TRUE" || uVal == "T" || uVal == "1")
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+
 // SET STATE // Sets specified boolean to true, false, or toggle
 bool setState(bool attribute, int state)
 {
@@ -3523,11 +3625,11 @@ void SortWaypoints(List<Waypoint> waypoints)
 
 	double r = map.rotationalRadius;
 
-	double cosAz = Math.Cos(toRadians(map.azimuth));
-	double sinAz = Math.Sin(toRadians(map.azimuth));
+	double cosAz = Math.Cos(ToRadians(map.azimuth));
+	double sinAz = Math.Sin(ToRadians(map.azimuth));
 
-	double cosAlt = Math.Cos(toRadians(map.altitude));
-	double sinAlt = Math.Sin(toRadians(map.altitude));
+	double cosAlt = Math.Cos(ToRadians(map.altitude));
+	double sinAlt = Math.Sin(ToRadians(map.altitude));
 
 	// Transformation Formulas from Matrix Calculations
 	double xT = cosAz * xS + sinAz * zS;
@@ -3546,11 +3648,11 @@ public Vector3 rotateVector(Vector3 vecIn, StarMap map)
 	float y = vecIn.Y;
 	float z = vecIn.Z;
 
-	float cosAz = (float) Math.Cos(toRadians(map.azimuth));
-	float sinAz = (float) Math.Sin(toRadians(map.azimuth));
+	float cosAz = (float) Math.Cos(ToRadians(map.azimuth));
+	float sinAz = (float) Math.Sin(ToRadians(map.azimuth));
 
-	float cosAlt = (float) Math.Cos(toRadians(map.altitude));
-	float sinAlt = (float) Math.Sin(toRadians(map.altitude));
+	float cosAlt = (float) Math.Cos(ToRadians(map.altitude));
+	float sinAlt = (float) Math.Sin(ToRadians(map.altitude));
   
 	float xT = cosAz * x + sinAz * z;
 	float yT = sinAz * sinAlt * x + cosAlt * y -sinAlt * cosAz * z;
@@ -3568,11 +3670,11 @@ public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
 	float y = vecIn.Y;
 	float z = vecIn.Z;
 
-	float cosAz = (float) Math.Cos(toRadians(-map.azimuth));
-	float sinAz = (float) Math.Sin(toRadians(-map.azimuth));
+	float cosAz = (float) Math.Cos(ToRadians(-map.azimuth));
+	float sinAz = (float) Math.Sin(ToRadians(-map.azimuth));
 
-	float cosAlt = (float) Math.Cos(toRadians(-map.altitude));
-	float sinAlt = (float) Math.Sin(toRadians(-map.altitude));
+	float cosAlt = (float) Math.Cos(ToRadians(-map.altitude));
+	float sinAlt = (float) Math.Sin(ToRadians(-map.altitude));
 
 	float xT = cosAz * x + sinAz * sinAlt * y + sinAz * cosAlt * z;
 	float yT = cosAlt * y - sinAlt * z;
@@ -3584,7 +3686,7 @@ public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
 
 
 // CYCLE EXECUTE // Wait specified number of cycles to execute cyclial commands
-public void CycleExecute(StarMap map)
+public void CycleExecute()
 {
 	_cycleStep--;
 
@@ -3596,26 +3698,6 @@ public void CycleExecute(StarMap map)
 		//Toggle Indicator LightGray
 		_lightOn = !_lightOn;
 
-		if(map.mode.ToUpper() == "PLANET" && _planetList.Count > 0)
-		{
-			//Sort Planets by proximity to ship.
-			SortByNearest(_planetList);
-			Planet planet = _planetList[0];
-
-			ShipToPlanet(planet, map);
-			_previousCommand = "NEWLY LOADED";
-
-			if(Vector3.Distance(_myPos, planet.position) > 2 * planet.radius)
-			{
-				NextMode(map);
-			}
-		}
-		else if(map.mode.ToUpper() == "SHIP")
-		{
-			map.center = _myPos;
-			_previousCommand = "NEWLY LOADED";
-		}
-
 		if(_waypointList.Count > 0)
 		{
 			_sortCounter++;
@@ -3623,6 +3705,31 @@ public void CycleExecute(StarMap map)
 			{
 				SortWaypoints(_waypointList);
 				_sortCounter = 0;
+			}
+		}
+		
+		if(_planetList.Count > 0)
+		{
+			//Sort Planets by proximity to ship.
+			SortByNearest(_planetList);
+			_nearestPlanet = _planetList[0];
+			bool inSpace = Vector3.Distance(_myPos, _nearestPlanet.position) > 2 * _nearestPlanet.radius;
+			
+			if(_mapList.Count < 1)
+				return;
+			
+			foreach(StarMap map in _mapList)
+			{
+				if(inSpace)
+				{
+					SetMapMode(map, "SHIP");
+				}
+
+				//else if(map.mode.ToUpper() == "SHIP")
+				//{
+				//	map.center = _myPos;
+				//	_previousCommand = "NEWLY LOADED";
+				//}
 			}
 		}
 	}
@@ -3707,6 +3814,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 	String planetMode = "P";
 	String freeMode = "F";
 	String worldMode = "W";
+	String chaseMode = "C";
 
 	if(map.viewport.Width > 500)
 	{
@@ -3717,6 +3825,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 		planetMode = "PLANET";
 		freeMode = "FREE";
 		worldMode = "WORLD";
+		chaseMode = "CHASE";
 	}
 
 	//TOP BAR
@@ -3747,6 +3856,9 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 			break;
 		case "WORLD":
 			modeReading = worldMode;
+			break;
+		case "CHASE":
+			modeReading = chaseMode;
 			break;
 		default:
 			modeReading = freeMode;
@@ -3892,7 +4004,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 
 
 // TO RADIANS //  Converts Degree Value to Radians
-public double toRadians(int angle)
+public double ToRadians(int angle)
 {
 	double radianValue = (double) angle * Math.PI/180;
 	return radianValue;
@@ -3900,7 +4012,7 @@ public double toRadians(int angle)
 
 
 // TO DEGREES //
-public float toDegrees(float angle)
+public float ToDegrees(float angle)
 {
 	float degreeValue = angle * 180/(float) Math.PI;
 	return degreeValue;
@@ -3908,7 +4020,7 @@ public float toDegrees(float angle)
 
 
 // DEGREE ADD //	Adds two degree angles.	 Sets Rollover at +/- 180°
-public static int degreeAdd(int angle_A, int angle_B)
+public static int DegreeAdd(int angle_A, int angle_B)
 {
 	int angleOut = angle_A + angle_B;
 
@@ -3926,7 +4038,7 @@ public static int degreeAdd(int angle_A, int angle_B)
 
 
 // UPDATE MAP // Transform logged locations based on map parameters
-public void updateMap(StarMap map)
+public void UpdateMap(StarMap map)
 {
 	if(_planetList.Count > 0)
 	{
@@ -3964,22 +4076,19 @@ public void updateMap(StarMap map)
 // ACTIVATE MAP // activates tagged map screen without having to recompile.
 void activateMap(StarMap map)
 {
-	//if(_mapBlocks.Count > 0)
-	//{
-		IMyTextSurfaceProvider mapBlock = map.block as IMyTextSurfaceProvider;
-		map.drawingSurface = mapBlock.GetSurface(map.index);
-		PrepareTextSurfaceForSprites(map.drawingSurface);
-		//_statusMessage = "MAP BLOCKS: " + mapBlock.CustomName;
-		//map = parametersToMap(mapBlock);
-		//updateMap(map);
+	IMyTextSurfaceProvider mapBlock = map.block as IMyTextSurfaceProvider;
+	map.drawingSurface = mapBlock.GetSurface(map.index);
+	PrepareTextSurfaceForSprites(map.drawingSurface);
+	//_statusMessage = "MAP BLOCKS: " + mapBlock.CustomName;
+	//map = parametersToMap(mapBlock);
+	//UpdateMap(map);
 
-		// Calculate the viewport offset by centering the surface size onto the texture size
-		map.viewport = new RectangleF(
-		(map.drawingSurface.TextureSize - map.drawingSurface.SurfaceSize) / 2f,
-			map.drawingSurface.SurfaceSize
-		);
-		map.number = _mapList.Count;
-		_mapList.Add(map);
-		updateMap(map);
-	//}
+	// Calculate the viewport offset by centering the surface size onto the texture size
+	map.viewport = new RectangleF(
+	(map.drawingSurface.TextureSize - map.drawingSurface.SurfaceSize) / 2f,
+		map.drawingSurface.SurfaceSize
+	);
+	map.number = _mapList.Count;
+	_mapList.Add(map);
+	UpdateMap(map);
 }
