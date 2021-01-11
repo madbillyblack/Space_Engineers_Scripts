@@ -129,14 +129,12 @@ public class StarMap
 
 	public void yaw(int angle)
 	{
-		if(this.mode.ToUpper() != "PLANET")
+		if(this.mode.ToUpper() == "PLANET" || this.mode.ToUpper() == "CHASE")
 		{
-		   this.azimuth = DegreeAdd(this.azimuth, angle); 
+			_statusMessage = "Yaw controls locked in PLANET and CHASE modes.";
+			return;
 		}
-		else
-		{
-			_statusMessage = "Rotational controls locked in PLANET mode.";
-		}
+		this.azimuth = DegreeAdd(this.azimuth, angle); 
 	}
 
 	public void pitch(int angle)
@@ -158,7 +156,7 @@ public class StarMap
 		}
 		else
 		{
-			_statusMessage = "Rotational controls locked in PLANET mode.";
+			_statusMessage = "Pitch controls locked in PLANET mode.";
 		}
 	}
 }
@@ -499,6 +497,12 @@ public Program()
 			}
 		}
 	}
+	
+	//if(_planetList.Count > 0)
+	//{
+	//	SortByNearest(_planetList);
+	//	_nearestPlanet = _planetList[0];
+	//}
 
 	string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
 	string [] gpsEntries = waypointData.Split('\n');
@@ -522,13 +526,14 @@ public Program()
 		for(int m = 0; m < _mapBlocks.Count; m++)
 		{
 			IMyTextSurfaceProvider mapBlock = _mapBlocks[m] as IMyTextSurfaceProvider;
-			List<StarMap> maps = parametersToMaps(mapBlock as IMyTerminalBlock);
+			List<StarMap> maps = ParametersToMaps(mapBlock as IMyTerminalBlock);
 			
 			if(maps.Count > 0)
 			{
 				foreach(StarMap map in maps)
 				{
 					activateMap(map);
+					MapToParameters(map);
 				}
 			}
 		}
@@ -569,9 +574,8 @@ public Program()
 	_previousCommand = "NEWLY LOADED";
 	
 	// Start with indicator light on.
-	_lightOn = false;
-	_cycleStep = 0;
-	CycleExecute();
+	_lightOn = true;
+	_cycleStep = CYCLE_LENGTH;
 	
 	 // Set the continuous update frequency of this script
 	Runtime.UpdateFrequency = UpdateFrequency.Update10;
@@ -625,29 +629,6 @@ public void Main(string argument)
 	{
 		CycleExecute();
 				
-/*		//IMyTerminalBlock mapBlock = _mapBlocks[0] as IMyTerminalBlock;
-		StarMap myMap = _mapList[0];
-
-		//Add rotational Speed
-		if(myMap.mode.ToUpper() != "PLANET")
-		{
-			myMap.azimuth = DegreeAdd(myMap.azimuth, _azSpeed);
-		}
-
-		//Add Translational Speed
-		if(myMap.mode.ToUpper() == "FREE" || myMap.mode.ToUpper() == "WORLD")
-		{
-			myMap.center += rotateMovement(_trackSpeed, myMap);
-		}
-		
-
-
-		if (_previousCommand == "NEWLY LOADED" || _azSpeed != 0 || _trackSpeed != _origin)
-		{
-			UpdateMap(myMap);
-			MapToParameters(myMap);
-		}
-*/
 		if (argument != "")
 		{
 			string [] args = argument.Split(' ');
@@ -934,6 +915,9 @@ public void Main(string argument)
 				}
 			}
 		}
+		
+		SortByNearest(_planetList);
+		
 		foreach(StarMap map in _mapList)
 		{
 			if(map.mode == "CHASE")
@@ -944,6 +928,7 @@ public void Main(string argument)
 			{
 				if(hasPlanets)
 				{
+					_nearestPlanet = _planetList[0];
 					ShipToPlanet(_nearestPlanet, map);
 				}
 				else
@@ -1023,7 +1008,7 @@ void Show(string attribute, List<StarMap> maps, int state)
 
 
 // PARAMETERS TO MAPS //
-public List<StarMap> parametersToMaps(IMyTerminalBlock mapBlock)
+public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 {
 	List<StarMap> mapsOut = new List<StarMap>();
 	
@@ -1605,7 +1590,7 @@ void MoveCenter(string movement, List<StarMap> maps)
 		}
 		else
 		{
-			_statusMessage = "Translation controls locked in PLANET and SHIP modes.";
+			_statusMessage = "Translation controls locked in PLANET, SHIP, and CHASE modes.";
 		}
 	}
 }
@@ -1739,7 +1724,8 @@ void CenterShip(StarMap map)
 void AlignShip(StarMap map)
 {
 	Vector3 heading = _refBlock.WorldMatrix.Forward;
-	map.azimuth = (int) ToDegrees((float) Math.Atan2(heading.X, heading.Z));
+	map.azimuth = DegreeAdd((int) ToDegrees((float) Math.Atan2(heading.Z, heading.X)), -90);
+	map.center = _myPos;
 }
 
 
@@ -3558,28 +3544,30 @@ public void PlanetSort(List<Planet> planets, StarMap map)
 public void SortByNearest(List<Planet> planets)
 {
 	int length = planets.Count;
-
-	for(int i = 0; i < length - 1; i++)
+	if(length > 1)
 	{
-		for(int p = 1; p < length; p++)
+		for(int i = 0; i < length - 1; i++)
 		{
-			Planet planetA = planets[p-1];
-			Planet planetB = planets[p];
-
-			float distA = Vector3.Distance(planetA.position, _myPos);
-			float distB = Vector3.Distance(planetB.position, _myPos);
-
-			if(distB < distA)
+			for(int p = 1; p < length; p++)
 			{
-				planets[p-1] = planetB;
-				planets[p] = planetA;
-			}
-		}
+				Planet planetA = planets[p-1];
+				Planet planetB = planets[p];
 
-		length--;
-		if (length < 2)
-		{
-			return;
+				float distA = Vector3.Distance(planetA.position, _myPos);
+				float distB = Vector3.Distance(planetB.position, _myPos);
+
+				if(distB < distA)
+				{
+					planets[p-1] = planetB;
+					planets[p] = planetA;
+				}
+			}
+
+			length--;
+			if (length < 2)
+			{
+				return;
+			}
 		}
 	}
 }
@@ -3713,17 +3701,24 @@ public void CycleExecute()
 			//Sort Planets by proximity to ship.
 			SortByNearest(_planetList);
 			_nearestPlanet = _planetList[0];
-			bool inSpace = Vector3.Distance(_myPos, _nearestPlanet.position) > 2 * _nearestPlanet.radius;
+			//bool inSpace = Vector3.Distance(_refBlock.GetPosition(), _nearestPlanet.position) > 2 * _nearestPlanet.radius;
 			
 			if(_mapList.Count < 1)
 				return;
 			
 			foreach(StarMap map in _mapList)
 			{
-				if(inSpace)
+				if(map.mode == "PLANET" || map.mode == "CHASE")
 				{
-					SetMapMode(map, "SHIP");
+					UpdateMap(map);
 				}
+				
+				
+				//if(inSpace && map.mode == "PLANET")
+				//{
+				//	_statusMessage = "Left G-Field of: " + _nearestPlanet.name;
+				//	map.mode = "SHIP";
+				//}
 
 				//else if(map.mode.ToUpper() == "SHIP")
 				//{
