@@ -22,7 +22,7 @@ const int MARKER_WIDTH = 8; // Width of GPS Markers
 const int ANGLE_STEP = 5; // Basic angle in degrees of step rotations.
 const int MAX_PITCH = 90; // Maximum (+/-) value of map pitch. [Not recommended above 90]
 const int MOVE_STEP = 5000; // Step size for translation (move) commands.
-const int ZOOM_STEP = 2; // Factor By which map is zoomed in and out (multiplied).
+const float ZOOM_STEP = 1.5f; // Factor By which map is zoomed in and out (multiplied).
 const int ZOOM_MAX = 1000000000; // Max value for Focal Length
 
 // View Defaults
@@ -129,9 +129,9 @@ public class StarMap
 
 	public void yaw(int angle)
 	{
-		if(this.mode.ToUpper() == "PLANET" || this.mode.ToUpper() == "CHASE")
+		if(this.mode.ToUpper() == "PLANET" || this.mode.ToUpper() == "CHASE" || this.mode.ToUpper() == "ORBIT")
 		{
-			_statusMessage = "Yaw controls locked in PLANET and CHASE modes.";
+			_statusMessage = "Yaw controls locked in PLANET, CHASE & ORBIT modes.";
 			return;
 		}
 		this.azimuth = DegreeAdd(this.azimuth, angle); 
@@ -139,7 +139,7 @@ public class StarMap
 
 	public void pitch(int angle)
 	{
-		if(this.mode.ToUpper() != "PLANET")
+		if(this.mode.ToUpper() != "PLANET" || this.mode.ToUpper() == "ORBIT")
 		{
 			int newAngle = DegreeAdd(this.altitude, angle);
 
@@ -156,7 +156,7 @@ public class StarMap
 		}
 		else
 		{
-			_statusMessage = "Pitch controls locked in PLANET mode.";
+			_statusMessage = "Pitch controls locked in PLANET & ORBIT modes.";
 		}
 	}
 }
@@ -792,6 +792,9 @@ public void Main(string argument)
 				case "FREE_MODE":
 					ChangeMode("FREE", maps);
 					break;
+				case "ORBIT_MODE":
+					ChangeMode("ORBIT", maps);
+					break;
 				case "PREVIOUS_MODE":
 					CycleMode(maps, false);
 					break;
@@ -917,6 +920,7 @@ public void Main(string argument)
 		}
 		
 		SortByNearest(_planetList);
+		_nearestPlanet = _planetList[0];
 		
 		foreach(StarMap map in _mapList)
 		{
@@ -924,17 +928,13 @@ public void Main(string argument)
 			{
 				AlignShip(map);
 			}
-			else if(map.mode == "PLANET")
+			else if(map.mode == "PLANET" && hasPlanets)
 			{
-				if(hasPlanets)
-				{
-					_nearestPlanet = _planetList[0];
-					ShipToPlanet(_nearestPlanet, map);
-				}
-				else
-				{
-					map.mode = "SHIP";
-				}
+				ShipToPlanet(_nearestPlanet, map);
+			}
+			else if(map.mode == "ORBIT")
+			{
+				AlignOrbit(map);
 			}
 			else
 			{
@@ -1485,7 +1485,7 @@ void Zoom(List<StarMap> maps, bool zoomIn)
 	foreach(StarMap map in maps)
 	{
 		int doF = map.focalLength;
-		int newScale;
+		float newScale;
 		
 		if(zoomIn)
 		{
@@ -1507,7 +1507,7 @@ void Zoom(List<StarMap> maps, bool zoomIn)
 		}
 		else
 		{
-			doF = newScale;
+			doF = (int) newScale;
 		}
 
 		map.focalLength = doF;
@@ -1590,7 +1590,7 @@ void MoveCenter(string movement, List<StarMap> maps)
 		}
 		else
 		{
-			_statusMessage = "Translation controls locked in PLANET, SHIP, and CHASE modes.";
+			_statusMessage = "Translation controls only available in FREE & WORLD modes.";
 		}
 	}
 }
@@ -1729,6 +1729,21 @@ void AlignShip(StarMap map)
 }
 
 
+// ALIGN ORBIT //
+void AlignOrbit(StarMap map)
+{
+	map.center = _myPos;
+	map.altitude = 0;
+	float magnitude = Vector3.Distance(_myPos, _nearestPlanet.position);
+	Vector3 orbit = _myPos - _nearestPlanet.position;
+	map.azimuth = (int) ToDegrees((float) Math.Atan2(orbit.Z, orbit.X));
+	
+	if(magnitude > _nearestPlanet.radius * 2.5f)
+	{
+		map.mode = "SHIP";
+	}
+}
+
 
 // PLANET MODE //
 void PlanetMode(StarMap map)
@@ -1769,17 +1784,22 @@ void PlanetMode(StarMap map)
 // SET MAP MODE //
 void SetMapMode(StarMap map, string mapMode)
 {
-	if(mapMode == "SHIP"  || mapMode == "CHASE")
-	{
-		CenterShip(map);
-	}
-	else if (mapMode == "WORLD")
+	if (mapMode == "WORLD")
 	{
 		CenterWorld(map);
 	}
-	else if(mapMode == "PLANET")
+	else
+	{
+		CenterShip(map);
+	}
+	
+	if(mapMode == "PLANET")
 	{
 		PlanetMode(map);
+	}
+	else if(mapMode == "ORBIT")
+	{
+		AlignOrbit(map);
 	}
 	
 	map.mode = mapMode;
@@ -1806,7 +1826,7 @@ void CycleMode(List<StarMap> maps, bool cycleUp)
 		return;
 		
 	_activePlanet = "";
-	string[] modes = {"FREE", "SHIP", "CHASE", "PLANET", "WORLD"};
+	string[] modes = {"FREE", "SHIP", "CHASE", "PLANET", "ORBIT", "WORLD"};
 	int length = modes.Length;
 
 	foreach(StarMap map in maps)
@@ -1862,6 +1882,11 @@ void ShipToPlanet(Planet planet, StarMap map)
 		map.center = planet.position;
 		map.azimuth = DegreeAdd((int) ToDegrees(azAngle),90);
 		map.altitude = (int) ToDegrees(-altAngle);
+		
+		if(magnitude > planet.radius * 2)
+		{
+			map.mode = "SHIP";
+		}
 	}
 }
 
@@ -1876,7 +1901,7 @@ void DefaultView(StarMap map)
 
 	if(map.viewport.Width > 500)
 	{
-		map.focalLength *= 2;
+		map.focalLength *= 3;
 	}
 
 	map.rotationalRadius = DV_RADIUS;
@@ -2033,9 +2058,16 @@ void SelectPlanet(Planet planet, StarMap map)
 {
 	map.center = planet.position;
 	_activePlanet = planet.name;
+	
 	if(planet.radius < 30000)
 	{
 		map.focalLength *= 4;
+	}
+	
+	else if(planet.radius < 40000)
+	{
+		map.focalLength *= 3;
+		map.focalLength /= 2;
 	}
 }
 
@@ -2444,10 +2476,45 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 
 		float diameter = ProjectDiameter(planet, map);
 
-		Vector2 position = startPosition - new Vector2(diameter/2,0);
+		MySprite sprite;
+		Vector2 position;
+
+		// Draw Gravity Well
+		if(map.mode == "ORBIT")
+		{
+			float radMod = 0.83f;
+			
+			position = startPosition - new Vector2(diameter*radMod,0);
+			sprite = new MySprite()
+			{
+				Type = SpriteType.TEXTURE,
+				Data = "CircleHollow",
+				Position = position,
+				Size=  new Vector2(diameter*radMod*2, diameter*radMod*2), 
+				Color = Color.Green
+			};
+			frame.Add(sprite);
+			
+			radMod *= 0.99f;
+			
+			position = startPosition - new Vector2(diameter*radMod, 0);
+			sprite = new MySprite()
+			{
+				Type = SpriteType.TEXTURE,
+				Data = "CircleHollow",
+				Position = position,
+				Size=  new Vector2(diameter*radMod*2, diameter*radMod*2), 
+				Color = Color.Black
+			};
+			frame.Add(sprite);
+		}
+
+
+
+		position = startPosition - new Vector2(diameter/2,0);
 
 		// Body
-		var sprite = new MySprite()
+		sprite = new MySprite()
 		{
 			Type = SpriteType.TEXTURE,
 			Data = "Circle",
@@ -3069,7 +3136,7 @@ void DisplayPlanetData()
 				planetEntry = "		   ";
 			}
 
-			planetEntry += planet.name + "	  R: " + abbreviateValue(planet.radius) + "m	dist: " + surfaceDistance.ToString("N1") + "km";
+			planetEntry += planet.name + "	  R: " + abbreviateValue(planet.radius) + "m    dist: " + surfaceDistance.ToString("N1") + "km";
 
 			planetData.Add(planetEntry);
 		}
@@ -3708,7 +3775,7 @@ public void CycleExecute()
 			
 			foreach(StarMap map in _mapList)
 			{
-				if(map.mode == "PLANET" || map.mode == "CHASE")
+				if(map.mode == "PLANET" || map.mode == "CHASE" || map.mode == "ORBIT")
 				{
 					UpdateMap(map);
 				}
@@ -3810,6 +3877,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 	String freeMode = "F";
 	String worldMode = "W";
 	String chaseMode = "C";
+	String orbitMode = "O";
 
 	if(map.viewport.Width > 500)
 	{
@@ -3821,6 +3889,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 		freeMode = "FREE";
 		worldMode = "WORLD";
 		chaseMode = "CHASE";
+		orbitMode = "ORBIT";
 	}
 
 	//TOP BAR
@@ -3854,6 +3923,9 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 			break;
 		case "CHASE":
 			modeReading = chaseMode;
+			break;
+		case "ORBIT":
+			modeReading = orbitMode;
 			break;
 		default:
 			modeReading = freeMode;
