@@ -84,6 +84,7 @@ List<Planet> _unchartedList = new List<Planet>();
 List<Waypoint> _waypointList = new List<Waypoint>();
 List<StarMap> _mapList = new List<StarMap>();
 Planet _nearestPlanet;
+MySpriteDrawFrame _frame;
 
 IMyTextSurface _dataSurface;
 IMyTerminalBlock _refBlock;
@@ -117,8 +118,6 @@ public class StarMap
 	public bool showInfo;
 	public int planetIndex;
 	public int waypointIndex;
-	
-	//public MySpriteDrawFrame frame;
 
 	public StarMap()
 	{
@@ -177,11 +176,6 @@ public class Location
 // PLANET //
 public class Planet : Location
 {
-	//public String name;
-	//public Vector3 center;
-	//public List<Vector3> transformedCoords;
-	//public String color;
-	
 	public float radius;
 	public Vector3 point1;
 	public Vector3 point2;
@@ -408,7 +402,6 @@ public class Waypoint : Location
 
 
 // PROGRAM ///////////////////////////////////////////////////////////////////////////////////////////////
-
 public Program()
 {
 	//Load Saved Variables
@@ -497,12 +490,6 @@ public Program()
 			}
 		}
 	}
-	
-	//if(_planetList.Count > 0)
-	//{
-	//	SortByNearest(_planetList);
-	//	_nearestPlanet = _planetList[0];
-	//}
 
 	string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
 	string [] gpsEntries = waypointData.Split('\n');
@@ -919,7 +906,10 @@ public void Main(string argument)
 			}
 		}
 		
-		SortByNearest(_planetList);
+		if(_cycleStep == CYCLE_LENGTH || _previousCommand == "NEWLY LOADED")
+		{
+			SortByNearest(_planetList);
+		}
 		_nearestPlanet = _planetList[0];
 		
 		foreach(StarMap map in _mapList)
@@ -954,13 +944,13 @@ public void Main(string argument)
 			}
 			
 			// Begin a new frame
-			MySpriteDrawFrame frame = map.drawingSurface.DrawFrame();
+			_frame = map.drawingSurface.DrawFrame();
 			
 			// All sprites must be added to the frame here
-			DrawSprites(ref frame, map);
+			DrawSprites(map);
 			
 			// We are done with the frame, send all the sprites to the text panel
-			frame.Dispose();
+			_frame.Dispose();
 		}
 	}
 	else
@@ -978,7 +968,6 @@ public void Main(string argument)
 
 
 // VIEW FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 // SHOW //
 void Show(string attribute, List<StarMap> maps, int state)
@@ -1084,6 +1073,7 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 	return mapsOut;
 }
 
+
 // DATA TO LOG //
 public void DataToLog()
 {
@@ -1156,8 +1146,6 @@ public void MapToParameters(StarMap map)
 		}
 	}
 	
-	
-	
 	// Read the old Ini Data and split into string arrays. Insert the new data into the arrays.
 	string newIndexes = InsertEntry(map.index.ToString(), blockIndex, ',', i, entries, "0");
 	string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), ';', i, entries, "(0,0,0)");
@@ -1209,7 +1197,6 @@ void ClipboardToLog(string clipboard, string markerType)
 	Vector3 position = new Vector3(float.Parse(waypointData[2]),float.Parse(waypointData[3]),float.Parse(waypointData[4]));
 	LogWaypoint(waypointData[1], position, markerType);
 }
-
 
 
 // LOG TO CLIPBOARD //
@@ -1295,6 +1282,7 @@ public void SetWaypointState(String waypointName, int state)
 
 	DataToLog();
 }
+
 
 // PLOT JUMP POINT //
 void PlotJumpPoint(string planetName)
@@ -1736,7 +1724,7 @@ void AlignOrbit(StarMap map)
 	map.altitude = 0;
 	float magnitude = Vector3.Distance(_myPos, _nearestPlanet.position);
 	Vector3 orbit = _myPos - _nearestPlanet.position;
-	map.azimuth = (int) ToDegrees((float) Math.Atan2(orbit.Z, orbit.X));
+	map.azimuth = (int) ToDegrees((float)Math.Abs(Math.Atan2(orbit.Z, orbit.X)));
 	
 	if(magnitude > _nearestPlanet.radius * 2.5f)
 	{
@@ -1863,9 +1851,6 @@ void CycleMode(List<StarMap> maps, bool cycleUp)
 		SetMapMode(map, modes[modeIndex]);
 	}
 }
-
-
-
 
 
 // SHIP TO PLANET //   Aligns the map so that the ship appears above the center of the planet.
@@ -2075,7 +2060,7 @@ void SelectPlanet(Planet planet, StarMap map)
 // DRAWING FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // DRAW SHIP //
-public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> displayPlanets)
+public void DrawShip(StarMap map, List<Planet> displayPlanets)
 {
 	// SHIP COLORS
 	Color bodyColor = new Color(SHIP_RED, SHIP_GREEN, SHIP_BLUE);
@@ -2142,17 +2127,17 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 
 		if(aboveY)
 		{
-			posY = vertMod + TOP_MARGIN	 + map.viewport.Center.Y - map.viewport.Height/2; //1.75f * SHIP_SCALE + 
+			posY = vertMod + TOP_MARGIN	 + map.viewport.Center.Y - map.viewport.Height/2;
 			rotation = 0;
 		}
 		else if(belowY)
 		{
-			posY = map.viewport.Center.Y + map.viewport.Height/2 - vertMod - TOP_MARGIN; //+ 1.25f * SHIP_SCALE 
+			posY = map.viewport.Center.Y + map.viewport.Height/2 - vertMod - TOP_MARGIN;
 			rotation = (float) Math.PI;
 		}
 		else
 		{
-			posY = map.viewport.Height/2 + shipY + (map.viewport.Width - map.viewport.Height)/2; //2
+			posY = map.viewport.Height/2 + shipY + (map.viewport.Width - map.viewport.Height)/2;
 		}
 
 		if(offX && offY)
@@ -2162,27 +2147,9 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 
 
 		//OFF MAP POINTER
-		var sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Triangle",
-			Position = new Vector2(posX - 2, posY),
-			Size=  new Vector2(pointerScale + 4, pointerScale + 4),
-			RotationOrScale=rotation,
-			Color = Color.Black,
-		};
-		frame.Add(sprite);
+		DrawTexture("Triangle", new Vector2(posX - 2, posY), new Vector2(pointerScale + 4, pointerScale + 4), rotation, Color.Black);
 
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Triangle",
-			Position = new Vector2(posX, posY),
-			Size=  new Vector2(pointerScale, pointerScale),
-			RotationOrScale=rotation,
-			Color = bodyColor,
-		};
-		frame.Add(sprite);
+		DrawTexture("Triangle", new Vector2(posX, posY), new Vector2(pointerScale, pointerScale), rotation, bodyColor);
 	}
 	else
 	{
@@ -2287,61 +2254,33 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 		//Get the Ratio of direction Vector's apparent vs actual magnitudes.
 		float shipLength = (float) 1.33 * SHIP_SCALE *(float) Math.Sqrt(headingX * headingX + headingY * headingY) / (float) Math.Sqrt (headingX * headingX + headingY * headingY + headingZ * headingZ);
 
-		//float shipLength = heading.Length();//Math.Sqrt(headingX * headingX + headingY * headingY);
-
-		float shipAngle = (float) Math.Atan2(headingX, headingY) * -1;//(float) Math.PI - 
+		float shipAngle = (float) Math.Atan2(headingX, headingY) * -1; 
 		
 		position += map.viewport.Center;
 
 		Vector2 offset = new Vector2( (float) Math.Sin(shipAngle), (float) Math.Cos(shipAngle) * -1);
 		position += offset * shipLength/4;
-		position -= new Vector2(SHIP_SCALE/2 ,0); // Center width of ship over position
+		position -= new Vector2(SHIP_SCALE/2 ,0);
 		Vector2 startPosition = position;
 
 		position -= new Vector2(2,0);
 
 		//Outline
-		var sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Triangle",
-			Position = position,
-			Size=  new Vector2(SHIP_SCALE+4, shipLength+4),
-			RotationOrScale=shipAngle,
-			Color = Color.Black,
-		};
-		frame.Add(sprite);
+		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE+4, shipLength+4), shipAngle, Color.Black);
 
 		float aftHeight = SHIP_SCALE - shipLength/(float) 1.33;
 
 		position = startPosition;
 		position -= offset * shipLength/2;
 		position -= new Vector2(2,0);
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Circle",
-			Position = position,
-			Size=  new Vector2(SHIP_SCALE+4, aftHeight+4),
-			RotationOrScale=shipAngle,
-			Color = Color.Black,
-		};
-		frame.Add(sprite);
+		
+		DrawTexture("Circle", position, new Vector2(SHIP_SCALE+4, aftHeight+4), shipAngle, Color.Black);
 		
 		position = startPosition;
+		
 		// Ship Body
+		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE, shipLength), shipAngle, bodyColor);
 
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Triangle",
-			Position = position,
-			Size=  new Vector2(SHIP_SCALE, shipLength),
-			RotationOrScale=shipAngle,
-			Color = bodyColor,
-		};
-		frame.Add(sprite);
-			   
 		// Aft Ellipse
 		if(headingZ < 0)
 		{
@@ -2350,29 +2289,13 @@ public void DrawShip(ref MySpriteDrawFrame frame, StarMap map, List<Planet> disp
 		}
 
 		position -= offset * shipLength/2;
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Circle",
-			Position = position,
-			Size=  new Vector2(SHIP_SCALE, aftHeight),
-			RotationOrScale=shipAngle,
-			Color = aftColor,
-		};
-		frame.Add(sprite);
+		
+		DrawTexture("Circle", position, new Vector2(SHIP_SCALE, aftHeight), shipAngle, aftColor);
 		
 		position -= offset * shipLength/16;
 		position += new Vector2(SHIP_SCALE/6, 0);
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Circle",
-			Position = position,
-			Size=  new Vector2(SHIP_SCALE*0.67f, aftHeight*0.67f),
-			RotationOrScale=shipAngle,
-			Color = plumeColor,
-		};
-		frame.Add(sprite);
+		
+		DrawTexture("Circle", position, new Vector2(SHIP_SCALE*0.67f, aftHeight*0.67f), shipAngle, plumeColor);
 	}
 }
 
@@ -2391,7 +2314,7 @@ public Vector2 PlotObject(Vector3 pos, StarMap map)
 
 
 // DRAW PLANETS //
-public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame, StarMap map)
+public void DrawPlanets(List<Planet> displayPlanets, StarMap map)
 {
 	PlanetSort(displayPlanets, map);
 
@@ -2476,68 +2399,32 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 
 		float diameter = ProjectDiameter(planet, map);
 
-		MySprite sprite;
 		Vector2 position;
+		Vector2 size;
 
 		// Draw Gravity Well
-		if(map.mode == "ORBIT")
+		if(map.mode == "ORBIT" && planet == _nearestPlanet)
 		{
 			float radMod = 0.83f;
-			
+			size = new Vector2(diameter*radMod*2, diameter*radMod*2);
 			position = startPosition - new Vector2(diameter*radMod,0);
-			sprite = new MySprite()
-			{
-				Type = SpriteType.TEXTURE,
-				Data = "CircleHollow",
-				Position = position,
-				Size=  new Vector2(diameter*radMod*2, diameter*radMod*2), 
-				Color = Color.Green
-			};
-			frame.Add(sprite);
 			
+			DrawTexture("CircleHollow", position, size, 0, Color.DarkGreen);
 			radMod *= 0.99f;
-			
 			position = startPosition - new Vector2(diameter*radMod, 0);
-			sprite = new MySprite()
-			{
-				Type = SpriteType.TEXTURE,
-				Data = "CircleHollow",
-				Position = position,
-				Size=  new Vector2(diameter*radMod*2, diameter*radMod*2), 
-				Color = Color.Black
-			};
-			frame.Add(sprite);
+			size = new Vector2(diameter*radMod*2, diameter*radMod*2);
+
+			DrawTexture("CircleHollow", position, size, 0, Color.Black);
 		}
 
-
-
+		// Planet Body
 		position = startPosition - new Vector2(diameter/2,0);
-
-		// Body
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Circle",
-			Position = position,
-			Size=  new Vector2(diameter,diameter), 
-			Color = surfaceColor,
-		};
-		frame.Add(sprite);
+		DrawTexture("Circle", position, new Vector2(diameter,diameter), 0, surfaceColor);
 		  
 		// Equator
 		double radAngle = (float) map.altitude * Math.PI/180;
 		float pitchMod = (float) Math.Sin(radAngle)*diameter;
-
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "CircleHollow",
-			Position = position,
-			Size=  new Vector2(diameter,pitchMod), 
-			Color = lineColor,
-		};
-
-		frame.Add(sprite);
+		DrawTexture("CircleHollow", position, new Vector2(diameter,pitchMod), 0, lineColor);
 
 		// Mask
 		int scaleMod = -1;
@@ -2545,33 +2432,16 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 		{
 			scaleMod *= -1;
 		}
-
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "SemiCircle",
-			Position = position,
-			Size=  new Vector2(diameter, diameter*scaleMod), 
-			Color = surfaceColor,
-		};
-		// Add the sprite to the frame
-		frame.Add(sprite);
+		DrawTexture("SemiCircle", position, new Vector2(diameter, diameter*scaleMod), 0, surfaceColor);
 
 		// Border
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "CircleHollow",
-			Position = position,
-			Size=  new Vector2(diameter, diameter), 
-			Color = lineColor,
-		}; 
-		frame.Add(sprite);
+		DrawTexture("CircleHollow", position, new Vector2(diameter, diameter), 0, lineColor);
+
 
 		// HashMarks
 		if(diameter > HASH_LIMIT)// && Vector3.Distance(planet.position, map.center) < 2*planet.radius
 		{
-			DrawHashMarks(planet, diameter, lineColor, map, ref frame);
+			DrawHashMarks(planet, diameter, lineColor, map);
 		}
 
 		if(map.showNames)
@@ -2584,42 +2454,52 @@ public void DrawPlanets(List<Planet> displayPlanets, ref MySpriteDrawFrame frame
 				fontMod =(float)0.5;
 			}
 
-			position = startPosition;
-
 			// Name Shadow
-			sprite = new MySprite()
-			{
-				Type = SpriteType.TEXT,
-				Data = planet.name,
-				Position = position,
-				RotationOrScale = fontMod*0.8f,
-				Color = Color.Black,
-				Alignment = TextAlignment.CENTER /* Center the text on the position */,
-				FontId = "White"
-			};
-			frame.Add(sprite);
-
-			position += new Vector2(-2,2);
+			position = startPosition;
+			DrawText(planet.name, position, fontMod*0.8f, TextAlignment.CENTER, Color.Black);
 
 			// Name
-			sprite = new MySprite()
-			{
-				Type = SpriteType.TEXT,
-				Data = planet.name,
-				Position = position,
-				RotationOrScale = fontMod*0.8f,
-				Color = Color.Yellow*_brightnessMod,
-				Alignment = TextAlignment.CENTER /* Center the text on the position */,
-				FontId = "White"
-			};
-			frame.Add(sprite);	  
+			position += new Vector2(-2,2);
+			DrawText(planet.name, position, fontMod*0.8f, TextAlignment.CENTER, Color.Yellow*_brightnessMod);
 		}
 	}
 }
 
 
+// DRAW TEXTURE //
+public void DrawTexture(string shape, Vector2 position, Vector2 size, float rotation, Color color)
+{
+	var sprite = new MySprite()
+	{
+		Type = SpriteType.TEXTURE,
+		Data = shape,
+		Position = position,
+		Size = size,
+		RotationOrScale=rotation,
+		Color = color
+	};
+	_frame.Add(sprite);
+}
+
+// DRAW TEXT //
+void DrawText(string text, Vector2 position, float scale, TextAlignment alignment, Color color)
+{
+	var sprite = new MySprite()
+	{
+		Type = SpriteType.TEXT,
+		Data = text,
+		Position = position,
+		RotationOrScale = scale,
+		Color = color,
+		Alignment = alignment,
+		FontId = "White"
+	};
+	_frame.Add(sprite);
+}
+
+
 // DRAW HASHMARKS //   Makes series of low-profile waypoints to denote latitude and longitude on planets.
-public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map, ref MySpriteDrawFrame frame)
+public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMap map)
 {
 	List<Waypoint> hashMarks = new List<Waypoint>();
 	
@@ -2703,51 +2583,24 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
 			Vector2 hashOffset = new Vector2(0,10*textMod*pitchMod);
 			position -= hashOffset;
 
-			var sprite = new MySprite()
-			{
-				Type = SpriteType.TEXT,
-				Data = hashLabels[0],
-				Position = position,
-				RotationOrScale = 0.5f * textMod,
-				Color = lineColor,
-				Alignment = TextAlignment.CENTER,
-				FontId = "White"
-			};
-			frame.Add(sprite);
+			DrawText(hashLabels[0], position, 0.5f * textMod, TextAlignment.CENTER, lineColor);
 
 			position += hashOffset; 
 
-			sprite = new MySprite()
-			{
-				Type = SpriteType.TEXT,
-				Data = hashLabels[1],
-				Position = position,
-				RotationOrScale = 0.4f * textMod,
-				Color = lineColor,
-				Alignment = TextAlignment.CENTER,
-				FontId = "White"
-			};
-			frame.Add(sprite);			   
+			DrawText(hashLabels[1], position, 0.4f * textMod, TextAlignment.CENTER, lineColor);		   
 		}
 		else
 		{
 			position += new Vector2(-2,2);
-			var sprite = new MySprite()
-			{
-				Type = SpriteType.TEXTURE,
-				Data = "Circle",
-				Position = position,
-				Size=  new Vector2(4,4), 
-				Color = lineColor,
-			};
-			frame.Add(sprite);
+			
+			DrawTexture("Circle", position, new Vector2(4,4), 0, lineColor);
 		}
 	}
 }
 
 
 // DRAW WAYPOINTS //
-public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
+public void DrawWaypoints(StarMap map)
 {
 	float fontSize = 0.5f;
 	int markerSize = MARKER_WIDTH;
@@ -2805,123 +2658,47 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 				markerColor *= _brightnessMod;
 
 				// PRINT MARKER
-				var sprite = new MySprite()
-				{
-					Type = SpriteType.TEXTURE,
-					Data = markerShape,
-					Position = position,
-					RotationOrScale = rotationMod,
-					Size=  markerScale, 
-					Color = Color.Black,
-				};
-				frame.Add(sprite);
+				
+				// Shadow
+				DrawTexture(markerShape, position, markerScale, rotationMod, Color.Black);
+
+				// Marker
+				position += new Vector2(1,0);
+				DrawTexture(markerShape, position, markerScale*1.2f, rotationMod, markerColor);
 
 				position += new Vector2(1,0);
-
-				sprite = new MySprite()
-				{
-					Type = SpriteType.TEXTURE,
-					Data = markerShape,
-					Position = position,
-					RotationOrScale = rotationMod,
-					Size =	markerScale * 1.2f, 
-					Color = markerColor,
-				};
-				frame.Add(sprite);
-
-				position += new Vector2(1,0);
-
-				sprite = new MySprite()
-				{
-					Type = SpriteType.TEXTURE,
-					Data = markerShape,
-					Position = position,
-					RotationOrScale = rotationMod,
-					Size=  markerScale, 
-					Color = markerColor,
-				};
-				frame.Add(sprite);
+				DrawTexture(markerShape, position, markerScale, rotationMod, markerColor);
 
 				if(waypoint.marker.ToUpper() == "STATION")
 				{
 					position += new Vector2(markerSize/2 - markerSize/20, 0);
-
-					sprite = new MySprite()
-					{
-						Type = SpriteType.TEXTURE,
-						Data = "SquareSimple",
-						Position = position,
-						RotationOrScale = rotationMod,
-						Size=  new Vector2(markerSize/10 ,markerSize), 
-						Color = markerColor,
-					};
-					frame.Add(sprite);
-
+					DrawTexture("SquareSimple", position, new Vector2(markerSize/10 ,markerSize), rotationMod, markerColor);
 					position = startPosition;
 				}
 
 				if(waypoint.marker.ToUpper() == "HAZARD")
 				{
 					position += new Vector2(markerSize/2 - markerSize/20, -markerSize*0.85f);
-
-					sprite = new MySprite()
-					{
-						Type = SpriteType.TEXT,
-						Data = "!",
-						Position = position,
-						RotationOrScale = fontSize*1.2f,
-						Color = Color.White,
-						Alignment = TextAlignment.CENTER, 
-						FontId = "White"
-					};
-					frame.Add(sprite);
-
+					
+					DrawText("!", position, fontSize*1.2f, TextAlignment.CENTER, Color.White);
 					position = startPosition;
 				}
 
 				if(waypoint.marker.ToUpper() == "BASE")
 				{
 					position += new Vector2(markerSize/6, -markerSize/12);
-					sprite = new MySprite()
-					{
-						Type = SpriteType.TEXTURE,
-						Data = "SemiCircle",
-						Position = position,
-						RotationOrScale = rotationMod,
-						Size=  new Vector2(markerSize*1.15f,markerSize*1.15f), 
-						Color = new Color(0,64,64)*_brightnessMod,
-					};
-					frame.Add(sprite);
+					
+					DrawTexture("SemiCircle", position, new Vector2(markerSize*1.15f,markerSize*1.15f), rotationMod, new Color(0,64,64)*_brightnessMod);
 					position += new Vector2(0.25f * markerSize,-0.33f * markerSize);
 				}
 
 				if(waypoint.marker.ToUpper() == "ASTEROID")
 				{
 					position += new Vector2(markerSize/2 - markerSize/20, 0);
-
-					sprite = new MySprite()
-					{
-						Type = SpriteType.TEXTURE,
-						Data = "SquareTapered",
-						Position = position,
-						RotationOrScale = rotationMod,
-						Size=  markerScale, 
-						Color = new Color(32,32,32)*_brightnessMod,
-					};
-					frame.Add(sprite);
+					DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
 
 					position -= new Vector2(markerSize - markerSize/10,0);
-
-					sprite = new MySprite()
-					{
-						Type = SpriteType.TEXTURE,
-						Data = "SquareTapered",
-						Position = position,
-						RotationOrScale = rotationMod,
-						Size=  markerScale, 
-						Color = new Color(32,32,32)*_brightnessMod,
-					};
-					frame.Add(sprite);
+					DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
 
 					position = startPosition;					 
 				}
@@ -2930,18 +2707,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 				{
 					// PRINT NAME
 					position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
-
-					sprite = new MySprite()
-					{
-						Type = SpriteType.TEXT,
-						Data = waypoint.name,
-						Position = position,
-						RotationOrScale = fontSize,
-						Color = Color.White*_brightnessMod,
-						Alignment = TextAlignment.LEFT,
-						FontId = "White"
-					};
-					frame.Add(sprite);
+					DrawText(waypoint.name, position, fontSize, TextAlignment.LEFT, Color.White*_brightnessMod);
 				}
 			}
 		}
@@ -2950,7 +2716,7 @@ public void DrawWaypoints(ref MySpriteDrawFrame frame, StarMap map)
 
 
 // DRAW SURFACE POINTS //
-public void DrawSurfacePoint(Vector3 surfacePoint, int pointNumber, ref MySpriteDrawFrame frame, StarMap map)
+public void DrawSurfacePoint(Vector3 surfacePoint, int pointNumber, StarMap map)
 {
 	Color pointColor;
 	switch(pointNumber)
@@ -2988,45 +2754,19 @@ public void DrawSurfacePoint(Vector3 surfacePoint, int pointNumber, ref MySprite
 		
 		position += new Vector2(-markerScale * 0.025f, markerScale *0.05f);
 
-		var sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Circle",
-			Position = position,
-			Size=  markerSize*1.1f, 
-			Color = Color.Black,
-		};
-		frame.Add(sprite);
+		DrawTexture("Circle", position, markerSize*1.1f, 0, Color.Black);
 
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "CircleHollow",
-			Position = position,
-			Size=  markerSize, 
-			Color = pointColor,
-		};
-		frame.Add(sprite);
+		DrawTexture("CircleHollow", position, markerSize, 0, pointColor);
 
 		position = startPosition - new Vector2(0, markerScale/2);
 
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXT,
-			Data = "?",
-			Position = position,
-			RotationOrScale = textSize,
-			Color = pointColor,
-			Alignment = TextAlignment.CENTER,
-			FontId = "White"
-		};
-		frame.Add(sprite);	
+		DrawText("?", position, textSize, TextAlignment.CENTER, pointColor);	
 	}
 }
 
 
 // PLOT UNCHARTED //
-public void PlotUncharted(ref MySpriteDrawFrame frame, StarMap map)
+public void PlotUncharted(StarMap map)
 {
 	if(_unchartedList.Count > 0)
 	{
@@ -3038,7 +2778,7 @@ public void PlotUncharted(ref MySpriteDrawFrame frame, StarMap map)
 			if(planetData[p] != "")
 			{
 				int pointNumber = p-3;
-				DrawSurfacePoint(planet.GetPoint(pointNumber),pointNumber, ref frame, map);
+				DrawSurfacePoint(planet.GetPoint(pointNumber),pointNumber, map);
 			}
 		}
 	}
@@ -3389,13 +3129,6 @@ public string InsertEntry(string entry, string oldString, char separator, int in
 	{
 		return entry;
 	}
-	
-	// If index is out of bounds, log error and return original string.
-//	if(index >= entries.Length)
-//	{
-//		_statusMessage = "INSERT INDEX Out of Bounds: " + oldString + " " + index + " " + entry;
-//		return oldString;
-//	}
 	
 	//Insert entry into the old string.
 	entries[index] = entry;
@@ -3768,7 +3501,6 @@ public void CycleExecute()
 			//Sort Planets by proximity to ship.
 			SortByNearest(_planetList);
 			_nearestPlanet = _planetList[0];
-			//bool inSpace = Vector3.Distance(_refBlock.GetPosition(), _nearestPlanet.position) > 2 * _nearestPlanet.radius;
 			
 			if(_mapList.Count < 1)
 				return;
@@ -3779,19 +3511,6 @@ public void CycleExecute()
 				{
 					UpdateMap(map);
 				}
-				
-				
-				//if(inSpace && map.mode == "PLANET")
-				//{
-				//	_statusMessage = "Left G-Field of: " + _nearestPlanet.name;
-				//	map.mode = "SHIP";
-				//}
-
-				//else if(map.mode.ToUpper() == "SHIP")
-				//{
-				//	map.center = _myPos;
-				//	_previousCommand = "NEWLY LOADED";
-				//}
 			}
 		}
 	}
@@ -3812,23 +3531,13 @@ public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
 
 
 // DRAW SPRITES //
-public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
+public void DrawSprites(StarMap map)
 {
 	Vector3 mapCenter = map.center;
 
-	Color gridColor = new Color(0,64,0);
 	// Create background sprite
-	var sprite = new MySprite()
-	{
-		Type = SpriteType.TEXTURE,
-		Data = "Grid",
-		Position = map.viewport.Center,
-		Size = map.viewport.Size,
-		Color = gridColor,
-		Alignment = TextAlignment.CENTER
-	};
-	// Add the sprite to the frame
-	frame.Add(sprite);
+	Color gridColor = new Color(0,64,0);
+	DrawTexture("Grid", new Vector2(0, map.viewport.Height/2), map.viewport.Size, 0, gridColor);
 
 	//DRAW PLANETS
 	List<Planet> displayPlanets = new List<Planet>();
@@ -3840,33 +3549,31 @@ public void DrawSprites(ref MySpriteDrawFrame frame, StarMap map)
 			displayPlanets.Add(planet);
 		}
 	}
-	DrawPlanets(displayPlanets, ref frame, map);
+	DrawPlanets(displayPlanets, map);
 
 	//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
 	if(map.showGPS)
 	{
-		DrawWaypoints(ref frame, map);
-		PlotUncharted(ref frame, map);
+		DrawWaypoints(map);
+		PlotUncharted(map);
 	}
-
 
 	// DRAW SHIP
 	if(map.showShip)
 	{
-		DrawShip(ref frame, map, displayPlanets);
+		DrawShip(map, displayPlanets);
 	}
-
 
 	// MAP INFO
 	if(map.showInfo)
 	{
-		drawMapInfo(ref frame, map);
+		DrawMapInfo(map);
 	}
 }
 
 
 // DRAW MAP INFO //
-public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
+public void DrawMapInfo(StarMap map)
 {
 	//DEFAULT SIZING / STRINGS
 	float fontSize = 0.6f;
@@ -3895,16 +3602,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 	//TOP BAR
 	var position = map.viewport.Center;
 	position -= new Vector2(map.viewport.Width/ 2, map.viewport.Height/2 - barHeight/2);
-
-	var sprite = new MySprite()
-	{
-		Type = SpriteType.TEXTURE,
-		Data = "SquareSimple",
-		Position = position,
-		Color = Color.Black,
-		Size= new Vector2(map.viewport.Width, barHeight),
-	};
-	frame.Add(sprite);
+	DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
   
 	//MODE	  
 	position += new Vector2(SIDE_MARGIN,-TOP_MARGIN);
@@ -3932,18 +3630,8 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 			break;		  
 	}
 
-	sprite = new MySprite()
-	{
-		Type = SpriteType.TEXT,
-		Data = modeReading,
-		Position = position,
-		RotationOrScale = fontSize,
-		Color = Color.White,
-		Alignment = TextAlignment.LEFT,
-		FontId = "White"
-	};
-	frame.Add(sprite);
-		
+	DrawText(modeReading, position, fontSize, TextAlignment.LEFT, Color.White);
+
 	// CENTER READING
 	string xCenter = abbreviateValue(map.center.X);
 	string yCenter = abbreviateValue(map.center.Y);
@@ -3952,17 +3640,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 
 	position += new Vector2(map.viewport.Width/2 - SIDE_MARGIN, 0);
 
-	sprite = new MySprite()
-	{
-		Type = SpriteType.TEXT,
-		Data = centerReading,
-		Position = position,
-		RotationOrScale = fontSize,
-		Color = Color.White,
-		Alignment = TextAlignment.CENTER,
-		FontId = "White"
-	};
-	frame.Add(sprite);
+	DrawText(centerReading, position, fontSize, TextAlignment.CENTER, Color.White);
 
 	// RUNNING INDICATOR
 	position += new Vector2(map.viewport.Width/2 - SIDE_MARGIN, TOP_MARGIN);
@@ -3971,15 +3649,7 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 
 	if(_lightOn)
 	{
-		sprite = new MySprite()
-		{
-			Type = SpriteType.TEXTURE,
-			Data = "Circle",
-			Position = position,
-			Size=  new Vector2(7,7), 
-			Color = lightColor,
-		};
-		frame.Add(sprite); 
+		DrawTexture("Circle", position,new Vector2(7,7), 0, lightColor);
 	}
 	
 	// MAP ID
@@ -3987,86 +3657,35 @@ public void drawMapInfo(ref MySpriteDrawFrame frame, StarMap map)
 	
 	string mapID = "[" + map.number + "]";
 	
-	sprite = new MySprite()
-	{
-		Type = SpriteType.TEXT,
-		Data = mapID,
-		Position = position,
-		RotationOrScale = fontSize,
-		Color = Color.White,
-		Alignment = TextAlignment.RIGHT,
-		FontId = "White"
-	};
-	frame.Add(sprite);
-	
+	DrawText(mapID, position, fontSize, TextAlignment.RIGHT, Color.White);
 
 	// BOTTOM BAR
 	position = map.viewport.Center;
 	position -= new Vector2(map.viewport.Width/ 2, barHeight/2 - map.viewport.Height/2);
-	
+
 	if(map.viewport.Width == 1024)
 	{
 		position = new Vector2(0, map.viewport.Height - barHeight/2);
 	}
-	
-	sprite = new MySprite()
-	{
-		Type = SpriteType.TEXTURE,
-		Data = "SquareSimple",
-		Position = position,
-		Color = Color.Black,
-		Size= new Vector2(map.viewport.Width, barHeight),
-	};
-	frame.Add(sprite);
-		
+	DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
+
 	// FOCAL LENGTH READING
 	position += new Vector2(SIDE_MARGIN,-TOP_MARGIN);
 
 	string dofReading = "FL:" + abbreviateValue((float)map.focalLength);
 
-	sprite = new MySprite()
-	{
-		Type = SpriteType.TEXT,
-		Data = dofReading,
-		Position = position,
-		RotationOrScale = fontSize,
-		Color = Color.White,
-		Alignment = TextAlignment.LEFT /* Center the text on the position */,
-		FontId = "White"
-	};
-	frame.Add(sprite);
+	DrawText(dofReading, position, fontSize, TextAlignment.LEFT, Color.White);
 
 	// ANGLE READING
 	position += new Vector2(map.viewport.Width/2 - SIDE_MARGIN, 0);
 
-	sprite = new MySprite()
-	{
-		Type = SpriteType.TEXT,
-		Data = angleReading,
-		Position = position,
-		RotationOrScale = fontSize,
-		Color = Color.White,
-		Alignment = TextAlignment.CENTER /* Center the text on the position */,
-		FontId = "White"
-	};
-	frame.Add(sprite);
- 
+	DrawText(angleReading, position, fontSize, TextAlignment.CENTER, Color.White);
+
 	// RADIUS READING
 	string radius = "R:"+ abbreviateValue((float)map.rotationalRadius);
 	position += new Vector2(map.viewport.Width/2 - SIDE_MARGIN, 0);
 
-	sprite = new MySprite()
-	{
-		Type = SpriteType.TEXT,
-		Data = radius,
-		Position = position,
-		RotationOrScale = fontSize,
-		Color = Color.White,
-		Alignment = TextAlignment.RIGHT,
-		FontId = "White"
-	};
-	frame.Add(sprite);
-
+	DrawText(radius, position, fontSize, TextAlignment.RIGHT, Color.White);
 }
 
 
@@ -4146,9 +3765,6 @@ void activateMap(StarMap map)
 	IMyTextSurfaceProvider mapBlock = map.block as IMyTextSurfaceProvider;
 	map.drawingSurface = mapBlock.GetSurface(map.index);
 	PrepareTextSurfaceForSprites(map.drawingSurface);
-	//_statusMessage = "MAP BLOCKS: " + mapBlock.CustomName;
-	//map = parametersToMap(mapBlock);
-	//UpdateMap(map);
 
 	// Calculate the viewport offset by centering the surface size onto the texture size
 	map.viewport = new RectangleF(
