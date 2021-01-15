@@ -1052,9 +1052,17 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 	
 	//assemble maps by position in string lists.
 	for(int i = 0; i < iLength; i++)
-	{
+	{	
 		StarMap map = new StarMap();
-		map.index = int.Parse(indexStrings[i]);
+		if(indexString == "")
+		{
+			map.index = _mapIndex;
+		}
+		else
+		{
+			map.index = int.Parse(indexStrings[i]);
+		}
+
 		map.block = mapBlock;
 		map.center = StringToVector3(centers[i]);
 		map.focalLength = int.Parse(fLengths[i]);
@@ -1385,7 +1393,10 @@ public void DeletePlanet(String planetName)
 	_unchartedList.Remove(alderaan);
 	_planetList.Remove(alderaan);
 	DataToLog();
-	_statusMessage = "Planet " + planetName + " deleted.\n";
+	_statusMessage = "PLANET DELETED: " + planetName +"\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.\n";
+	
+	if(_planetList.Count > 0)
+		_nearestPlanet = _planetList[0];
 }
 
 
