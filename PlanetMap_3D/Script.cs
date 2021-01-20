@@ -67,6 +67,7 @@ bool _showMapParameters;
 bool _showShip;
 bool _showNames;
 bool _lightOn;
+bool _planets;
 int _cycleStep;
 int _sortCounter = 0;
 float _brightnessMod;
@@ -492,6 +493,7 @@ public Program()
 			}
 		}
 	}
+	_planets = _planetList.Count > 0;
 
 	string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
 	string [] gpsEntries = waypointData.Split('\n');
@@ -584,6 +586,7 @@ public void Save()
 // MAIN ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public void Main(string argument)
 {
+	_planets = _planetList.Count > 0;
 	_myPos = _refBlock.GetPosition();
 	
 	Echo("//////// PLANET MAP 3D ////////");
@@ -997,6 +1000,8 @@ void Show(string attribute, List<StarMap> maps, int state)
 				map.showInfo = setState(map.showInfo, state);
 				break;
 		}
+		
+		MapToParameters(map);
 	}
 }
 
@@ -1080,6 +1085,8 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 		map.showNames = ParseBool(nameBools[i]);
 		map.showShip = ParseBool(shipBools[i]);
 		map.showInfo = ParseBool(infoBools[i]);
+		map.activePlanetName = planets[i];
+		map.activePlanet = GetPlanet(map.activePlanetName);
 		
 		mapsOut.Add(map);
 	}
@@ -1108,7 +1115,7 @@ public void DataToLog()
 	}
 
 	String planetData = "";
-	if(_planetList.Count > 0)
+	if(_planets)
 	{
 		foreach(Planet planet in _planetList)
 		{
@@ -1174,8 +1181,8 @@ public void MapToParameters(StarMap map)
 	string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), ',', i, entries, "0");
 	string newGPS = InsertEntry(map.showGPS.ToString(), lcdIni.Get("mapDisplay", "GPS").ToString(), ',', i, entries, "True");
 	string newNames = InsertEntry(map.showNames.ToString(), lcdIni.Get("mapDisplay", "Names").ToString(), ',', i, entries, "True");
-	string newShip = InsertEntry(map.showGPS.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), ',', i, entries, "True");	
-	string newInfo = InsertEntry(map.showGPS.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), ',', i, entries, "True");
+	string newShip = InsertEntry(map.showShip.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), ',', i, entries, "True");	
+	string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), ',', i, entries, "True");
 	string newPlanets = InsertEntry(map.activePlanetName, lcdIni.Get("mapDisplay", "Planet").ToString(), ',',i, entries, "[null]");
 	
 	// Update the Ini Data.
@@ -1403,7 +1410,7 @@ public void DeletePlanet(String planetName)
 	DataToLog();
 	_statusMessage = "PLANET DELETED: " + planetName +"\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.\n";
 	
-	if(_planetList.Count > 0)
+	if(_planets)
 		_nearestPlanet = _planetList[0];
 }
 
@@ -1709,7 +1716,7 @@ void CenterWorld(StarMap map)
 	map.rotationalRadius = 4194304;
 	Vector3 worldCenter = new Vector3(0,0,0);
 
-	if(_planetList.Count > 0)
+	if(_planets)
 	{
 		foreach(Planet planet in _planetList)
 		{
@@ -1743,10 +1750,32 @@ void AlignShip(StarMap map)
 // ALIGN ORBIT //
 void AlignOrbit(StarMap map)
 {
-	map.center = _myPos;
+	Vector3 planetPos = map.activePlanet.position;
+	map.center = (_myPos + planetPos)/2;
 	map.altitude = 0;
-	Vector3 orbit = _myPos - _nearestPlanet.position;
-	map.azimuth = (int) ToDegrees((float)Math.Abs(Math.Atan2(orbit.Z, orbit.X)));
+	Vector3 orbit = _myPos - planetPos;
+	map.azimuth = (int) ToDegrees((float)Math.Abs(Math.Atan2(orbit.Z, orbit.X)+ (float)Math.PI*0.75f)); //  )
+	
+	//Get largest component distance between ship and planet.
+	//double span = Math.Sqrt(orbit.LengthSquared() - Math.Pow(orbit.Y,2));
+	float span = orbit.Length();
+	/*
+	if(orbit.Y > span)
+	{
+		span = orbit.Y * 2;
+		_statusMessage = "WHOA MAN, THAT's DEEP!";
+	}
+	*/
+	double newRadius = 1.25f * map.focalLength * span / map.viewport.Height;
+
+	if(newRadius > MAX_VALUE || newRadius < 0)
+	{
+		newRadius = MAX_VALUE;
+		double newZoom = 0.8f * map.viewport.Height * (MAX_VALUE / span);
+		map.focalLength = (int) newZoom;
+	}
+	
+	map.rotationalRadius = (int) newRadius;
 }
 
 
@@ -1764,7 +1793,7 @@ void PlanetMode(StarMap map)
 		map.focalLength *= 4;
 	}
 
-	if(_planetList.Count > 0)
+	if(_planets)
 	{
 		SortByNearest(_planetList);
 		_nearestPlanet = _planetList[0];
@@ -1872,28 +1901,19 @@ void CycleMode(List<StarMap> maps, bool cycleUp)
 // SHIP TO PLANET //   Aligns the map so that the ship appears above the center of the planet.
 void ShipToPlanet(StarMap map)
 {
-	if(_planetList.Count > 0)
+	if(_planets)
 	{
-		if(map.activePlanetName == "" && map.activePlanetName == "[null]");
-		{
-			map.activePlanet = _nearestPlanet;
-			map.activePlanetName = _nearestPlanet.name;
-		}
-		
-		Vector3 shipVector = _myPos - map.activePlanet.position;
-		float magnitude = Vector3.Distance(_myPos, map.activePlanet.position);
+		Planet planet = _nearestPlanet;
+
+		Vector3 shipVector = _myPos - planet.position;
+		float magnitude = Vector3.Distance(_myPos, planet.position);
 
 		float azAngle = (float) Math.Atan2(shipVector.Z,shipVector.X);
 		float altAngle = (float) Math.Asin(shipVector.Y/magnitude);
 
-		map.center = map.activePlanet.position;
+		map.center = planet.position;
 		map.azimuth = DegreeAdd((int) ToDegrees(azAngle),90);
 		map.altitude = (int) ToDegrees(-altAngle);
-		
-//		if(magnitude > planet.radius * 2)
-//		{
-//			map.mode = "SHIP";
-//		}
 	}
 }
 
@@ -1988,7 +2008,7 @@ Planet GetPlanet(string planetName)
 		}
 	}
 
-	if(_planetList.Count > 0)
+	if(_planets)
 	{
 		foreach(Planet planet in _planetList)
 		{
@@ -2073,7 +2093,7 @@ void SelectPlanet(Planet planet, StarMap map)
 		map.activePlanet=GetPlanet(planet.name);
 
 	
-	if(planet.radius < 30000)
+	if(planet.radius < 27000)
 	{
 		map.focalLength *= 4;
 	}
@@ -2101,7 +2121,7 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 	float shipY = shipPos.Y;
 
 	int vertMod = 0;
-	if(_showMapParameters)
+	if(map.showInfo)
 	{
 		vertMod = BAR_HEIGHT;
 
@@ -2431,13 +2451,13 @@ public void DrawPlanets(List<Planet> displayPlanets, StarMap map)
 		Vector2 size;
 
 		// Draw Gravity Well
-		if(map.mode == "ORBIT" && planet == _nearestPlanet)
+		if(map.mode == "ORBIT" && planet == map.activePlanet)
 		{
 			float radMod = 0.83f;
 			size = new Vector2(diameter*radMod*2, diameter*radMod*2);
 			position = startPosition - new Vector2(diameter*radMod,0);
 			
-			DrawTexture("CircleHollow", position, size, 0, Color.DarkGreen);
+			DrawTexture("CircleHollow", position, size, 0, Color.Yellow);
 			radMod *= 0.99f;
 			position = startPosition - new Vector2(diameter*radMod, 0);
 			size = new Vector2(diameter*radMod*2, diameter*radMod*2);
@@ -2887,7 +2907,7 @@ void DisplayPlanetData()
 	List<string> planetData = new List<string>();
 	planetData.Add("Charted: " + _planetList.Count + "	  Uncharted: " + _unchartedList.Count);
 
-	if(_planetList.Count > 0)
+	if(_planets)
 	{
 		foreach(Planet planet in _planetList)
 		{
@@ -2969,50 +2989,48 @@ void DisplayWaypointData()
 // DISPLAY MAP DATA //
 void DisplayMapData()
 {
-	string output = "// MAP DATA";
+	string output = "// MAP DATA" + SLASHES;
 
-	List<string> mapData = new List<string>();
+	if(_statusMessage != "")
+		output += "\n" + _statusMessage;
 
 	if(_mapBlocks.Count > 0)
 	{
-		StarMap map = _mapList[0];
-		output += ": " + _mapBlocks[0].CustomName + SLASHES;
-
-		if(_statusMessage != "")
+		List<string> mapData = new List<string>();
+		foreach(StarMap map in _mapList)
 		{
-			output += "\n" + _statusMessage;
+			mapData.Add("MAP " + map.number + " --- "  + map.viewport.Width.ToString("N0") + " x " + map.viewport.Height.ToString("N0") + " --- "+ map.mode + " Mode");
+			mapData.Add("   On: " + map.block.CustomName + "   Screen: " + map.index);
+			
+			if(map.activePlanetName != "")
+				mapData.Add("   Selected Planet: " + map.activePlanetName);
+
+			string hidden = "   Hidden:";
+			if(!map.showInfo)
+				hidden += " Stat-Bars ";
+
+			if(!map.showGPS)
+				hidden += " GPS ";
+
+			if(!map.showNames)
+				hidden += " Names ";
+
+			if(!map.showShip)
+				hidden += " Ship";
+
+			if(!map.showGPS || !map.showInfo || !map.showShip && !map.showNames)
+				mapData.Add(hidden);
+
+			mapData.Add("   Center: " + Vector3ToString(map.center));
+			mapData.Add("   Azimuth: " + map.azimuth + "°   Altitude: " + map.altitude * -1 + "°");
+			mapData.Add("   Focal Length: " + abbreviateValue(map.focalLength) + "   Radius: " + abbreviateValue(map.rotationalRadius) +"\n");
 		}
-
-		string hidden = "	Mode: "	 + map.mode + "	   Hidden:";
-
-		if(!_showMapParameters)
-		{
-			hidden += " Stat-Bars ";
-		}
-
-		if(!_gpsActive)
-		{
-			hidden += " Waypoints ";
-		}
-
-		if(!_showNames)
-		{
-			hidden += " Names";
-		}
-
-		mapData.Add(hidden);
-		mapData.Add("	Center: " + Vector3ToString(map.center));
-		mapData.Add("	Azimuth: " + map.azimuth + "°	Altitude: " + map.altitude * -1 + "°");
-		mapData.Add("	Focal Length: " + abbreviateValue(map.focalLength));
-		mapData.Add("	Rotational Radius: " + abbreviateValue(map.rotationalRadius));
-		mapData.Add("	Brightness: " + _brightnessMod);
-		mapData.Add("	Dimensions: " + map.viewport.Height + " x " + map.viewport.Width);
 
 		output += ScrollToString(mapData);
 	}
 	else
 	{
-		output += SLASHES + "\n\n NO MAP BLOCKS TO DISPLAY!!!";
+		output += "\n\n NO MAP BLOCKS TO DISPLAY!!!";
 	}
 
 	_dataSurface.WriteText(output);
@@ -3067,6 +3085,14 @@ void PreviousPage()
 
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// CHECK MAP PLANET //
+void CheckMapPlanet(StarMap map)
+{
+	
+	//if(map.activePlanetName == "" || map.activePlanetName)
+}
+
 
 // PARSE BOOL //
 bool ParseBool(string val)
@@ -3526,7 +3552,7 @@ public void CycleExecute()
 			}
 		}
 		
-		if(_planetList.Count > 0)
+		if(_planets)
 		{
 			//Sort Planets by proximity to ship.
 			SortByNearest(_planetList);
@@ -3572,20 +3598,16 @@ public void DrawSprites(StarMap map)
 
 	//DRAW PLANETS
 	List<Planet> displayPlanets = new List<Planet>();
-	Echo("--A--");
+	
 	foreach(Planet planet in _planetList)
 	{
-		Echo("--B: " + planet.name);
-		Echo(Vector3ToString(planet.transformedCoords[map.number]));
 		if(planet.transformedCoords[map.number].Z > map.focalLength)
 		{
 			displayPlanets.Add(planet);
 		}
 	}
-	Echo("--C--");	
+	
 	DrawPlanets(displayPlanets, map);
-
-	Echo("--D--");
 
 	//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
 	if(map.showGPS)
@@ -3763,7 +3785,7 @@ public static int DegreeAdd(int angle_A, int angle_B)
 // UPDATE MAP // Transform logged locations based on map parameters
 public void UpdateMap(StarMap map)
 {
-	if(_planetList.Count > 0)
+	if(_planets)
 	{
 		foreach(Planet planet in _planetList)
 		{
