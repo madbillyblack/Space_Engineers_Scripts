@@ -1,6 +1,6 @@
 //////////////////////
 // PLANET MAP 3D //
-/////////////////////
+///////////////////// 1.2.1
 
 // USER CONSTANTS //  Feel free to alter these as needed.
 
@@ -68,6 +68,7 @@ bool _showShip;
 bool _showNames;
 bool _lightOn;
 bool _planets;
+bool _planetToLog;
 int _cycleStep;
 int _sortCounter = 0;
 float _brightnessMod;
@@ -440,6 +441,7 @@ public Program()
 	string newData = DEFAULT_SETTINGS;
 
 	_statusMessage = "";
+	_planetToLog = false;
 
 	if(!oldData.Contains("[Map Settings]"))
 	{
@@ -777,6 +779,9 @@ public void Main(string argument)
 					break;
 				case "SHIP_MODE":
 					ChangeMode("SHIP", maps);
+					break;
+				case "CHASE_MODE":
+					ChangeMode("CHASE", maps);
 					break;
 				case "PLANET_MODE":
 					ChangeMode("PLANET", maps);
@@ -1451,12 +1456,14 @@ public void LogNext(String planetName)
 		}
 
 		planet.CalculatePlanet();
+		_planetToLog = true; // Specify that DataToLog needs to be called in CycleExecute.
+
+		foreach(StarMap map in _mapList)
+		{
+			UpdateMap(map);
+		}
 	}
-	foreach(StarMap map in _mapList)
-	{
-		UpdateMap(map);
-	}
-	
+
 	DataToLog();
 }
 
@@ -1787,7 +1794,7 @@ void PlanetMode(StarMap map)
 	map.dX = 0;
 	map.dY = 0;
 	map.dZ = 0;
-
+	
 	if(map.viewport.Width > 500)
 	{
 		map.focalLength *= 4;
@@ -1796,7 +1803,7 @@ void PlanetMode(StarMap map)
 	if(_planets)
 	{
 		SortByNearest(_planetList);
-		_nearestPlanet = _planetList[0];
+		map.activePlanet = _planetList[0];
 		ShipToPlanet(map);
 
 		if(map.activePlanet.radius < 30000)
@@ -1804,10 +1811,6 @@ void PlanetMode(StarMap map)
 			map.focalLength *= 4;
 		}
 	}
-//	else
-//	{
-//		map.mode = "FREE";
-//	}
 
 	map.rotationalRadius = DV_RADIUS;
 	map.mode = "PLANET";
@@ -1833,6 +1836,10 @@ void SetMapMode(StarMap map, string mapMode)
 	else if(mapMode == "ORBIT")
 	{
 		AlignOrbit(map);
+	}
+	else if(mapMode == "CHASE")
+	{
+		AlignShip(map);
 	}
 	
 	map.mode = mapMode;
@@ -3569,6 +3576,12 @@ public void CycleExecute()
 				}
 			}
 		}
+		
+		if(_planetToLog)
+		{
+			DataToLog();
+			_planetToLog = false;
+		}
 	}
 }
 
@@ -3601,14 +3614,13 @@ public void DrawSprites(StarMap map)
 	
 	foreach(Planet planet in _planetList)
 	{
-		if(planet.transformedCoords[map.number].Z > map.focalLength)
+		if(planet.transformedCoords.Count == _mapList.Count && planet.transformedCoords[map.number].Z > map.focalLength)
 		{
 			displayPlanets.Add(planet);
 		}
 	}
 	
 	DrawPlanets(displayPlanets, map);
-
 	//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
 	if(map.showGPS)
 	{
