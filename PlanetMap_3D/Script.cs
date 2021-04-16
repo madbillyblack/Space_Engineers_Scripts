@@ -1,6 +1,6 @@
 //////////////////////
 // PLANET MAP 3D //
-///////////////////// 1.2.1
+///////////////////// 1.2.2
 
 // USER CONSTANTS //  Feel free to alter these as needed.
 
@@ -1757,7 +1757,21 @@ void AlignShip(StarMap map)
 // ALIGN ORBIT //
 void AlignOrbit(StarMap map)
 {
+	if(_planetList.Count < 1){
+		return;
+	}
+	
+	if(map.activePlanet == null){
+		if(_nearestPlanet == null){
+			Echo("No Nearest Planet Set!");
+			return;
+		}
+		
+		SelectPlanet(_nearestPlanet, map);
+	}
+
 	Vector3 planetPos = map.activePlanet.position;
+	Echo("C");
 	map.center = (_myPos + planetPos)/2;
 	map.altitude = 0;
 	Vector3 orbit = _myPos - planetPos;
@@ -2336,13 +2350,46 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 		// Ship Body
 		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE, shipLength), shipAngle, bodyColor);
 
+		// Canopy
+		position = startPosition;
+		position += offset * shipLength/8;
+		position += new Vector2(SHIP_SCALE/4,0);
+		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*0.5f, shipLength*0.5f), shipAngle, Color.Blue);
+		
+		// Canopy Mask
+		Vector3 shipUp = rotateVector(_refBlock.WorldMatrix.Up, map);
+		Vector3 shipRight = rotateVector(_refBlock.WorldMatrix.Right, map);
+		
+		float rollInput = (float) Math.Atan2(Math.Sqrt(shipUp.X*shipUp.X + shipUp.Y*shipUp.Y), shipUp.Z)/2 + (float) Math.PI/2;
+		Echo("Roll Angle: " + ToDegrees(rollInput) + "°");
+
+		float rollAngle =  -1 * (float) Math.Cos(rollInput) * (float) Math.Atan2(SHIP_SCALE, 2* shipLength);
+		//if(shipUp.Z < 0)
+		//	rollAngle *= -1;
+			
+		if(shipRight.Z > 0)
+			rollAngle *= -1;
+		
+		Echo("Mask Angle: " + ToDegrees(rollAngle) + "°");
+		
+		float rollScale = (float) Math.Sin(rollInput) * 0.6f * shipLength/SHIP_SCALE;
+		Vector2 rollOffset = new Vector2 ((float) Math.Sin(shipAngle - rollAngle), (float) Math.Cos(shipAngle - rollAngle) *-1);
+			
+		//rollAngle = 0;
+		position = startPosition;
+		position += new Vector2((1- rollScale)*SHIP_SCALE/2, 0);
+		position += offset * shipLength * 0.25f;
+		position -= rollOffset * 0.7f * shipLength/3;
+		
+		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*rollScale, shipLength*0.75f), shipAngle - rollAngle, bodyColor);
+
 		// Aft Ellipse
 		if(headingZ < 0)
 		{
 			aftColor = bodyColor;
 			plumeColor = bodyColor;
 		}
-
+		position = startPosition;
 		position -= offset * shipLength/2;
 		
 		DrawTexture("Circle", position, new Vector2(SHIP_SCALE, aftHeight), shipAngle, aftColor);
