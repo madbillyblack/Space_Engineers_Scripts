@@ -71,6 +71,7 @@ bool _planets;
 bool _planetToLog;
 int _cycleStep;
 int _sortCounter = 0;
+int _roll;
 float _brightnessMod;
 static string _statusMessage;
 string _activePlanet ="";
@@ -408,6 +409,8 @@ public class Waypoint : Location
 // PROGRAM ///////////////////////////////////////////////////////////////////////////////////////////////
 public Program()
 {
+	_roll = 0;
+	
 	//Load Saved Variables
 	String[] loadData = Storage.Split('\n');
 	if(loadData.Length > 8)
@@ -588,6 +591,7 @@ public void Save()
 // MAIN ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public void Main(string argument)
 {
+	_roll++;
 	_planets = _planetList.Count > 0;
 	_myPos = _refBlock.GetPosition();
 	
@@ -2350,54 +2354,72 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 		// Ship Body
 		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE, shipLength), shipAngle, bodyColor);
 
+		if(headingZ < 0){
+			position = startPosition;
+			position -= offset * shipLength/2;
+			
+			DrawTexture("Circle", position, new Vector2(SHIP_SCALE, aftHeight), shipAngle, bodyColor);
+		}
+
 		// Canopy
 		position = startPosition;
 		position += offset * shipLength/8;
 		position += new Vector2(SHIP_SCALE/4,0);
 		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*0.5f, shipLength*0.5f), shipAngle, Color.Blue);
 		
-		// Canopy Mask
+
+		
+		// Canopy Mask Variables
 		Vector3 shipUp = rotateVector(_refBlock.WorldMatrix.Up, map);
 		Vector3 shipRight = rotateVector(_refBlock.WorldMatrix.Right, map);
 		
-		float rollInput = (float) Math.Atan2(Math.Sqrt(shipUp.X*shipUp.X + shipUp.Y*shipUp.Y), shipUp.Z)/2 + (float) Math.PI/2;
+		float rollInput = (float) Math.Atan2(shipRight.Z, shipUp.Z) + (float) Math.PI;
+
 		Echo("Roll Angle: " + ToDegrees(rollInput) + "°");
 
-		float rollAngle =  -1 * (float) Math.Cos(rollInput) * (float) Math.Atan2(SHIP_SCALE, 2* shipLength);
-		//if(shipUp.Z < 0)
-		//	rollAngle *= -1;
-			
-		if(shipRight.Z > 0)
-			rollAngle *= -1;
+		float rollAngle =  (float) Math.Cos(rollInput/2) * (float) Math.Atan2(SHIP_SCALE, 2* shipLength) *0.9f;//(float) Math.Atan2(shipLength, 2 * SHIP_SCALE) * (1 - (float) Math.Cos(rollInput))/2;//
 		
-		Echo("Mask Angle: " + ToDegrees(rollAngle) + "°");
-		
-		float rollScale = (float) Math.Sin(rollInput) * 0.6f * shipLength/SHIP_SCALE;
+		float rollScale = (float) Math.Sin(rollInput/2) * 0.7f * shipLength/SHIP_SCALE;// + (float) Math.Abs(headingZ)/10;
 		Vector2 rollOffset = new Vector2 ((float) Math.Sin(shipAngle - rollAngle), (float) Math.Cos(shipAngle - rollAngle) *-1);
+		
+		float maskMod = 0.95f;
+		if(rollInput < 0.35f || rollInput > 5.93f)
+			maskMod = 0.6f;
 			
-		//rollAngle = 0;
+		// Canopy Edge
+		var edgeColor = bodyColor;
+		int edgeMod = 1;
+		
+		if(headingZ < 0){
+			edgeColor = Color.Blue;
+			edgeMod = -1;
+		}
+		
+		position = startPosition;
+		position -= offset * shipLength/8;
+		position += new Vector2(SHIP_SCALE/4,0);
+		DrawTexture("SemiCircle", position, new Vector2(SHIP_SCALE*0.5f, aftHeight*0.5f*edgeMod), shipAngle, edgeColor);
+			
+		// Canopy Mask
 		position = startPosition;
 		position += new Vector2((1- rollScale)*SHIP_SCALE/2, 0);
 		position += offset * shipLength * 0.25f;
 		position -= rollOffset * 0.7f * shipLength/3;
 		
-		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*rollScale, shipLength*0.75f), shipAngle - rollAngle, bodyColor);
+		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*rollScale, shipLength*maskMod), shipAngle - rollAngle, bodyColor);	
 
-		// Aft Ellipse
-		if(headingZ < 0)
-		{
-			aftColor = bodyColor;
-			plumeColor = bodyColor;
+		//Aft Plume
+		if(headingZ >= 0){
+			position = startPosition;
+			position -= offset * shipLength/2;
+			
+			DrawTexture("Circle", position, new Vector2(SHIP_SCALE, aftHeight), shipAngle, aftColor);
+			
+			position -= offset * shipLength/16;
+			position += new Vector2(SHIP_SCALE/6, 0);
+			
+			DrawTexture("Circle", position, new Vector2(SHIP_SCALE*0.67f, aftHeight*0.67f), shipAngle, plumeColor);
 		}
-		position = startPosition;
-		position -= offset * shipLength/2;
-		
-		DrawTexture("Circle", position, new Vector2(SHIP_SCALE, aftHeight), shipAngle, aftColor);
-		
-		position -= offset * shipLength/16;
-		position += new Vector2(SHIP_SCALE/6, 0);
-		
-		DrawTexture("Circle", position, new Vector2(SHIP_SCALE*0.67f, aftHeight*0.67f), shipAngle, plumeColor);
 	}
 }
 
