@@ -1,6 +1,6 @@
 //////////////////////
 // PLANET MAP 3D //
-///////////////////// 1.2.2
+///////////////////// 1.3.0
 
 // USER CONSTANTS //  Feel free to alter these as needed.
 
@@ -1754,6 +1754,12 @@ void AlignShip(StarMap map)
 {	
 	Vector3 heading = _refBlock.WorldMatrix.Forward;
 	map.azimuth = DegreeAdd((int) ToDegrees((float) Math.Atan2(heading.Z, heading.X)), -90);
+	
+	int newAlt = (int) ToDegrees((float) Math.Asin(heading.Y)) -25;
+	if(newAlt < -90)
+		newAlt = -90;
+	
+	map.altitude = newAlt;
 	map.center = _myPos;
 }
 
@@ -2139,6 +2145,7 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 	Color bodyColor = new Color(SHIP_RED, SHIP_GREEN, SHIP_BLUE);
 	Color aftColor = new Color(180,60,0);
 	Color plumeColor = Color.Yellow;
+	Color canopyColor = Color.DarkBlue;
 
 	Vector3 transformedShip = transformVector(_myPos, map);
 	Vector2 shipPos = PlotObject(transformedShip,map);
@@ -2240,76 +2247,91 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 					aftColor = new Color(48,0,0);
 					bodyColor = new Color(64,0,0);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "GREEN":
 					aftColor = new Color(0,48,0);
 					bodyColor = new Color(0,64,0);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "BLUE":
 					aftColor = new Color(0,0,48);
 					bodyColor = new Color(0,0,64);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "YELLOW":
 					aftColor = new Color(127,127,39);
 					bodyColor = new Color(127,127,51);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "MAGENTA":
 					aftColor = new Color(96,0,96);
 					bodyColor = new Color(127,0,127);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "PURPLE":
 					aftColor = new Color(36,0,62);
 					bodyColor = new Color(48,0,96);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "CYAN":
 					aftColor = new Color(0,48,48);
 					bodyColor = new Color(0,64,64);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "LIGHTBLUE":
 					aftColor = new Color(48,48,144);
 					bodyColor = new Color(64,64,192);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "ORANGE":
 					aftColor = new Color(48,24,0);
 					bodyColor = new Color(64,32,0);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "TAN":
 					aftColor = new Color(175,115,54);
 					bodyColor = new Color(205,133,63);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "BROWN":
 					aftColor = new Color(43,28,13);
 					bodyColor = new Color(50,33,15);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "RUST":
 					aftColor = new Color(48,15,12);
 					bodyColor = new Color(128,40,32);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "GRAY":
 					aftColor = new Color(48,48,48);
 					bodyColor = new Color(64,64,64);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "GREY":
 					aftColor = new Color(48,48,48);
 					bodyColor = new Color(64,64,64);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 				case "WHITE":
 					aftColor = new Color(100,150,150);
 					bodyColor = new Color(192,192,192);
 					plumeColor = aftColor;
+					canopyColor = aftColor;
 					break;
 			}
 		}
@@ -2365,7 +2387,7 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 		position = startPosition;
 		position += offset * shipLength/8;
 		position += new Vector2(SHIP_SCALE/4,0);
-		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*0.5f, shipLength*0.5f), shipAngle, Color.Blue);
+		DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*0.5f, shipLength*0.5f), shipAngle, canopyColor);
 		
 
 		
@@ -2391,7 +2413,7 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 		int edgeMod = 1;
 		
 		if(headingZ < 0){
-			edgeColor = Color.Blue;
+			edgeColor = canopyColor;
 			edgeMod = -1;
 		}
 		
