@@ -17,6 +17,7 @@ const int HASH_LIMIT = 125; //Minimum diameter size to print Hashmarks on planet
 // Waypoints
 const float JUMP_RATIO = 2; // Ratio of distance from center to radius for viable jump points
 const int MARKER_WIDTH = 8; // Width of GPS Markers
+const int FOCAL_MOD = 250; // Mod for waypoint scale
 
 // View Controls
 const int ANGLE_STEP = 5; // Basic angle in degrees of step rotations.
@@ -2747,7 +2748,11 @@ public void DrawHashMarks(Planet planet, float diameter, Color lineColor, StarMa
 public void DrawWaypoints(StarMap map)
 {
 	float fontSize = 0.5f;
-	int markerSize = MARKER_WIDTH;
+	float markerSize = MARKER_WIDTH;
+	
+	// focal radius for modifying waypoint scale
+	int focalRadius = map.rotationalRadius - map.focalLength;
+	
 	if(map.viewport.Width > 500)
 	{
 		fontSize *= 1.5f;
@@ -2759,7 +2764,14 @@ public void DrawWaypoints(StarMap map)
 		{
 			float rotationMod = 0;
 			Color markerColor = Color.White;
-			Vector2 markerScale = new Vector2(markerSize,markerSize);
+			
+			float coordZ = waypoint.transformedCoords[map.number].Z;
+			float gpsScale = FOCAL_MOD * map.focalLength /coordZ;//coordZ / (-2 * focalRadius) + 1.5f;
+				
+			
+			float iconSize = markerSize * gpsScale;
+			
+			Vector2 markerScale = new Vector2(iconSize,iconSize);
 
 			Vector2 waypointPosition = PlotObject(waypoint.transformedCoords[map.number], map);
 			Vector2 startPosition = map.viewport.Center + waypointPosition;
@@ -2773,7 +2785,7 @@ public void DrawWaypoints(StarMap map)
 				case "BASE":
 					markerShape = "SemiCircle";
 					markerScale *= 1.25f;
-					startPosition += new Vector2(0,markerSize);
+					startPosition += new Vector2(0,iconSize);
 					break;
 				case "LANDMARK":
 					markerShape = "Triangle";
@@ -2795,9 +2807,16 @@ public void DrawWaypoints(StarMap map)
 					break;
 			}
 			
-			if(waypoint.transformedCoords[map.number].Z > map.focalLength)
+
+			
+			if(coordZ > map.focalLength)
 			{
-				Vector2 position = startPosition - new Vector2(markerSize/2,0);
+				Vector2 position = startPosition - new Vector2(iconSize/2,0);
+				
+				if(waypoint.name.StartsWith("EARTHLIKE")){
+					Echo(waypoint.name + " scale: " + gpsScale);
+					Echo("Marker Size: " + iconSize);
+				}
 
 				markerColor *= _brightnessMod;
 
@@ -2815,14 +2834,14 @@ public void DrawWaypoints(StarMap map)
 
 				if(waypoint.marker.ToUpper() == "STATION")
 				{
-					position += new Vector2(markerSize/2 - markerSize/20, 0);
-					DrawTexture("SquareSimple", position, new Vector2(markerSize/10 ,markerSize), rotationMod, markerColor);
+					position += new Vector2(iconSize/2 - iconSize/20, 0);
+					DrawTexture("SquareSimple", position, new Vector2(iconSize/10 ,iconSize), rotationMod, markerColor);
 					position = startPosition;
 				}
 
 				if(waypoint.marker.ToUpper() == "HAZARD")
 				{
-					position += new Vector2(markerSize/2 - markerSize/20, -markerSize*0.85f);
+					position += new Vector2(iconSize/2 - iconSize/20, -iconSize*0.85f);
 					
 					DrawText("!", position, fontSize*1.2f, TextAlignment.CENTER, Color.White);
 					position = startPosition;
@@ -2830,18 +2849,18 @@ public void DrawWaypoints(StarMap map)
 
 				if(waypoint.marker.ToUpper() == "BASE")
 				{
-					position += new Vector2(markerSize/6, -markerSize/12);
+					position += new Vector2(iconSize/6, -iconSize/12);
 					
-					DrawTexture("SemiCircle", position, new Vector2(markerSize*1.15f,markerSize*1.15f), rotationMod, new Color(0,64,64)*_brightnessMod);
-					position += new Vector2(0.25f * markerSize,-0.33f * markerSize);
+					DrawTexture("SemiCircle", position, new Vector2(iconSize*1.15f,iconSize*1.15f), rotationMod, new Color(0,64,64)*_brightnessMod);
+					position += new Vector2(0.25f * iconSize,-0.33f * iconSize);
 				}
 
 				if(waypoint.marker.ToUpper() == "ASTEROID")
 				{
-					position += new Vector2(markerSize/2 - markerSize/20, 0);
+					position += new Vector2(iconSize/2 - iconSize/20, 0);
 					DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
 
-					position -= new Vector2(markerSize - markerSize/10,0);
+					position -= new Vector2(iconSize - iconSize/10,0);
 					DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
 
 					position = startPosition;					 
@@ -2850,8 +2869,8 @@ public void DrawWaypoints(StarMap map)
 				if(map.showNames)
 				{
 					// PRINT NAME
-					position += new Vector2(1.33f * markerSize,-0.75f * markerSize);
-					DrawText(waypoint.name, position, fontSize, TextAlignment.LEFT, Color.White*_brightnessMod);
+					position += new Vector2(1.33f * iconSize,-0.75f * iconSize);
+					DrawText(waypoint.name, position, fontSize * gpsScale, TextAlignment.LEFT, Color.White*_brightnessMod);
 				}
 			}
 		}
