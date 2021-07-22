@@ -71,7 +71,6 @@ bool _planets;
 bool _planetToLog;
 int _cycleStep;
 int _sortCounter = 0;
-int _roll;
 float _brightnessMod;
 static string _statusMessage;
 string _activePlanet ="";
@@ -408,9 +407,7 @@ public class Waypoint : Location
 
 // PROGRAM ///////////////////////////////////////////////////////////////////////////////////////////////
 public Program()
-{
-	_roll = 0;
-	
+{	
 	//Load Saved Variables
 	String[] loadData = Storage.Split('\n');
 	if(loadData.Length > 8)
@@ -591,7 +588,6 @@ public void Save()
 // MAIN ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public void Main(string argument)
 {
-	_roll++;
 	_planets = _planetList.Count > 0;
 	_myPos = _refBlock.GetPosition();
 	
@@ -1781,7 +1777,7 @@ void AlignOrbit(StarMap map)
 	}
 
 	Vector3 planetPos = map.activePlanet.position;
-	Echo("C");
+
 	map.center = (_myPos + planetPos)/2;
 	map.altitude = 0;
 	Vector3 orbit = _myPos - planetPos;
