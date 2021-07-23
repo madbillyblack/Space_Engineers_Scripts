@@ -2285,104 +2285,14 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 		if(displayPlanets.Count > 0)
 		{
 			String planetColor = obscureShip(position, displayPlanets, map);
-			switch(planetColor.ToUpper())
-			{
-				case "RED":
-					aftColor = new Color(48,0,0);
-					bodyColor = new Color(64,0,0);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "GREEN":
-					aftColor = new Color(0,48,0);
-					bodyColor = new Color(0,64,0);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "BLUE":
-					aftColor = new Color(0,0,48);
-					bodyColor = new Color(0,0,64);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "YELLOW":
-					aftColor = new Color(127,127,39);
-					bodyColor = new Color(127,127,51);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "MAGENTA":
-					aftColor = new Color(96,0,96);
-					bodyColor = new Color(127,0,127);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "PURPLE":
-					aftColor = new Color(36,0,62);
-					bodyColor = new Color(48,0,96);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "CYAN":
-					aftColor = new Color(0,48,48);
-					bodyColor = new Color(0,64,64);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "LIGHTBLUE":
-					aftColor = new Color(48,48,144);
-					bodyColor = new Color(64,64,192);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "ORANGE":
-					aftColor = new Color(48,24,0);
-					bodyColor = new Color(64,32,0);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "TAN":
-					aftColor = new Color(175,115,54);
-					bodyColor = new Color(205,133,63);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "BROWN":
-					aftColor = new Color(43,28,13);
-					bodyColor = new Color(50,33,15);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "RUST":
-					aftColor = new Color(48,15,12);
-					bodyColor = new Color(128,40,32);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "GRAY":
-					aftColor = new Color(48,48,48);
-					bodyColor = new Color(64,64,64);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "GREY":
-					aftColor = new Color(48,48,48);
-					bodyColor = new Color(64,64,64);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
-				case "WHITE":
-					aftColor = new Color(100,150,150);
-					bodyColor = new Color(192,192,192);
-					plumeColor = aftColor;
-					canopyColor = aftColor;
-					break;
+			
+			if(planetColor != "NONE"){
+				bodyColor = ColorSwitch(planetColor.ToUpper()) * 2 * _brightnessMod;
+				aftColor = bodyColor * 0.75f;
+				plumeColor = aftColor;
+				canopyColor = aftColor;
 			}
 		}
-
-		aftColor *= _brightnessMod;
-		bodyColor *= _brightnessMod;
-		plumeColor *= _brightnessMod;
 
 
 		// Ship Heading
@@ -2516,74 +2426,8 @@ public void DrawPlanets(List<Planet> displayPlanets, StarMap map)
 		Vector2 planetPosition = PlotObject(planet.transformedCoords[map.number], map);
 		planet.mapPos = planetPosition;
 
-		Color surfaceColor = new Color(0,0,0);
-		Color lineColor = new Color(16,16,16);
-		switch(planet.color.ToUpper())
-		{
-			case "RED":
-				surfaceColor = new Color(32,0,0);
-				lineColor = new Color(64,0,0);
-				break;
-			case "GREEN":
-				surfaceColor = new Color(0,32,0);
-				lineColor = new Color(0,64,0);
-				break;
-			case "BLUE":
-				surfaceColor = new Color(0,0,32);
-				lineColor = new Color(0,0,64);
-				break;
-			case "YELLOW":
-				surfaceColor = new Color(127,127,26);
-				lineColor = new Color(127,127,51);
-				break;
-			case "MAGENTA":
-				surfaceColor = new Color(64,0,64);
-				lineColor = new Color(127,0,127);
-				break;
-			case "PURPLE":
-				surfaceColor = new Color(24,0,48);
-				lineColor = new Color(48,0,96);
-				break;
-			case "CYAN":
-				surfaceColor = new Color(0,32,32);
-				lineColor = new Color(0,64,64);
-				break;
-			case "LIGHTBLUE":
-				surfaceColor = new Color(32,32,96);
-				lineColor = new Color(64,64,192);
-				break;
-			case "ORANGE":
-				surfaceColor = new Color(32,16,0);
-				lineColor = new Color(64,32,0);
-				break;
-			case "TAN":
-				surfaceColor = new Color(153,100,48);
-				lineColor = new Color(205,133,63);
-				break;
-			case "BROWN":
-				surfaceColor = new Color(38,25,12);
-				lineColor = new Color(50,33,15);
-				break;
-			case "RUST":
-				surfaceColor = new Color(64,20,16);
-				lineColor = new Color(128,40,32);
-				break;
-			case "GRAY":
-				surfaceColor = new Color(16,16,16);
-				lineColor = new Color(32,32,32);
-				break;
-			case "GREY":
-				surfaceColor = new Color(16,16,16);
-				lineColor = new Color(32,32,32);
-				break;
-			case "WHITE":
-				surfaceColor = new Color(64,64,64);
-				lineColor = new Color(192,192,192);				   
-				break;
-		}
-
-		surfaceColor *= _brightnessMod;
-		lineColor *= _brightnessMod;
+		Color surfaceColor = ColorSwitch(planet.color.ToUpper()) * _brightnessMod;
+		Color lineColor = surfaceColor * 2;
 
 		Vector2 startPosition = map.viewport.Center + planetPosition;
 
@@ -3252,6 +3096,86 @@ void PreviousPage()
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+// COLOR SWITCH //
+Color ColorSwitch(string colorString){
+	if(colorString.StartsWith("#"))
+		return HexToColor(colorString);
+	
+	Color colorOut;
+	switch(colorString){
+			case "RED":
+				colorOut = new Color(32,0,0);
+				break;
+			case "GREEN":
+				colorOut = new Color(0,32,0);
+				break;
+			case "BLUE":
+				colorOut = new Color(0,0,32);
+				break;
+			case "YELLOW":
+				colorOut = new Color(127,127,26);
+				break;
+			case "MAGENTA":
+				colorOut = new Color(64,0,64);
+				break;
+			case "PURPLE":
+				colorOut = new Color(24,0,48);
+				break;
+			case "CYAN":
+				colorOut = new Color(0,32,32);
+				break;
+			case "LIGHTBLUE":
+				colorOut = new Color(32,32,96);
+				break;
+			case "ORANGE":
+				colorOut = new Color(32,16,0);
+				break;
+			case "TAN":
+				colorOut = new Color(153,100,48);
+				break;
+			case "BROWN":
+				colorOut = new Color(38,25,12);
+				break;
+			case "RUST":
+				colorOut = new Color(64,20,16);
+				break;
+			case "GRAY":
+				colorOut = new Color(16,16,16);
+				break;
+			case "GREY":
+				colorOut = new Color(16,16,16);
+				break;
+			case "WHITE":
+				colorOut = new Color(64,64,64);
+				break;
+			default:
+				colorOut = new Color(8,8,8);
+				break;
+	}
+	
+	return colorOut;
+}
+
+// HEX TO COLOR //
+Color HexToColor(string hexString){
+	
+	if(hexString.Length != 9 && hexString.Length != 7)
+		return Color.White;
+	int i = 3; // Starting index for ARGB format.
+	
+	if(hexString.Length == 7)
+			i = 1; // Starting index for normal HEX.
+	
+	int r,g,b = 0;
+
+	r = Convert.ToUInt16(hexString.Substring(i, 2),16);
+	g = Convert.ToUInt16(hexString.Substring(i+2, 2),16);
+	b = Convert.ToUInt16(hexString.Substring(i+4, 2),16); 
+
+	return new Color(r, g, b);
+}
+
+
 // PARSE BOOL //
 bool ParseBool(string val)
 {
@@ -3744,20 +3668,6 @@ public void CycleExecute()
 
 
 // BORROWED FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// HEX TO COLOR //
-Color HexToColor(string hexString){
-	if(hexString.Length < 9)
-		return Color.White;
-	
-	int r,g,b = 0;
-
-	r = Convert.ToUInt16(hexString.Substring(3, 2),16);
-	g = Convert.ToUInt16(hexString.Substring(5, 2),16);
-	b = Convert.ToUInt16(hexString.Substring(7, 2),16); 
-
-	return new Color(r, g, b);
-}
 
 
 // PREPARE TEXT SURFACE FOR SPRITES //
