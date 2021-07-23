@@ -840,22 +840,22 @@ public void Main(string argument)
 					SetWaypointState(cmdArg, 3);
 					break;
 				case "LOG_WAYPOINT":
-					LogWaypoint(cmdArg, _myPos, "WAYPOINT");
+					LogWaypoint(cmdArg, _myPos, "WAYPOINT", "WHITE");
 					break;
 				case "LOG_BASE":
-					LogWaypoint(cmdArg, _myPos, "BASE");
+					LogWaypoint(cmdArg, _myPos, "BASE", "WHITE");
 					break;
 				case "LOG_STATION":
-					LogWaypoint(cmdArg, _myPos, "STATION");
+					LogWaypoint(cmdArg, _myPos, "STATION", "WHITE");
 					break;					  
 				case "LOG_LANDMARK":
-					LogWaypoint(cmdArg, _myPos, "LANDMARK");
+					LogWaypoint(cmdArg, _myPos, "LANDMARK", "WHITE");
 					break;
 				case "LOG_HAZARD":
-					LogWaypoint(cmdArg, _myPos, "HAZARD");
+					LogWaypoint(cmdArg, _myPos, "HAZARD", "RED");
 					break;
 				case "LOG_ASTEROID":
-					LogWaypoint(cmdArg, _myPos, "ASTEROID");
+					LogWaypoint(cmdArg, _myPos, "ASTEROID", "WHITE");
 					break;
 				case "PASTE_WAYPOINT":
 					ClipboardToLog(cmdArg, "WAYPOINT");
@@ -1263,14 +1263,14 @@ public void MapToParameters(StarMap map)
 void ClipboardToLog(string clipboard, string markerType)
 {
 	string[] waypointData = clipboard.Split(':');
-	if(waypointData.Length < 5)
+	if(waypointData.Length < 6)
 	{
 		_statusMessage = "Does not match GPS format:/nGPS:<name>:X:Y:Z:<color>:";
 		return;
 	}
 	
 	Vector3 position = new Vector3(float.Parse(waypointData[2]),float.Parse(waypointData[3]),float.Parse(waypointData[4]));
-	LogWaypoint(waypointData[1], position, markerType);
+	LogWaypoint(waypointData[1], position, markerType, waypointData[5]);
 }
 
 
@@ -1292,7 +1292,7 @@ string LogToClipboard(string waypointName)
 
 
 // LOG WAYPOINT //
-public void LogWaypoint(String waypointName, Vector3 position, String markerType)
+public void LogWaypoint(String waypointName, Vector3 position, String markerType, String waypointColor)
 {
 	if(waypointName == "")
 	{
@@ -1313,6 +1313,7 @@ public void LogWaypoint(String waypointName, Vector3 position, String markerType
 	waypoint.position = position;
 	waypoint.marker = markerType;
 	waypoint.isActive = true;
+	waypoint.color = waypointColor;
 
 	_waypointList.Add(waypoint);
 	DataToLog();
@@ -1382,7 +1383,7 @@ void PlotJumpPoint(string planetName)
 	
 	Vector3 position = planet.position + (_myPos - planet.position)/Vector3.Distance(_myPos, planet.position)* planet.radius * JUMP_RATIO;
 	
-	LogWaypoint(name + designation, position, "WAYPOINT");
+	LogWaypoint(name + designation, position, "WAYPOINT", "WHITE");
 }
 
 
@@ -1410,7 +1411,7 @@ void ProjectPoint(string arg)
 
 		string marker = args[0];
 		
-		LogWaypoint(name.Trim(), location, marker);
+		LogWaypoint(name.Trim(), location, marker, "WHITE");
 	
 		return;
 	}
@@ -2811,6 +2812,9 @@ public void DrawWaypoints(StarMap map)
 			float rotationMod = 0;
 			Color markerColor = Color.White;
 			
+			if(waypoint.color.StartsWith("#"))
+				markerColor = HexToColor(waypoint.color);
+			
 			float coordZ = waypoint.transformedCoords[map.number].Z;
 			float gpsScale = 1;
 			
@@ -2915,10 +2919,10 @@ public void DrawWaypoints(StarMap map)
 				}
 
 				if(map.showNames)
-				{
+				{					
 					// PRINT NAME
 					position += new Vector2(1.33f * iconSize,-0.75f * iconSize);
-					DrawText(waypoint.name, position, fontSize * gpsScale, TextAlignment.LEFT, Color.White*_brightnessMod);
+					DrawText(waypoint.name, position, fontSize * gpsScale, TextAlignment.LEFT, markerColor*_brightnessMod);
 				}
 			}
 		}
@@ -3247,13 +3251,6 @@ void PreviousPage()
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// CHECK MAP PLANET //
-void CheckMapPlanet(StarMap map)
-{
-	
-	//if(map.activePlanetName == "" || map.activePlanetName)
-}
-
 
 // PARSE BOOL //
 bool ParseBool(string val)
@@ -3392,6 +3389,12 @@ public Waypoint StringToWaypoint(String argument)
 		waypoint.marker = wayPointData[2];	
 		waypoint.isActive = wayPointData[3].ToUpper() == "ACTIVE";
 	}
+	
+	if(wayPointData.Length < 5){
+		waypoint.color = "WHITE";
+	} else {
+		waypoint.color = wayPointData[4];
+	}	
 	return waypoint;
 }
 
@@ -3406,7 +3409,7 @@ public String WaypointToString(Waypoint waypoint)
 	{
 		activity = "ACTIVE";
 	}
-	output += ";" + activity;
+	output += ";" + activity + ";" + waypoint.color;
 
 	return output;		  
 }
@@ -3741,6 +3744,21 @@ public void CycleExecute()
 
 
 // BORROWED FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// HEX TO COLOR //
+Color HexToColor(string hexString){
+	if(hexString.Length < 9)
+		return Color.White;
+	
+	int r,g,b = 0;
+
+	r = Convert.ToUInt16(hexString.Substring(3, 2),16);
+	g = Convert.ToUInt16(hexString.Substring(5, 2),16);
+	b = Convert.ToUInt16(hexString.Substring(7, 2),16); 
+
+	return new Color(r, g, b);
+}
+
 
 // PREPARE TEXT SURFACE FOR SPRITES //
 public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
