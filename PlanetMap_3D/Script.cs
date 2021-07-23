@@ -112,16 +112,17 @@ public class StarMap
 	public int dY;
 	public int dZ;
 	public int dAz;
+	public int gpsState;
 	public IMyTextSurface drawingSurface;
 	public RectangleF viewport;
 	public IMyTerminalBlock block;
-	public bool showGPS;
 	public bool showNames;
 	public bool showShip;
 	public bool showInfo;
 	public int planetIndex;
 	public int waypointIndex;
 	public string activePlanetName;
+	public string gpsMode;
 	public Planet activePlanet;
 
 	public StarMap()
@@ -162,6 +163,25 @@ public class StarMap
 		{
 			_statusMessage = "Pitch controls locked in PLANET & ORBIT modes.";
 		}
+	}
+	
+	public string gpsStateToMode(){
+		switch(this.gpsState){
+			case 0:
+				this.gpsMode = "OFF";
+				break;
+			case 1:
+				this.gpsMode = "NORMAL";
+				break;
+			case 2:
+				this.gpsMode = "SHOW_ACTIVE";
+				break;
+			default:
+				this.gpsMode = "ERROR";
+				break;
+		}
+		
+		return this.gpsMode;
 	}
 }
 
@@ -698,16 +718,15 @@ public void Main(string argument)
 					Show("GPS", maps, 1);
 					break;
 				case "GPS_OFF":
-					Show("GPS", maps, 0);
-					break;
-				case "SHOW_GPS":
-					Show("GPS", maps, 1);
-					break;
 				case "HIDE_GPS":
 					Show("GPS", maps, 0);
 					break;
+				case "SHOW_GPS":
+					Show("GPS", maps, 2);
+					break;
 				case "TOGGLE_GPS":
-					Show("GPS", maps, 3);
+				case "CYCLE_GPS":
+					cycleGPS(maps);
 					break;
 				case "NEXT_PLANET":
 					CyclePlanets(maps, true);
@@ -994,7 +1013,7 @@ void Show(string attribute, List<StarMap> maps, int state)
 		switch(attribute)
 		{
 			case "GPS":
-				map.showGPS = setState(map.showGPS, state);
+				map.gpsState = state;
 				break;
 			case "NAMES":
 				map.showNames = setState(map.showNames, state);
@@ -1008,6 +1027,19 @@ void Show(string attribute, List<StarMap> maps, int state)
 		}
 		
 		MapToParameters(map);
+	}
+}
+
+
+// CYCLE GPS //
+void cycleGPS(List<StarMap> maps){
+	if(NoMaps(maps))
+		return;
+	
+	foreach(StarMap map in maps){
+		map.gpsState++;
+		if(map.gpsState > 2)
+			map.gpsState = 0;
 	}
 }
 
@@ -1061,7 +1093,7 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 	List<string> azimuths = StringToEntries(lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', iLength, "0");
 	List<string> altitudes = StringToEntries(lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', iLength, DV_ALTITUDE.ToString());
 	List<string> modes = StringToEntries(lcdIni.Get("mapDisplay","Mode").ToString(), ',', iLength, "FREE");
-	List<string> gpsBools = StringToEntries(lcdIni.Get("mapDisplay","GPS").ToString(), ',', iLength, "true");
+	List<string> gpsModes = StringToEntries(lcdIni.Get("mapDisplay","GPS").ToString(), ',', iLength, "true");
 	List<string> nameBools = StringToEntries(lcdIni.Get("mapDisplay","Names").ToString(), ',', iLength, "true");
 	List<string> shipBools = StringToEntries(lcdIni.Get("mapDisplay","Ship").ToString(), ',', iLength, "true");
 	List<string> infoBools = StringToEntries(lcdIni.Get("mapDisplay","Info").ToString(), ',', iLength, "true");
@@ -1087,7 +1119,21 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 		map.azimuth = int.Parse(azimuths[i]);	
 		map.altitude = int.Parse(altitudes[i]);
 		map.mode = modes[i];
-		map.showGPS = ParseBool(gpsBools[i]);
+		
+		map.gpsMode = gpsModes[i];
+		switch(map.gpsMode.ToUpper()){
+			case "OFF":
+			case "FALSE":
+				map.gpsState = 0;
+				break;
+			case "SHOW_ACTIVE":
+				map.gpsState = 2;
+				break;
+			default:
+				map.gpsState = 1;
+				break;
+		}
+		
 		map.showNames = ParseBool(nameBools[i]);
 		map.showShip = ParseBool(shipBools[i]);
 		map.showInfo = ParseBool(infoBools[i]);
@@ -1185,7 +1231,7 @@ public void MapToParameters(StarMap map)
 	string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), ',', i, entries, "0");
 	string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), ',', i, entries, "0");
 	string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), ',', i, entries, "0");
-	string newGPS = InsertEntry(map.showGPS.ToString(), lcdIni.Get("mapDisplay", "GPS").ToString(), ',', i, entries, "True");
+	string newGPS = InsertEntry(map.gpsStateToMode(), lcdIni.Get("mapDisplay", "GPS").ToString(), ',', i, entries, "True");
 	string newNames = InsertEntry(map.showNames.ToString(), lcdIni.Get("mapDisplay", "Names").ToString(), ',', i, entries, "True");
 	string newShip = InsertEntry(map.showShip.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), ',', i, entries, "True");	
 	string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), ',', i, entries, "True");
@@ -2766,9 +2812,11 @@ public void DrawWaypoints(StarMap map)
 			Color markerColor = Color.White;
 			
 			float coordZ = waypoint.transformedCoords[map.number].Z;
-			float gpsScale = FOCAL_MOD * map.focalLength /coordZ;//coordZ / (-2 * focalRadius) + 1.5f;
-				
+			float gpsScale = 1;
 			
+			if(map.gpsState == 1)
+				gpsScale = FOCAL_MOD * map.focalLength /coordZ;//coordZ / (-2 * focalRadius) + 1.5f;
+				
 			float iconSize = markerSize * gpsScale;
 			
 			Vector2 markerScale = new Vector2(iconSize,iconSize);
@@ -3122,7 +3170,7 @@ void DisplayMapData()
 			if(!map.showInfo)
 				hidden += " Stat-Bars ";
 
-			if(!map.showGPS)
+			if(map.gpsState == 0)
 				hidden += " GPS ";
 
 			if(!map.showNames)
@@ -3131,7 +3179,7 @@ void DisplayMapData()
 			if(!map.showShip)
 				hidden += " Ship";
 
-			if(!map.showGPS || !map.showInfo || !map.showShip && !map.showNames)
+			if(map.gpsState == 0 || !map.showInfo || !map.showShip && !map.showNames)
 				mapData.Add(hidden);
 
 			mapData.Add("   Center: " + Vector3ToString(map.center));
@@ -3728,9 +3776,8 @@ public void DrawSprites(StarMap map)
 	
 	DrawPlanets(displayPlanets, map);
 	//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
-	if(map.showGPS)
+	if(map.gpsState > 0)
 	{
-
 		DrawWaypoints(map);
 		PlotUncharted(map);
 	}
