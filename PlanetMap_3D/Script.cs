@@ -122,14 +122,16 @@ public class StarMap
 	public int planetIndex;
 	public int waypointIndex;
 	public string activePlanetName;
+	public string activeWaypointName;
 	public string gpsMode;
 	public Planet activePlanet;
+	public Waypoint activeWaypoint;
 
 	public StarMap()
 	{
 		this.azSpeed = 0;
 		this.planetIndex = 0;
-		this.waypointIndex = 0;
+		this.waypointIndex = -1;
 	}
 
 	public void yaw(int angle)
@@ -893,8 +895,23 @@ public void Main(string argument)
 				case "PLOT_JUMP":
 					PlotJumpPoint(cmdArg);
 					break;
-				case "PROJECT":
-					ProjectPoint(cmdArg);
+				case "PROJECT_WAYPOINT":
+					ProjectPoint(cmdArg, "WAYPOINT");
+					break;
+				case "PROJECT_BASE":
+					ProjectPoint(cmdArg, "BASE");
+					break;
+				case "PROJECT_STATION":
+					ProjectPoint(cmdArg, "STATION");
+					break;
+				case "PROJECT_LANDMARK":
+					ProjectPoint(cmdArg, "LANDMARK");
+					break;
+				case "PROJECT_ASTEROID":
+					ProjectPoint(cmdArg, "ASTEROID");
+					break;
+				case "PROJECT_HAZARD":
+					ProjectPoint(cmdArg, "HAZARD");
 					break;
 				case "NEXT_PAGE":
 					NextPage();
@@ -1098,6 +1115,7 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 	List<string> shipBools = StringToEntries(lcdIni.Get("mapDisplay","Ship").ToString(), ',', iLength, "true");
 	List<string> infoBools = StringToEntries(lcdIni.Get("mapDisplay","Info").ToString(), ',', iLength, "true");
 	List<string> planets = StringToEntries(lcdIni.Get("mapDisplay","Planet").ToString(), ',', iLength, "[null]");
+	List<string> waypoints = StringToEntries(lcdIni.Get("mapDisplay","Waypoint").ToString(), ',', iLength, "[null]");
 	
 	//assemble maps by position in string lists.
 	for(int i = 0; i < iLength; i++)
@@ -1139,6 +1157,8 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 		map.showInfo = ParseBool(infoBools[i]);
 		map.activePlanetName = planets[i];
 		map.activePlanet = GetPlanet(map.activePlanetName);
+		map.activeWaypointName = waypoints[i];
+		map.activeWaypoint = GetWaypoint(map.activeWaypointName);
 		
 		mapsOut.Add(map);
 	}
@@ -1236,6 +1256,7 @@ public void MapToParameters(StarMap map)
 	string newShip = InsertEntry(map.showShip.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), ',', i, entries, "True");	
 	string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), ',', i, entries, "True");
 	string newPlanets = InsertEntry(map.activePlanetName, lcdIni.Get("mapDisplay", "Planet").ToString(), ',',i, entries, "[null]");
+	string newWaypoints = InsertEntry(map.activeWaypointName, lcdIni.Get("mapDisplay", "Waypoint").ToString(), ',',i, entries, "[null]");
 	
 	// Update the Ini Data.
 	lcdIni.Set("mapDisplay", "Center", newCenters);
@@ -1254,6 +1275,7 @@ public void MapToParameters(StarMap map)
 	lcdIni.Set("mapDisplay", "Ship", newShip);
 	lcdIni.Set("mapDisplay", "Info", newInfo);
 	lcdIni.Set("mapDisplay", "Planet", newPlanets);
+	lcdIni.Set("mapDisplay", "Waypoint", newWaypoints);
 	
 	map.block.CustomData = lcdIni.ToString();
 }
@@ -1388,28 +1410,24 @@ void PlotJumpPoint(string planetName)
 
 
 // PROJECT POINT//
-void ProjectPoint(string arg)
+void ProjectPoint(string arg, string marker)
 {
 	string [] args = arg.Split(' ');
 	
-	if(args.Length < 3)
-	{
-		_statusMessage = "INSUFFICIENT ARGUMENT!\nPlease include arguments <MARKER-TYPE> <DISTANCE(in meters)> <WAYPOINT NAME>";
+	if(args.Length < 2){
+		_statusMessage = "INSUFFICIENT ARGUMENT!\nPlease include arguments <DISTANCE(in meters)> <WAYPOINT NAME>";
 		return;
 	}
 	
 	int distance;
-	if(int.TryParse(args[1],out distance))
-	{
+	if(int.TryParse(args[0],out distance)){
 		string name = "";
-		for(int i = 2; i < args.Length; i++)
+		for(int i = 1; i < args.Length; i++)
 		{
 			name += args[i] + " ";
 		}
 
 		Vector3 location = _myPos + _refBlock.WorldMatrix.Forward * distance;
-
-		string marker = args[0];
 		
 		LogWaypoint(name.Trim(), location, marker, "WHITE");
 	
@@ -2143,17 +2161,29 @@ void CycleWaypoints(List<StarMap> maps, bool next)
 			map.waypointIndex--;
 		}
 		
-		if(map.waypointIndex < 0)
-		{
+		
+		if(map.waypointIndex == -1){
+			map.activeWaypoint = null;
+			map.activeWaypointName = "";
+			MapToParameters(map);
+			return;
+		}
+		else if(map.waypointIndex < -1){
 			map.waypointIndex = gpsCount - 1;
 		}
-		else if(map.waypointIndex >= gpsCount)
-		{
-			map.waypointIndex = 0;
+		else if(map.waypointIndex >= gpsCount){
+			map.waypointIndex = -1;
+			map.activeWaypoint = null;
+			map.activeWaypointName = "";
+			MapToParameters(map);
+			return;
 		}
 		
 		Waypoint waypoint = _waypointList[map.waypointIndex];
 		map.center = waypoint.position;
+		map.activeWaypoint = waypoint;
+		map.activeWaypointName = waypoint.name;
+		MapToParameters(map);
 	}
 }
 
@@ -2287,7 +2317,7 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 			String planetColor = obscureShip(position, displayPlanets, map);
 			
 			if(planetColor != "NONE"){
-				bodyColor = ColorSwitch(planetColor.ToUpper()) * 2 * _brightnessMod;
+				bodyColor = ColorSwitch(planetColor.ToUpper(), false) * 2 * _brightnessMod;
 				aftColor = bodyColor * 0.75f;
 				plumeColor = aftColor;
 				canopyColor = aftColor;
@@ -2426,7 +2456,7 @@ public void DrawPlanets(List<Planet> displayPlanets, StarMap map)
 		Vector2 planetPosition = PlotObject(planet.transformedCoords[map.number], map);
 		planet.mapPos = planetPosition;
 
-		Color surfaceColor = ColorSwitch(planet.color.ToUpper()) * _brightnessMod;
+		Color surfaceColor = ColorSwitch(planet.color.ToUpper(), false) * _brightnessMod;
 		Color lineColor = surfaceColor * 2;
 
 		Vector2 startPosition = map.viewport.Center + planetPosition;
@@ -2654,16 +2684,18 @@ public void DrawWaypoints(StarMap map)
 		if(waypoint.isActive)
 		{
 			float rotationMod = 0;
-			Color markerColor = Color.White;
-			
-			if(waypoint.color.StartsWith("#"))
-				markerColor = HexToColor(waypoint.color);
+			Color markerColor = ColorSwitch(waypoint.color, true);
 			
 			float coordZ = waypoint.transformedCoords[map.number].Z;
 			float gpsScale = 1;
 			
-			if(map.gpsState == 1)
+			bool activePoint = (map.activeWaypointName != "") && (waypoint.name == map.activeWaypointName);
+
+			
+			if(map.gpsState == 1 && !activePoint)
 				gpsScale = FOCAL_MOD * map.focalLength /coordZ;//coordZ / (-2 * focalRadius) + 1.5f;
+			
+			
 				
 			float iconSize = markerSize * gpsScale;
 			
@@ -2707,6 +2739,7 @@ public void DrawWaypoints(StarMap map)
 			
 			if(coordZ > map.focalLength)
 			{
+				
 				Vector2 position = startPosition - new Vector2(iconSize/2,0);
 				
 				if(waypoint.name.StartsWith("EARTHLIKE")){
@@ -2728,44 +2761,39 @@ public void DrawWaypoints(StarMap map)
 				position += new Vector2(1,0);
 				DrawTexture(markerShape, position, markerScale, rotationMod, markerColor);
 
-				if(waypoint.marker.ToUpper() == "STATION")
-				{
-					position += new Vector2(iconSize/2 - iconSize/20, 0);
-					DrawTexture("SquareSimple", position, new Vector2(iconSize/10 ,iconSize), rotationMod, markerColor);
-					position = startPosition;
+				// Draw secondary features for special markers
+				switch(waypoint.marker.ToUpper()){
+					case "STATION":
+						position += new Vector2(iconSize/2 - iconSize/20, 0);
+						DrawTexture("SquareSimple", position, new Vector2(iconSize/10 ,iconSize), rotationMod, markerColor);
+						break;
+					case "HAZARD":
+						position += new Vector2(iconSize/2 - iconSize/20, -iconSize*0.85f);
+						DrawText("!", position, fontSize*1.2f*gpsScale, TextAlignment.CENTER, Color.White);
+						break;
+					case "BASE":
+						position += new Vector2(iconSize/6, -iconSize/12);
+						DrawTexture("SemiCircle", position, new Vector2(iconSize*1.15f,iconSize*1.15f), rotationMod, new Color(0,64,64)*_brightnessMod);
+						startPosition -= new Vector2(0,iconSize * 0.4f);
+						break;
+					case "ASTEROID":
+						position += new Vector2(iconSize/2 - iconSize/20, 0);
+						DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
+						position -= new Vector2(iconSize - iconSize/10,0);
+						DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
+						break;
+					default:
+						break;
+				}
+				
+				if(activePoint){
+					position = startPosition - new Vector2(0.9f * markerSize, 0.33f * markerSize);
+					DrawText("|________", position, fontSize, TextAlignment.LEFT, Color.White);
 				}
 
-				if(waypoint.marker.ToUpper() == "HAZARD")
-				{
-					position += new Vector2(iconSize/2 - iconSize/20, -iconSize*0.85f);
-					
-					DrawText("!", position, fontSize*1.2f, TextAlignment.CENTER, Color.White);
-					position = startPosition;
-				}
-
-				if(waypoint.marker.ToUpper() == "BASE")
-				{
-					position += new Vector2(iconSize/6, -iconSize/12);
-					
-					DrawTexture("SemiCircle", position, new Vector2(iconSize*1.15f,iconSize*1.15f), rotationMod, new Color(0,64,64)*_brightnessMod);
-					position += new Vector2(0.25f * iconSize,-0.33f * iconSize);
-				}
-
-				if(waypoint.marker.ToUpper() == "ASTEROID")
-				{
-					position += new Vector2(iconSize/2 - iconSize/20, 0);
-					DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
-
-					position -= new Vector2(iconSize - iconSize/10,0);
-					DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32,32,32)*_brightnessMod);
-
-					position = startPosition;					 
-				}
-
-				if(map.showNames)
-				{					
-					// PRINT NAME
-					position += new Vector2(1.33f * iconSize,-0.75f * iconSize);
+				// PRINT NAME
+				if(map.showNames){					
+					position = startPosition + new Vector2(1.33f * iconSize,-0.75f * iconSize);
 					DrawText(waypoint.name, position, fontSize * gpsScale, TextAlignment.LEFT, markerColor*_brightnessMod);
 				}
 			}
@@ -3097,11 +3125,14 @@ void PreviousPage()
 
 
 // COLOR SWITCH //
-Color ColorSwitch(string colorString){
+Color ColorSwitch(string colorString, bool isWaypoint){
 	if(colorString.StartsWith("#"))
 		return HexToColor(colorString);
 	
-	Color colorOut;
+	Color colorOut = new Color(8,8,8);
+	if(isWaypoint)
+		colorOut = Color.White;
+		
 	switch(colorString){
 			case "RED":
 				colorOut = new Color(32,0,0);
@@ -3147,6 +3178,8 @@ Color ColorSwitch(string colorString){
 				break;
 			case "WHITE":
 				colorOut = new Color(64,64,64);
+				if(isWaypoint)
+					colorOut = Color.White;
 				break;
 			default:
 				colorOut = new Color(8,8,8);
