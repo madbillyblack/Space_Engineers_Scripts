@@ -892,6 +892,9 @@ public void Main(string argument)
 				case "COLOR_PLANET":
 					SetPlanetColor(cmdArg);
 					break;
+				case "COLOR_WAYPOINT":
+					SetWaypointColor(cmdArg);
+					break;
 				case "PLOT_JUMP":
 					PlotJumpPoint(cmdArg);
 					break;
@@ -1353,7 +1356,7 @@ public void SetWaypointState(String waypointName, int state)
 	
 	if(waypoint == null)
 	{
-		_statusMessage = "No waypoint " + waypointName + " found.";
+		WaypointError(waypointName);
 		return;
 	}
 
@@ -1439,9 +1442,14 @@ void ProjectPoint(string arg, string marker)
 
 
 // PLANET ERROR //
-void PlanetError(string name)
-{
+void PlanetError(string name){
 	_statusMessage = "No planet " + name + " found!";
+}
+
+
+// WAYPOINT ERROR //
+void WaypointError(string name){
+	_statusMessage = "No waypoint " + name + " found!";
 }
 
 
@@ -1534,17 +1542,14 @@ public void LogNext(String planetName)
 }
 
 
-// SET COLOR //
-void SetPlanetColor(String argument)
-{
+// SET PLANET COLOR //
+void SetPlanetColor(String argument){
 	String[] args = argument.Split(' ');
 	String planetColor = args[0];
-	if(args.Length < 2)
-	{
+	
+	if(args.Length < 2){
 		_statusMessage = "Insufficient Argument.  COLOR_PLANET requires COLOR and PLANET NAME.\n";
-	}
-	else
-	{
+	}else{
 		String planetName = "";
 		for(int p = 1; p < args.Length; p++)
 		{
@@ -1554,8 +1559,7 @@ void SetPlanetColor(String argument)
 
 		Planet planet = GetPlanet(planetName);
 		
-		if(planet != null)
-		{
+		if(planet != null){
 			planet.color = planetColor;
 			_statusMessage = planetName + " color changed to " + planetColor + ".\n";
 			DataToLog();
@@ -1563,6 +1567,35 @@ void SetPlanetColor(String argument)
 		}
 		
 		PlanetError(planetName);
+	}
+}
+
+
+// SET WAYPOINT COLOR //
+void SetWaypointColor(String argument){
+	String[] args = argument.Split(' ');
+	String waypointColor = args[0];
+	
+	if(args.Length < 2){
+		_statusMessage = "Insufficient Argument.  COLOR_WAYPOINT requires COLOR and WAYPOINT NAME.\n";
+	}else{
+		String waypointName = "";
+		for(int w = 1; w < args.Length; w++)
+		{
+			waypointName += args[w] + " ";
+		}
+		waypointName = waypointName.Trim(' ').ToUpper();
+
+		Waypoint waypoint = GetWaypoint(waypointName);
+		
+		if(waypoint != null){
+			waypoint.color = waypointColor;
+			_statusMessage = waypointName + " color changed to " + waypointColor + ".\n";
+			DataToLog();
+			return;
+		}
+		
+		WaypointError(waypointName);
 	}
 }
 
