@@ -1762,13 +1762,16 @@ void CenterShip(StarMap map)
 void AlignShip(StarMap map)
 {	
 	Vector3 heading = _refBlock.WorldMatrix.Forward;
-	map.azimuth = DegreeAdd((int) ToDegrees((float) Math.Atan2(heading.Z, heading.X)), -90);
+	int newAz = DegreeAdd((int) ToDegrees((float) Math.Atan2(heading.Z, heading.X)), -90);
 	
-	int newAlt = (int) ToDegrees((float) Math.Asin(heading.Y)) -25;
-	if(newAlt < -90)
-		newAlt = -90;
+	int newAlt = (int) ToDegrees((float) Math.Asin(heading.Y));// -25;
+	if(newAlt < -90){
+		newAlt = DegreeAdd(newAlt, 180);
+		newAz = DegreeAdd(newAz, 180);
+	}
 	
 	map.altitude = newAlt;
+	map.azimuth = newAz;
 	map.center = _myPos;
 }
 
@@ -2372,6 +2375,14 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 			position += new Vector2(SHIP_SCALE/6, 0);
 			
 			DrawTexture("Circle", position, new Vector2(SHIP_SCALE*0.67f, aftHeight*0.67f), shipAngle, plumeColor);
+
+			/* //CHASE ROLL INDICATOR
+			if(map.mode == "CHASE"){
+				float chaseAngle = (float) Math.PI - rollInput;
+				position = startPosition + new Vector2(SHIP_SCALE/3, 0);
+				position += new Vector2((float)Math.Sin(chaseAngle), (float) Math.Cos(chaseAngle) *-1)* SHIP_SCALE/6;
+				DrawTexture("Triangle", position, new Vector2(SHIP_SCALE*0.33f, SHIP_SCALE*0.33f), chaseAngle, aftColor);
+			}*/
 		}
 	}
 }
@@ -2450,7 +2461,7 @@ public void DrawPlanets(List<Planet> displayPlanets, StarMap map)
 
 
 		// HashMarks
-		if(diameter > HASH_LIMIT)// && Vector3.Distance(planet.position, map.center) < 2*planet.radius
+		if(diameter > HASH_LIMIT && map.mode != "CHASE")// && Vector3.Distance(planet.position, map.center) < 2*planet.radius
 		{
 			DrawHashMarks(planet, diameter, lineColor, map);
 		}
