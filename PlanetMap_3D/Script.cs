@@ -649,9 +649,17 @@ public void Main(string argument)
 		if (argument != "")
 		{
 			string [] args = argument.Split(' ');
-			string command = args[0].ToUpper();
+			string [] cmds = args[0].ToUpper().Split('_');
+			string command = cmds[0];
 			string cmdArg = "";
+			if(cmds.Length > 1)
+				cmdArg = cmds[1];
 			
+			// Account for single instance commands with underscores
+			if(cmdArg == "RADIUS" || cmdArg == "SHIP" || cmdArg == "JUMP")
+				command = args[0];
+			
+			string argData = "";
 			_statusMessage = "";
 			_activeWaypoint = "";
 			_previousCommand = "Command: " + argument;
@@ -659,166 +667,99 @@ public void Main(string argument)
 			// If there are multiple words in the argument. Combine the latter words into the entity name.
 			if(args.Length == 1)
 			{
-				cmdArg = "0";
+				argData = "0";
 			}
 			else if(args.Length > 1)
 			{
-				cmdArg = args[1];
+				argData = args[1];
 				if(args.Length > 2)
 				{
 					for(int q = 2; q < args.Length;	 q++)
 					{
-						cmdArg += " " + args[q];
+						argData += " " + args[q];
 					}
 				}
 			}
 			
-			List<StarMap> maps = ArgToMaps(cmdArg);
+			List<StarMap> maps = ArgToMaps(argData);
 			
 			switch(command)
 			{
-				case "ZOOM_IN":
-					Zoom(maps, true);
+				case "ZOOM":
+					Zoom(maps, cmdArg);
 					break;
-				case "ZOOM_OUT":
-					Zoom(maps, false);
+				case "MOVE":
+					MoveCenter(maps, cmdArg);
 					break;
-				case "MOVE_LEFT":
-					MoveCenter("LEFT", maps);
-					break;
-				case "MOVE_RIGHT":
-					MoveCenter("RIGHT", maps);
-					break;
-				case "MOVE_UP":
-					MoveCenter("UP", maps);
-					break;
-				case "MOVE_DOWN":
-					MoveCenter("DOWN", maps);
-					break;
-				case "MOVE_FORWARD":
-					MoveCenter("FORWARD", maps);
-					break;
-				case "MOVE_BACKWARD":
-					MoveCenter("BACKWARD", maps);
-					break;
-				case "DEFAULT_VIEW":
+				case "DEFAULT":
 					MapsToDefault(maps);
 					break;
-				case "ROTATE_LEFT":
-					RotateMaps("LEFT", maps);
+				case "ROTATE":
+					RotateMaps(maps, cmdArg);
 					break;
-				case "ROTATE_RIGHT":
-					RotateMaps("RIGHT", maps);
+				case "SPIN":
+					SpinMaps(maps, cmdArg, ANGLE_STEP/2);
 					break;
-				case "ROTATE_UP":
-					RotateMaps("UP", maps);
-					break;
-				case "ROTATE_DOWN":
-					RotateMaps("DOWN", maps);
-					break;
-				case "GPS_ON":
-					Show("GPS", maps, 1);
-					break;
-				case "GPS_OFF":
-				case "HIDE_GPS":
-					Show("GPS", maps, 0);
-					break;
-				case "SHOW_GPS":
-					Show("GPS", maps, 2);
-					break;
-				case "TOGGLE_GPS":
-				case "CYCLE_GPS":
-					cycleGPS(maps);
-					break;
-				case "NEXT_PLANET":
-					CyclePlanets(maps, true);
-					break;
-				case "PREVIOUS_PLANET":
-					CyclePlanets(maps, false);
-					break;
-				case "NEXT_WAYPOINT":
-					CycleWaypoints(maps, true);
-					break;
-				case "PREVIOUS_WAYPOINT":
-					CycleWaypoints(maps, false);
-					break;
-				case "SPIN_LEFT":
-					SpinMaps(maps, ANGLE_STEP/2);
-					break;
-				case "SPIN_RIGHT":
-					SpinMaps(maps, -ANGLE_STEP/2);
+				case "TRACK":
+					TrackCenter(maps, cmdArg);
 					break;
 				case "STOP":
 					StopMaps(maps);
 					break;
-				case "TRACK_LEFT":
-					TrackCenter(maps, 0, MOVE_STEP);
+				case "GPS":
+					if(cmdArg == "ON"){
+						Show(maps, "GPS", 1);
+					}else{
+						Show(maps, "GPS", 0);
+					}
 					break;
-				case "TRACK_RIGHT":
-					TrackCenter(maps, 0, -MOVE_STEP);
+				case "HIDE":
+					if(cmdArg == "WAYPOINT"){
+						SetWaypointState(argData, 0);
+					}else{
+						Show(maps, cmdArg, 0);
+					}
 					break;
-				case "TRACK_UP":
-					TrackCenter(maps, 1, MOVE_STEP);
+				case "SHOW":
+					if(cmdArg == "WAYPOINT"){
+						SetWaypointState(argData, 1);
+					}else{
+						Show(maps, cmdArg, 1);
+					}
 					break;
-				case "TRACK_DOWN":
-					TrackCenter(maps, 1, -MOVE_STEP);;
+				case "TOGGLE":
+					if(cmdArg == "WAYPOINT"){
+						SetWaypointState(argData, 2);
+					}else{
+						Show(maps, cmdArg, 3);
+					}
 					break;
-				case "TRACK_FORWARD":
-					TrackCenter(maps, 2, MOVE_STEP);
+				case "CYCLE"://GPS
+					cycleGPS(maps);
 					break;
-				case "TRACK_BACKWARD":
-					TrackCenter(maps, 2, -MOVE_STEP);
+				case "NEXT":
+					nextLast(maps, cmdArg, true);
 					break;
-				case "SHOW_NAMES":
-					Show("NAMES", maps, 1);
+				case "PREVIOUS":
+					nextLast(maps, cmdArg, false);
 					break;
-				case "HIDE_NAMES":
-					Show("NAMES", maps, 0);
-					break;
-				case "TOGGLE_NAMES":
-					Show("NAMES", maps, 3);
-					break;
-				case "SHOW_INFO":
-					Show("INFO", maps, 1);
-					break;
-				case "HIDE_INFO":
-					Show("INFO", maps, 0);
-					break;
-				case "TOGGLE_INFO":
-					Show("INFO", maps, 3);
-					break;
-				case "SHOW_SHIP":
-					Show("SHIP", maps, 1);
-					break;
-				case "HIDE_SHIP":
-					Show("SHIP", maps, 0);
-					break;
-				case "TOGGLE_SHIP":
-					Show("SHIP", maps, 3);
-					break;
-				case "WORLD_MODE":
+				case "WORLD"://MODE
 					ChangeMode("WORLD", maps);
 					break;
-				case "SHIP_MODE":
+				case "SHIP"://MODE
 					ChangeMode("SHIP", maps);
 					break;
-				case "CHASE_MODE":
+				case "CHASE"://MODE
 					ChangeMode("CHASE", maps);
 					break;
-				case "PLANET_MODE":
+				case "PLANET"://MODE
 					ChangeMode("PLANET", maps);
 					break;
-				case "FREE_MODE":
+				case "FREE"://MODE
 					ChangeMode("FREE", maps);
 					break;
-				case "ORBIT_MODE":
+				case "ORBIT"://MODE
 					ChangeMode("ORBIT", maps);
-					break;
-				case "PREVIOUS_MODE":
-					CycleMode(maps, false);
-					break;
-				case "NEXT_MODE":
-					CycleMode(maps, true);
 					break;
 				case "DECREASE_RADIUS":
 					AdjustRadius(maps, false);
@@ -829,109 +770,40 @@ public void Main(string argument)
 				case "CENTER_SHIP":
 					MapsToShip(maps);
 					break;
-				case "WAYPOINT_OFF":
-					SetWaypointState(cmdArg, 0);
+				case "WAYPOINT":
+					waypointCommand(cmdArg, argData);
 					break;
-				case "WAYPOINT_ON":
-					SetWaypointState(cmdArg, 1);
+				case "PASTE":
+					ClipboardToLog(cmdArg, argData);
 					break;
-				case "TOGGLE_WAYPOINT":
-					SetWaypointState(cmdArg, 2);
+				case "EXPORT"://WAYPOINT
+					_clipboard = LogToClipboard(argData);
 					break;
-				case "DELETE_WAYPOINT":
-					SetWaypointState(cmdArg, 3);
+				case "NEW"://PLANET
+					NewPlanet(argData);
 					break;
-				case "LOG_WAYPOINT":
-					LogWaypoint(cmdArg, _myPos, "WAYPOINT", "WHITE");
+				case "LOG":
+					if(cmdArg == "NEXT"){
+						LogNext(argData);
+					}else{
+						LogWaypoint(argData, _myPos, cmdArg, "WHITE");
+					}
 					break;
-				case "LOG_BASE":
-					LogWaypoint(cmdArg, _myPos, "BASE", "WHITE");
+				case "COLOR":
+					if(cmdArg == "PLANET"){
+						SetPlanetColor(argData);
+					}else{
+						SetWaypointColor(argData);
+					}
 					break;
-				case "LOG_STATION":
-					LogWaypoint(cmdArg, _myPos, "STATION", "WHITE");
-					break;					  
-				case "LOG_LANDMARK":
-					LogWaypoint(cmdArg, _myPos, "LANDMARK", "WHITE");
-					break;
-				case "LOG_HAZARD":
-					LogWaypoint(cmdArg, _myPos, "HAZARD", "RED");
-					break;
-				case "LOG_ASTEROID":
-					LogWaypoint(cmdArg, _myPos, "ASTEROID", "WHITE");
-					break;
-				case "PASTE_WAYPOINT":
-					ClipboardToLog(cmdArg, "WAYPOINT");
-					break;
-				case "PASTE_BASE":
-					ClipboardToLog(cmdArg, "BASE");
-					break;
-				case "PASTE_STATION":
-					ClipboardToLog(cmdArg, "STATION");
-					break;
-				case "PASTE_LANDMARK":
-					ClipboardToLog(cmdArg, "LANDMARK");
-					break;
-				case "PASTE_ASTEROID":
-					ClipboardToLog(cmdArg, "ASTEROID");
-					break;
-				case "PASTE_HAZARD":
-					ClipboardToLog(cmdArg, "HAZARD");
-					break;
-				case "EXPORT_WAYPOINT":
-					_clipboard = LogToClipboard(cmdArg);
-					break;
-				case "NEW_PLANET":
-					NewPlanet(cmdArg);
-					break;
-				case "LOG_NEXT":
-					LogNext(cmdArg);
-					break;
-				case "DELETE_PLANET":
-					DeletePlanet(cmdArg);
-					break;
-				case "COLOR_PLANET":
-					SetPlanetColor(cmdArg);
-					break;
-				case "COLOR_WAYPOINT":
-					SetWaypointColor(cmdArg);
+				case "MAKE":
+					SetWaypointType(cmdArg, argData);
 					break;
 				case "PLOT_JUMP":
-					PlotJumpPoint(cmdArg);
+					PlotJumpPoint(argData);
 					break;
-				case "PROJECT_WAYPOINT":
-					ProjectPoint(cmdArg, "WAYPOINT");
-					break;
-				case "PROJECT_BASE":
-					ProjectPoint(cmdArg, "BASE");
-					break;
-				case "PROJECT_STATION":
-					ProjectPoint(cmdArg, "STATION");
-					break;
-				case "PROJECT_LANDMARK":
-					ProjectPoint(cmdArg, "LANDMARK");
-					break;
-				case "PROJECT_ASTEROID":
-					ProjectPoint(cmdArg, "ASTEROID");
-					break;
-				case "PROJECT_HAZARD":
-					ProjectPoint(cmdArg, "HAZARD");
-					break;
-				case "NEXT_PAGE":
-					NextPage();
-					break;
-				case "PREVIOUS_PAGE":
-					PreviousPage();
-					break;
-				case "SCROLL_DOWN":
-					_scrollIndex++;
-					break;
-				case "SCROLL_UP":
-					_scrollIndex--;
-					if(_scrollIndex < 0)
-						_scrollIndex = 0;
-					break;
-				case "SCROLL_HOME":
-					_scrollIndex = 0;
+				case "SCROLL":
+					pageScroll(cmdArg);
 					break;
 				case "BRIGHTEN":
 					if(_brightnessMod < BRIGHTNESS_LIMIT)
@@ -940,6 +812,13 @@ public void Main(string argument)
 				case "DARKEN":
 					if(_brightnessMod > 1)
 						_brightnessMod -= 0.25f;
+					break;
+				case "DELETE":
+					if(cmdArg == "PLANET"){
+						DeletePlanet(argData);
+					}else{
+						SetWaypointState(argData, 3);
+					}
 					break;
 				default:
 					_statusMessage = "UNRECOGNIZED COMMAND!";
@@ -1023,7 +902,7 @@ public void Main(string argument)
 // VIEW FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // SHOW //
-void Show(string attribute, List<StarMap> maps, int state)
+void Show(List<StarMap> maps, string attribute, int state)
 {
 	if(NoMaps(maps))
 		return;
@@ -1033,7 +912,11 @@ void Show(string attribute, List<StarMap> maps, int state)
 		switch(attribute)
 		{
 			case "GPS":
-				map.gpsState = state;
+				if(state == 3){
+					cycleGPS(maps);
+				}else{
+					map.gpsState = state;
+				}
 				break;
 			case "NAMES":
 				map.showNames = setState(map.showNames, state);
@@ -1043,6 +926,9 @@ void Show(string attribute, List<StarMap> maps, int state)
 				break;
 			case "INFO":
 				map.showInfo = setState(map.showInfo, state);
+				break;
+			default:
+				_statusMessage = "INVALID DISPLAY COMMAND";
 				break;
 		}
 		
@@ -1285,7 +1171,7 @@ public void MapToParameters(StarMap map)
 
 
 // CLIPBOARD TO LOG //
-void ClipboardToLog(string clipboard, string markerType)
+void ClipboardToLog(string markerType, string clipboard)
 {
 	string[] waypointData = clipboard.Split(':');
 	if(waypointData.Length < 6)
@@ -1413,7 +1299,7 @@ void PlotJumpPoint(string planetName)
 
 
 // PROJECT POINT//
-void ProjectPoint(string arg, string marker)
+void ProjectPoint(string marker, string arg)
 {
 	string [] args = arg.Split(' ');
 	
@@ -1600,8 +1486,21 @@ void SetWaypointColor(String argument){
 }
 
 
+// SET WAYPOINT TYPE //
+void SetWaypointType(string arg, string waypointName){
+	Waypoint waypoint = GetWaypoint(waypointName);
+	
+	if(waypoint == null){
+		WaypointError(waypointName);
+		return;
+	}
+	
+	waypoint.marker = arg;
+	DataToLog();
+}
+
 // ZOOM // Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
-void Zoom(List<StarMap> maps, bool zoomIn)
+void Zoom(List<StarMap> maps, string arg)
 {
 	if(NoMaps(maps))
 		return;
@@ -1611,7 +1510,7 @@ void Zoom(List<StarMap> maps, bool zoomIn)
 		int doF = map.focalLength;
 		float newScale;
 		
-		if(zoomIn)
+		if(arg == "IN")
 		{
 			newScale = doF*ZOOM_STEP;
 		}
@@ -1673,7 +1572,7 @@ void AdjustRadius(List<StarMap> maps, bool increase)
 
 
 // MOVE CENTER //
-void MoveCenter(string movement, List<StarMap> maps)
+void MoveCenter(List<StarMap> maps, string movement)
 {
 	if(NoMaps(maps))
 		return;
@@ -1721,23 +1620,35 @@ void MoveCenter(string movement, List<StarMap> maps)
 
 
 // TRACK CENTER //		Adjust translational speed of map.
-void TrackCenter(List<StarMap> maps, int axis, int speed)
+void TrackCenter(List<StarMap> maps, string direction)
 {
 	if(NoMaps(maps))
 		return;	
 		
 	foreach(StarMap map in maps)
 	{
-		switch(axis)
+		switch(direction)
 		{
-			case 0:
-				map.dX += speed;
+			case "LEFT":
+				map.dX += MOVE_STEP;
 				break;
-			case 1:
-				map.dY += speed;
+			case "RIGHT":
+				map.dX -= MOVE_STEP;
 				break;
-			case 2:
-				map.dZ += speed;
+			case "UP":
+				map.dY += MOVE_STEP;
+				break;
+			case "DOWN":
+				map.dY -= MOVE_STEP;
+				break;
+			case "FORWARD":
+				map.dZ += MOVE_STEP;
+				break;
+			case "BACKWARD":
+				map.dZ -= MOVE_STEP;
+				break;
+			default:
+				_statusMessage = "Error with Track Command";
 				break;
 		}
 	}
@@ -1745,7 +1656,7 @@ void TrackCenter(List<StarMap> maps, int axis, int speed)
 
 
 // ROTATE MAPS //
-void RotateMaps(string direction, List<StarMap> maps)
+void RotateMaps(List<StarMap> maps, string direction)
 {
 	if(NoMaps(maps))
 		return;
@@ -1772,10 +1683,13 @@ void RotateMaps(string direction, List<StarMap> maps)
 
 
 // SPIN MAPS //		Adjust azimuth speed of maps.
-void SpinMaps(List<StarMap> maps, int deltaAz)
+void SpinMaps(List<StarMap> maps, string direction, int deltaAz)
 {
 	if(NoMaps(maps))
 		return;
+		
+	if(direction == "RIGHT")
+		deltaAz *= -1;
 		
 	foreach(StarMap map in maps)
 	{
@@ -2350,7 +2264,7 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 			String planetColor = obscureShip(position, displayPlanets, map);
 			
 			if(planetColor != "NONE"){
-				bodyColor = ColorSwitch(planetColor.ToUpper(), false) * 2 * _brightnessMod;
+				bodyColor = ColorSwitch(planetColor, false) * 2 * _brightnessMod;
 				aftColor = bodyColor * 0.75f;
 				plumeColor = aftColor;
 				canopyColor = aftColor;
@@ -2414,7 +2328,7 @@ public void DrawShip(StarMap map, List<Planet> displayPlanets)
 		
 		float rollInput = (float) Math.Atan2(shipRight.Z, shipUp.Z) + (float) Math.PI;
 
-		Echo("Roll Angle: " + ToDegrees(rollInput) + "°");
+		//Echo("Roll Angle: " + ToDegrees(rollInput) + "°");
 
 		float rollAngle =  (float) Math.Cos(rollInput/2) * (float) Math.Atan2(SHIP_SCALE, 2* shipLength) *0.9f;//(float) Math.Atan2(shipLength, 2 * SHIP_SCALE) * (1 - (float) Math.Cos(rollInput))/2;//
 		
@@ -2489,7 +2403,7 @@ public void DrawPlanets(List<Planet> displayPlanets, StarMap map)
 		Vector2 planetPosition = PlotObject(planet.transformedCoords[map.number], map);
 		planet.mapPos = planetPosition;
 
-		Color surfaceColor = ColorSwitch(planet.color.ToUpper(), false) * _brightnessMod;
+		Color surfaceColor = ColorSwitch(planet.color, false) * _brightnessMod;
 		Color lineColor = surfaceColor * 2;
 
 		Vector2 startPosition = map.viewport.Center + planetPosition;
@@ -2746,7 +2660,7 @@ public void DrawWaypoints(StarMap map)
 				case "BASE":
 					markerShape = "SemiCircle";
 					markerScale *= 1.25f;
-					startPosition += new Vector2(0,iconSize);
+					//startPosition += new Vector2(0,iconSize);
 					break;
 				case "LANDMARK":
 					markerShape = "Triangle";
@@ -2774,11 +2688,6 @@ public void DrawWaypoints(StarMap map)
 			{
 				
 				Vector2 position = startPosition - new Vector2(iconSize/2,0);
-				
-				if(waypoint.name.StartsWith("EARTHLIKE")){
-					Echo(waypoint.name + " scale: " + gpsScale);
-					Echo("Marker Size: " + iconSize);
-				}
 
 				markerColor *= _brightnessMod;
 
@@ -3133,32 +3042,80 @@ string ScrollToString(List<string> dataList)
 
 
 // NEXT PAGE //
-void NextPage()
+void NextPage(bool next)
 {
-	_pageIndex++;
-	if(_pageIndex >= DATA_PAGES)
-	{
-		_pageIndex = 0;
+	if(next){
+		_pageIndex++;
+		if(_pageIndex >= DATA_PAGES)
+			_pageIndex = 0;
+		return;
+	}
+	
+	if(_pageIndex == 0)
+		_pageIndex = DATA_PAGES;
+	
+	_pageIndex--;
+}
+
+
+// BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////
+
+// WAYPOINT COMMAND // Bridge function to eliminate old switch cases.
+void waypointCommand(string arg, string waypointName){
+	int state = 0;
+	if(arg == "ON")
+		state = 1;
+	
+	SetWaypointState(waypointName, state);	
+}
+
+
+// NEXT LAST //
+void nextLast(List<StarMap> maps, string arg, bool state){
+	switch(arg){
+		case "PLANET":
+			CyclePlanets(maps, state);
+			break;
+		case "WAYPOINT":
+			CycleWaypoints(maps, state);
+			break;
+		case "MODE":
+			CycleMode(maps, state);
+			break;
+		case "PAGE":
+			NextPage(state);
+			break;
 	}
 }
 
 
-// PREVIOUS PAGE //
-void PreviousPage()
-{
-	if(_pageIndex == 0)
-	{
-		_pageIndex = DATA_PAGES;
+// PAGE SCROLL //
+void pageScroll(string arg){
+	switch(arg){
+		case "UP":
+			_scrollIndex--;
+			if(_scrollIndex < 0)
+				_scrollIndex = 0;								
+			break;
+		case "DOWN":
+			_scrollIndex++;
+			break;
+		case "HOME":
+			_scrollIndex = 0;	
+			break;
+		default:
+			_statusMessage = "INVALID SCROLL COMMAND";
+			break;
 	}
-	_pageIndex--;
 }
 
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 // COLOR SWITCH //
 Color ColorSwitch(string colorString, bool isWaypoint){
+	colorString = colorString.ToUpper();
+	
 	if(colorString.StartsWith("#"))
 		return HexToColor(colorString);
 	
