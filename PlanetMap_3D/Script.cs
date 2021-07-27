@@ -4,6 +4,10 @@
 
 // USER CONSTANTS //  Feel free to alter these as needed.
 
+//Refresh
+const int CYCLE_LENGTH = 5; // Number of runs for delayed cycle
+
+
 // Ship
 const int SHIP_RED = 127;   //Red RGB value for ship pointer
 const int SHIP_GREEN = 127; //Green RGB value for ship pointer
@@ -31,8 +35,6 @@ const int DV_RADIUS = 262144; //Default View Radius
 const int DV_FOCAL = 256; //Default Focal Length
 const int DV_ALTITUDE = -15; //Default Altitude (angle)
 const int BRIGHTNESS_LIMIT = 4;
-const int CYCLE_LENGTH = 5; // Number of runs for delayed cycle
-
 
 
 // THERE IS NO REASON TO ALTER ANYTHING BELOW THIS LINE! //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +47,7 @@ const int SIDE_MARGIN = 15; // Margin for sides of frame
 const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 4;  // Number of Data Display Pages
 const string SLASHES = " //////////////////////////////////////////////////////////////";
-const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nPlanet_List=\nWaypoint_List=\n";
+const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
 string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
 							+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="
 							+DV_ALTITUDE+"\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True\nPlanet=";
@@ -70,6 +72,7 @@ bool _showNames;
 bool _lightOn;
 bool _planets;
 bool _planetToLog;
+bool _slowMode = false;
 int _cycleStep;
 int _sortCounter = 0;
 float _brightnessMod;
@@ -499,6 +502,20 @@ public Program()
 
 	//Name of Data Display Block
 	_dataName = _mapLog.Get("Map Settings", "Data_Tag").ToString();
+	
+	//Slow Mode
+	if(!Me.CustomData.Contains("Slow_Mode")){
+		_mapLog.Set("Map Settings", "Slow_Mode", "false");
+		Me.CustomData = _mapLog.ToString();
+	}
+	_slowMode = ParseBool(_mapLog.Get("Map Settings", "Slow_Mode").ToString());
+	
+	//Cycle Step Length
+	if(!Me.CustomData.Contains("Cycle_Step")){
+		_mapLog.Set("Map Settings", "Cycle_Step", CYCLE_LENGTH);
+		Me.CustomData = _mapLog.ToString();
+	}
+	_cycleStep = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
 
 	string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
 
@@ -591,10 +608,13 @@ public Program()
 	
 	// Start with indicator light on.
 	_lightOn = true;
-	_cycleStep = CYCLE_LENGTH;
+	//_cycleStep = CYCLE_LENGTH;
 	
 	 // Set the continuous update frequency of this script
-	Runtime.UpdateFrequency = UpdateFrequency.Update10;
+	if(_slowMode)
+		Runtime.UpdateFrequency = UpdateFrequency.Update100;
+	else
+		Runtime.UpdateFrequency = UpdateFrequency.Update10;
 }
 
 
