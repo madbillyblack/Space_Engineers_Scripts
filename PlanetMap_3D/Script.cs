@@ -48,7 +48,7 @@ const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 5;  // Number of Data Display Pages
 const string SLASHES = " //////////////////////////////////////////////////////////////";
 const string GPS_INPUT = "// GPS INPUT ";
-const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nGPS_Input_Name=[GPS_IN]\nGPS_Input_Index=0\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
+const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
 string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
 							+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="
 							+DV_ALTITUDE+"\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True\nPlanet=";
@@ -95,9 +95,6 @@ MySpriteDrawFrame _frame;
 
 IMyTextSurface _dataSurface;
 IMyTerminalBlock _refBlock;
-IMyTextSurfaceProvider _gpsInput;
-int _gpsInputIndex;
-//RectangleF _viewport;
 
 
 // CLASSES //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -472,14 +469,11 @@ public Program()
 	_statusMessage = "";
 	_planetToLog = false;
 
-	if(!oldData.Contains("[Map Settings]"))
-	{
-		if(oldData.StartsWith("["))
-		{
+	if(!oldData.Contains("[Map Settings]")){
+		if(oldData.StartsWith("[")){
 			newData += oldData;
 		}
-		else
-		{
+		else{
 			newData += "---\n\n" + oldData;
 		}
 		Me.CustomData = newData;
@@ -520,49 +514,10 @@ public Program()
 	}
 	_cycleStep = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
 
-	//GPS Input Name
-	if(!Me.CustomData.Contains("GPS_Input_Name") || !Me.CustomData.Contains("GPS_Input_Index")){
-		_mapLog.Set("Map Settings", "GPS_Input_Name", "[GPS_IN]");
-		_mapLog.Set("Map Settings", "GPS_Input_Index", "0");
-		Me.CustomData = _mapLog.ToString();
-	}
-	
-	//Sort Multiple GPS Inputs by distance
-	List<IMyTerminalBlock> gpsInputs = new List<IMyTerminalBlock>();
-	GridTerminalSystem.SearchBlocksOfName(_mapLog.Get("Map Settings", "GPS_Input_Name").ToString(), gpsInputs);
-
-	if(gpsInputs.Count > 0){
-		IMyTerminalBlock currentBlock = gpsInputs[0];
-		
-		if(gpsInputs.Count > 1){
-			for(int i = 1; i < gpsInputs.Count; i++){
-				if(Vector3.Distance(Me.Position, gpsInputs[i].Position) < Vector3.Distance(Me.Position, currentBlock.Position))
-					currentBlock = gpsInputs[i];
-			}
-		}
-		
-		_gpsInput = currentBlock as IMyTextSurfaceProvider;
-		
-		int screenCount = _gpsInput.SurfaceCount;
-		_gpsInputIndex = _mapLog.Get("Map Settings", "GPS_Input_Index").ToUInt16();
-		if(_gpsInputIndex >= screenCount)
-				_gpsInputIndex = screenCount - 1;
-		
-		if(screenCount > 0){
-			IMyTextSurface inputSurface = _gpsInput.GetSurface(_gpsInputIndex);
-			StringBuilder surfaceText = new StringBuilder();
-			inputSurface.ReadText(surfaceText, false);
-			if(surfaceText.ToString().Trim() == ""){
-				inputSurface.WriteText("// Paste GPS Coords Below "+SLASHES+"\n");
-			}
-		}		
-	}
-
 	string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
 
 	string [] mapEntries = planetData.Split('\n');
-	foreach(string planetString in mapEntries)
-	{
+	foreach(string planetString in mapEntries){
 		if(planetString.Contains(";"))
 		{
 			Planet planet = new Planet(planetString);
@@ -685,15 +640,8 @@ public void Main(string argument)
 	}else{
 		Echo("Data Screen: Active");
 	}
-	
-	if(_gpsInput == null){
-		Echo("GPS Input: Unassigned");
-	}else{
-		Echo("GPS Input: Active");
-	}
 
 	bool hasPlanets = _planetList.Count > 0;
-
 
 	if(hasPlanets)
 	{
