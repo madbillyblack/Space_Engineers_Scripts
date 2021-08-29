@@ -4,10 +4,6 @@
 
 // USER CONSTANTS //  Feel free to alter these as needed.
 
-//Refresh
-const int CYCLE_LENGTH = 5; // Number of runs for delayed cycle
-
-
 // Ship
 const int SHIP_RED = 127;   //Red RGB value for ship pointer
 const int SHIP_GREEN = 127; //Green RGB value for ship pointer
@@ -48,10 +44,12 @@ const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 5;  // Number of Data Display Pages
 const string SLASHES = " //////////////////////////////////////////////////////////////";
 const string GPS_INPUT = "// GPS INPUT ";
-const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
+const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=4\nPlanet_List=\nWaypoint_List=\n";
 string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
 							+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="
 							+DV_ALTITUDE+"\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True\nPlanet=";
+							
+string[] _cycleSpinner = {"--"," /", " |", " \\"};						
 
 
 // GLOBALS //
@@ -74,6 +72,7 @@ bool _lightOn;
 bool _planets;
 bool _planetToLog;
 bool _slowMode = false;
+int _cycleLength;
 int _cycleStep;
 int _sortCounter = 0;
 float _brightnessMod;
@@ -509,10 +508,11 @@ public Program()
 	
 	//Cycle Step Length
 	if(!Me.CustomData.Contains("Cycle_Step")){
-		_mapLog.Set("Map Settings", "Cycle_Step", CYCLE_LENGTH);
+		_mapLog.Set("Map Settings", "Cycle_Step", 4);
 		Me.CustomData = _mapLog.ToString();
 	}
-	_cycleStep = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
+	_cycleLength = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
+	_cycleStep = _cycleLength;
 
 	string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
 
@@ -604,7 +604,6 @@ public Program()
 	
 	// Start with indicator light on.
 	_lightOn = true;
-	//_cycleStep = CYCLE_LENGTH;
 	
 	 // Set the continuous update frequency of this script
 	if(_slowMode)
@@ -629,8 +628,8 @@ public void Main(string argument)
 {
 	_planets = _planetList.Count > 0;
 	_myPos = _refBlock.GetPosition();
-	
-	Echo("//////// PLANET MAP 3D ////////");
+		
+	Echo("////// PLANET MAP 3D //////   " + _cycleSpinner[_cycleStep %4]);
 	Echo(_previousCommand);
 	Echo(_statusMessage);
 	Echo("MAP Count: " + _mapList.Count);
@@ -806,6 +805,8 @@ public void Main(string argument)
 				case "LOG":
 					if(cmdArg == "NEXT"){
 						LogNext(argData);
+					}else if(cmdArg == "BATCH"){
+						LogBatch();
 					}else{
 						LogWaypoint(argData, _myPos, cmdArg, "WHITE");
 					}
@@ -858,7 +859,7 @@ public void Main(string argument)
 		
 		if(hasPlanets)
 		{
-			if(_cycleStep == CYCLE_LENGTH || _previousCommand == "NEWLY LOADED")
+			if(_cycleStep == _cycleLength || _previousCommand == "NEWLY LOADED")
 			{
 				SortByNearest(_planetList);
 			}
@@ -3111,6 +3112,39 @@ void NextPage(bool next)
 }
 
 
+// LOG BATCH //  Logs multiple pasted terminal coordinates.
+void LogBatch(){
+	if(_dataSurface == null){
+		_statusMessage = "No DATA DISPLAY Screen Designated!";
+		return;
+	}
+	
+	if(_pageIndex != 0){
+		_statusMessage = "Please navigate to GPS INPUT page before running LOG_BATCH command.";
+	}
+	
+	StringBuilder inputText = new StringBuilder();
+	_dataSurface.ReadText(inputText, false);
+	string[] inputs = inputText.ToString().Split('\n');
+	
+	List<string> outputs = new List<string>();
+	
+	foreach(string entry in inputs){
+		if(entry.StartsWith("GPS:")){
+			ClipboardToLog("WAYPOINT", entry);
+		}else{
+			outputs.Add(entry);
+		}
+	}
+	
+	string output = "";
+	outputs.ForEach(delegate(string item){
+		output += item + "\n";
+	});
+	_dataSurface.WriteText(output);
+}
+
+
 // BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////
 
 // WAYPOINT COMMAND // Bridge function to eliminate old switch cases.
@@ -3701,7 +3735,7 @@ public void CycleExecute()
 	// EXECUTE CYCLE DELAY FUNCTIONS
 	if(_cycleStep < 0)
 	{
-		_cycleStep = CYCLE_LENGTH;
+		_cycleStep = _cycleLength;
 
 		//Toggle Indicator LightGray
 		_lightOn = !_lightOn;
