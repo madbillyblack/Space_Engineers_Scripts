@@ -41,13 +41,13 @@ const int BRIGHTNESS_LIMIT = 4;
 
 
 // OTHER CONSTANTS //
+const string DEVIDER = "--Paste Terminal Coords Below This Line-~\n";
 const int BAR_HEIGHT = 20; //Default height of parameter bars
 const int TOP_MARGIN = 8; // Margin for top and bottom of frame
 const int SIDE_MARGIN = 15; // Margin for sides of frame
 const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 5;  // Number of Data Display Pages
 const string SLASHES = " //////////////////////////////////////////////////////////////";
-const string GPS_INPUT = "// GPS INPUT ";
 const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nGPS_Input_Name=[GPS_IN]\nGPS_Input_Index=0\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
 string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
 							+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="
@@ -95,8 +95,7 @@ MySpriteDrawFrame _frame;
 
 IMyTextSurface _dataSurface;
 IMyTerminalBlock _refBlock;
-IMyTextSurfaceProvider _gpsInput;
-int _gpsInputIndex;
+IMyTextSurface _gpsInput;
 //RectangleF _viewport;
 
 
@@ -520,44 +519,6 @@ public Program()
 	}
 	_cycleStep = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
 
-	//GPS Input Name
-	if(!Me.CustomData.Contains("GPS_Input_Name") || !Me.CustomData.Contains("GPS_Input_Index")){
-		_mapLog.Set("Map Settings", "GPS_Input_Name", "[GPS_IN]");
-		_mapLog.Set("Map Settings", "GPS_Input_Index", "0");
-		Me.CustomData = _mapLog.ToString();
-	}
-	
-	//Sort Multiple GPS Inputs by distance
-	List<IMyTerminalBlock> gpsInputs = new List<IMyTerminalBlock>();
-	GridTerminalSystem.SearchBlocksOfName(_mapLog.Get("Map Settings", "GPS_Input_Name").ToString(), gpsInputs);
-
-	if(gpsInputs.Count > 0){
-		IMyTerminalBlock currentBlock = gpsInputs[0];
-		
-		if(gpsInputs.Count > 1){
-			for(int i = 1; i < gpsInputs.Count; i++){
-				if(Vector3.Distance(Me.Position, gpsInputs[i].Position) < Vector3.Distance(Me.Position, currentBlock.Position))
-					currentBlock = gpsInputs[i];
-			}
-		}
-		
-		_gpsInput = currentBlock as IMyTextSurfaceProvider;
-		
-		int screenCount = _gpsInput.SurfaceCount;
-		_gpsInputIndex = _mapLog.Get("Map Settings", "GPS_Input_Index").ToUInt16();
-		if(_gpsInputIndex >= screenCount)
-				_gpsInputIndex = screenCount - 1;
-		
-		if(screenCount > 0){
-			IMyTextSurface inputSurface = _gpsInput.GetSurface(_gpsInputIndex);
-			StringBuilder surfaceText = new StringBuilder();
-			inputSurface.ReadText(surfaceText, false);
-			if(surfaceText.ToString().Trim() == ""){
-				inputSurface.WriteText("// Paste GPS Coords Below "+SLASHES+"\n");
-			}
-		}		
-	}
-
 	string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
 
 	string [] mapEntries = planetData.Split('\n');
@@ -679,18 +640,6 @@ public void Main(string argument)
 	Echo(_previousCommand);
 	Echo(_statusMessage);
 	Echo("MAP Count: " + _mapList.Count);
-	
-	if(_dataSurface == null){
-		Echo("Data Screen: Unassigned");
-	}else{
-		Echo("Data Screen: Active");
-	}
-	
-	if(_gpsInput == null){
-		Echo("GPS Input: Unassigned");
-	}else{
-		Echo("GPS Input: Active");
-	}
 
 	bool hasPlanets = _planetList.Count > 0;
 
@@ -707,8 +656,8 @@ public void Main(string argument)
 
 	if(_waypointList.Count > 0)
 	{
-		Echo("GPS Count: " + _waypointList.Count + "\n");
-		//Waypoint waypoint = _waypointList[_waypointList.Count - 1];
+		Echo("GPS Count: " + _waypointList.Count);
+		Waypoint waypoint = _waypointList[_waypointList.Count - 1];
 	}
 	else
 	{
@@ -966,7 +915,9 @@ public void Main(string argument)
 	}
 
 	if(_dataBlocks.Count > 0)
+	{
 		DisplayData();
+	}
 }
 
 
@@ -2943,12 +2894,8 @@ public String obscureShip(Vector2 shipPos, List<Planet> planets, StarMap map)
 // DISPLAY DATA // Page selection interface for Data Display
 void DisplayData()
 {
-	if(_dataSurface == null)
-		return;
-	
 	switch(_pageIndex)
-	{
-		case 0:
+	{	case 0:
 			DisplayGPSInput();
 			break;
 		case 1:
@@ -2969,69 +2916,54 @@ void DisplayData()
 
 // DISPLAY GPS INPUT //
 void DisplayGPSInput(){
-	if(_cycleStep > 0 || _dataSurface == null)
-		return;
+	string header = "// GPS BATCH INPUT " + SLASHES + "~\n" + DEVIDER;
+	string [] currentText = _dataSurface.GetText().Split('~');
+	Echo("Text Length: " + currentText.Length);
+	if(currentText.Length > 2)
+		header += currentText[2];
 	
-	StringBuilder menuText = new StringBuilder();
-	_dataSurface.ReadText(menuText, false);
-	
-	string output = menuText.ToString();
-
-	if(!output.StartsWith(GPS_INPUT))
-		output = GPS_INPUT + SLASHES + "\n~Input Terminal Coords Below This Line~";
-	
-	_dataSurface.WriteText(output);
+	_dataSurface.WriteText(header);
 }
 
 
+
+
 // DISPLAY PLANET DATA //
-void DisplayPlanetData()
-{
+void DisplayPlanetData(){
+	
 	string output = "// PLANET LIST" + SLASHES;
 	List<string> planetData = new List<string>();
 	planetData.Add("Charted: " + _planetList.Count + "	  Uncharted: " + _unchartedList.Count);
 
-	if(_planets)
-	{
-		foreach(Planet planet in _planetList)
-		{
+	if(_planets){
+		foreach(Planet planet in _planetList){
 			float surfaceDistance = (Vector3.Distance(planet.position, _myPos) - planet.radius)/1000;
-			if(surfaceDistance < 0)
-			{
+			if(surfaceDistance < 0){
 				surfaceDistance = 0;
 			}
 			string planetEntry;
-			if(planet.name.ToUpper() == _activePlanet.ToUpper())
-			{
+			if(planet.name.ToUpper() == _activePlanet.ToUpper()){
 				planetEntry = ">>> ";
-			}
-			else
-			{
+			}else{
 				planetEntry = "		   ";
 			}
 
 			planetEntry += planet.name + "	  R: " + abbreviateValue(planet.radius) + "m    dist: " + surfaceDistance.ToString("N1") + "km";
-
 			planetData.Add(planetEntry);
 		}
 	}
 
-	if(_unchartedList.Count > 0)
-	{
+	if(_unchartedList.Count > 0){
 		string unchartedHeader = "\n----Uncharted Planets----";
 		planetData.Add(unchartedHeader);
-		foreach(Planet uncharted in _unchartedList)
-		{
+		foreach(Planet uncharted in _unchartedList){
 			float unchartedDistance = Vector3.Distance(_myPos, uncharted.GetPoint(1))/1000;
-
 			string unchartedEntry = "  " + uncharted.name + "	 dist: " + unchartedDistance.ToString("N1") + "km";
-
 			planetData.Add(unchartedEntry);
 		}
 	}
 
 	output += ScrollToString(planetData);
-
 	_dataSurface.WriteText(output);
 }
 
