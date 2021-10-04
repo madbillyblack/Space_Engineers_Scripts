@@ -37,6 +37,7 @@ const int BRIGHTNESS_LIMIT = 4;
 
 
 // OTHER CONSTANTS //
+const string SYNC_TAG = "[SYNC]"; //Tag used to indicate master sync computer.
 const int BAR_HEIGHT = 20; //Default height of parameter bars
 const int TOP_MARGIN = 8; // Margin for top and bottom of frame
 const int SIDE_MARGIN = 15; // Margin for sides of frame
@@ -44,12 +45,13 @@ const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 5;  // Number of Data Display Pages
 const string SLASHES = " //////////////////////////////////////////////////////////////";
 const string GPS_INPUT = "// GPS INPUT ";
-const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=4\nPlanet_List=\nWaypoint_List=\n";
-string _defaultDisplay = "[mapDisplay]\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
+const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_Tag=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
+string _defaultDisplay = "[mapDisplay]\nGrid_Tag=\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
 							+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="
 							+DV_ALTITUDE+"\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True\nPlanet=";
 							
-string[] _cycleSpinner = {"--"," /", " |", " \\"};						
+string[] _cycleSpinner = {"--"," / ", " | ", " \\ "};
+						
 
 
 // GLOBALS //
@@ -80,15 +82,16 @@ static string _statusMessage;
 string _activePlanet ="";
 string _activeWaypoint = "";
 string _clipboard = "";
+string _gridTag;
 Vector3 _trackSpeed;
 Vector3 _origin = new Vector3(0,0,0);
 Vector3 _myPos;
-List<IMyTerminalBlock> _mapBlocks = new List<IMyTerminalBlock>();
+List<IMyTerminalBlock> _mapBlocks;
 List<IMyTerminalBlock> _dataBlocks = new List<IMyTerminalBlock>();
-List<Planet> _planetList = new List<Planet>();
-List<Planet> _unchartedList = new List<Planet>();
-List<Waypoint> _waypointList = new List<Waypoint>();
-List<StarMap> _mapList = new List<StarMap>();
+List<Planet> _planetList;
+List<Planet> _unchartedList;
+List<Waypoint> _waypointList;
+List<StarMap> _mapList;
 Planet _nearestPlanet;
 MySpriteDrawFrame _frame;
 
@@ -478,132 +481,7 @@ public Program()
 		Me.CustomData = newData;
 	}
 
-	// Call the TryParse method on the custom data. This method will
-	// return false if the source wasn't compatible with the parser.
-	MyIniParseResult result;
-	if (!_mapLog.TryParse(Me.CustomData, out result)) 
-		throw new Exception(result.ToString());
-
-	//Name of screen to print map to.
-	_mapTag =  _mapLog.Get("Map Settings", "MAP_Tag").ToString();
-
-	//Index of screen to print map to.
-	_mapIndex = _mapLog.Get("Map Settings","MAP_Index").ToUInt16();
-
-	//Index of screen to print map data to.
-	_dataIndex = _mapLog.Get("Map Settings","Data_Index").ToUInt16();
-
-	//Name of reference block
-	_refName = _mapLog.Get("Map Settings", "Reference_Name").ToString();
-
-	//Name of Data Display Block
-	_dataName = _mapLog.Get("Map Settings", "Data_Tag").ToString();
-	
-	//Slow Mode
-	if(!Me.CustomData.Contains("Slow_Mode")){
-		_mapLog.Set("Map Settings", "Slow_Mode", "false");
-		Me.CustomData = _mapLog.ToString();
-	}
-	_slowMode = ParseBool(_mapLog.Get("Map Settings", "Slow_Mode").ToString());
-	
-	//Cycle Step Length
-	if(!Me.CustomData.Contains("Cycle_Step")){
-		_mapLog.Set("Map Settings", "Cycle_Step", 4);
-		Me.CustomData = _mapLog.ToString();
-	}
-	_cycleLength = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
-	_cycleStep = _cycleLength;
-
-	string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
-
-	string [] mapEntries = planetData.Split('\n');
-	foreach(string planetString in mapEntries){
-		if(planetString.Contains(";"))
-		{
-			Planet planet = new Planet(planetString);
-			if(planet.isCharted)
-			{
-				_planetList.Add(planet);
-			}
-			else
-			{
-				_unchartedList.Add(planet);
-			}
-		}
-	}
-	_planets = _planetList.Count > 0;
-
-	string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
-	string [] gpsEntries = waypointData.Split('\n');
-	
-	foreach(string waypointString in gpsEntries)
-	{
-		if(waypointString.Contains(";"))
-		{
-		   Waypoint waypoint = StringToWaypoint(waypointString);
-		   _waypointList.Add(waypoint);
-		}
-	}
-
-	if(_mapTag == "" || _mapTag == "<name>")
-	{
-	   Echo("No LCD specified!!!");
-	}
-	else
-	{
-		GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
-		for(int m = 0; m < _mapBlocks.Count; m++)
-		{
-			IMyTextSurfaceProvider mapBlock = _mapBlocks[m] as IMyTextSurfaceProvider;
-			List<StarMap> maps = ParametersToMaps(mapBlock as IMyTerminalBlock);
-			
-			if(maps.Count > 0)
-			{
-				foreach(StarMap map in maps)
-				{
-					activateMap(map);
-					MapToParameters(map);
-				}
-			}
-		}
-	}
-
-	if(_dataName != "" || _dataName != "<name>")
-	{
-		GridTerminalSystem.SearchBlocksOfName(_dataName, _dataBlocks);
-		if(_dataBlocks.Count > 0)
-		{
-			IMyTextSurfaceProvider dataBlock = _dataBlocks[0] as IMyTextSurfaceProvider;
-			_dataSurface = dataBlock.GetSurface(_dataIndex);
-			_dataSurface.ContentType = ContentType.TEXT_AND_IMAGE;
-		}
-	}
-
-	if(_refName == "" || _refName == "<name>")
-	{
-		_statusMessage = "WARNING: No Reference Block Name Specified!\nMay result in false orientation!";
-		_refBlock = Me as IMyTerminalBlock;
-	}
-	else
-	{
-		List<IMyTerminalBlock> refBlocks = new List<IMyTerminalBlock>();
-		GridTerminalSystem.SearchBlocksOfName(_refName, refBlocks);
-		if(refBlocks.Count > 0)
-		{
-			_refBlock = refBlocks[0] as IMyTerminalBlock;
-			Echo("Reference: " + _refBlock.CustomName);
-		}
-		else
-		{
-			_statusMessage = "WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!";
-			_refBlock = Me as IMyTerminalBlock;
-		}
-	}
-
-	_previousCommand = "NEWLY LOADED";
-	
-	// Start with indicator light on.
-	_lightOn = true;
+	refresh();
 	
 	 // Set the continuous update frequency of this script
 	if(_slowMode)
@@ -629,7 +507,7 @@ public void Main(string argument)
 	_planets = _planetList.Count > 0;
 	_myPos = _refBlock.GetPosition();
 		
-	Echo("////// PLANET MAP 3D //////   " + _cycleSpinner[_cycleStep %4]);
+	Echo("////// PLANET MAP 3D ////// " + _cycleSpinner[_cycleStep % _cycleSpinner.Length]);
 	Echo(_previousCommand);
 	Echo(_statusMessage);
 	Echo("MAP Count: " + _mapList.Count);
@@ -842,6 +720,20 @@ public void Main(string argument)
 						SetWaypointState(argData, 3);
 					}
 					break;
+				case "SYNC":
+					if(cmdArg == "TO"){
+						syncWithMaster(true);
+					}else{
+						syncWithMaster(false);
+					}
+					break;
+				case "REFRESH":
+					refresh();
+					break;
+				case "UPDATE":
+					if(cmdArg == "TAGS")
+						updateTags();
+					break;
 				default:
 					_statusMessage = "UNRECOGNIZED COMMAND!";
 					break;
@@ -910,8 +802,9 @@ public void Main(string argument)
 	else
 	{
 		_statusMessage = "NO MAP DISPLAY FOUND!\nPlease add tag " + _mapTag + " to desired block.\n";
-		GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
+		//GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
 		//activateMap();
+		updateTags();
 	}
 
 	if(_dataBlocks.Count > 0)
@@ -975,7 +868,7 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 {
 	List<StarMap> mapsOut = new List<StarMap>();
 	
-	MyIni lcdIni = new MyIni();
+	MyIni lcdIni = DataToIni(mapBlock);
 	
 	if(!mapBlock.CustomData.Contains("[mapDisplay]"))
 	{
@@ -993,10 +886,6 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 
 		mapBlock.CustomData = newData;
 	}
-
-	MyIniParseResult result;
-	if (!lcdIni.TryParse(mapBlock.CustomData, out result)) 
-		throw new Exception(result.ToString());
 
 	string indexString;
 
@@ -1079,11 +968,7 @@ public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 // DATA TO LOG //
 public void DataToLog()
 {
-	MyIni mapIni = new MyIni();
-
-	MyIniParseResult result;
-	if (!mapIni.TryParse(Me.CustomData, out result)) 
-		throw new Exception(result.ToString());
+	MyIni mapIni = DataToIni(Me);
 
 	if(_waypointList.Count > 0)
 	{
@@ -1124,11 +1009,7 @@ public void DataToLog()
 // MAP TO PARAMETERS // Writes map object to CustomData of Display Block
 public void MapToParameters(StarMap map)
 {
-	MyIni lcdIni = new MyIni();
-
-	MyIniParseResult result;
-	if (!lcdIni.TryParse(map.block.CustomData, out result)) 
-		throw new Exception(result.ToString());
+	MyIni lcdIni = DataToIni(Me);
 	
 	int i = 0;
 	
@@ -3138,9 +3019,10 @@ void LogBatch(){
 	}
 	
 	string output = "";
-	outputs.ForEach(delegate(string item){
+	foreach(string item in outputs){
 		output += item + "\n";
-	});
+	}
+	
 	_dataSurface.WriteText(output);
 }
 
@@ -3154,6 +3036,39 @@ void waypointCommand(string arg, string waypointName){
 		state = 1;
 	
 	SetWaypointState(waypointName, state);	
+}
+
+
+// SYNC WITH MASTER // Sync map data with master sync computer.
+void syncWithMaster(bool syncTo){
+	List<IMyTerminalBlock> syncBlocks = new List<IMyTerminalBlock>();
+	GridTerminalSystem.SearchBlocksOfName(SYNC_TAG, syncBlocks);
+	
+	if(syncBlocks.Count < 1){
+		_statusMessage = "NO MAP MASTER FOUND.\nPlease add tag '" + SYNC_TAG + "' to the map computer's name on your station or capital ship.\n";
+		return;
+	}
+	
+	if(syncBlocks.Count > 1){
+		_statusMessage = "Multiple blocks found with tag '" + SYNC_TAG + "'! Please resolve conflict before syncing.\n";
+		return;
+	}
+	
+	IMyTerminalBlock blockA = syncBlocks[0];
+	IMyTerminalBlock blockB = Me;
+	
+	if(syncTo){
+		blockA = Me;
+		blockB = syncBlocks[0];
+	}
+	
+	List<string> doublePlanets = mapSync(blockA, blockB, "Planet_List");
+	List<string> doubleGPS = mapSync(blockA, blockB, "Waypoint_List");
+	
+	IMyProgrammableBlock syncBlock = syncBlocks[0] as IMyProgrammableBlock;
+	syncBlock.TryRun("REFRESH");
+	
+	_statusMessage = "MAP DATA SYNCED\nDuplicate Planets:\n" + listToNames(doublePlanets,';') + "\nDuplicate Waypoints:\n" + listToNames(doubleGPS,';');
 }
 
 
@@ -3173,6 +3088,73 @@ void nextLast(List<StarMap> maps, string arg, bool state){
 			NextPage(state);
 			break;
 	}
+}
+
+
+// MAP SYNC //  Syncs Data for specific ini entry between two blocks, and returns list of duplicate entries.
+List<string> mapSync(IMyTerminalBlock mapA, IMyTerminalBlock mapB, string listName){
+	List<string> duplicates = new List<string>();
+	
+	if(syncBlockError(mapA))
+		return duplicates;
+	if(syncBlockError(mapB))
+		return duplicates;
+	
+	MyIni iniA = DataToIni(mapA);
+	MyIni iniB = DataToIni(mapB);
+	
+	string dataA = iniA.Get("Map Settings", listName).ToString();
+	string dataB = iniB.Get("Map Settings", listName).ToString();
+	string newData = "";
+	
+	if(dataA == ""){
+		newData = dataB;
+	}else if(dataB == ""){
+		newData = dataA;
+	}else{
+		List<string> outputs = dataA.Split('\n').ToList();
+		List<string> inputs = dataB.Split('\n').ToList();
+		
+		foreach(string input in inputs){
+			string name = input.Split(';')[0];
+			int matchCount = 0;
+			
+			foreach(string output in outputs){
+				if(output.StartsWith(name)){
+					matchCount++;
+					
+				}
+			}
+			
+			if(matchCount > 0)
+				duplicates.Add(input);
+			else
+				outputs.Add(input);
+		}
+		
+		foreach(string entry in outputs){
+			newData += entry + "\n";
+		}
+	}
+	
+	iniA.Set("Map Settings", listName, newData.Trim());
+	mapA.CustomData = iniA.ToString();
+	
+	iniB.Set("Map Settings", listName, newData.Trim());
+	mapB.CustomData = iniB.ToString();	
+	
+	return duplicates;
+}
+
+
+// SYNC BLOCK ERROR // Returns false and sets error message if Sync Block has no Map Data
+bool syncBlockError(IMyTerminalBlock sync){
+	if(sync.CustomData.Contains("[Map Settings]")){
+		return true;
+	}
+	
+	_statusMessage = "SYNC Block '" + sync.CustomName +"' contains no map settings! Please ensure that SYNC Block is also running this script!\n";
+	return false;
 }
 
 
@@ -3198,6 +3180,52 @@ void pageScroll(string arg){
 
 
 // TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// UPDATE TAGS // Add Grid Tag to all map displays on grid
+void updateTags(){
+	if(_mapBlocks.Count < 1)
+		return;
+	
+	_gridTag = Me.CubeGrid.EntityId.ToString();
+	setMapIni("Grid_Tag", _gridTag);
+	
+	foreach(IMyTerminalBlock mapBlock in _mapBlocks){
+		if(mapBlock.IsSameConstructAs(Me)){
+			MyIni mapIni = DataToIni(mapBlock);
+			mapIni.Set("mapDisplay", "Grid_Tag", _gridTag);
+			mapBlock.CustomData = mapIni.ToString();
+		}
+	}
+	
+	refresh();
+}
+
+
+// ON GRID // Checks if map blocks are part of current ship, even if merged
+bool onGrid(IMyTerminalBlock mapTerminal){
+	if(!mapTerminal.IsSameConstructAs(Me))
+		return false;
+	
+	MyIni mapIni = DataToIni(mapTerminal);
+	string iniGrid = mapIni.Get("mapDisplay", "Grid_Tag").ToString();
+	
+	if(iniGrid == _gridTag)
+		return true;
+	else
+		return false;
+}
+
+// DATA TO INI //
+MyIni DataToIni(IMyTerminalBlock block){
+	MyIni iniOuti = new MyIni();
+	
+	MyIniParseResult result;
+	if (!iniOuti.TryParse(block.CustomData, out result)) 
+		throw new Exception(result.ToString());
+	
+	return iniOuti;
+}
 
 // COLOR SWITCH //
 Color ColorSwitch(string colorString, bool isWaypoint){
@@ -3389,6 +3417,7 @@ public string InsertEntry(string entry, string oldString, char separator, int in
 	
 	return newString;	
 }
+
 
 // STRING TO ENTRIES //		Splits string into a list of variable length, by a separator character.  If the list is shorter than 
 					//		the desired length,the remainder is filled with copies of the place holder.
@@ -3777,6 +3806,169 @@ public void CycleExecute()
 }
 
 
+// LIST TO NAMES // Builds multi-line string of names from list entries
+string listToNames(List<string> inputs, char separator){
+	string output = "";
+
+	if(inputs.Count < 1)
+		return output;
+	
+	foreach(string input in inputs){
+		output += input.Split(separator)[0] + "\n";
+	}
+	
+	return output.Trim();
+}
+
+
+// SET MAP INI // Ensures that ini entry exists and sets with default arg value if not
+void setMapIni(string entry, string arg){
+	if(!Me.CustomData.Contains(entry)){
+		_mapLog.Set("Map Settings", entry, arg);
+		Me.CustomData = _mapLog.ToString();
+	}
+}
+
+
+// REFRESH // - Updates map info from map's custom data
+void refresh(){
+	_planetList = new List<Planet>();
+	_unchartedList = new List<Planet>();
+	_waypointList = new List<Waypoint>();
+	_mapList = new List<StarMap>();
+	_mapBlocks = new List<IMyTerminalBlock>();
+	
+		_mapLog = DataToIni(Me);
+
+	//Name of screen to print map to.
+	_mapTag =  _mapLog.Get("Map Settings", "MAP_Tag").ToString();
+
+	//Index of screen to print map to.
+	_mapIndex = _mapLog.Get("Map Settings","MAP_Index").ToUInt16();
+
+	//Index of screen to print map data to.
+	_dataIndex = _mapLog.Get("Map Settings","Data_Index").ToUInt16();
+
+	//Name of reference block
+	_refName = _mapLog.Get("Map Settings", "Reference_Name").ToString();
+
+	//Name of Data Display Block
+	_dataName = _mapLog.Get("Map Settings", "Data_Tag").ToString();
+	
+	//Slow Mode
+	setMapIni("Slow_Mode", "false");
+	_slowMode = ParseBool(_mapLog.Get("Map Settings", "Slow_Mode").ToString());
+	
+	//Grid Tag
+	setMapIni("Grid_Tag", Me.CubeGrid.EntityId.ToString());
+	_gridTag = _mapLog.Get("Map Settings", "Grid_Tag").ToString();
+	
+	if(_gridTag == ""){
+		_gridTag = Me.CubeGrid.EntityId.ToString();
+		_mapLog.Set("Map Settings", "Grid_Tag", _gridTag);
+		Me.CustomData = _mapLog.ToString();
+	}
+	
+	//Cycle Step Length
+	setMapIni("Cycle_Step", "5");
+	_cycleLength = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
+	_cycleStep = _cycleLength;
+
+	if(_mapTag == "" || _mapTag == "<name>")
+	{
+	   Echo("No LCD specified!!!");
+	}
+	else
+	{
+		GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
+		foreach(IMyTerminalBlock mapBlock in _mapBlocks){
+			if(onGrid(mapBlock)){
+				List<StarMap> maps = ParametersToMaps(mapBlock);
+				
+				if(maps.Count > 0)
+				{
+					foreach(StarMap map in maps)
+					{
+						activateMap(map);
+						MapToParameters(map);
+					}
+				}
+			}
+		}
+	}
+
+	if(_dataName != "" || _dataName != "<name>")
+	{
+		GridTerminalSystem.SearchBlocksOfName(_dataName, _dataBlocks);
+		if(_dataBlocks.Count > 0)
+		{
+			IMyTextSurfaceProvider dataBlock = _dataBlocks[0] as IMyTextSurfaceProvider;
+			_dataSurface = dataBlock.GetSurface(_dataIndex);
+			_dataSurface.ContentType = ContentType.TEXT_AND_IMAGE;
+		}
+	}
+
+	if(_refName == "" || _refName == "<name>")
+	{
+		_statusMessage = "WARNING: No Reference Block Name Specified!\nMay result in false orientation!";
+		_refBlock = Me as IMyTerminalBlock;
+	}
+	else
+	{
+		List<IMyTerminalBlock> refBlocks = new List<IMyTerminalBlock>();
+		GridTerminalSystem.SearchBlocksOfName(_refName, refBlocks);
+		if(refBlocks.Count > 0)
+		{
+			_refBlock = refBlocks[0] as IMyTerminalBlock;
+			Echo("Reference: " + _refBlock.CustomName);
+		}
+		else
+		{
+			_statusMessage = "WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!";
+			_refBlock = Me as IMyTerminalBlock;
+		}
+	}
+
+
+
+	string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
+
+	string [] mapEntries = planetData.Split('\n');
+	foreach(string planetString in mapEntries){
+		if(planetString.Contains(";"))
+		{
+			Planet planet = new Planet(planetString);
+			if(planet.isCharted)
+			{
+				_planetList.Add(planet);
+			}
+			else
+			{
+				_unchartedList.Add(planet);
+			}
+		}
+	}
+	_planets = _planetList.Count > 0;
+
+	string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
+	string [] gpsEntries = waypointData.Split('\n');
+	
+	foreach(string waypointString in gpsEntries)
+	{
+		if(waypointString.Contains(";"))
+		{
+		   Waypoint waypoint = StringToWaypoint(waypointString);
+		   _waypointList.Add(waypoint);
+		}
+	}
+
+	_previousCommand = "NEWLY LOADED";
+	
+	// Start with indicator light on.
+	_lightOn = true;
+}
+
+
 // BORROWED FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -3988,6 +4180,9 @@ public static int DegreeAdd(int angle_A, int angle_B)
 // UPDATE MAP // Transform logged locations based on map parameters
 public void UpdateMap(StarMap map)
 {
+	if(_mapList.Count == 0)
+		return;
+
 	if(_planets)
 	{
 		foreach(Planet planet in _planetList)
@@ -4004,6 +4199,7 @@ public void UpdateMap(StarMap map)
 			}
 		}
 	}
+
 	if(_waypointList.Count > 0)
 	{
 		foreach(Waypoint waypoint in _waypointList)
