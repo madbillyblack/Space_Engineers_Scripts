@@ -3184,18 +3184,15 @@ void pageScroll(string arg){
 
 // UPDATE TAGS // Add Grid Tag to all map displays on grid
 void updateTags(){
+	_gridTag = Me.CubeGrid.EntityId.ToString();
+	setIni(Me, "Map Settings", "Grid_ID", _gridTag);
+	
 	if(_mapBlocks.Count < 1)
 		return;
 	
-	_gridTag = Me.CubeGrid.EntityId.ToString();
-	setMapIni("Grid_ID", _gridTag);
-	
 	foreach(IMyTerminalBlock mapBlock in _mapBlocks){
-		if(mapBlock.IsSameConstructAs(Me)){
-			MyIni mapIni = DataToIni(mapBlock);
-			mapIni.Set("mapDisplay", "Grid_ID", _gridTag);
-			mapBlock.CustomData = mapIni.ToString();
-		}
+		if(mapBlock.IsSameConstructAs(Me))
+			setIni(mapBlock, "mapDisplay", "Grid_ID", _gridTag);
 	}
 	
 	refresh();
@@ -3207,8 +3204,7 @@ bool onGrid(IMyTerminalBlock mapTerminal){
 	if(!mapTerminal.IsSameConstructAs(Me))
 		return false;
 	
-	MyIni mapIni = DataToIni(mapTerminal);
-	string iniGrid = mapIni.Get("mapDisplay", "Grid_ID").ToString();
+	string iniGrid = getIni(mapTerminal, "mapDisplay", "Grid_ID", "Unassigned");
 	
 	if(iniGrid == _gridTag)
 		return true;
@@ -3821,12 +3817,22 @@ string listToNames(List<string> inputs, char separator){
 }
 
 
-// SET MAP INI // Ensures that ini entry exists and sets with default arg value if not
-void setMapIni(string entry, string arg){
-	if(!Me.CustomData.Contains(entry)){
-		_mapLog.Set("Map Settings", entry, arg);
-		Me.CustomData = _mapLog.ToString();
-	}
+// SET INI // Update ini parameter for block, and write back to custom data.
+void setIni(IMyTerminalBlock block, string entry, string parameter, string arg){
+	MyIni blockIni = DataToIni(block);
+	blockIni.Set(entry, parameter, arg);
+	block.CustomData = blockIni.ToString();
+}
+
+
+// GET INI // Gets ini value from block.  Returns default argument if doesn't exist.
+string getIni(IMyTerminalBlock block, string entry, string parameter, string defaultVal){
+	MyIni blockIni = DataToIni(block);
+	
+	if(!block.CustomData.Contains(entry)||!block.CustomData.Contains(parameter))
+		setIni(block, entry, parameter, defaultVal);
+	
+	return blockIni.Get(entry, parameter).ToString();
 }
 
 
@@ -3856,12 +3862,10 @@ void refresh(){
 	_dataName = _mapLog.Get("Map Settings", "Data_Tag").ToString();
 	
 	//Slow Mode
-	setMapIni("Slow_Mode", "false");
-	_slowMode = ParseBool(_mapLog.Get("Map Settings", "Slow_Mode").ToString());
+	_slowMode = ParseBool(getIni(Me, "Map Settings", "Slow_Mode", "false"));
 	
 	//Grid Tag
-	setMapIni("Grid_ID", Me.CubeGrid.EntityId.ToString());
-	_gridTag = _mapLog.Get("Map Settings", "Grid_ID").ToString();
+	_gridTag = getIni(Me, "Map Settings", "Grid_ID", Me.CubeGrid.EntityId.ToString());
 	
 	if(_gridTag == ""){
 		_gridTag = Me.CubeGrid.EntityId.ToString();
@@ -3870,8 +3874,11 @@ void refresh(){
 	}
 	
 	//Cycle Step Length
-	setMapIni("Cycle_Step", "5");
-	_cycleLength = _mapLog.Get("Map Settings", "Cycle_Step").ToUInt16();
+	try{
+		_cycleLength = Int16.Parse(getIni(Me, "Map Settings", "Cycle_Step", "5"));
+	}catch{
+		_cycleLength = 5;
+	}
 	_cycleStep = _cycleLength;
 
 	if(_mapTag == "" || _mapTag == "<name>")
