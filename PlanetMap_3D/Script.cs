@@ -45,8 +45,8 @@ const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
 const int DATA_PAGES = 5;  // Number of Data Display Pages
 const string SLASHES = " //////////////////////////////////////////////////////////////";
 const string GPS_INPUT = "// GPS INPUT ";
-const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_Tag=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
-string _defaultDisplay = "[mapDisplay]\nGrid_Tag=\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
+const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_ID=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
+string _defaultDisplay = "[mapDisplay]\nGrid_ID=\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
 							+DV_FOCAL+"\nRotationalRadius="+DV_RADIUS +"\nAzimuth=0\nAltitude="
 							+DV_ALTITUDE+"\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True\nPlanet=";
 							
@@ -801,10 +801,10 @@ public void Main(string argument)
 	}
 	else
 	{
-		_statusMessage = "NO MAP DISPLAY FOUND!\nPlease add tag " + _mapTag + " to desired block.\n";
-		//GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
-		//activateMap();
 		updateTags();
+		
+		if(_mapList.Count < 1)
+			_statusMessage = "NO MAP DISPLAY FOUND!\nPlease add tag " + _mapTag + " to desired block.\n";
 	}
 
 	if(_dataBlocks.Count > 0)
@@ -1009,7 +1009,7 @@ public void DataToLog()
 // MAP TO PARAMETERS // Writes map object to CustomData of Display Block
 public void MapToParameters(StarMap map)
 {
-	MyIni lcdIni = DataToIni(Me);
+	MyIni lcdIni = DataToIni(map.block);
 	
 	int i = 0;
 	
@@ -3188,12 +3188,12 @@ void updateTags(){
 		return;
 	
 	_gridTag = Me.CubeGrid.EntityId.ToString();
-	setMapIni("Grid_Tag", _gridTag);
+	setMapIni("Grid_ID", _gridTag);
 	
 	foreach(IMyTerminalBlock mapBlock in _mapBlocks){
 		if(mapBlock.IsSameConstructAs(Me)){
 			MyIni mapIni = DataToIni(mapBlock);
-			mapIni.Set("mapDisplay", "Grid_Tag", _gridTag);
+			mapIni.Set("mapDisplay", "Grid_ID", _gridTag);
 			mapBlock.CustomData = mapIni.ToString();
 		}
 	}
@@ -3208,7 +3208,7 @@ bool onGrid(IMyTerminalBlock mapTerminal){
 		return false;
 	
 	MyIni mapIni = DataToIni(mapTerminal);
-	string iniGrid = mapIni.Get("mapDisplay", "Grid_Tag").ToString();
+	string iniGrid = mapIni.Get("mapDisplay", "Grid_ID").ToString();
 	
 	if(iniGrid == _gridTag)
 		return true;
@@ -3860,12 +3860,12 @@ void refresh(){
 	_slowMode = ParseBool(_mapLog.Get("Map Settings", "Slow_Mode").ToString());
 	
 	//Grid Tag
-	setMapIni("Grid_Tag", Me.CubeGrid.EntityId.ToString());
-	_gridTag = _mapLog.Get("Map Settings", "Grid_Tag").ToString();
+	setMapIni("Grid_ID", Me.CubeGrid.EntityId.ToString());
+	_gridTag = _mapLog.Get("Map Settings", "Grid_ID").ToString();
 	
 	if(_gridTag == ""){
 		_gridTag = Me.CubeGrid.EntityId.ToString();
-		_mapLog.Set("Map Settings", "Grid_Tag", _gridTag);
+		_mapLog.Set("Map Settings", "Grid_ID", _gridTag);
 		Me.CustomData = _mapLog.ToString();
 	}
 	
