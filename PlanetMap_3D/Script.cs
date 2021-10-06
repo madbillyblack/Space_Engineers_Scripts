@@ -482,6 +482,7 @@ public Program()
 	}
 
 	refresh();
+	_previousCommand = "NEWLY LOADED";
 	
 	 // Set the continuous update frequency of this script
 	if(_slowMode)
@@ -723,6 +724,8 @@ public void Main(string argument)
 				case "SYNC":
 					if(cmdArg == "TO"){
 						syncWithMaster(true);
+					}else if(cmdArg == "ALERT"){
+						syncAlert(argData);
 					}else{
 						syncWithMaster(false);
 					}
@@ -3027,18 +3030,6 @@ void LogBatch(){
 }
 
 
-// BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////
-
-// WAYPOINT COMMAND // Bridge function to eliminate old switch cases.
-void waypointCommand(string arg, string waypointName){
-	int state = 0;
-	if(arg == "ON")
-		state = 1;
-	
-	SetWaypointState(waypointName, state);	
-}
-
-
 // SYNC WITH MASTER // Sync map data with master sync computer.
 void syncWithMaster(bool syncTo){
 	List<IMyTerminalBlock> syncBlocks = new List<IMyTerminalBlock>();
@@ -3054,21 +3045,148 @@ void syncWithMaster(bool syncTo){
 		return;
 	}
 	
-	IMyTerminalBlock blockA = syncBlocks[0];
+	if(Me.CustomName.Contains(SYNC_TAG)){
+		_statusMessage = "SYNC Requests cannot be made from SYNC terminal!\n";
+		return;
+	}
+	
+	IMyProgrammableBlock syncBlock = syncBlocks[0] as IMyProgrammableBlock;
+	IMyTerminalBlock blockA = syncBlock as IMyTerminalBlock;
 	IMyTerminalBlock blockB = Me;
 	
 	if(syncTo){
 		blockA = Me;
-		blockB = syncBlocks[0];
+		blockB = syncBlock as IMyTerminalBlock;
 	}
 	
-	List<string> doublePlanets = mapSync(blockA, blockB, "Planet_List");
-	List<string> doubleGPS = mapSync(blockA, blockB, "Waypoint_List");
+	int[] pSync = mapSync(blockA, blockB, "Planet_List");
+	int[] wSync = mapSync(blockA, blockB, "Waypoint_List");
 	
-	IMyProgrammableBlock syncBlock = syncBlocks[0] as IMyProgrammableBlock;
-	syncBlock.TryRun("REFRESH");
+	if(syncTo){
+		pSync = syncReverse(pSync);
+		wSync = syncReverse(wSync);
+	}
 	
-	_statusMessage = "MAP DATA SYNCED\nDuplicate Planets:\n" + listToNames(doublePlanets,';') + "\nDuplicate Waypoints:\n" + listToNames(doubleGPS,';');
+	syncBlock.TryRun("SYNC_ALERT " + Me.CustomName);
+	refresh();
+	
+	_statusMessage = "MAP DATA SYNCED\n-- Planets --\nDownloaded: " + pSync[0] + "\nUploaded: " + pSync[1] + "\n\n--Waypoints--\nDownloaded: " + wSync[0] + "\nUploaded: " + wSync[1] + "\n";
+}
+
+
+// SYNC REVERSE // reverses 2 entry int array
+int[] syncReverse(int[] input){
+	int[] output = new int[] {input[1], input[0]};
+	return output;
+}
+
+
+// MAP SYNC //  Syncs Data for specific ini entry between two blocks, int array [from, to] mapA.
+int[] mapSync(IMyTerminalBlock mapA, IMyTerminalBlock mapB, string listName){
+	int[] downUp = new int[] {0,0};
+	
+	if(syncBlockError(mapA))
+		return downUp;
+	if(syncBlockError(mapB))
+		return downUp;
+	
+	MyIni iniA = DataToIni(mapA);
+	MyIni iniB = DataToIni(mapB);
+	
+	string dataA = iniA.Get("Map Settings", listName).ToString();
+	string dataB = iniB.Get("Map Settings", listName).ToString();
+	string newData = "";
+	
+	if(dataA == ""){
+		newData = dataB;
+	}else if(dataB == ""){
+		newData = dataA;
+	}else{
+		List<string> outputs = dataA.Split('\n').ToList();
+		List<string> inputs = dataB.Split('\n').ToList();
+		
+		int startCount = outputs.Count;
+		int matchCount = 0;
+		
+		foreach(string input in inputs){
+			string name = input.Split(';')[0];
+			bool matched = false;
+			
+			foreach(string output in outputs){
+				if(output.StartsWith(name)){
+					matched = true;
+				}
+			}
+
+			if(matched)
+				matchCount++;
+			else
+				outputs.Add(input);
+		}
+		
+		downUp[0] = startCount - matchCount;
+		downUp[1] = inputs.Count - matchCount;
+		
+		foreach(string entry in outputs){
+			newData += entry + "\n";	
+		}
+	}
+	
+	iniA.Set("Map Settings", listName, newData.Trim());
+	mapA.CustomData = iniA.ToString();
+	
+	iniB.Set("Map Settings", listName, newData.Trim());
+	mapB.CustomData = iniB.ToString();
+	
+	return downUp;
+}
+
+
+// SYNC BLOCK ERROR // Returns false and sets error message if Sync Block has no Map Data
+bool syncBlockError(IMyTerminalBlock sync){
+	if(sync.CustomData.Contains("[Map Settings]")){
+		return false;
+	}
+	
+	_statusMessage = "SYNC Block '" + sync.CustomName +"' contains no map settings! Please ensure that SYNC Block is also running this script!\n";
+	return true;
+}
+
+
+// SYNC ALERT // Refreshes then sets status to alert message.
+void syncAlert(string name){
+	refresh();
+	string senderData;
+	IMyTerminalBlock sender;
+	
+	try{
+		sender = GridTerminalSystem.GetBlockWithName(name);
+		senderData = getIni(sender, "Map Settings", "Grid_ID", sender.CubeGrid.EntityId.ToString());
+	}catch{
+		senderData = "UNKNOWN";
+	}
+	_statusMessage = "Origin Grid ID: " + senderData + "\n";
+}
+
+
+// PAGE SCROLL //
+void pageScroll(string arg){
+	switch(arg){
+		case "UP":
+			_scrollIndex--;
+			if(_scrollIndex < 0)
+				_scrollIndex = 0;								
+			break;
+		case "DOWN":
+			_scrollIndex++;
+			break;
+		case "HOME":
+			_scrollIndex = 0;	
+			break;
+		default:
+			_statusMessage = "INVALID SCROLL COMMAND";
+			break;
+	}
 }
 
 
@@ -3091,91 +3209,15 @@ void nextLast(List<StarMap> maps, string arg, bool state){
 }
 
 
-// MAP SYNC //  Syncs Data for specific ini entry between two blocks, and returns list of duplicate entries.
-List<string> mapSync(IMyTerminalBlock mapA, IMyTerminalBlock mapB, string listName){
-	List<string> duplicates = new List<string>();
-	
-	if(syncBlockError(mapA))
-		return duplicates;
-	if(syncBlockError(mapB))
-		return duplicates;
-	
-	MyIni iniA = DataToIni(mapA);
-	MyIni iniB = DataToIni(mapB);
-	
-	string dataA = iniA.Get("Map Settings", listName).ToString();
-	string dataB = iniB.Get("Map Settings", listName).ToString();
-	string newData = "";
-	
-	if(dataA == ""){
-		newData = dataB;
-	}else if(dataB == ""){
-		newData = dataA;
-	}else{
-		List<string> outputs = dataA.Split('\n').ToList();
-		List<string> inputs = dataB.Split('\n').ToList();
-		
-		foreach(string input in inputs){
-			string name = input.Split(';')[0];
-			int matchCount = 0;
-			
-			foreach(string output in outputs){
-				if(output.StartsWith(name)){
-					matchCount++;
-					
-				}
-			}
-			
-			if(matchCount > 0)
-				duplicates.Add(input);
-			else
-				outputs.Add(input);
-		}
-		
-		foreach(string entry in outputs){
-			newData += entry + "\n";
-		}
-	}
-	
-	iniA.Set("Map Settings", listName, newData.Trim());
-	mapA.CustomData = iniA.ToString();
-	
-	iniB.Set("Map Settings", listName, newData.Trim());
-	mapB.CustomData = iniB.ToString();	
-	
-	return duplicates;
-}
+// BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////
 
-
-// SYNC BLOCK ERROR // Returns false and sets error message if Sync Block has no Map Data
-bool syncBlockError(IMyTerminalBlock sync){
-	if(sync.CustomData.Contains("[Map Settings]")){
-		return true;
-	}
+// WAYPOINT COMMAND // Bridge function to eliminate old switch cases.
+void waypointCommand(string arg, string waypointName){
+	int state = 0;
+	if(arg == "ON")
+		state = 1;
 	
-	_statusMessage = "SYNC Block '" + sync.CustomName +"' contains no map settings! Please ensure that SYNC Block is also running this script!\n";
-	return false;
-}
-
-
-// PAGE SCROLL //
-void pageScroll(string arg){
-	switch(arg){
-		case "UP":
-			_scrollIndex--;
-			if(_scrollIndex < 0)
-				_scrollIndex = 0;								
-			break;
-		case "DOWN":
-			_scrollIndex++;
-			break;
-		case "HOME":
-			_scrollIndex = 0;	
-			break;
-		default:
-			_statusMessage = "INVALID SCROLL COMMAND";
-			break;
-	}
+	SetWaypointState(waypointName, state);	
 }
 
 
@@ -3803,14 +3845,14 @@ public void CycleExecute()
 
 
 // LIST TO NAMES // Builds multi-line string of names from list entries
-string listToNames(List<string> inputs, char separator){
+string listToStrings(List<string> inputs){
 	string output = "";
 
 	if(inputs.Count < 1)
 		return output;
 	
 	foreach(string input in inputs){
-		output += input.Split(separator)[0] + "\n";
+		output += input + "\n";
 	}
 	
 	return output.Trim();
@@ -3968,8 +4010,6 @@ void refresh(){
 		   _waypointList.Add(waypoint);
 		}
 	}
-
-	_previousCommand = "NEWLY LOADED";
 	
 	// Start with indicator light on.
 	_lightOn = true;
