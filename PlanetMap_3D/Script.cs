@@ -722,13 +722,7 @@ public void Main(string argument)
 					}
 					break;
 				case "SYNC":
-					if(cmdArg == "TO"){
-						syncWithMaster(true);
-					}else if(cmdArg == "ALERT"){
-						syncAlert(argData);
-					}else{
-						syncWithMaster(false);
-					}
+					sync(cmdArg, argData);
 					break;
 				case "REFRESH":
 					refresh();
@@ -3030,8 +3024,28 @@ void LogBatch(){
 }
 
 
-// SYNC WITH MASTER // Sync map data with master sync computer.
-void syncWithMaster(bool syncTo){
+// SYNC // Switch function for all sync commands
+void sync(string cmdArg, string argData){
+	bool syncTo = argData == "OVERWRITE";
+
+	if(cmdArg == "MASTER"){
+		syncMaster(syncTo);
+	}else if(cmdArg == "NEAREST"){
+		syncNearest(syncTo);
+	}else{
+		_statusMessage = "Invalid Sync Command!";
+	}
+}
+
+
+// SYNC MASTER // Finds Master Sync Block on station and syncs to or from depending on bool.
+void syncMaster(bool syncTo){
+
+	if(Me.CustomName.Contains(SYNC_TAG)){
+		_statusMessage = "SYNC Requests cannot be made from SYNC terminal!\n";
+		return;
+	}
+	
 	List<IMyTerminalBlock> syncBlocks = new List<IMyTerminalBlock>();
 	GridTerminalSystem.SearchBlocksOfName(SYNC_TAG, syncBlocks);
 	
@@ -3045,12 +3059,40 @@ void syncWithMaster(bool syncTo){
 		return;
 	}
 	
-	if(Me.CustomName.Contains(SYNC_TAG)){
-		_statusMessage = "SYNC Requests cannot be made from SYNC terminal!\n";
+	syncWith(syncBlocks[0] as IMyProgrammableBlock, syncTo);
+}
+
+
+// SYNC NEAREST // Finds Nearest other mapping program and syncs to or from depending on bool.
+void syncNearest(bool syncTo){
+	List<IMyProgrammableBlock> computers = new List<IMyProgrammableBlock>();
+	GridTerminalSystem.GetBlocksOfType<IMyProgrammableBlock>(computers);
+	
+	IMyProgrammableBlock syncBlock = null;
+	float nearest = float.MaxValue;
+	
+	foreach(IMyProgrammableBlock computer in computers){
+		if(computer.CustomData.Contains("[Map Settings]") && !(computer == Me)){
+			float distance = Vector3.Distance(_myPos, computer.GetPosition());
+			if(distance < nearest){
+				nearest = distance;
+				syncBlock = computer;
+			}
+		}
+	}
+	
+	if(!(syncBlock == null)){
+		syncWith(syncBlock, syncTo);
 		return;
 	}
 	
-	IMyProgrammableBlock syncBlock = syncBlocks[0] as IMyProgrammableBlock;
+	_statusMessage = "No other mapping computers available to sync!";
+}
+
+
+// SYNC WITH // Sync map data with master sync computer.
+void syncWith(IMyProgrammableBlock syncBlock, bool syncTo){
+
 	IMyTerminalBlock blockA = syncBlock as IMyTerminalBlock;
 	IMyTerminalBlock blockB = Me;
 	
