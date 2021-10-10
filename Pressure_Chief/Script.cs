@@ -5,7 +5,7 @@
 //////////////////////////////v1.0
 
 // USER CONSTANTS -  Feel free to change as needed:
-
+const string VAC_TAG = "XoX"; // Tag used to designate External reference vents (i.e. Vacuum vents).
 
 
 // AVOID CHANGING ANYTHING BELOW THIS LINE!!!!!-----------------------------------------------------------------------------------------------------
@@ -13,6 +13,7 @@ const string OPENER = "[|";
 const string CLOSER = "|]";
 const char SPLITTER = '|';
 const string INI_HEAD = "Pressure Chief";
+
 
 // Globals //
 static string _statusMessage;
@@ -37,16 +38,27 @@ public class Sector{
 	public IMyAirVent vent;
 	public List<IMyDoor> doors;
 	public List<IMyLightingBlock> lights;
-	public string type; // User Defined Defaults to "Room"
+	public List<IMyTextPanel> lcds;
+	public List<IMyShipMergeBlock> mergeBlocks;
+	public List<IMyShipConnector> connectors;
+	public string type; // Room, Lock, Dock, or Vacuum
 	public IMyTimerBlock lockTimer;
 	public IMySoundBlock lockAlarm;
-	public IMyShipConnector connector;
 	
 	public Sector(IMyAirVent airVent){
 		this.vent = airVent;
-		this.tag = TagsFromName(airVent.CustomName);
+		this.tag = TagFromName(airVent.CustomName);
+
+		if(this.tag == VAC_TAG)
+			this.type = "Vacuum";
+		else
+			this.type = "Room";
+		
 		this.doors = new List<IMyDoor>();
 		this.lights = new List<IMyLightingBlock>();
+		this.lcds = new List<IMyTextPanel>();
+		this.mergeBlocks = new List<IMyShipMergeBlock>();
+		this.connectors = new List<IMyShipConnector>();
 	}
 }
 
@@ -73,17 +85,15 @@ public void Main(string argument, UpdateType updateSource)
 		
 	foreach(Sector sector in _sectors){
 		Echo(sector.type + " " + sector.tag);
-		if(sector.doors.Count > 0){
-			foreach(IMyDoor door in sector.doors)
-				Echo("* " + door.CustomName);
-		}
-		Echo(" ");
+		Echo("* Doors: " + sector.doors.Count);
+		Echo("* Lights: " + sector.lights.Count);
+		Echo("* LCDs: " + sector.lcds.Count + "\n");
 	}
 }
 
 
-// TAGS FROM NAME //
-public static string TagsFromName(string name){
+// TAG FROM NAME //
+public static string TagFromName(string name){
 	
 	int start = name.IndexOf(OPENER) + OPENER.Length; //Start index of tag substring
 	int length = name.IndexOf(CLOSER) - start; //Length of tag
@@ -94,7 +104,7 @@ public static string TagsFromName(string name){
 
 // MULTITAGS // Returns 2 entry array of tags for blocks with multiple tags.
 public static string[] MultiTags(string name){
-	string bigTag = TagsFromName(name);
+	string bigTag = TagFromName(name);
 	string[] output = bigTag.Split(SPLITTER);
 	
 	if(output.Length == 2)
@@ -157,52 +167,142 @@ void Build(){
 		
 		foreach(IMyAirVent vent in _vents){
 			Sector sector = new Sector(vent);
-			sector.type = GetKey(vent, "Sector_Type", "Room");
 			_sectors.Add(sector);
 		}
 		
 		if(_sectors.Count < 1 || _doors.Count < 1)
 			return;
 		
-		foreach(IMyDoor door in _doors)
-			AssignDoor(door);		
+		// Assign double-tagged components
+		AssignDoors();
+		AssignLCDs();
+		
+		// Assign single-tagged components
+		if(_lights.Count > 0){
+			foreach(IMyLightingBlock light in _lights)
+				AssignLight(light);
+		}
+		
+		if(_lockTimers.Count > 0){
+			foreach(IMyTimerBlock timer in _lockTimers)
+				AssignTimer(timer);
+		}
+		
+		if(_lockAlarms.Count > 0){
+			foreach(IMySoundBlock alarm in _lockAlarms)
+				AssignAlarm(alarm);
+		}
+		
+		if(_mergeBlocks.Count > 0){
+			foreach(IMyShipMergeBlock mergeBlock in _mergeBlocks)
+				AssignMergeBlock(mergeBlock);
+		}
+		
+		if(_connectors.Count > 0){
+			foreach(IMyShipConnector connector in _connectors)
+				AssignConnector(connector);
+		}
 	}
 }
 
 
 // ASSIGN DOOR //
-void AssignDoor(IMyDoor door){
-	string[] tags = MultiTags(door.CustomName);
-	
-	foreach(Sector sector in _sectors){
-		if(sector.tag == tags[0] || sector.tag == tags[1])
-			sector.doors.Add(door);
+void AssignDoors(){
+	foreach(IMyDoor door in _doors){
+		string[] tags = MultiTags(door.CustomName);
+		
+		foreach(Sector sector in _sectors){
+			if(sector.tag == tags[0] || sector.tag == tags[1])
+				sector.doors.Add(door);
+		}
 	}
 }
 
 
 // ASSIGN LCD //
-void AssignLCD(IMyTextPanel lcd){}
-
-
-// ASSIGN ALARM //
-void AssignAlarm(IMySoundBlock alarm){}
-
-
-// ASSIGN TIMER //
-void AssignTimer(IMyTimerBlock timer){}
-
-
-// ASSIGN CONNECTOR //
-void AssignConnector(IMyShipConnector connector){}
-
-
-// ASSIGN MERGE BLOCK //
-void AssignMergeBlock(IMyShipMergeBlock mergeBlock){}
+void AssignLCDs(){
+	if(_lcds.Count < 1)
+		return;
+	
+	foreach(IMyTextPanel lcd in _lcds){
+		string[] tags = MultiTags(lcd.CustomName);
+	
+		foreach(Sector sector in _sectors){
+			if(sector.tag == tags[0] || sector.tag == tags[1])
+				sector.lcds.Add(lcd);
+		}
+	}
+}
 
 
 // ASSIGN LIGHT //
-void AssignLight(IMyLightingBlock light){}
+void AssignLight(IMyLightingBlock light){
+	string tag = TagFromName(light.CustomName);
+	
+	foreach(Sector sector in _sectors){
+		if(sector.tag == tag){
+			sector.lights.Add(light);
+			return;
+		}
+	}
+}
+
+
+// ASSIGN TIMER //
+void AssignTimer(IMyTimerBlock timer){
+	string tag = TagFromName(timer.CustomName);
+	
+	foreach(Sector sector in _sectors){
+		if(sector.tag == tag){
+			sector.lockTimer = timer;
+			sector.type = "Lock"; //Set Sector Type to Lock if a Timer is present
+			return;
+		}
+	}
+}
+
+
+// ASSIGN ALARM //
+void AssignAlarm(IMySoundBlock alarm){
+	string tag = TagFromName(alarm.CustomName);
+	
+	foreach(Sector sector in _sectors){
+		if(sector.tag == tag){
+			sector.lockAlarm = alarm;
+			return;
+		}
+	}
+}
+
+
+// ASSIGN MERGE BLOCK //
+void AssignMergeBlock(IMyShipMergeBlock mergeBlock){
+	string tag = TagFromName(mergeBlock.CustomName);
+	
+	foreach(Sector sector in _sectors){
+		if(sector.tag == tag){
+			sector.mergeBlocks.Add(mergeBlock);
+			sector.type = "Dock"; //Set Sector Type to Dock if Merge Blocks are present.
+			return;
+		}
+	}
+}
+
+
+// ASSIGN CONNECTOR //
+void AssignConnector(IMyShipConnector connector){
+	string tag = TagFromName(connector.CustomName);
+	
+	foreach(Sector sector in _sectors){
+		if(sector.tag == tag){
+			sector.connectors.Add(connector);
+			return;
+		}
+	}
+}
+
+
+
 
 
 
