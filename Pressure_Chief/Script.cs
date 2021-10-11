@@ -17,6 +17,7 @@ const string INI_HEAD = "Pressure Chief";
 
 // Globals //
 static string _statusMessage;
+int _currentSector;
 
 List<IMyAirVent> _vents;
 List<IMyDoor> _doors;
@@ -27,70 +28,154 @@ List<IMyShipConnector> _connectors;
 List<IMyShipMergeBlock> _mergeBlocks;
 List<IMyLightingBlock> _lights;
 List<Sector> _sectors;
+List<Bulkhead> _bulkheads;
 
 
 
 // CLASSES //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// SECTOR //
 public class Sector{
 	
-	public string tag;
-	public IMyAirVent vent;
-	public List<IMyDoor> doors;
-	public List<IMyLightingBlock> lights;
-	public List<IMyTextPanel> lcds;
-	public List<IMyShipMergeBlock> mergeBlocks;
-	public List<IMyShipConnector> connectors;
-	public string type; // Room, Lock, Dock, or Vacuum
-	public IMyTimerBlock lockTimer;
-	public IMySoundBlock lockAlarm;
+	public string Tag;
+	public IMyAirVent Vent;
+	public List<IMyDoor> Doors;
+	public List<IMyLightingBlock> Lights;
+	public List<IMyTextPanel> LCDs;
+	public List<IMyShipMergeBlock> MergeBlocks;
+	public List<IMyShipConnector> Connectors;
+	public List<Bulkhead> Bulkheads;
+	public string Type; // Room, Lock, Dock, or Vacuum
+	public IMyTimerBlock LockTimer;
+	public IMySoundBlock LockAlarm;
 	
 	public Sector(IMyAirVent airVent){
-		this.vent = airVent;
-		this.tag = TagFromName(airVent.CustomName);
+		this.Vent = airVent;
+		this.Tag = TagFromName(airVent.CustomName);
 
-		if(this.tag == VAC_TAG)
-			this.type = "Vacuum";
+		if(this.Tag == VAC_TAG)
+			this.Type = "Vacuum";
 		else
-			this.type = "Room";
+			this.Type = "Room";
 		
-		this.doors = new List<IMyDoor>();
-		this.lights = new List<IMyLightingBlock>();
-		this.lcds = new List<IMyTextPanel>();
-		this.mergeBlocks = new List<IMyShipMergeBlock>();
-		this.connectors = new List<IMyShipConnector>();
+		this.Doors = new List<IMyDoor>();
+		this.Lights = new List<IMyLightingBlock>();
+		this.LCDs = new List<IMyTextPanel>();
+		this.MergeBlocks = new List<IMyShipMergeBlock>();
+		this.Connectors = new List<IMyShipConnector>();
+		this.Bulkheads = new List<Bulkhead>();
 	}
 }
 
 
-public Program()
-{
-	_statusMessage = "";
-	Build();
-	Runtime.UpdateFrequency = UpdateFrequency.Update100;
+// BULKHEAD //   Wrapper class for doors so that they can directly access their sectors.
+public class Bulkhead{
+	public IMyDoor Door;
+	public string TagA;
+	public string TagB;
+	public Sector SectorA;
+	public Sector SectorB;
+	public IMyAirVent VentA;
+	public IMyAirVent VentB;
+	public IMyTextPanel LCDa;
+	public IMyTextPanel LCDb;
+	public bool Override;
+	
+	public Bulkhead(IMyDoor myDoor){
+		this.Door = myDoor;
+		string[] tags = MultiTags(myDoor.CustomName);
+		
+		this.TagA = tags[0];
+		this.TagB = tags[1];
+		this.Override = false;
+	}
+
+	public void Monitor(){
+		if(this.SectorA == null || this.SectorB == null)
+			return;
+		
+		float pressureA = this.VentA.GetOxygenLevel();
+		float pressureB = this.VentB.GetOxygenLevel();
+		
+		if(this.Override || pressureA == pressureB)
+			this.Door.GetActionWithName("OnOff_On").Apply(this.Door);
+		else
+			this.Door.GetActionWithName("OnOff_Off").Apply(this.Door);
+	}
+	
+	public void SetOverride(bool overrided){
+		this.Override = overrided;
+		SetIni(this.Door, "Override", overrided.ToString());
+		_statusMessage = this.Door.CustomName + " Override status set to " + overrided.ToString();
+	}
 }
 
-public void Save()
-{
+
+// PROGRAM /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public Program(){
+	_statusMessage = "";
+	_currentSector = 0;
+	Build();
+	Runtime.UpdateFrequency = UpdateFrequency.Update10;
 }
+
+
+// SAVE ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public void Save(){}
 
 
 // MAIN /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-public void Main(string argument, UpdateType updateSource)
-{
-	if(_sectors.Count < 1){
-		Echo("NOTHING TO SEE");
-		return;
-	}
+public void Main(string arg){
+	if(arg != ""){
+		string[] args = arg.Split(' ');
 		
-	foreach(Sector sector in _sectors){
-		Echo(sector.type + " " + sector.tag);
-		Echo("* Doors: " + sector.doors.Count);
-		Echo("* Lights: " + sector.lights.Count);
-		Echo("* LCDs: " + sector.lcds.Count + "\n");
+		string command = args[0].ToUpper();
+		
+		string cmdArg = "";
+		
+		if(args.Length > 1){
+			for(int i = 1; i < args.Length; i++)
+				cmdArg += args[i];
+		}
+		
+		switch(command){
+			case "OVERRIDE":
+				Bulkhead overrideDoor = GetBulkhead(cmdArg);
+				overrideDoor.SetOverride(true);
+				break;
+			case "RESTORE":
+				Bulkhead restoreDoor = GetBulkhead(cmdArg);
+				restoreDoor.SetOverride(false);
+				break;
+			default:
+				_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
+				break;
+		}
+	}
+	
+	
+	Echo(_statusMessage);
+	
+	_currentSector++;
+	if(_currentSector >= _sectors.Count)
+		_currentSector = 0;
+
+	Sector sector = _sectors[_currentSector];
+	Echo(sector.Type + " " + sector.Tag);
+
+	foreach(Bulkhead bulkhead in sector.Bulkheads){
+		Echo("\n" + bulkhead.Door.CustomName);
+		bulkhead.Monitor();
+		
+		if(bulkhead.LCDa != null)
+			Echo("* " + bulkhead.LCDa.CustomName);
+		if(bulkhead.LCDb != null)
+			Echo("* " + bulkhead.LCDb.CustomName);
 	}
 }
 
+
+// TOOL FUNCTIONS //--------------------------------------------------------------------------------------------------------------------------------
 
 // TAG FROM NAME //
 public static string TagFromName(string name){
@@ -115,8 +200,31 @@ public static string[] MultiTags(string name){
 }
 
 
+// PARSE BOOL //
+bool ParseBool(string val)
+{
+	string uVal = val.ToUpper();
+	if(uVal == "TRUE" || uVal == "T" || uVal == "1")
+	{
+		return true;
+	}
+	
+	return false;
+}
 
-// BUILD FUNCIONS -----------------------------------------------------------------------------------------------------------------------------------
+
+// GET BULKHEAD //
+Bulkhead GetBulkhead(string tag){
+	foreach(Bulkhead bulkhead in _bulkheads){
+		if(tag.Contains(bulkhead.TagA) && tag.Contains(bulkhead.TagB))
+			return bulkhead;
+	}
+	
+	_statusMessage = "No Door with tag " + tag + " found!";
+	return null;
+}
+
+// INIT FUNCIONS -----------------------------------------------------------------------------------------------------------------------------------
 
 // BUILD // Searches grid for all components and adds them to current run.
 void Build(){
@@ -129,6 +237,7 @@ void Build(){
 	_mergeBlocks = new List<IMyShipMergeBlock>();
 	_lights = new List<IMyLightingBlock>();
 	_sectors = new List<Sector>();
+	_bulkheads = new List<Bulkhead>();
 	
 	
 	List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
@@ -206,15 +315,33 @@ void Build(){
 }
 
 
-// ASSIGN DOOR //
+// ASSIGN DOORS //
 void AssignDoors(){
 	foreach(IMyDoor door in _doors){
 		string[] tags = MultiTags(door.CustomName);
+		Bulkhead bulkhead = new Bulkhead(door);
+		bulkhead.Override = ParseBool(GetKey(door, "Override", "false"));
 		
 		foreach(Sector sector in _sectors){
-			if(sector.tag == tags[0] || sector.tag == tags[1])
-				sector.doors.Add(door);
+			if(sector.Tag == tags[0]){
+				sector.Doors.Add(door);
+				sector.Bulkheads.Add(bulkhead);
+				bulkhead.SectorA = sector;
+				bulkhead.VentA = sector.Vent;
+			}else if(sector.Tag == tags[1]){
+				sector.Doors.Add(door);
+				sector.Bulkheads.Add(bulkhead);
+				bulkhead.SectorB = sector;
+				bulkhead.VentB = sector.Vent;
+			}
 		}
+		
+		if(bulkhead.SectorA == null)
+			_statusMessage += "\nDOOR ERROR: " + door.CustomName + "\nNo Sector Found with tag " + tags[0];
+		else if(bulkhead.SectorB == null)
+			_statusMessage += "\nDOOR ERROR: " + door.CustomName + "\nNo Sector Found with tag " + tags[1];
+		else
+			_bulkheads.Add(bulkhead);
 	}
 }
 
@@ -226,10 +353,15 @@ void AssignLCDs(){
 	
 	foreach(IMyTextPanel lcd in _lcds){
 		string[] tags = MultiTags(lcd.CustomName);
+		string tag = tags[0] + SPLITTER + tags[1];
+		string reverseTag = tags[1] + SPLITTER + tags[0];
 	
-		foreach(Sector sector in _sectors){
-			if(sector.tag == tags[0] || sector.tag == tags[1])
-				sector.lcds.Add(lcd);
+		foreach(Bulkhead bulkhead in _bulkheads){
+			string doorName = bulkhead.Door.CustomName;
+			if(doorName.Contains(tag))
+				bulkhead.LCDa = lcd;
+			else if(doorName.Contains(reverseTag))
+				bulkhead.LCDb = lcd;
 		}
 	}
 }
@@ -240,8 +372,8 @@ void AssignLight(IMyLightingBlock light){
 	string tag = TagFromName(light.CustomName);
 	
 	foreach(Sector sector in _sectors){
-		if(sector.tag == tag){
-			sector.lights.Add(light);
+		if(sector.Tag == tag){
+			sector.Lights.Add(light);
 			return;
 		}
 	}
@@ -253,9 +385,9 @@ void AssignTimer(IMyTimerBlock timer){
 	string tag = TagFromName(timer.CustomName);
 	
 	foreach(Sector sector in _sectors){
-		if(sector.tag == tag){
-			sector.lockTimer = timer;
-			sector.type = "Lock"; //Set Sector Type to Lock if a Timer is present
+		if(sector.Tag == tag){
+			sector.LockTimer = timer;
+			sector.Type = "Lock"; //Set Sector Type to Lock if a Timer is present
 			return;
 		}
 	}
@@ -267,8 +399,8 @@ void AssignAlarm(IMySoundBlock alarm){
 	string tag = TagFromName(alarm.CustomName);
 	
 	foreach(Sector sector in _sectors){
-		if(sector.tag == tag){
-			sector.lockAlarm = alarm;
+		if(sector.Tag == tag){
+			sector.LockAlarm = alarm;
 			return;
 		}
 	}
@@ -280,9 +412,9 @@ void AssignMergeBlock(IMyShipMergeBlock mergeBlock){
 	string tag = TagFromName(mergeBlock.CustomName);
 	
 	foreach(Sector sector in _sectors){
-		if(sector.tag == tag){
-			sector.mergeBlocks.Add(mergeBlock);
-			sector.type = "Dock"; //Set Sector Type to Dock if Merge Blocks are present.
+		if(sector.Tag == tag){
+			sector.MergeBlocks.Add(mergeBlock);
+			sector.Type = "Dock"; //Set Sector Type to Dock if Merge Blocks are present.
 			return;
 		}
 	}
@@ -294,8 +426,8 @@ void AssignConnector(IMyShipConnector connector){
 	string tag = TagFromName(connector.CustomName);
 	
 	foreach(Sector sector in _sectors){
-		if(sector.tag == tag){
-			sector.connectors.Add(connector);
+		if(sector.Tag == tag){
+			sector.Connectors.Add(connector);
 			return;
 		}
 	}
@@ -320,7 +452,7 @@ string GetKey(IMyTerminalBlock block, string key, string defaultVal){
 
 
 // SET INI // Update ini key for block, and write back to custom data.
-void SetIni(IMyTerminalBlock block, string key, string arg){
+static void SetIni(IMyTerminalBlock block, string key, string arg){
 	MyIni blockIni = GetIni(block);
 	blockIni.Set(INI_HEAD, key, arg);
 	block.CustomData = blockIni.ToString();
@@ -328,7 +460,7 @@ void SetIni(IMyTerminalBlock block, string key, string arg){
 
 
 // GET INI //
-MyIni GetIni(IMyTerminalBlock block){
+static MyIni GetIni(IMyTerminalBlock block){
 	MyIni iniOuti = new MyIni();
 	
 	MyIniParseResult result;
