@@ -13,22 +13,24 @@ const string OPENER = "[|";
 const string CLOSER = "|]";
 const char SPLITTER = '|';
 const string INI_HEAD = "Pressure Chief";
+const string NORMAL = "255,255,255";
+const string EMERGENCY = "255,0,0";
 
 
 // Globals //
 static string _statusMessage;
 int _currentSector;
 
-List<IMyAirVent> _vents;
-List<IMyDoor> _doors;
-List<IMyTextPanel> _lcds;
-List<IMySoundBlock> _lockAlarms;
-List<IMyTimerBlock> _lockTimers;
-List<IMyShipConnector> _connectors;
-List<IMyShipMergeBlock> _mergeBlocks;
-List<IMyLightingBlock> _lights;
-List<Sector> _sectors;
-List<Bulkhead> _bulkheads;
+static List<IMyAirVent> _vents;
+static List<IMyDoor> _doors;
+static List<IMyTextPanel> _lcds;
+static List<IMySoundBlock> _lockAlarms;
+static List<IMyTimerBlock> _lockTimers;
+static List<IMyShipConnector> _connectors;
+static List<IMyShipMergeBlock> _mergeBlocks;
+static List<IMyLightingBlock> _lights;
+static List<Sector> _sectors;
+static List<Bulkhead> _bulkheads;
 
 
 
@@ -46,12 +48,16 @@ public class Sector{
 	public List<IMyShipConnector> Connectors;
 	public List<Bulkhead> Bulkheads;
 	public string Type; // Room, Lock, Dock, or Vacuum
+	public string NormalColor;
+	public string EmergencyColor;
 	public IMyTimerBlock LockTimer;
 	public IMySoundBlock LockAlarm;
 	
 	public Sector(IMyAirVent airVent){
 		this.Vent = airVent;
 		this.Tag = TagFromName(airVent.CustomName);
+		this.NormalColor = GetKey(airVent, "Normal_Color", "");
+		this.EmergencyColor = GetKey(airVent, "Emergency_Color", "");
 
 		if(this.Tag == VAC_TAG)
 			this.Type = "Vacuum";
@@ -64,6 +70,22 @@ public class Sector{
 		this.MergeBlocks = new List<IMyShipMergeBlock>();
 		this.Connectors = new List<IMyShipConnector>();
 		this.Bulkheads = new List<Bulkhead>();
+	}
+	
+	public void Monitor(){
+		foreach(Bulkhead myBulkhead in this.Bulkheads)
+			myBulkhead.Monitor();
+			
+		bool depressurized = this.Vent.GetOxygenLevel() < 0.7 || this.Vent.Depressurize;
+			
+		if(this.Lights.Count > 0){
+			foreach(IMyLightingBlock myLight in this.Lights){
+				if(depressurized)
+					myLight.Color = ColorFromString(GetKey(myLight, "Emergency_Color", EMERGENCY));
+				else
+					myLight.Color = ColorFromString(GetKey(myLight, "Normal_Color", NORMAL));
+			}
+		}
 	}
 }
 
@@ -147,6 +169,9 @@ public void Main(string arg){
 				Bulkhead restoreDoor = GetBulkhead(cmdArg);
 				restoreDoor.SetOverride(false);
 				break;
+			case "REFRESH":
+				Build();
+				break;
 			default:
 				_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
 				break;
@@ -160,18 +185,27 @@ public void Main(string arg){
 	if(_currentSector >= _sectors.Count)
 		_currentSector = 0;
 
+
 	Sector sector = _sectors[_currentSector];
 	Echo(sector.Type + " " + sector.Tag);
+	sector.Monitor();
 
+/*
 	foreach(Bulkhead bulkhead in sector.Bulkheads){
 		Echo("\n" + bulkhead.Door.CustomName);
+		//try{
 		bulkhead.Monitor();
-		
+		//}catch{
+		//	_statusMessage = "MONITOR ERROR at " + bulkhead.Door.CustomName;
+		//}
+
+			
 		if(bulkhead.LCDa != null)
 			Echo("* " + bulkhead.LCDa.CustomName);
 		if(bulkhead.LCDb != null)
 			Echo("* " + bulkhead.LCDb.CustomName);
 	}
+*/	
 }
 
 
@@ -223,6 +257,25 @@ Bulkhead GetBulkhead(string tag){
 	_statusMessage = "No Door with tag " + tag + " found!";
 	return null;
 }
+
+
+// COLOR FROM STRING //
+static Color ColorFromString(string rgb){
+	string[] values = rgb.Split(',');
+	if(values.Length < 3)
+		return Color.Purple;
+	
+	byte[] outputs = new byte[3];
+	for(int i=0; i<3; i++){
+		bool success = byte.TryParse(values[i], out outputs[i]);
+		if(!success)
+			outputs[i] = 0;
+	}
+	
+	return new Color(outputs[0],outputs[1],outputs[2]);
+}
+
+
 
 // INIT FUNCIONS -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -371,9 +424,19 @@ void AssignLCDs(){
 void AssignLight(IMyLightingBlock light){
 	string tag = TagFromName(light.CustomName);
 	
+	EnsureKey(light, "Normal_Color", "255,255,255");
+	EnsureKey(light, "Emergency_Color", "255,0,0");
+	
 	foreach(Sector sector in _sectors){
 		if(sector.Tag == tag){
 			sector.Lights.Add(light);
+			
+			if(sector.NormalColor != "")
+				SetIni(light, "Normal_Color", sector.NormalColor);
+			if(sector.EmergencyColor != "")
+				SetIni(light, "Emergency_Color", sector.EmergencyColor);
+			
+			
 			return;
 		}
 	}
@@ -440,13 +503,19 @@ void AssignConnector(IMyShipConnector connector){
 
 // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
 
-// GET KEY // Gets ini value from block.  Returns default argument if doesn't exist.
-string GetKey(IMyTerminalBlock block, string key, string defaultVal){
+
+
+// ENSURE KEY //
+static void EnsureKey(IMyTerminalBlock block, string key, string defaultVal){
 	if(!block.CustomData.Contains(INI_HEAD)||!block.CustomData.Contains(key))
 		SetIni(block, key, defaultVal);
-	
+}
+
+
+// GET KEY // Gets ini value from block.  Returns default argument if doesn't exist.
+static string GetKey(IMyTerminalBlock block, string key, string defaultVal){
+	EnsureKey(block, key, defaultVal);
 	MyIni blockIni = GetIni(block);
-	
 	return blockIni.Get(INI_HEAD, key).ToString();
 }
 
