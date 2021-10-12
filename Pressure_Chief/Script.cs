@@ -19,6 +19,7 @@ const string EMERGENCY = "255,0,0";
 
 // Globals //
 static string _statusMessage;
+static string _previosCommand;
 int _currentSector;
 static bool _autoCheck;
 static bool _autoClose;
@@ -93,7 +94,8 @@ public class Sector{
 			}
 		}
 		
-		this.UpdateStatus();
+		if(_autoClose)
+			this.UpdateStatus();
 	}
 	
 	public void CloseDoors(){
@@ -107,11 +109,18 @@ public class Sector{
 	
 	public void UpdateStatus(){
 		IMyAirVent airVent = this.Vent;
+		string oldStatus = GetKey(airVent, "Status", "Depressurized");
 		
-		if(_autoClose && this.Type=="Room"){
-			string oldStatus = GetKey(airVent, "Status", "Depressurized");
+		if(this.Type=="Room"){
+
 			if(oldStatus=="Pressurized" && airVent.Status.ToString() != "Pressurized")
 				this.CloseDoors();
+		}else if((this.Type=="Lock" || this.Type=="Dock") && this.LockAlarm != null){
+			if(oldStatus != "Pressurized" && airVent.Status.ToString() == "Pressurized"){
+				this.LockAlarm.SelectedSound = "SoundBlockAlert2";
+				this.LockAlarm.LoopPeriod = 1.1f;
+				this.LockAlarm.Play();
+			}
 		}
 		
 		SetKey(airVent, "Status", airVent.Status.ToString());
@@ -121,7 +130,7 @@ public class Sector{
 
 // BULKHEAD //   Wrapper class for doors so that they can directly access their sectors.
 public class Bulkhead{
-	public IMyDoor Door;
+	public List<IMyDoor> Doors;
 	public string TagA;
 	public string TagB;
 	public Sector SectorA;
@@ -133,7 +142,8 @@ public class Bulkhead{
 	public bool Override;
 	
 	public Bulkhead(IMyDoor myDoor){
-		this.Door = myDoor;
+		this.Doors = new List<IMyDoor>();
+		this.Doors.Add(myDoor);
 		string[] tags = MultiTags(myDoor.CustomName);
 		
 		this.TagA = tags[0];
@@ -147,23 +157,34 @@ public class Bulkhead{
 		
 		float pressureA = this.VentA.GetOxygenLevel();
 		float pressureB = this.VentB.GetOxygenLevel();
+		this.Override = ParseBool(GetKey(this.Doors[0], "Override", "false"));
 		
-		if(this.Override || pressureA == pressureB)
-			this.Door.GetActionWithName("OnOff_On").Apply(this.Door);
-		else
-			this.Door.GetActionWithName("OnOff_Off").Apply(this.Door);
+		if(this.Override || Math.Abs(pressureA - pressureB) < 0.1){
+			foreach(IMyDoor door in this.Doors)
+				door.GetActionWithName("OnOff_On").Apply(door);
+		}else{
+			foreach(IMyDoor door in this.Doors)
+				door.GetActionWithName("OnOff_Off").Apply(door);
+		}
 	}
 	
 	public void SetOverride(bool overrided){
 		this.Override = overrided;
-		SetKey(this.Door, "Override", overrided.ToString());
-		_statusMessage = this.Door.CustomName + " Override status set to " + overrided.ToString();
+		SetKey(this.Doors[0], "Override", overrided.ToString());
+		_statusMessage = this.Doors[0].CustomName + " Override status set to " + overrided.ToString();
 	}
+	
+	public void Open(){
+		foreach(IMyDoor myDoor in this.Doors)
+			myDoor.OpenDoor();
+	}
+	
 }
 
 
 // PROGRAM /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public Program(){
+	_previosCommand = "NEWLY LOADED";
 	_statusMessage = "";
 	_currentSector = 0;
 
@@ -189,10 +210,12 @@ public void Main(string arg){
 		Echo("No Vents Found to Build Network!  Please add sector tags to vent names then recompile!");
 		return;
 	}
-	
+	Echo(_previosCommand);
 	Echo(_statusMessage);
 	
 	if(arg != ""){
+		_previosCommand = arg;
+		
 		string[] args = arg.Split(' ');
 		
 		string command = args[0].ToUpper();
@@ -263,7 +286,7 @@ public static string[] MultiTags(string name){
 
 
 // PARSE BOOL //
-bool ParseBool(string val)
+static bool ParseBool(string val)
 {
 	string uVal = val.ToUpper();
 	if(uVal == "TRUE" || uVal == "T" || uVal == "1")
@@ -276,17 +299,26 @@ bool ParseBool(string val)
 
 
 // GET SECTOR //
-//Sector GetSector(string tag){}
+Sector GetSector(string tag){
+	foreach(Sector sector in _sectors){
+		if(sector.Tag == tag)
+			return sector;
+	}
+	
+	return null;
+}
 
 
 // GET BULKHEAD //
 Bulkhead GetBulkhead(string tag){
+	if(_bulkheads.Count < 1)
+		return null;
+	
 	foreach(Bulkhead bulkhead in _bulkheads){
 		if(tag.Contains(bulkhead.TagA) && tag.Contains(bulkhead.TagB))
 			return bulkhead;
 	}
 	
-	_statusMessage = "No Door with tag " + tag + " found!";
 	return null;
 }
 
@@ -305,6 +337,24 @@ static Color ColorFromString(string rgb){
 	}
 	
 	return new Color(outputs[0],outputs[1],outputs[2]);
+}
+
+
+// TIMER CALL //
+void TimerCall(string tag){
+	Sector sector = GetSector(tag);
+	
+	if(sector == null || (sector.Type != "Lock" && sector.Type != "Dock")){
+		_statusMessage = "INVALID TIMER CALL!";
+		return;
+	}
+	
+	foreach(Bulkhead bulkhead in sector.Bulkheads){
+		if(bulkhead.TagA == VAC_TAG || bulkhead.TagB == VAC_TAG){
+			bulkhead.SetOverride(true);
+			bulkhead.Open();
+		}
+	}
 }
 
 
@@ -337,6 +387,8 @@ void Build(){
 					_vents.Add(block as IMyAirVent);
 					break;
 				case "MyObjectBuilder_Door":
+				case "MyObjectBuilder_AirtightSlideDoor":
+				case "MyObjectBuilder_AirtightHangarDoor":
 					_doors.Add(block as IMyDoor);
 					break;
 				case "MyObjectBuilder_TextPanel":
@@ -406,8 +458,19 @@ void Build(){
 void AssignDoors(){
 	foreach(IMyDoor door in _doors){
 		string[] tags = MultiTags(door.CustomName);
-		Bulkhead bulkhead = new Bulkhead(door);
+		Bulkhead bulkhead = GetBulkhead(tags[0]+SPLITTER+tags[1]);
+		if(bulkhead == null){
+			Echo("A");
+			bulkhead = new Bulkhead(door);
+			_bulkheads.Add(bulkhead);
+		}else{
+			bulkhead.Doors.Add(door);
+		}
+		
+		Echo("B");
 		bulkhead.Override = ParseBool(GetKey(door, "Override", "false"));
+		SetKey(door, "Vent_A", "");
+		SetKey(door, "Vent_B", "");
 		
 		foreach(Sector sector in _sectors){
 			if(sector.Tag == tags[0]){
@@ -415,11 +478,13 @@ void AssignDoors(){
 				sector.Bulkheads.Add(bulkhead);
 				bulkhead.SectorA = sector;
 				bulkhead.VentA = sector.Vent;
+				SetKey(door, "Vent_A", sector.Vent.CustomName);
 			}else if(sector.Tag == tags[1]){
 				sector.Doors.Add(door);
 				sector.Bulkheads.Add(bulkhead);
 				bulkhead.SectorB = sector;
 				bulkhead.VentB = sector.Vent;
+				SetKey(door, "Vent_B", sector.Vent.CustomName);
 			}
 		}
 		
@@ -427,8 +492,8 @@ void AssignDoors(){
 			_statusMessage += "\nDOOR ERROR: " + door.CustomName + "\nNo Sector Found with tag " + tags[0];
 		else if(bulkhead.SectorB == null)
 			_statusMessage += "\nDOOR ERROR: " + door.CustomName + "\nNo Sector Found with tag " + tags[1];
-		else
-			_bulkheads.Add(bulkhead);
+		//else
+		//	_bulkheads.Add(bulkhead);
 	}
 }
 
@@ -444,7 +509,7 @@ void AssignLCDs(){
 		string reverseTag = tags[1] + SPLITTER + tags[0];
 	
 		foreach(Bulkhead bulkhead in _bulkheads){
-			string doorName = bulkhead.Door.CustomName;
+			string doorName = bulkhead.Doors[0].CustomName;
 			if(doorName.Contains(tag))
 				bulkhead.LCDa = lcd;
 			else if(doorName.Contains(reverseTag))
@@ -480,6 +545,14 @@ void AssignTimer(IMyTimerBlock timer){
 	
 	foreach(Sector sector in _sectors){
 		if(sector.Tag == tag){
+			string delayString = GetKey(timer, "delay", "5");
+			UInt16 delay;
+			
+			if(UInt16.TryParse(delayString, out delay))
+				timer.TriggerDelay = delay;
+			else
+				timer.TriggerDelay = 5;
+			
 			sector.LockTimer = timer;
 			sector.Type = "Lock"; //Set Sector Type to Lock if a Timer is present
 			return;
