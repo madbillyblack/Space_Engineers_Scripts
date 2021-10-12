@@ -20,6 +20,9 @@ const string EMERGENCY = "255,0,0";
 // Globals //
 static string _statusMessage;
 int _currentSector;
+static bool _autoCheck;
+static bool _autoClose;
+
 
 static List<IMyAirVent> _vents;
 static List<IMyDoor> _doors;
@@ -31,6 +34,7 @@ static List<IMyShipMergeBlock> _mergeBlocks;
 static List<IMyLightingBlock> _lights;
 static List<Sector> _sectors;
 static List<Bulkhead> _bulkheads;
+
 
 
 
@@ -50,14 +54,16 @@ public class Sector{
 	public string Type; // Room, Lock, Dock, or Vacuum
 	public string NormalColor;
 	public string EmergencyColor;
+	public string Status;
 	public IMyTimerBlock LockTimer;
 	public IMySoundBlock LockAlarm;
 	
 	public Sector(IMyAirVent airVent){
 		this.Vent = airVent;
 		this.Tag = TagFromName(airVent.CustomName);
-		this.NormalColor = GetKey(airVent, "Normal_Color", "");
-		this.EmergencyColor = GetKey(airVent, "Emergency_Color", "");
+		this.NormalColor = GetKey(airVent, "Normal_Color", NORMAL);
+		this.EmergencyColor = GetKey(airVent, "Emergency_Color", EMERGENCY);
+		this.Status = GetKey(airVent, "Status", airVent.Status.ToString());
 
 		if(this.Tag == VAC_TAG)
 			this.Type = "Vacuum";
@@ -81,11 +87,34 @@ public class Sector{
 		if(this.Lights.Count > 0){
 			foreach(IMyLightingBlock myLight in this.Lights){
 				if(depressurized)
-					myLight.Color = ColorFromString(GetKey(myLight, "Emergency_Color", EMERGENCY));
+					myLight.Color = ColorFromString(GetKey(myLight, "Emergency_Color", this.EmergencyColor));
 				else
-					myLight.Color = ColorFromString(GetKey(myLight, "Normal_Color", NORMAL));
+					myLight.Color = ColorFromString(GetKey(myLight, "Normal_Color", this.NormalColor));
 			}
 		}
+		
+		this.UpdateStatus();
+	}
+	
+	public void CloseDoors(){
+		if(this.Doors.Count < 1)
+			return;
+		
+		foreach(IMyDoor myDoor in this.Doors){
+			myDoor.CloseDoor();
+		}
+	}
+	
+	public void UpdateStatus(){
+		IMyAirVent airVent = this.Vent;
+		
+		if(_autoClose && this.Type=="Room"){
+			string oldStatus = GetKey(airVent, "Status", "Depressurized");
+			if(oldStatus=="Pressurized" && airVent.Status.ToString() != "Pressurized")
+				this.CloseDoors();
+		}
+		
+		SetKey(airVent, "Status", airVent.Status.ToString());
 	}
 }
 
@@ -127,7 +156,7 @@ public class Bulkhead{
 	
 	public void SetOverride(bool overrided){
 		this.Override = overrided;
-		SetIni(this.Door, "Override", overrided.ToString());
+		SetKey(this.Door, "Override", overrided.ToString());
 		_statusMessage = this.Door.CustomName + " Override status set to " + overrided.ToString();
 	}
 }
@@ -137,8 +166,16 @@ public class Bulkhead{
 public Program(){
 	_statusMessage = "";
 	_currentSector = 0;
+
 	Build();
-	Runtime.UpdateFrequency = UpdateFrequency.Update10;
+	
+	string updateFactor = GetKey(Me, "Refresh_Rate", "10");
+	if(updateFactor == "1")
+		Runtime.UpdateFrequency = UpdateFrequency.Update1;
+	else if(updateFactor == "100")
+		Runtime.UpdateFrequency = UpdateFrequency.Update100;
+	else
+		Runtime.UpdateFrequency = UpdateFrequency.Update10;
 }
 
 
@@ -148,6 +185,13 @@ public void Save(){}
 
 // MAIN /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public void Main(string arg){
+	if(_vents.Count < 1){
+		Echo("No Vents Found to Build Network!  Please add sector tags to vent names then recompile!");
+		return;
+	}
+	
+	Echo(_statusMessage);
+	
 	if(arg != ""){
 		string[] args = arg.Split(' ');
 		
@@ -176,10 +220,11 @@ public void Main(string arg){
 				_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
 				break;
 		}
+		return;
 	}
 	
 	
-	Echo(_statusMessage);
+
 	
 	_currentSector++;
 	if(_currentSector >= _sectors.Count)
@@ -189,23 +234,6 @@ public void Main(string arg){
 	Sector sector = _sectors[_currentSector];
 	Echo(sector.Type + " " + sector.Tag);
 	sector.Monitor();
-
-/*
-	foreach(Bulkhead bulkhead in sector.Bulkheads){
-		Echo("\n" + bulkhead.Door.CustomName);
-		//try{
-		bulkhead.Monitor();
-		//}catch{
-		//	_statusMessage = "MONITOR ERROR at " + bulkhead.Door.CustomName;
-		//}
-
-			
-		if(bulkhead.LCDa != null)
-			Echo("* " + bulkhead.LCDa.CustomName);
-		if(bulkhead.LCDb != null)
-			Echo("* " + bulkhead.LCDb.CustomName);
-	}
-*/	
 }
 
 
@@ -247,6 +275,10 @@ bool ParseBool(string val)
 }
 
 
+// GET SECTOR //
+//Sector GetSector(string tag){}
+
+
 // GET BULKHEAD //
 Bulkhead GetBulkhead(string tag){
 	foreach(Bulkhead bulkhead in _bulkheads){
@@ -263,7 +295,7 @@ Bulkhead GetBulkhead(string tag){
 static Color ColorFromString(string rgb){
 	string[] values = rgb.Split(',');
 	if(values.Length < 3)
-		return Color.Purple;
+		return Color.Black;
 	
 	byte[] outputs = new byte[3];
 	for(int i=0; i<3; i++){
@@ -292,6 +324,8 @@ void Build(){
 	_sectors = new List<Sector>();
 	_bulkheads = new List<Bulkhead>();
 	
+	_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
+	_autoClose = ParseBool(GetKey(Me, "Auto-Close", "true"));
 	
 	List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
 	GridTerminalSystem.SearchBlocksOfName(OPENER, blocks);
@@ -424,19 +458,16 @@ void AssignLCDs(){
 void AssignLight(IMyLightingBlock light){
 	string tag = TagFromName(light.CustomName);
 	
-	EnsureKey(light, "Normal_Color", "255,255,255");
-	EnsureKey(light, "Emergency_Color", "255,0,0");
-	
 	foreach(Sector sector in _sectors){
 		if(sector.Tag == tag){
 			sector.Lights.Add(light);
 			
-			if(sector.NormalColor != "")
-				SetIni(light, "Normal_Color", sector.NormalColor);
-			if(sector.EmergencyColor != "")
-				SetIni(light, "Emergency_Color", sector.EmergencyColor);
+			if(GetKey(light, "Normal_Color", sector.NormalColor) == "");
+				SetKey(light, "Normal_Color", sector.NormalColor);
+			if(GetKey(light, "Emergency_Color", sector.EmergencyColor) == "");
+				SetKey(light, "Emergency_Color", sector.EmergencyColor);
 			
-			
+
 			return;
 		}
 	}
@@ -504,11 +535,10 @@ void AssignConnector(IMyShipConnector connector){
 // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
 
 
-
 // ENSURE KEY //
 static void EnsureKey(IMyTerminalBlock block, string key, string defaultVal){
 	if(!block.CustomData.Contains(INI_HEAD)||!block.CustomData.Contains(key))
-		SetIni(block, key, defaultVal);
+		SetKey(block, key, defaultVal);
 }
 
 
@@ -520,8 +550,8 @@ static string GetKey(IMyTerminalBlock block, string key, string defaultVal){
 }
 
 
-// SET INI // Update ini key for block, and write back to custom data.
-static void SetIni(IMyTerminalBlock block, string key, string arg){
+// SET KEY // Update ini key for block, and write back to custom data.
+static void SetKey(IMyTerminalBlock block, string key, string arg){
 	MyIni blockIni = GetIni(block);
 	blockIni.Set(INI_HEAD, key, arg);
 	block.CustomData = blockIni.ToString();
