@@ -1,0 +1,11 @@
+#files
+*.csproj
+*png
+*readme
+*.suo
+*.sln
+
+#directories
+*MDK/
+*bin/
+*obj/
