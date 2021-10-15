@@ -232,19 +232,19 @@ namespace IngameScript
 		public class Bulkhead
 		{
 			public List<IMyDoor> Doors;
+			public List<IMyTextPanel> LCDs;
 			public string TagA;
 			public string TagB;
 			public Sector SectorA;
 			public Sector SectorB;
 			public IMyAirVent VentA;
 			public IMyAirVent VentB;
-			public IMyTextPanel LCDa;
-			public IMyTextPanel LCDb;
 			public bool Override;
 
 			public Bulkhead(IMyDoor myDoor)
 			{
 				this.Doors = new List<IMyDoor>();
+				this.LCDs = new List<IMyTextPanel>();
 				this.Doors.Add(myDoor);
 				string[] tags = MultiTags(myDoor.CustomName);
 
@@ -297,16 +297,19 @@ namespace IngameScript
 
 			public void DrawGauges()
 			{
-				if (this.LCDa == null && this.LCDb == null)
+				if (this.LCDs.Count < 1)
 					return;
 
 				bool locked = !this.Doors[0].IsWorking;
 
-				if (this.LCDa != null) 
-					DrawGauge(this.LCDa as IMyTextSurfaceProvider, this.SectorA, this.SectorB, locked);
+				foreach (IMyTextPanel lcd in this.LCDs) {
+					string side = GetKey(lcd, "Side", "Select A or B");
 
-				if(this.LCDb != null)
-					DrawGauge(this.LCDb as IMyTextSurfaceProvider, this.SectorB, this.SectorA, locked);
+					if(side == "A")
+						DrawGauge(lcd as IMyTextSurfaceProvider, this.SectorA, this.SectorB, locked);
+					else if(side == "B")
+						DrawGauge(lcd as IMyTextSurfaceProvider, this.SectorB, this.SectorA, locked);
+				}
 			}
 		}
 
@@ -619,6 +622,8 @@ namespace IngameScript
 			{
 				Echo(sector.Type + " " + sector.Tag);
 				Echo(" * Doors: " + sector.Doors.Count + "  * Lights: " + sector.Lights.Count);
+				if(sector.Type == "Dock")
+					Echo(" * Merge Blocks: " + sector.MergeBlocks.Count + "  * Connectors: " + sector.Connectors.Count);
 			}				
 
 			_breatherStep++;
@@ -1201,12 +1206,14 @@ namespace IngameScript
 					if (doorName.Contains(tag))
 					{
 						PrepareTextSurface(lcd as IMyTextSurfaceProvider);
-						bulkhead.LCDa = lcd;
+						SetKey(lcd, "Side", "A");
+						bulkhead.LCDs.Add(lcd);
 					}
 					else if (doorName.Contains(reverseTag))
 					{
 						PrepareTextSurface(lcd as IMyTextSurfaceProvider);
-						bulkhead.LCDb = lcd;
+						SetKey(lcd, "Side", "B");
+						bulkhead.LCDs.Add(lcd);
 					}
 				}
 			}
@@ -1345,9 +1352,12 @@ namespace IngameScript
 			MyIni iniOuti = new MyIni();
 
 			MyIniParseResult result;
-			if (!iniOuti.TryParse(block.CustomData, out result))
-				throw new Exception(result.ToString());
-
+			if (!iniOuti.TryParse(block.CustomData, out result)) {
+				block.CustomData = "---\n" + block.CustomData;
+				if (!iniOuti.TryParse(block.CustomData, out result))
+					throw new Exception(result.ToString());
+			}
+				
 			return iniOuti;
 		}
 
