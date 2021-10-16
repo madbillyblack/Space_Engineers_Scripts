@@ -109,7 +109,20 @@ namespace IngameScript
 										"///////////\\///",
 										"////////////\\//",
 										"/////////////\\/",
-										"//////////////\\",};
+										"//////////////\\",
+										"/////////////\\/",
+										"////////////\\//",
+										"///////////\\///",
+										"//////////\\////",
+										"/////////\\/////",
+										"////////\\//////",
+										"///////\\///////",
+										"//////\\////////",
+										"/////\\/////////",
+										"////\\//////////",
+										"///\\///////////",
+										"//\\////////////",
+										"/\\/////////////"};
 		static int _breatherStep;
 		static int _breatherLength;
 
@@ -225,6 +238,21 @@ namespace IngameScript
 
 				SetKey(airVent, "Status", airVent.Status.ToString());
 			}
+
+			public Bulkhead GetExteriorBulkhead()
+            {
+				if(this.Bulkheads.Count > 0)
+                {
+					foreach(Bulkhead bulkhead in this.Bulkheads)
+                    {
+						if (bulkhead.TagB == VAC_TAG || bulkhead.TagA == VAC_TAG)
+							return bulkhead;
+                    }
+                }
+
+				_statusMessage = "Can't find exterior bulkhead for " + this.Tag + "!";
+				return null;
+            }
 		}
 
 
@@ -355,6 +383,10 @@ namespace IngameScript
 			if (_vents.Count < 1)
 			{
 				Echo("No Vents Found to Build Network!  Please add sector tags to vent names then recompile!");
+				
+				if(_breatherStep == 0)
+					Build();
+				
 				return;
 			}
 
@@ -372,7 +404,7 @@ namespace IngameScript
 				if (args.Length > 1)
 				{
 					for (int i = 1; i < args.Length; i++)
-						cmdArg += args[i];
+						cmdArg += args[i] + " ";
 				}
 
 				switch (command)
@@ -385,6 +417,9 @@ namespace IngameScript
 						break;
 					case "CLOSE_LOCK":
 						CloseLock(cmdArg);
+						break;
+					case "CYCLE_LOCK":
+						CycleLock(cmdArg);
 						break;
 					case "DOCK_SEAL":
 						DockSeal(GetSector(cmdArg));
@@ -406,15 +441,18 @@ namespace IngameScript
 					case "SET_GRID_ID":
 						SetGridID(cmdArg);
 						break;
+					case "SET_LIGHT_COLOR":
+						SetSectorColor(cmdArg, false);
+						break;
+					case "SET_EMERGENCY_COLOR":
+						SetSectorColor(cmdArg, true);
+						break;
 					default:
 						_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
 						break;
 				}
 				return;
 			}
-
-
-
 
 			_currentSector++;
 			if (_currentSector >= _sectors.Count)
@@ -599,15 +637,30 @@ namespace IngameScript
             }
 		}
 
-		// UNKNOWN SECTOR //
-		bool UnknownSector(Sector sector)
-		{
-			if (sector != null)
-				return false;
 
-			_statusMessage = "UNKOWN SECTOR!";
-			return true;
-		}
+		// UNKNOWN SECTOR // - Checks if Sector exists and is valid type.  Returns true if errors detected. Type can be "Room", "Lock", or "Dock". 
+		bool UnknownSector(Sector sector, string type)
+        {
+			if(sector == null)
+            {
+				_statusMessage = "INVALID SECTOR CALL!";
+				return true;
+            }
+
+			if(type == "Dock" && sector.Type != "Dock")
+            {
+				_statusMessage = "INVALID DOCK CALL!";
+				return true;
+            }
+
+			if(type == "Lock" && sector.Type != "Dock" && sector.Type != "Lock")
+            {
+				_statusMessage = "INVALID LOCK CALL!";
+				return true;
+			}
+
+			return false;
+        }
 
 
 		// PRINT HEADER // Prints program data in terminal
@@ -631,22 +684,99 @@ namespace IngameScript
 				_breatherStep = 0;
         }
 
+
+		// SET SECTOR COLOR //
+		void SetSectorColor(string sectorData, bool emergency)
+        {
+			if (sectorData != "")
+            {
+				string[] data = sectorData.Split(' ');
+
+				if (data.Length > 1)
+				{
+					string rgbCode = data[0];
+					string tag = "";
+
+					for(int i = 1; i < data.Length; i++)
+                    {
+						tag += data[i] + " ";
+                    }
+
+					Sector sector = GetSector(tag.Trim());
+					if (UnknownSector(sector, "Room"))
+						return;
+
+					string lightCase = "Normal_Color";
+					if (emergency)
+						lightCase = "Emergency_Color";
+
+					SetKey(sector.Vent, lightCase, rgbCode);
+
+					if (sector.Lights.Count > 0)
+					{
+						foreach (IMyLightingBlock light in sector.Lights)
+							SetKey(light, lightCase, rgbCode);
+					}
+
+					return;
+				}	
+			}
+
+			_statusMessage = "INCOMPLETE COLOR DATA!!!\nPlease Follow Format:\n<red_value>,<green_value>,<blue_value> <sector_tag>";
+			return;
+		}
+
 		// LOCK & DOCK FUNCTIONS --------------------------------------------------------------------------------------------------------------------------
 
 		// OPEN LOCK //
 		void OpenLock(string tag) {
 			Sector sector = GetSector(tag);
-
-			if (sector == null || (sector.Type != "Lock" && sector.Type != "Dock"))
-			{
-				_statusMessage = "INVALID OPEN LOCK CALL: " + tag;
+			if (UnknownSector(sector, "Lock"))
 				return;
-			}
 
 			sector.CloseDoors();
 			sector.Vent.Depressurize = true;
 
 			StageLock(sector, "1", 1); //phase 1, alert sound 1
+		}
+
+
+		// CLOSE LOCK //
+		void CloseLock(string tag)
+		{
+			Sector sector = GetSector(tag);
+
+			if (UnknownSector(sector, "Lock"))
+				return;
+
+			sector.CloseDoors();
+			sector.Vent.Depressurize = false;
+
+			foreach (Bulkhead bulkhead in sector.Bulkheads)
+			{
+				if (bulkhead.TagB == VAC_TAG || bulkhead.TagA == VAC_TAG)
+				{
+					bulkhead.SetOverride(false);
+				}
+			}
+		}
+
+
+		// CYCLE LOCK //
+		void CycleLock(string tag)
+        {
+			Sector sector = GetSector(tag);
+			if (UnknownSector(sector, "Lock"))
+				return;
+
+			Bulkhead bulkhead = sector.GetExteriorBulkhead();
+			if (bulkhead == null)
+				return;
+
+			if (bulkhead.Override)
+				CloseLock(tag);
+			else
+				OpenLock(tag);
 		}
 
 
@@ -711,34 +841,10 @@ namespace IngameScript
 		}
 
 
-		// CLOSE LOCK //
-		void CloseLock(string tag)
-		{
-			Sector sector = GetSector(tag);
-
-			if (sector == null || (sector.Type != "Lock" && sector.Type != "Dock"))
-			{
-				_statusMessage = "INVALID CLOSE LOCK CALL: " + tag;
-				return;
-			}
-
-			sector.CloseDoors();
-			sector.Vent.Depressurize = false;
-
-			foreach (Bulkhead bulkhead in sector.Bulkheads)
-			{
-				if (bulkhead.TagB == VAC_TAG || bulkhead.TagA == VAC_TAG)
-				{
-					bulkhead.SetOverride(false);
-				}
-			}
-		}
-
-
 		// DOCK SEAL //
 		void DockSeal(Sector sector)
         {
-			if (sector.Type != "Dock" || UnknownSector(sector))
+			if (UnknownSector(sector, "Dock"))
 				return;
 
 			foreach (IMyShipConnector connector in sector.Connectors)
@@ -751,7 +857,7 @@ namespace IngameScript
 		// UNDOCK //
 		void Undock(Sector sector)
         {
-			if (sector.Type != "Dock" || UnknownSector(sector))
+			if (UnknownSector(sector, "Dock"))
 				return;
 
 			sector.CloseDoors();
@@ -822,7 +928,6 @@ namespace IngameScript
 
 			return docked;
 		}
-
 
 
 		// GET CONNECTED MERGE BLOCK //
@@ -1231,11 +1336,10 @@ namespace IngameScript
 				{
 					sector.Lights.Add(light);
 
-					if (GetKey(light, "Normal_Color", sector.NormalColor) == "") ;
-					SetKey(light, "Normal_Color", sector.NormalColor);
-					if (GetKey(light, "Emergency_Color", sector.EmergencyColor) == "") ;
-					SetKey(light, "Emergency_Color", sector.EmergencyColor);
-
+					if (GetKey(light, "Normal_Color", sector.NormalColor) == "")
+						SetKey(light, "Normal_Color", sector.NormalColor);
+					if (GetKey(light, "Emergency_Color", sector.EmergencyColor) == "")
+						SetKey(light, "Emergency_Color", sector.EmergencyColor);
 
 					return;
 				}
