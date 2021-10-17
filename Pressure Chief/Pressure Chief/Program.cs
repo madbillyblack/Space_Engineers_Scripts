@@ -127,7 +127,7 @@ namespace IngameScript
 		static int _breatherLength;
 
 		int _currentSector;
-		static bool _autoCheck;
+		//static bool _autoCheck;
 		static bool _autoClose;
 
 		static Color _backgroundColor;
@@ -308,7 +308,6 @@ namespace IngameScript
 			{
 				this.Override = overrided;
 				SetKey(this.Doors[0], "Override", overrided.ToString());
-				//_statusMessage = this.Doors[0].CustomName + " Override status set to " + overrided.ToString();
 			}
 
 			public void Open()
@@ -356,18 +355,43 @@ namespace IngameScript
 			_roomColor = new Color(ROOM_RED, ROOM_GREEN, ROOM_BLUE);
 
 			_gridID = GetKey(Me, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+			//_autoCheck = true;
 			
 			Build();
 
 			string updateFactor = GetKey(Me, "Refresh_Rate", "10");
-			if (updateFactor == "1")
-				Runtime.UpdateFrequency = UpdateFrequency.Update1;
-			else if (updateFactor == "100")
-				Runtime.UpdateFrequency = UpdateFrequency.Update100;
-			else
-				Runtime.UpdateFrequency = UpdateFrequency.Update10;
 
-			
+			switch (updateFactor)
+			{ 
+				case "1":
+					Runtime.UpdateFrequency = UpdateFrequency.Update1;
+					break;
+				case "10":
+					Runtime.UpdateFrequency = UpdateFrequency.Update10;
+					break;
+				case "100":
+					Runtime.UpdateFrequency = UpdateFrequency.Update100;
+					break;
+				//case "0":
+				//	Runtime.UpdateFrequency = UpdateFrequency.None;
+				//	_autoCheck = false;
+				//	break;
+				default:
+					Runtime.UpdateFrequency = UpdateFrequency.Update10;
+					//_autoCheck = false;
+					//Echo("'Refresh_Rate' value unrecognized. Refresh disabled.\n- Please check value and recompile. -");
+					break;
+			}
+			/*
+            if (!_autoCheck)
+            {
+				_breather = new string[] { "///////////////" };
+				_breatherLength = _breather.Length;
+
+				Echo("REFRESH RATE set to 0: Event Trigger.  Please set Vent Actions to trigger script commands." +
+					"\nRefresh Rate can be set in Custom Data to 1, 10, or 100 to check a new sector every 1, 10, or 100 ticks.");
+			}
+			*/	
 		}
 
 
@@ -446,6 +470,12 @@ namespace IngameScript
 						break;
 					case "SET_EMERGENCY_COLOR":
 						SetSectorColor(cmdArg, true);
+						break;
+					case "VENT_CHECK_1": //For event triggered operation of script. Call from Vent actions, etc.
+					case "VENT_CHECK_2":
+						Sector mySector = GetSector(cmdArg);
+						if (!UnknownSector(mySector, "Room"))
+							mySector.Monitor();
 						break;
 					default:
 						_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
@@ -706,9 +736,19 @@ namespace IngameScript
 					if (UnknownSector(sector, "Room"))
 						return;
 
-					string lightCase = "Normal_Color";
+					string lightCase;
 					if (emergency)
+                    {
 						lightCase = "Emergency_Color";
+						sector.EmergencyColor = rgbCode;
+					}
+					else
+                    {
+						lightCase = "Normal_Color";
+						sector.NormalColor = rgbCode;
+
+					}
+						
 
 					SetKey(sector.Vent, lightCase, rgbCode);
 
@@ -784,55 +824,55 @@ namespace IngameScript
 		void TimerCall(string tag)
 		{
 			Sector sector = GetSector(tag);
-
-			if (sector == null || (sector.Type != "Lock" && sector.Type != "Dock"))
-			{
-				_statusMessage = "INVALID TIMER CALL: " + tag;
+			if (UnknownSector(sector, "lock"))
 				return;
-			}
 
 			IMyTimerBlock timer = sector.LockTimer;
 			string phase = GetKey(timer, "Phase", "0");
 
-			Bulkhead bulkhead = GetBulkhead(sector.Tag + SPLITTER + VAC_TAG);
-			if (bulkhead == null)
-			{
-				_statusMessage = "TIMER CALL BULKHEAD ERROR: " + tag;
-				return;
-			}
+			Bulkhead bulkhead = sector.GetExteriorBulkhead();
 
 			switch (phase)
 			{
-				case "1":
-					bulkhead.SetOverride(true);
+				case "1": // OVERIDE EXTERIOR BULKHEAD
+					Echo("Timer Call 1");
+					_statusMessage = "Overriding Lock " + tag;
 					SetKey(timer, "Phase", "2");
 					timer.TriggerDelay = 1;
 					timer.StartCountdown();
+					bulkhead.SetOverride(true);
+					sector.Monitor();
 					break;
-				case "2":
+				case "2": // OPEN DOORS
+					Echo("Timer Call 2");
 					bulkhead.Open();
 					SetKey(timer, "Phase", "0");
 					_statusMessage = sector.Type + " " + sector.Tag + " opened.";
+					sector.Monitor();
 					break;
-				case "3":
+				case "3": // OVERRIDE SELF AND DOCKED PORT
+					_statusMessage = "Sealing Dock " + sector.Tag;
 					SetDockedOverride(sector, true);
 					SetKey(timer, "Phase", "4");
 					timer.TriggerDelay = 1;
 					timer.StartCountdown();
 					break;
-				case "4":
+				case "4": // OPEN SELF
 					bulkhead.Open();
+					_statusMessage = "Dock " + sector.Tag + " is sealed.";
 					SetKey(timer, "Phase", "0");
 					break;
-				case "5":
+				case "5": // DISENGAGE CONNECTIONS
 					ActivateDock(sector, false);
 					SetKey(timer, "Phase", "6");
 					timer.TriggerDelay = 10;
 					timer.StartCountdown();
+					_statusMessage = "Dock " + sector.Tag + " disengaged.";
 					break;
-				case "6":
+				case "6": // RE-ENGAGE CONNECTIONS & RESET
 					ActivateDock(sector, true);
 					SetKey(timer, "Phase", "0");
+					_statusMessage = "Dock " + sector.Tag + " re-enabled.";
 					break;
 				default:
 					_statusMessage = sector.Tag + " timer phase: " + phase;
@@ -1145,7 +1185,7 @@ namespace IngameScript
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
 
-			_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
+			//_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
 			_autoClose = ParseBool(GetKey(Me, "Auto-Close", "true"));
 
 			List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
@@ -1246,7 +1286,6 @@ namespace IngameScript
 				Bulkhead bulkhead = GetBulkhead(tags[0] + SPLITTER + tags[1]);
 				if (bulkhead == null)
 				{
-					Echo("A");
 					bulkhead = new Bulkhead(door);
 					_bulkheads.Add(bulkhead);
 				}
@@ -1258,7 +1297,6 @@ namespace IngameScript
 				if (tags[0] == VAC_TAG || tags[1] == VAC_TAG)
 					EnsureKey(door, "AutoOpen", "true");
 
-				Echo("B");
 				bulkhead.Override = ParseBool(GetKey(door, "Override", "false"));
 				SetKey(door, "Vent_A", "");
 				SetKey(door, "Vent_B", "");
@@ -1335,11 +1373,8 @@ namespace IngameScript
 				if (sector.Tag == tag)
 				{
 					sector.Lights.Add(light);
-
-					if (GetKey(light, "Normal_Color", sector.NormalColor) == "")
-						SetKey(light, "Normal_Color", sector.NormalColor);
-					if (GetKey(light, "Emergency_Color", sector.EmergencyColor) == "")
-						SetKey(light, "Emergency_Color", sector.EmergencyColor);
+					EnsureKey(light, "Normal_Color", light.Color.R.ToString() + "," + light.Color.G.ToString() + "," + light.Color.R.ToString());
+					EnsureKey(light, "Emergency_Color", "255,0,0");
 
 					return;
 				}
