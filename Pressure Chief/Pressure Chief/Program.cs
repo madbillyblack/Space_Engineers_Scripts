@@ -138,6 +138,7 @@ namespace IngameScript
 		static List<IMyAirVent> _vents;
 		static List<IMyDoor> _doors;
 		static List<IMyTextPanel> _lcds;
+		static List<IMyButtonPanel> _buttons;
 		static List<IMySoundBlock> _lockAlarms;
 		static List<IMyTimerBlock> _lockTimers;
 		static List<IMyShipConnector> _connectors;
@@ -159,7 +160,7 @@ namespace IngameScript
 			public IMyAirVent Vent;
 			public List<IMyDoor> Doors;
 			public List<IMyLightingBlock> Lights;
-			public List<IMyTextPanel> LCDs;
+			public List<IMyTextSurfaceProvider> LCDs;
 			public List<IMyShipMergeBlock> MergeBlocks;
 			public List<IMyShipConnector> Connectors;
 			public List<Bulkhead> Bulkheads;
@@ -185,7 +186,7 @@ namespace IngameScript
 
 				this.Doors = new List<IMyDoor>();
 				this.Lights = new List<IMyLightingBlock>();
-				this.LCDs = new List<IMyTextPanel>();
+				this.LCDs = new List<IMyTextSurfaceProvider>();
 				this.MergeBlocks = new List<IMyShipMergeBlock>();
 				this.Connectors = new List<IMyShipConnector>();
 				this.Bulkheads = new List<Bulkhead>();
@@ -260,7 +261,7 @@ namespace IngameScript
 		public class Bulkhead
 		{
 			public List<IMyDoor> Doors;
-			public List<IMyTextPanel> LCDs;
+			public List<IMyTextSurfaceProvider> LCDs;
 			public string TagA;
 			public string TagB;
 			public Sector SectorA;
@@ -272,7 +273,7 @@ namespace IngameScript
 			public Bulkhead(IMyDoor myDoor)
 			{
 				this.Doors = new List<IMyDoor>();
-				this.LCDs = new List<IMyTextPanel>();
+				this.LCDs = new List<IMyTextSurfaceProvider>();
 				this.Doors.Add(myDoor);
 				string[] tags = MultiTags(myDoor.CustomName);
 
@@ -329,13 +330,13 @@ namespace IngameScript
 
 				bool locked = !this.Doors[0].IsWorking;
 
-				foreach (IMyTextPanel lcd in this.LCDs) {
-					string side = GetKey(lcd, "Side", "Select A or B");
+				foreach (IMyTextSurfaceProvider lcd in this.LCDs) {
+					string side = GetKey(lcd as IMyTerminalBlock, "Side", "Select A or B");
 
 					if(side == "A")
-						DrawGauge(lcd as IMyTextSurfaceProvider, this.SectorA, this.SectorB, locked);
+						DrawGauge(lcd, this.SectorA, this.SectorB, locked);
 					else if(side == "B")
-						DrawGauge(lcd as IMyTextSurfaceProvider, this.SectorB, this.SectorA, locked);
+						DrawGauge(lcd, this.SectorB, this.SectorA, locked);
 				}
 			}
 		}
@@ -434,15 +435,18 @@ namespace IngameScript
 				switch (command)
 				{
 					case "OPEN_LOCK":
+					case "OPENLOCK":
 						OpenLock(cmdArg);
 						break;
 					case "TIMER_CALL":
 						TimerCall(cmdArg);
 						break;
 					case "CLOSE_LOCK":
+					case "CLOSELOCK":
 						CloseLock(cmdArg);
 						break;
 					case "CYCLE_LOCK":
+					case "CYCLELOCK":
 						CycleLock(cmdArg);
 						break;
 					case "DOCK_SEAL":
@@ -1101,36 +1105,36 @@ namespace IngameScript
 			// Left Chamber
 			position = viewport.Center - new Vector2(width *0.475f, 0);
 			DrawTexture("SquareSimple", position, new Vector2(width*0.4f, height * 0.67f), 0, new Color(redA, greenA, blueA), frame);
-			position -= new Vector2(height *-0.1f, height / 3);
+			position -= new Vector2(width *-0.01f, height / 3);
 			WriteText("*" + sectorA.Tag, position, TextAlignment.LEFT, 0.8f, _roomColor, frame);
-			position += new Vector2(width * 0.375f, height / 3);
+			position += new Vector2(width * 0.375f, height *0.365f);
 			WriteText(((int)(pressureA*100)) +"kPa", position, TextAlignment.RIGHT, 0.8f, _textColor, frame);
 
 			// Right Chamber
 			position = viewport.Center + new Vector2(width * 0.075f, 0);
 			DrawTexture("SquareSimple", position, new Vector2(width*0.4f, height * 0.67f), 0, new Color(redB, greenB, blueB), frame);
-			position -= new Vector2(height * -0.1f, height / 3);
+			position -= new Vector2(width * -0.01f, height / 3);
 			WriteText(sectorB.Tag, position, TextAlignment.LEFT, 0.8f, _textColor, frame);
-			position += new Vector2(width * 0.375f, height / 3);
+			position += new Vector2(width * 0.375f, height * 0.365f);
 			WriteText(((int)(pressureB * 100)) + "kPa", position, TextAlignment.RIGHT, 0.8f, _textColor, frame);
 
 
 			// Door Background
-			position = viewport.Center - new Vector2(height * 0.25f, 0);
-			DrawTexture("SquareSimple", position, new Vector2(height * 0.5f, height * 0.5f), 0, Color.Black, frame);
+			position = viewport.Center - new Vector2(width * 0.05f, 0);
+			DrawTexture("SquareSimple", position, new Vector2(width*0.1f, height * 0.5f), 0, Color.Black, frame);
 
 			// Door Status
 			if (locked)
 			{
-				position = viewport.Center - new Vector2(height * 0.2f,0);
-				DrawTexture("Cross", position, new Vector2(height * 0.4f, height * 0.4f), 0, Color.White, frame);
+				position = viewport.Center - new Vector2(width * 0.04f,0);
+				DrawTexture("Cross", position, new Vector2(width * 0.08f, width * 0.08f), 0, Color.White, frame);
 			}
 			else
 			{
-				position = viewport.Center - new Vector2(height * 0.275f,0);
-				DrawTexture("Arrow", position, new Vector2(height * 0.4f, height * 0.35f), (float) Math.PI/-2, Color.White, frame);
-				position += new Vector2(height * 0.15f, 0);
-				DrawTexture("Arrow", position, new Vector2(height * 0.4f, height * 0.35f), (float)Math.PI/2, Color.White, frame);
+				position = viewport.Center - new Vector2(width * 0.06f,0);
+				DrawTexture("Arrow", position, new Vector2(width * 0.08f, width * 0.08f), (float) Math.PI/-2, Color.White, frame);
+				position += new Vector2(width * 0.04f, 0);
+				DrawTexture("Arrow", position, new Vector2(width * 0.08f, width * 0.08f), (float)Math.PI/2, Color.White, frame);
 			}
 
 			frame.Dispose();
@@ -1177,6 +1181,7 @@ namespace IngameScript
 			_vents = new List<IMyAirVent>();
 			_doors = new List<IMyDoor>();
 			_lcds = new List<IMyTextPanel>();
+			_buttons = new List<IMyButtonPanel>();
 			_lockAlarms = new List<IMySoundBlock>();
 			_lockTimers = new List<IMyTimerBlock>();
 			_connectors = new List<IMyShipConnector>();
@@ -1210,6 +1215,10 @@ namespace IngameScript
 							case "MyObjectBuilder_TextPanel":
 								_lcds.Add(block as IMyTextPanel);
 								break;
+							case "MyObjectBuilder_ButtonPanel":
+								if (block.BlockDefinition.SubtypeId == "LargeSciFiButtonTerminal")
+									_buttons.Add(block as IMyButtonPanel);
+								break;
 							case "MyObjectBuilder_SoundBlock":
 								_lockAlarms.Add(block as IMySoundBlock);
 								break;
@@ -1242,6 +1251,7 @@ namespace IngameScript
 				// Assign double-tagged components
 				AssignDoors();
 				AssignLCDs();
+				AssignButtons();
 
 				// Assign single-tagged components
 				if (_lights.Count > 0)
@@ -1350,18 +1360,49 @@ namespace IngameScript
 					{
 						PrepareTextSurface(lcd as IMyTextSurfaceProvider);
 						SetKey(lcd, "Side", "A");
-						bulkhead.LCDs.Add(lcd);
+						bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
 					}
 					else if (doorName.Contains(reverseTag))
 					{
 						PrepareTextSurface(lcd as IMyTextSurfaceProvider);
 						SetKey(lcd, "Side", "B");
-						bulkhead.LCDs.Add(lcd);
+						bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
 					}
 				}
 			}
 		}
 
+
+		// ASSIGN BUTTONS //
+		void AssignButtons()
+        {
+			if (_buttons.Count < 1)
+				return;
+
+			foreach (IMyButtonPanel button in _buttons)
+			{
+				string[] tags = MultiTags(button.CustomName);
+				string tag = tags[0] + SPLITTER + tags[1];
+				string reverseTag = tags[1] + SPLITTER + tags[0];
+
+				foreach (Bulkhead bulkhead in _bulkheads)
+				{
+					string doorName = bulkhead.Doors[0].CustomName;
+					if (doorName.Contains(tag))
+					{
+						PrepareTextSurface(button as IMyTextSurfaceProvider);
+						SetKey(button, "Side", "A");
+						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
+					}
+					else if (doorName.Contains(reverseTag))
+					{
+						PrepareTextSurface(button as IMyTextSurfaceProvider);
+						SetKey(button, "Side", "B");
+						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
+					}
+				}
+			}
+		}
 
 		// ASSIGN LIGHT //
 		void AssignLight(IMyLightingBlock light)

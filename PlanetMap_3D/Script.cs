@@ -795,7 +795,7 @@ public void Main(string argument)
 			// We are done with the frame, send all the sprites to the text panel
 			_frame.Dispose();
 			
-			_statusMessage = Me.DefinitionDisplayName;
+			//_statusMessage = Me.DefinitionDisplayName;
 		}
 	}
 	else
