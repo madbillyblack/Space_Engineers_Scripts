@@ -89,12 +89,14 @@ namespace IngameScript
 		const string EMERGENCY = "255,0,0";
 		const int DELAY = 3;
 		const float THRESHHOLD = 0.2f;
+		const int SCREEN_THRESHHOLD = 180;
 
 
 		// Globals //
 		static string _statusMessage;
 		static string _previosCommand;
 		static string _gridID;
+		static string _vacTag;
 		static string[] _breather =    {"\\//////////////", 
 										"/\\/////////////",
 										"//\\////////////",
@@ -179,7 +181,7 @@ namespace IngameScript
 				this.EmergencyColor = GetKey(airVent, "Emergency_Color", EMERGENCY);
 				this.Status = GetKey(airVent, "Status", airVent.Status.ToString());
 
-				if (this.Tag == VAC_TAG)
+				if (this.Tag == _vacTag)
 					this.Type = "Vacuum";
 				else
 					this.Type = "Room";
@@ -228,16 +230,19 @@ namespace IngameScript
 			public void UpdateStatus()
 			{
 				IMyAirVent airVent = this.Vent;
-				string oldStatus = GetKey(airVent, "Status", "Depressurized");
+				string oldStatus = GetKey(airVent, "Status", "0");
+				float o2Level;
+				if (!float.TryParse(oldStatus, out o2Level))
+					o2Level = 0;
 
 				if (this.Type == "Room")
 				{
 
-					if (oldStatus == "Pressurized" && airVent.Status.ToString() != "Pressurized")
+					if (Math.Abs(o2Level - airVent.GetOxygenLevel()) > THRESHHOLD)
 						this.CloseDoors();
 				}
 
-				SetKey(airVent, "Status", airVent.Status.ToString());
+				SetKey(airVent, "Status", airVent.GetOxygenLevel().ToString());
 			}
 
 			public Bulkhead GetExteriorBulkhead()
@@ -246,7 +251,7 @@ namespace IngameScript
                 {
 					foreach(Bulkhead bulkhead in this.Bulkheads)
                     {
-						if (bulkhead.TagB == VAC_TAG || bulkhead.TagA == VAC_TAG)
+						if (bulkhead.TagB == _vacTag || bulkhead.TagA == _vacTag)
 							return bulkhead;
                     }
                 }
@@ -798,7 +803,7 @@ namespace IngameScript
 
 			foreach (Bulkhead bulkhead in sector.Bulkheads)
 			{
-				if (bulkhead.TagB == VAC_TAG || bulkhead.TagA == VAC_TAG)
+				if (bulkhead.TagB == _vacTag || bulkhead.TagA == _vacTag)
 				{
 					bulkhead.SetOverride(false);
 				}
@@ -835,6 +840,11 @@ namespace IngameScript
 			string phase = GetKey(timer, "Phase", "0");
 
 			Bulkhead bulkhead = sector.GetExteriorBulkhead();
+			if(bulkhead == null)
+            {
+				_statusMessage = "CANNOT FIND EXTERIOR BULKHEAD FOR " + tag + "!\nCheck Your VAC_TAGs!";
+				return;
+            }
 
 			switch (phase)
 			{
@@ -966,7 +976,7 @@ namespace IngameScript
 
 			foreach (IMyTerminalBlock door in doors)
 			{
-				if (door.CustomName.Contains(dockTag) && door.CustomName.Contains(VAC_TAG) && GetKey(door, "Grid_ID", "unspecified") != _gridID)
+				if (door.CustomName.Contains(dockTag) && door.CustomName.Contains(_vacTag) && GetKey(door, "Grid_ID", "unspecified") != _gridID)
 					docked.Add(door as IMyDoor);
 			}
 
@@ -1038,7 +1048,7 @@ namespace IngameScript
 
 			foreach (Bulkhead bulkhead in sector.Bulkheads)
 			{
-				if (bulkhead.TagB == VAC_TAG || bulkhead.TagA == VAC_TAG)
+				if (bulkhead.TagB == _vacTag || bulkhead.TagA == _vacTag)
 					bulkhead.SetOverride(overriding);
 			}
 
@@ -1080,7 +1090,17 @@ namespace IngameScript
 		// DRAW GAUGE //
 		static void DrawGauge(IMyTextSurfaceProvider lcd, Sector sectorA, Sector sectorB, bool locked) 
 		{
-			IMyTextSurface drawSurface = lcd.GetSurface(0);
+			byte index = 0;
+			if (lcd.SurfaceCount > 1)
+            {
+				if (!Byte.TryParse(GetKey(lcd as IMyTerminalBlock, "Screen_Index", "0"), out index)|| index >= lcd.SurfaceCount)
+				{
+					index = 0;
+					_statusMessage = "Invalid 'Screen_Index' value in block " + (lcd as IMyTerminalBlock).CustomName;
+				}
+			}
+
+			IMyTextSurface drawSurface = lcd.GetSurface(index);
 			RectangleF viewport = new RectangleF((drawSurface.TextureSize - drawSurface.SurfaceSize) / 2f, drawSurface.SurfaceSize);
 
 			float pressureA = sectorA.Vent.GetOxygenLevel();
@@ -1090,6 +1110,9 @@ namespace IngameScript
 
 			float height = drawSurface.SurfaceSize.Y;
 			float width = viewport.Width;
+			float textSize = 0.8f;
+			if (width < SCREEN_THRESHHOLD)
+				textSize = 0.4f;
 
 			Vector2 position = viewport.Center - new Vector2(width/2, 0);
 
@@ -1106,17 +1129,17 @@ namespace IngameScript
 			position = viewport.Center - new Vector2(width *0.475f, 0);
 			DrawTexture("SquareSimple", position, new Vector2(width*0.4f, height * 0.67f), 0, new Color(redA, greenA, blueA), frame);
 			position -= new Vector2(width *-0.01f, height / 3);
-			WriteText("*" + sectorA.Tag, position, TextAlignment.LEFT, 0.8f, _roomColor, frame);
+			WriteText("*" + sectorA.Tag, position, TextAlignment.LEFT, textSize, _roomColor, frame);
 			position += new Vector2(width * 0.375f, height *0.365f);
-			WriteText(((int)(pressureA*100)) +"kPa", position, TextAlignment.RIGHT, 0.8f, _textColor, frame);
+			WriteText(((int)(pressureA*100)) +"kPa", position, TextAlignment.RIGHT, textSize, _textColor, frame);
 
 			// Right Chamber
 			position = viewport.Center + new Vector2(width * 0.075f, 0);
 			DrawTexture("SquareSimple", position, new Vector2(width*0.4f, height * 0.67f), 0, new Color(redB, greenB, blueB), frame);
 			position -= new Vector2(width * -0.01f, height / 3);
-			WriteText(sectorB.Tag, position, TextAlignment.LEFT, 0.8f, _textColor, frame);
+			WriteText(sectorB.Tag, position, TextAlignment.LEFT, textSize, _textColor, frame);
 			position += new Vector2(width * 0.375f, height * 0.365f);
-			WriteText(((int)(pressureB * 100)) + "kPa", position, TextAlignment.RIGHT, 0.8f, _textColor, frame);
+			WriteText(((int)(pressureB * 100)) + "kPa", position, TextAlignment.RIGHT, textSize, _textColor, frame);
 
 
 			// Door Background
@@ -1190,6 +1213,8 @@ namespace IngameScript
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
 
+			_vacTag = GetKey(Me, "Vac_Tag", VAC_TAG);
+
 			//_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
 			_autoClose = ParseBool(GetKey(Me, "Auto-Close", "true"));
 
@@ -1216,7 +1241,7 @@ namespace IngameScript
 								_lcds.Add(block as IMyTextPanel);
 								break;
 							case "MyObjectBuilder_ButtonPanel":
-								if (block.BlockDefinition.SubtypeId == "LargeSciFiButtonTerminal")
+								if (block.BlockDefinition.SubtypeId == "LargeSciFiButtonTerminal" || block.BlockDefinition.SubtypeId == "LargeSciFiButtonPanel")
 									_buttons.Add(block as IMyButtonPanel);
 								break;
 							case "MyObjectBuilder_SoundBlock":
@@ -1304,7 +1329,7 @@ namespace IngameScript
 					bulkhead.Doors.Add(door);
 				}
 
-				if (tags[0] == VAC_TAG || tags[1] == VAC_TAG)
+				if (tags[0] == _vacTag || tags[1] == _vacTag)
 					EnsureKey(door, "AutoOpen", "true");
 
 				bulkhead.Override = ParseBool(GetKey(door, "Override", "false"));
@@ -1392,12 +1417,14 @@ namespace IngameScript
 					{
 						PrepareTextSurface(button as IMyTextSurfaceProvider);
 						SetKey(button, "Side", "A");
+						EnsureKey(button, "Screen_Index", "0");
 						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
 					}
 					else if (doorName.Contains(reverseTag))
 					{
 						PrepareTextSurface(button as IMyTextSurfaceProvider);
 						SetKey(button, "Side", "B");
+						EnsureKey(button, "Screen_Index", "0");
 						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
 					}
 				}
@@ -1414,7 +1441,7 @@ namespace IngameScript
 				if (sector.Tag == tag)
 				{
 					sector.Lights.Add(light);
-					EnsureKey(light, "Normal_Color", light.Color.R.ToString() + "," + light.Color.G.ToString() + "," + light.Color.R.ToString());
+					EnsureKey(light, "Normal_Color", light.Color.R.ToString() + "," + light.Color.G.ToString() + "," + light.Color.B.ToString());
 					EnsureKey(light, "Emergency_Color", "255,0,0");
 
 					return;
@@ -1547,7 +1574,16 @@ namespace IngameScript
 		// PREPARE TEXT SURFACE
 		public void PrepareTextSurface(IMyTextSurfaceProvider lcd)
 		{
-			IMyTextSurface textSurface = lcd.GetSurface(0);
+			byte index = 0;
+			if (lcd.SurfaceCount > 1)
+			{
+				if (!Byte.TryParse(GetKey(lcd as IMyTerminalBlock, "Screen_Index", "0"), out index) || index >= lcd.SurfaceCount)
+				{
+					index = 0;
+					_statusMessage = "Invalid 'Screen_Index' value in block " + (lcd as IMyTerminalBlock).CustomName;
+				}
+			}
+			IMyTextSurface textSurface = lcd.GetSurface(index);
 
 			// Set the sprite display mode
 			textSurface.ContentType = ContentType.SCRIPT;
