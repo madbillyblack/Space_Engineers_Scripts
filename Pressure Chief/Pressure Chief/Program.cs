@@ -162,7 +162,7 @@ namespace IngameScript
 			public IMyAirVent Vent;
 			public List<IMyDoor> Doors;
 			public List<IMyLightingBlock> Lights;
-			public List<IMyTextSurfaceProvider> LCDs;
+			public List<IMyTextSurface> Surfaces;
 			public List<IMyShipMergeBlock> MergeBlocks;
 			public List<IMyShipConnector> Connectors;
 			public List<Bulkhead> Bulkheads;
@@ -188,7 +188,7 @@ namespace IngameScript
 
 				this.Doors = new List<IMyDoor>();
 				this.Lights = new List<IMyLightingBlock>();
-				this.LCDs = new List<IMyTextSurfaceProvider>();
+				this.Surfaces = new List<IMyTextSurface>();
 				this.MergeBlocks = new List<IMyShipMergeBlock>();
 				this.Connectors = new List<IMyShipConnector>();
 				this.Bulkheads = new List<Bulkhead>();
@@ -267,6 +267,7 @@ namespace IngameScript
 		{
 			public List<IMyDoor> Doors;
 			public List<IMyTextSurfaceProvider> LCDs;
+			public List<IMyTextSurface> Surfaces;
 			public string TagA;
 			public string TagB;
 			public Sector SectorA;
@@ -279,6 +280,7 @@ namespace IngameScript
 			{
 				this.Doors = new List<IMyDoor>();
 				this.LCDs = new List<IMyTextSurfaceProvider>();
+				this.Surfaces = new List<IMyTextSurface>();
 				this.Doors.Add(myDoor);
 				string[] tags = MultiTags(myDoor.CustomName);
 
@@ -316,12 +318,12 @@ namespace IngameScript
 				SetKey(this.Doors[0], "Override", overrided.ToString());
 			}
 
-			public void Open()
+			public void Open(bool openAll)
 			{
 				foreach (IMyDoor myDoor in this.Doors)
 				{
 					bool auto = ParseBool(GetKey(myDoor, "AutoOpen", "true"));
-					if(auto)
+					if(auto || openAll)
                     {
 						myDoor.OpenDoor();
 					}
@@ -330,18 +332,21 @@ namespace IngameScript
 
 			public void DrawGauges()
 			{
-				if (this.LCDs.Count < 1)
+				if (this.Surfaces.Count < 1)
 					return;
 
 				bool locked = !this.Doors[0].IsWorking;
 
-				foreach (IMyTextSurfaceProvider lcd in this.LCDs) {
-					string side = GetKey(lcd as IMyTerminalBlock, "Side", "Select A or B");
+				for(int i = 0; i < this.LCDs.Count; i++) {
+					IMyTerminalBlock lcd = this.LCDs[i] as IMyTerminalBlock;
+					IMyTextSurface surface = this.Surfaces[i];
+
+					string side = GetKey(lcd, "Side", "Select A or B");
 
 					if(side == "A")
-						DrawGauge(lcd, this.SectorA, this.SectorB, locked);
+						DrawGauge(surface, this.SectorA, this.SectorB, locked);
 					else if(side == "B")
-						DrawGauge(lcd, this.SectorB, this.SectorA, locked);
+						DrawGauge(surface, this.SectorB, this.SectorA, locked);
 				}
 			}
 		}
@@ -441,7 +446,10 @@ namespace IngameScript
 				{
 					case "OPEN_LOCK":
 					case "OPENLOCK":
-						OpenLock(cmdArg);
+						OpenLock(cmdArg, false);
+						break;
+					case "OPEN_ALL":
+						OpenLock(cmdArg, true);
 						break;
 					case "TIMER_CALL":
 						TimerCall(cmdArg);
@@ -778,7 +786,14 @@ namespace IngameScript
 		// LOCK & DOCK FUNCTIONS --------------------------------------------------------------------------------------------------------------------------
 
 		// OPEN LOCK //
-		void OpenLock(string tag) {
+		void OpenLock(string tag, bool openAll) {
+			string phase;
+			if (openAll)
+				phase = "3";
+			else
+				phase = "1";
+
+
 			Sector sector = GetSector(tag);
 			if (UnknownSector(sector, "Lock"))
 				return;
@@ -786,7 +801,7 @@ namespace IngameScript
 			sector.CloseDoors();
 			sector.Vent.Depressurize = true;
 
-			StageLock(sector, "1", 1); //phase 1, alert sound 1
+			StageLock(sector, phase, 1); // alert sound 1
 		}
 
 
@@ -825,7 +840,7 @@ namespace IngameScript
 			if (bulkhead.Override)
 				CloseLock(tag);
 			else
-				OpenLock(tag);
+				OpenLock(tag, false);
 		}
 
 
@@ -848,42 +863,35 @@ namespace IngameScript
 
 			switch (phase)
 			{
-				case "1": // OVERIDE EXTERIOR BULKHEAD
-					Echo("Timer Call 1");
-					_statusMessage = "Overriding Lock " + tag;
-					SetKey(timer, "Phase", "2");
-					timer.TriggerDelay = 1;
-					timer.StartCountdown();
-					bulkhead.SetOverride(true);
-					sector.Monitor();
+				case "1": // OVERRIDE EXTERIOR BULKHEAD
+					TimerOverride(timer, sector, bulkhead, "2");
 					break;
-				case "2": // OPEN DOORS
-					Echo("Timer Call 2");
-					bulkhead.Open();
-					SetKey(timer, "Phase", "0");
-					_statusMessage = sector.Type + " " + sector.Tag + " opened.";
-					sector.Monitor();
+				case "2": // OPEN AUTO-OPEN DOORS ONLY
+					TimerOpen(timer, sector, bulkhead, false);
 					break;
-				case "3": // OVERRIDE SELF AND DOCKED PORT
-					_statusMessage = "Sealing Dock " + sector.Tag;
+				case "3":// OVERRIDE EXTERIOR BULKHEAD
+					TimerOverride(timer, sector, bulkhead, "4");
+					break;
+				case "4":
+					TimerOpen(timer, sector, bulkhead, true);
+					break;
+				case "5": // OVERRIDE SELF AND DOCKED PORT
 					SetDockedOverride(sector, true);
-					SetKey(timer, "Phase", "4");
-					timer.TriggerDelay = 1;
-					timer.StartCountdown();
+					TimerOverride(timer, sector, bulkhead, "6");
 					break;
-				case "4": // OPEN SELF
-					bulkhead.Open();
+				case "6": // OPEN SELF
+					bulkhead.Open(false);
 					_statusMessage = "Dock " + sector.Tag + " is sealed.";
-					SetKey(timer, "Phase", "0");
+					SetKey(timer, "Phase", "0"); // Consider Removing for HATCH call
 					break;
-				case "5": // DISENGAGE CONNECTIONS
+				case "7": // DISENGAGE CONNECTIONS
 					ActivateDock(sector, false);
-					SetKey(timer, "Phase", "6");
+					SetKey(timer, "Phase", "8");
 					timer.TriggerDelay = 10;
 					timer.StartCountdown();
 					_statusMessage = "Dock " + sector.Tag + " disengaged.";
 					break;
-				case "6": // RE-ENGAGE CONNECTIONS & RESET
+				case "8": // RE-ENGAGE CONNECTIONS & RESET
 					ActivateDock(sector, true);
 					SetKey(timer, "Phase", "0");
 					_statusMessage = "Dock " + sector.Tag + " re-enabled.";
@@ -892,6 +900,28 @@ namespace IngameScript
 					_statusMessage = sector.Tag + " timer phase: " + phase;
 					break;
 			}
+		}
+
+
+		// TIMER OVERRIDE // - First Timer Action overrides lock.
+		void TimerOverride(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, string phase)
+		{
+			_statusMessage = "Overriding Lock " + sector.Tag;
+			SetKey(timer, "Phase", phase);
+			timer.TriggerDelay = 1;
+			timer.StartCountdown();
+			bulkhead.SetOverride(true);
+			sector.Monitor();
+		}
+
+
+		// TIMER OPEN // - Second Timer Call - opens overriden doors.  Set openAll to true to open normally disabled doors.
+		void TimerOpen(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, bool openAll)
+		{
+			bulkhead.Open(openAll);
+			SetKey(timer, "Phase", "0");
+			_statusMessage = sector.Type + " " + sector.Tag + " opened.";
+			sector.Monitor();
 		}
 
 
@@ -904,7 +934,7 @@ namespace IngameScript
 			foreach (IMyShipConnector connector in sector.Connectors)
 				connector.Connect();
 
-			StageLock(sector, "3", 2); // phase "3", alert 2
+			StageLock(sector, "5", 2); // phase "3", alert 2
 		}
 
 
@@ -920,7 +950,7 @@ namespace IngameScript
 			foreach (IMyDoor door in dockedDoors)
 				door.CloseDoor();
 
-			StageLock(sector, "5", 1);
+			StageLock(sector, "7", 1);
         }
 
 
@@ -1046,12 +1076,6 @@ namespace IngameScript
 			if (dockedDoors.Count < 1)
 				return;
 
-			foreach (Bulkhead bulkhead in sector.Bulkheads)
-			{
-				if (bulkhead.TagB == _vacTag || bulkhead.TagA == _vacTag)
-					bulkhead.SetOverride(overriding);
-			}
-
 			foreach (IMyDoor door in dockedDoors)
 			{
 				SetKey(door, "Override", overriding.ToString());
@@ -1085,22 +1109,12 @@ namespace IngameScript
 			}
 		}
 
+
 		// SPRITE FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------
 
 		// DRAW GAUGE //
-		static void DrawGauge(IMyTextSurfaceProvider lcd, Sector sectorA, Sector sectorB, bool locked) 
+		static void DrawGauge(IMyTextSurface drawSurface, Sector sectorA, Sector sectorB, bool locked) 
 		{
-			byte index = 0;
-			if (lcd.SurfaceCount > 1)
-            {
-				if (!Byte.TryParse(GetKey(lcd as IMyTerminalBlock, "Screen_Index", "0"), out index)|| index >= lcd.SurfaceCount)
-				{
-					index = 0;
-					_statusMessage = "Invalid 'Screen_Index' value in block " + (lcd as IMyTerminalBlock).CustomName;
-				}
-			}
-
-			IMyTextSurface drawSurface = lcd.GetSurface(index);
 			RectangleF viewport = new RectangleF((drawSurface.TextureSize - drawSurface.SurfaceSize) / 2f, drawSurface.SurfaceSize);
 
 			float pressureA = sectorA.Vent.GetOxygenLevel();
@@ -1383,15 +1397,15 @@ namespace IngameScript
 					string doorName = bulkhead.Doors[0].CustomName;
 					if (doorName.Contains(tag))
 					{
-						PrepareTextSurface(lcd as IMyTextSurfaceProvider);
 						SetKey(lcd, "Side", "A");
 						bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
+						bulkhead.Surfaces.Add(PrepareTextSurface(lcd as IMyTextSurfaceProvider));
 					}
 					else if (doorName.Contains(reverseTag))
 					{
-						PrepareTextSurface(lcd as IMyTextSurfaceProvider);
 						SetKey(lcd, "Side", "B");
 						bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
+						bulkhead.Surfaces.Add(PrepareTextSurface(lcd as IMyTextSurfaceProvider));
 					}
 				}
 			}
@@ -1415,17 +1429,17 @@ namespace IngameScript
 					string doorName = bulkhead.Doors[0].CustomName;
 					if (doorName.Contains(tag))
 					{
-						PrepareTextSurface(button as IMyTextSurfaceProvider);
 						SetKey(button, "Side", "A");
 						EnsureKey(button, "Screen_Index", "0");
 						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
+						bulkhead.Surfaces.Add(PrepareTextSurface(button as IMyTextSurfaceProvider));
 					}
 					else if (doorName.Contains(reverseTag))
 					{
-						PrepareTextSurface(button as IMyTextSurfaceProvider);
 						SetKey(button, "Side", "B");
 						EnsureKey(button, "Screen_Index", "0");
 						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
+						bulkhead.Surfaces.Add(PrepareTextSurface(button as IMyTextSurfaceProvider));
 					}
 				}
 			}
@@ -1572,7 +1586,7 @@ namespace IngameScript
 		// BORROWED FUNCTIONS --------------------------------------------------------------------------------------------------------------
 
 		// PREPARE TEXT SURFACE
-		public void PrepareTextSurface(IMyTextSurfaceProvider lcd)
+		public IMyTextSurface PrepareTextSurface(IMyTextSurfaceProvider lcd)
 		{
 			byte index = 0;
 			if (lcd.SurfaceCount > 1)
@@ -1589,6 +1603,8 @@ namespace IngameScript
 			textSurface.ContentType = ContentType.SCRIPT;
 			// Make sure no built-in script has been selected
 			textSurface.Script = "";
+
+			return textSurface;
 		}
 
 
