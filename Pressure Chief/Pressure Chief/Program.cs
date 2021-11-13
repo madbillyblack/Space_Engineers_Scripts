@@ -58,7 +58,7 @@ namespace IngameScript
 		//////////////////////////// v1.0
 
 		// USER CONSTANTS -  Feel free to change as needed -------------------------------------------------------------------------------------------------
-		const string VAC_TAG = "XoX"; // Tag used to designate External reference vents (i.e. Vacuum vents).
+		const string VAC_TAG = "EXT"; // Tag used to designate External reference vents (i.e. Vacuum vents).
 		
 		// Background Colors // - RGB values for LCD background
 		const int BG_RED = 127;
@@ -97,7 +97,9 @@ namespace IngameScript
 		static string _previosCommand;
 		static string _gridID;
 		static string _vacTag;
-		static string[] _breather =    {"\\//////////////", 
+
+		// Breather Array - Used to indicate that program is running in terminal
+		static string[] _breather =    {"\\//////////////",
 										"/\\/////////////",
 										"//\\////////////",
 										"///\\///////////",
@@ -125,18 +127,18 @@ namespace IngameScript
 										"///\\///////////",
 										"//\\////////////",
 										"/\\/////////////"};
-		static int _breatherStep;
+		static int _breatherStep; //Current index of breather array
 		static int _breatherLength;
 
-		int _currentSector;
+		int _currentSector; //Sector that the program is currently checking
 		//static bool _autoCheck;
 		static bool _autoClose;
 
-		static Color _backgroundColor;
-		static Color _textColor;
-		static Color _roomColor;
+		static Color _backgroundColor; //Global used to store background color of LCD displays
+		static Color _textColor; //Global used to store default text color of LCD displays
+		static Color _roomColor; //Global used to store highlight text color for room in which LCD is located
 		
-
+		//Lists for tagged blocks
 		static List<IMyAirVent> _vents;
 		static List<IMyDoor> _doors;
 		static List<IMyTextPanel> _lcds;
@@ -146,63 +148,68 @@ namespace IngameScript
 		static List<IMyShipConnector> _connectors;
 		static List<IMyShipMergeBlock> _mergeBlocks;
 		static List<IMyLightingBlock> _lights;
+
+		//Lists for script classes
 		static List<Sector> _sectors;
 		static List<Bulkhead> _bulkheads;
 
 
-
-
 		// CLASSES //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		// SECTOR //
+		// SECTOR // - Class that includes all components for a specific room.
 		public class Sector
 		{
-
-			public string Tag;
-			public IMyAirVent Vent;
+			public string Tag; // Name or Designation for Sector
+			public List<IMyAirVent> Vents;
 			public List<IMyDoor> Doors;
 			public List<IMyLightingBlock> Lights;
-			public List<IMyTextSurface> Surfaces;
+			public List<IMyTextSurface> Surfaces; // LCD screens used to display pressure readings
 			public List<IMyShipMergeBlock> MergeBlocks;
 			public List<IMyShipConnector> Connectors;
 			public List<Bulkhead> Bulkheads;
 			public string Type; // Room, Lock, Dock, or Vacuum
-			public string NormalColor;
-			public string EmergencyColor;
-			public string Status;
+			public string NormalColor; // Default pressurized light color for sector
+			public string EmergencyColor; // Default depressurized light color for sector
+			public string Status; // Current pressure status read from main Vents[0]
 			public IMyTimerBlock LockTimer;
 			public IMySoundBlock LockAlarm;
 
+			// Constructor - Vent required
 			public Sector(IMyAirVent airVent)
 			{
-				this.Vent = airVent;
-				this.Tag = TagFromName(airVent.CustomName);
-				this.NormalColor = GetKey(airVent, "Normal_Color", NORMAL);
-				this.EmergencyColor = GetKey(airVent, "Emergency_Color", EMERGENCY);
-				this.Status = GetKey(airVent, "Status", airVent.Status.ToString());
-
-				if (this.Tag == _vacTag)
-					this.Type = "Vacuum";
-				else
-					this.Type = "Room";
-
+				// Create Lists
+				this.Vents = new List<IMyAirVent>();
 				this.Doors = new List<IMyDoor>();
 				this.Lights = new List<IMyLightingBlock>();
 				this.Surfaces = new List<IMyTextSurface>();
 				this.MergeBlocks = new List<IMyShipMergeBlock>();
 				this.Connectors = new List<IMyShipConnector>();
 				this.Bulkheads = new List<Bulkhead>();
+
+				// Set up sector based on primary vent
+				this.Vents.Add(airVent);
+				this.Tag = TagFromName(airVent.CustomName);
+				this.NormalColor = GetKey(airVent, "Normal_Color", NORMAL);
+				this.EmergencyColor = GetKey(airVent, "Emergency_Color", EMERGENCY);
+				this.Status = GetKey(airVent, "Status", airVent.Status.ToString());
+
+				// Designate exterior sector
+				if (this.Tag == _vacTag)
+					this.Type = "Vacuum";
+				else
+					this.Type = "Room";
 			}
 
+			// MONITOR - Check all pressure status between this and all neighboring sectors and update lights based on pressure status.
 			public void Monitor()
 			{
 				foreach (Bulkhead myBulkhead in this.Bulkheads)
 					myBulkhead.Monitor();
 
-				bool depressurized = this.Vent.GetOxygenLevel() < 0.7 || this.Vent.Depressurize;
-
 				if (this.Lights.Count > 0)
 				{
+					bool depressurized = this.Vents[0].GetOxygenLevel() < 0.7 || this.Vents[0].Depressurize;
+
 					foreach (IMyLightingBlock myLight in this.Lights)
 					{
 						if (depressurized)
@@ -216,6 +223,25 @@ namespace IngameScript
 					this.UpdateStatus();
 			}
 
+			// UPDATE STATUS - Update the pressurization status of vent's custom data, and closed doors if status has changed. 
+			public void UpdateStatus()
+			{
+				IMyAirVent airVent = this.Vents[0];
+				string oldStatus = GetKey(airVent, "Status", "0");
+				float o2Level;
+				if (!float.TryParse(oldStatus, out o2Level))
+					o2Level = 0;
+
+				if (this.Type == "Room")
+				{
+					if (Math.Abs(o2Level - airVent.GetOxygenLevel()) > THRESHHOLD)
+						this.CloseDoors();
+				}
+
+				SetKey(airVent, "Status", airVent.GetOxygenLevel().ToString());
+			}
+
+			// CLOSE DOORS
 			public void CloseDoors()
 			{
 				if (this.Doors.Count < 1)
@@ -227,68 +253,69 @@ namespace IngameScript
 				}
 			}
 
-			public void UpdateStatus()
-			{
-				IMyAirVent airVent = this.Vent;
-				string oldStatus = GetKey(airVent, "Status", "0");
-				float o2Level;
-				if (!float.TryParse(oldStatus, out o2Level))
-					o2Level = 0;
-
-				if (this.Type == "Room")
-				{
-
-					if (Math.Abs(o2Level - airVent.GetOxygenLevel()) > THRESHHOLD)
-						this.CloseDoors();
-				}
-
-				SetKey(airVent, "Status", airVent.GetOxygenLevel().ToString());
-			}
-
+			// GET EXTERIOR BULKHEAD - Returns bulkhead between this sector and exterior
 			public Bulkhead GetExteriorBulkhead()
             {
 				if(this.Bulkheads.Count > 0)
                 {
-					foreach(Bulkhead bulkhead in this.Bulkheads)
+					// Return null if exterior vent.
+					if (this.Tag == _vacTag)
+					{
+						_statusMessage = "Command not applicable to Exterior";
+						return null;
+					}
+
+					foreach (Bulkhead bulkhead in this.Bulkheads)
                     {
 						if (bulkhead.TagB == _vacTag || bulkhead.TagA == _vacTag)
 							return bulkhead;
                     }
                 }
-
+			
 				_statusMessage = "Can't find exterior bulkhead for " + this.Tag + "!";
 				return null;
             }
 		}
 
 
-		// BULKHEAD //   Wrapper class for doors so that they can directly access their sectors.
+		// BULKHEAD //   Class for barrier between sectors, which has doors and can also have LCD surfaces.
 		public class Bulkhead
 		{
 			public List<IMyDoor> Doors;
 			public List<IMyTextSurfaceProvider> LCDs;
 			public List<IMyTextSurface> Surfaces;
-			public string TagA;
-			public string TagB;
-			public Sector SectorA;
-			public Sector SectorB;
-			public IMyAirVent VentA;
-			public IMyAirVent VentB;
-			public bool Override;
+			public bool Override; // If True, Bulkhead ignores pressure checks and is always unlocked.
 
+			// Variables for sectors separated by bulkhead.
+			public Sector SectorA;
+			public IMyAirVent VentA;
+			public string TagA;
+
+			public Sector SectorB;
+			public IMyAirVent VentB;
+			public string TagB;
+
+			// Constructor - Door required
 			public Bulkhead(IMyDoor myDoor)
 			{
 				this.Doors = new List<IMyDoor>();
 				this.LCDs = new List<IMyTextSurfaceProvider>();
 				this.Surfaces = new List<IMyTextSurface>();
 				this.Doors.Add(myDoor);
-				string[] tags = MultiTags(myDoor.CustomName);
+				this.Override = false;
 
+				// Get tags from door name
+				string[] tags = MultiTags(myDoor.CustomName);
 				this.TagA = tags[0];
 				this.TagB = tags[1];
-				this.Override = false;
+
+				this.SectorA = GetSector(TagA);
+				this.SectorB = GetSector(TagB);
+				this.VentA = this.SectorA.Vents[0];
+				this.VentB = this.SectorB.Vents[0];
 			}
 
+			// MONITOR - Checks pressure difference between sectors and bulkhead override status and locks/unlocks accordingly.
 			public void Monitor()
 			{
 				if (this.SectorA == null || this.SectorB == null)
@@ -312,12 +339,14 @@ namespace IngameScript
 				this.DrawGauges();
 			}
 
+			// Set Override - Set's override status and updates custom data.
 			public void SetOverride(bool overrided)
 			{
 				this.Override = overrided;
 				SetKey(this.Doors[0], "Override", overrided.ToString());
 			}
 
+			// Open - openAll variable determines if doors with AutoOpen set to false are also opened.
 			public void Open(bool openAll)
 			{
 				foreach (IMyDoor myDoor in this.Doors)
@@ -330,6 +359,7 @@ namespace IngameScript
 				}
 			}
 
+			// Draw Gauges - Calls DrawGauge with side parameters for all LCD displays in Bulkhead
 			public void DrawGauges()
 			{
 				if (this.Surfaces.Count < 1)
@@ -355,6 +385,7 @@ namespace IngameScript
 		// PROGRAM /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public Program()
 		{
+			// Set Global Variables
 			_previosCommand = "NEWLY LOADED";
 			_statusMessage = "";
 			_currentSector = 0;
@@ -368,10 +399,11 @@ namespace IngameScript
 			_gridID = GetKey(Me, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 			//_autoCheck = true;
 			
+			// Assign all correctly named components to sectors.
 			Build();
 
+			// Check program block's custom data for Refresh_Rate and set UpdateFrequency accordingly.
 			string updateFactor = GetKey(Me, "Refresh_Rate", "10");
-
 			switch (updateFactor)
 			{ 
 				case "1":
@@ -413,18 +445,22 @@ namespace IngameScript
 		// MAIN /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public void Main(string arg)
 		{
+			// Print basic terminal output
 			PrintHeader();
 
+			// Check for vents to run script from
 			if (_vents.Count < 1)
 			{
 				Echo("No Vents Found to Build Network!  Please add sector tags to vent names then recompile!");
 				
+				//If no vents search for newly named components
 				if(_breatherStep == 0)
 					Build();
 				
 				return;
 			}
 
+			// Command Switch
 			if (arg != "")
 			{
 				_statusMessage = "";
@@ -432,14 +468,17 @@ namespace IngameScript
 
 				string[] args = arg.Split(' ');
 
+				// Main command
 				string command = args[0].ToUpper();
 
+				// Trailing command arguments
 				string cmdArg = "";
-
 				if (args.Length > 1)
 				{
 					for (int i = 1; i < args.Length; i++)
 						cmdArg += args[i] + " ";
+
+					cmdArg = cmdArg.Trim();
 				}
 
 				switch (command)
@@ -498,13 +537,15 @@ namespace IngameScript
 						_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
 						break;
 				}
+
+				// Exit after command executed.
 				return;
 			}
 
+			// Normal Execution - Monitor Current Sector
 			_currentSector++;
 			if (_currentSector >= _sectors.Count)
 				_currentSector = 0;
-
 
 			Sector sector = _sectors[_currentSector];
 			Echo("\nCurrent Check: " + sector.Type + " " + sector.Tag);
@@ -514,7 +555,7 @@ namespace IngameScript
 
 		// TOOL FUNCTIONS //--------------------------------------------------------------------------------------------------------------------------------
 
-		// TAG FROM NAME //
+		// TAG FROM NAME // Returns Single-Sector-Tag from block's name.
 		public static string TagFromName(string name)
 		{
 			int start = name.IndexOf(OPENER) + OPENER.Length; //Start index of tag substring
@@ -537,8 +578,9 @@ namespace IngameScript
 			return new string[] { "ERROR", "ERROR" };
 		}
 
-		// STRIP TAG //
-		string StripTag(string tag)
+
+		// STRIP TAG // Removes identifier characters from beginning and end of tag strings.
+		static string StripTag(string tag)
 		{
 			char[] extra = { ' ', '[', ']', SPLITTER};
 			string output = tag.Trim(extra);
@@ -559,8 +601,8 @@ namespace IngameScript
 		}
 
 
-		// GET SECTOR //
-		Sector GetSector(string tag)
+		// GET SECTOR // Returns sector with given tag.
+		static Sector GetSector(string tag)
 		{
 			foreach (Sector sector in _sectors)
 			{
@@ -574,7 +616,7 @@ namespace IngameScript
 		}
 
 
-		// GET BULKHEAD //
+		// GET BULKHEAD // Returns bulkhead with given double-tag.
 		Bulkhead GetBulkhead(string tag)
 		{
 			if (_bulkheads.Count < 1)
@@ -590,7 +632,7 @@ namespace IngameScript
 		}
 
 
-		// COLOR FROM STRING //
+		// COLOR FROM STRING // Returns color based on comma separated RGB value.
 		static Color ColorFromString(string rgb)
 		{
 			string[] values = rgb.Split(',');
@@ -609,79 +651,31 @@ namespace IngameScript
 		}
 
 
-		// SET GRID ID //
+		// SET GRID ID // Updates Grid ID parameter for all designated blocks in Grid, then rebuilds the grid.
 		void SetGridID(string arg)
 		{
-			string gridID = _gridID;
+			string gridID;
 			if (arg != "")
 				gridID = arg;
+			else
+				gridID = Me.CubeGrid.EntityId.ToString();
 
 			SetKey(Me, "Grid_ID", gridID);
 			_gridID = gridID;
 
-			if (_vents.Count > 0)
-			{
-				foreach (IMyAirVent vent in _vents)
-				{
-					SetKey(vent as IMyTerminalBlock, "Grid_ID", gridID);
-				}
+			List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+			GridTerminalSystem.SearchBlocksOfName(OPENER, blocks);
+
+			if (blocks.Count < 1)
+				return;
+
+			foreach (IMyTerminalBlock block in blocks)
+			{ 
+				if(block.CustomName.Contains(CLOSER))
+					SetKey(block, "Grid_ID", gridID);
 			}
 
-			if (_doors.Count > 0)
-			{
-				foreach (IMyDoor door in _doors)
-				{
-					SetKey(door as IMyTerminalBlock, "Grid_ID", gridID);
-				}
-			}
-
-			if (_lights.Count > 0)
-			{
-				foreach (IMyLightingBlock light in _lights)
-				{
-					SetKey(light as IMyTerminalBlock, "Grid_ID", gridID);
-				}
-			}
-
-			if (_lcds.Count > 0)
-			{
-				foreach (IMyTextPanel lcd in _lcds)
-				{
-					SetKey(lcd as IMyTerminalBlock, "Grid_ID", gridID);
-				}
-			}
-
-			if (_lockTimers.Count > 0)
-			{
-				foreach (IMyTimerBlock timer in _lockTimers)
-				{
-					SetKey(timer as IMyTerminalBlock, "Grid_ID", gridID);
-				}
-			}
-
-			if (_lockAlarms.Count > 0)
-			{
-				foreach (IMySoundBlock alarm in _lockAlarms)
-				{
-					SetKey(alarm as IMyTerminalBlock, "Grid_ID", gridID);
-				}
-			}
-
-			if (_mergeBlocks.Count > 0)
-			{
-				foreach (IMyShipMergeBlock mergeBlock in _mergeBlocks)
-				{
-					SetKey(mergeBlock as IMyTerminalBlock, "Grid_ID", gridID);
-				}
-			}
-
-			if(_connectors.Count > 0)
-            {
-				foreach(IMyShipConnector connector in _connectors)
-                {
-					SetKey(connector as IMyTerminalBlock, "Grid_ID", gridID);
-				}
-            }
+			Build();
 		}
 
 
@@ -732,7 +726,8 @@ namespace IngameScript
         }
 
 
-		// SET SECTOR COLOR //
+		/* SET SECTOR COLOR // - Updates the default color for a sector
+			* Emergency bool determines if it's normal or emergency color*/			
 		void SetSectorColor(string sectorData, bool emergency)
         {
 			if (sectorData != "")
@@ -767,7 +762,7 @@ namespace IngameScript
 					}
 						
 
-					SetKey(sector.Vent, lightCase, rgbCode);
+					SetKey(sector.Vents[0], lightCase, rgbCode);
 
 					if (sector.Lights.Count > 0)
 					{
@@ -785,7 +780,8 @@ namespace IngameScript
 
 		// LOCK & DOCK FUNCTIONS --------------------------------------------------------------------------------------------------------------------------
 
-		// OPEN LOCK //
+		/* OPEN LOCK // - Initiallize lock opening sequence
+		 *bool openAll determines if non-AutoOpen doors are included in sequence. */
 		void OpenLock(string tag, bool openAll) {
 			string phase;
 			if (openAll)
@@ -793,19 +789,18 @@ namespace IngameScript
 			else
 				phase = "1";
 
-
 			Sector sector = GetSector(tag);
 			if (UnknownSector(sector, "Lock"))
 				return;
 
 			sector.CloseDoors();
-			sector.Vent.Depressurize = true;
+			sector.Vents[0].Depressurize = true;
 
 			StageLock(sector, phase, 1); // alert sound 1
 		}
 
 
-		// CLOSE LOCK //
+		// CLOSE LOCK // - Closes lock and restores vents to pressurized.
 		void CloseLock(string tag)
 		{
 			Sector sector = GetSector(tag);
@@ -814,7 +809,7 @@ namespace IngameScript
 				return;
 
 			sector.CloseDoors();
-			sector.Vent.Depressurize = false;
+			sector.Vents[0].Depressurize = false;
 
 			foreach (Bulkhead bulkhead in sector.Bulkheads)
 			{
@@ -826,7 +821,7 @@ namespace IngameScript
 		}
 
 
-		// CYCLE LOCK //
+		// CYCLE LOCK // - Opens or closes lock based on locks current Override State
 		void CycleLock(string tag)
         {
 			Sector sector = GetSector(tag);
@@ -844,7 +839,7 @@ namespace IngameScript
 		}
 
 
-		// TIMER CALL //
+		// TIMER CALL // - Switch command to execute timer actions depending on its current state (recorded in Custom Data of Timer)
 		void TimerCall(string tag)
 		{
 			Sector sector = GetSector(tag);
@@ -925,7 +920,7 @@ namespace IngameScript
 		}
 
 
-		// DOCK SEAL //
+		// DOCK SEAL // - Attempts to lock dock connectors to other dock.
 		void DockSeal(Sector sector)
         {
 			if (UnknownSector(sector, "Dock"))
@@ -938,7 +933,7 @@ namespace IngameScript
 		}
 
 
-		// UNDOCK //
+		// UNDOCK // - Close dock, get other dock, close and reset override, then start timer to separate.
 		void Undock(Sector sector)
         {
 			if (UnknownSector(sector, "Dock"))
@@ -954,7 +949,7 @@ namespace IngameScript
         }
 
 
-		// GET DOCKED DOORS//
+		// GET DOCKED DOORS// - Get doors of a connected dock and return as list.
 		List<IMyDoor> GetDockedDoors(Sector sector)
 		{
 			List<IMyDoor> docked = new List<IMyDoor>();
@@ -1014,7 +1009,7 @@ namespace IngameScript
 		}
 
 
-		// GET CONNECTED MERGE BLOCK //
+		// GET CONNECTED MERGE BLOCK // -  Attempts to get nearest connected merge block that has a different GridID
 		IMyShipMergeBlock GetMergedBlock(IMyShipMergeBlock mergeA)
 		{
 			Vector3 pos = mergeA.GetPosition();
@@ -1041,7 +1036,7 @@ namespace IngameScript
 		}
 
 
-		// STAGE LOCK //
+		// STAGE LOCK // - Executes various repeated functions for Timer Calls
 		void StageLock(Sector sector, string phase, int alert)
         {
 			IMyTimerBlock timer = sector.LockTimer;
@@ -1062,14 +1057,18 @@ namespace IngameScript
 			if (sector.LockAlarm != null)
 			{
 				IMySoundBlock alarm = sector.LockAlarm;
-				alarm.SelectedSound = "SoundBlockAlert" + alert;
+				bool autoSound = ParseBool(GetKey(alarm, "Auto-Sound-Select", "true"));
+
+				if(autoSound)
+					alarm.SelectedSound = "SoundBlockAlert" + alert;
+				
 				alarm.LoopPeriod = DELAY;
 				alarm.Play();
 			}
 		}
 
 
-		// SET DOCKED OVERIDE //
+		// SET DOCKED OVERIDE // - Unlocks doors in connected docking port.
 		void SetDockedOverride(Sector sector, bool overriding)
 		{
 			List<IMyDoor> dockedDoors = GetDockedDoors(sector);
@@ -1083,7 +1082,7 @@ namespace IngameScript
 		}
 
 
-		// ACTIVATE DOCK //
+		// ACTIVATE DOCK // - Turns dock merge blocks on or off, and attempts to connect any possible connectors.
 		void ActivateDock(Sector sector, bool activate)
 		{
 			string action = "OnOff_Off";
@@ -1112,13 +1111,13 @@ namespace IngameScript
 
 		// SPRITE FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------
 
-		// DRAW GAUGE //
+		// DRAW GAUGE // - Draws the pressure display between room the lcd is locate in and the neighboring room.
 		static void DrawGauge(IMyTextSurface drawSurface, Sector sectorA, Sector sectorB, bool locked) 
 		{
 			RectangleF viewport = new RectangleF((drawSurface.TextureSize - drawSurface.SurfaceSize) / 2f, drawSurface.SurfaceSize);
 
-			float pressureA = sectorA.Vent.GetOxygenLevel();
-			float pressureB = sectorB.Vent.GetOxygenLevel();
+			float pressureA = sectorA.Vents[0].GetOxygenLevel();
+			float pressureB = sectorB.Vents[0].GetOxygenLevel();
 
 			var frame = drawSurface.DrawFrame();
 
@@ -1193,6 +1192,7 @@ namespace IngameScript
 			frame.Add(sprite);
 		}
 
+
 		// WRITE TEXT //
 		static void WriteText(string text, Vector2 position, TextAlignment alignment, float scale, Color color, MySpriteDrawFrame frame)
 		{
@@ -1228,7 +1228,7 @@ namespace IngameScript
 			_bulkheads = new List<Bulkhead>();
 
 			_vacTag = GetKey(Me, "Vac_Tag", VAC_TAG);
-
+			
 			//_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
 			_autoClose = ParseBool(GetKey(Me, "Auto-Close", "true"));
 
@@ -1280,8 +1280,18 @@ namespace IngameScript
 
 				foreach (IMyAirVent vent in _vents)
 				{
-					Sector sector = new Sector(vent);
-					_sectors.Add(sector);
+
+					Sector sector = GetSector(TagFromName(vent.CustomName));
+
+					if (sector == null)
+					{
+						sector = new Sector(vent);
+						_sectors.Add(sector);
+					}
+					else
+					{
+						sector.Vents.Add(vent);
+					}
 				}
 
 				if (_sectors.Count < 1 || _doors.Count < 1)
@@ -1326,9 +1336,15 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN DOORS //
+		// ASSIGN DOORS // Add doors to respective lists in known Sector and Bulkhead objects.
 		void AssignDoors()
 		{
+			if(_doors.Count < 1)
+            {
+				Echo("NO DOORS FOUND!");
+				return;
+            }
+
 			foreach (IMyDoor door in _doors)
 			{
 				string[] tags = MultiTags(door.CustomName);
@@ -1357,16 +1373,16 @@ namespace IngameScript
 						sector.Doors.Add(door);
 						sector.Bulkheads.Add(bulkhead);
 						bulkhead.SectorA = sector;
-						bulkhead.VentA = sector.Vent;
-						SetKey(door, "Vent_A", sector.Vent.CustomName);
+						bulkhead.VentA = sector.Vents[0];
+						SetKey(door, "Vent_A", sector.Vents[0].CustomName);
 					}
 					else if (sector.Tag == tags[1])
 					{
 						sector.Doors.Add(door);
 						sector.Bulkheads.Add(bulkhead);
 						bulkhead.SectorB = sector;
-						bulkhead.VentB = sector.Vent;
-						SetKey(door, "Vent_B", sector.Vent.CustomName);
+						bulkhead.VentB = sector.Vents[0];
+						SetKey(door, "Vent_B", sector.Vents[0].CustomName);
 					}
 				}
 
@@ -1380,7 +1396,7 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN LCD //
+		// ASSIGN LCD // Add lcds to respective lists in known Bulkhead objects.
 		void AssignLCDs()
 		{
 			if (_lcds.Count < 1)
@@ -1412,7 +1428,7 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN BUTTONS //
+		// ASSIGN BUTTONS // Add buttons to lcd lists in known Bulkhead objects.
 		void AssignButtons()
         {
 			if (_buttons.Count < 1)
@@ -1445,7 +1461,7 @@ namespace IngameScript
 			}
 		}
 
-		// ASSIGN LIGHT //
+		// ASSIGN LIGHT // Add lights to light lists in designated sectors.
 		void AssignLight(IMyLightingBlock light)
 		{
 			string tag = TagFromName(light.CustomName);
@@ -1464,7 +1480,7 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN TIMER //
+		// ASSIGN TIMER // Add timers to their designated sectors.
 		void AssignTimer(IMyTimerBlock timer)
 		{
 			string tag = TagFromName(timer.CustomName);
@@ -1473,7 +1489,7 @@ namespace IngameScript
 			{
 				if (sector.Tag == tag)
 				{
-					string delayString = GetKey(timer, "delay", "5");
+					string delayString = GetKey(timer, "Delay", "5");
 					UInt16 delay;
 
 					if (UInt16.TryParse(delayString, out delay))
@@ -1489,7 +1505,7 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN ALARM //
+		// ASSIGN ALARM // Add alarms to their designated sectors.
 		void AssignAlarm(IMySoundBlock alarm)
 		{
 			string tag = TagFromName(alarm.CustomName);
@@ -1505,7 +1521,7 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN MERGE BLOCK //
+		// ASSIGN MERGE BLOCK // Add merge blocks to their designated docks.
 		void AssignMergeBlock(IMyShipMergeBlock mergeBlock)
 		{
 			string tag = TagFromName(mergeBlock.CustomName);
@@ -1522,7 +1538,7 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN CONNECTOR //
+		// ASSIGN CONNECTOR // Add connectors to their designated docks.
 		void AssignConnector(IMyShipConnector connector)
 		{
 			string tag = TagFromName(connector.CustomName);
@@ -1541,7 +1557,7 @@ namespace IngameScript
 		// INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
 
 
-		// ENSURE KEY //
+		// ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
 		static void EnsureKey(IMyTerminalBlock block, string key, string defaultVal)
 		{
 			if (!block.CustomData.Contains(INI_HEAD) || !block.CustomData.Contains(key))
@@ -1567,7 +1583,7 @@ namespace IngameScript
 		}
 
 
-		// GET INI //
+		// GET INI // Get entire INI object from specified block.
 		static MyIni GetIni(IMyTerminalBlock block)
 		{
 			MyIni iniOuti = new MyIni();
