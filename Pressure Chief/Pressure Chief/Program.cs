@@ -325,15 +325,15 @@ namespace IngameScript
 				float pressureB = this.VentB.GetOxygenLevel();
 				this.Override = ParseBool(GetKey(this.Doors[0], "Override", "false"));
 
-				if (this.Override || Math.Abs(pressureA - pressureB) < THRESHHOLD)
+				if (Math.Abs(pressureA - pressureB) < THRESHHOLD)
 				{
 					foreach (IMyDoor door in this.Doors)
-						door.GetActionWithName("OnOff_On").Apply(door);
+						CheckDoor(door, true);
 				}
 				else
 				{
 					foreach (IMyDoor door in this.Doors)
-						door.GetActionWithName("OnOff_Off").Apply(door);
+						CheckDoor(door, false);
 				}
 
 				this.DrawGauges();
@@ -343,7 +343,8 @@ namespace IngameScript
 			public void SetOverride(bool overrided)
 			{
 				this.Override = overrided;
-				SetKey(this.Doors[0], "Override", overrided.ToString());
+				foreach(IMyDoor door in this.Doors)
+					SetKey(door, "Override", overrided.ToString());
 			}
 
 			// Open - openAll variable determines if doors with AutoOpen set to false are also opened.
@@ -906,6 +907,19 @@ namespace IngameScript
 			timer.TriggerDelay = 1;
 			timer.StartCountdown();
 			bulkhead.SetOverride(true);
+
+			if(phase == "6")
+            {
+				foreach (IMyDoor door in bulkhead.Doors)
+				{
+					bool autoOpen = ParseBool(GetKey(door, "AutoOpen", "true"));
+					if (!autoOpen)
+					{
+						SetKey(door, "Override", "false");
+					}
+				}
+			}
+
 			sector.Monitor();
 		}
 
@@ -1107,9 +1121,19 @@ namespace IngameScript
 
 			foreach (IMyDoor door in dockedDoors)
 			{
-				SetKey(door, "Override", overriding.ToString());
-				if (!overriding)
+				if (overriding)
+                {
+					bool AutoOpen = ParseBool(GetKey(door, "AutoOpen", "true"));
+					if(AutoOpen)
+						SetKey(door, "Override", "true");
+					else
+						SetKey(door, "Override", "false");
+				}
+				else
+                {
+					SetKey(door, "Override", "false");
 					door.CloseDoor();
+				}
 			}
 
 			// Get list of vents in docked sector and set depressurization to false.
@@ -1148,6 +1172,18 @@ namespace IngameScript
 					connector.GetActionWithName(action).Apply(connector);
 				}
 			}
+		}
+
+
+		// CHECK DOOR // - Power/Depower Door based on if it's EQUALIZED or OVERRIDEN
+		public static void CheckDoor(IMyDoor door, bool equalized)
+        {
+			bool doorOverride = ParseBool(GetKey(door, "Override", "false"));
+
+			if (equalized || doorOverride)
+				door.GetActionWithName("OnOff_On").Apply(door);
+			else
+				door.GetActionWithName("OnOff_Off").Apply(door);
 		}
 
 
