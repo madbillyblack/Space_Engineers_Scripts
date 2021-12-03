@@ -940,10 +940,13 @@ namespace IngameScript
 				return;
 
 			sector.CloseDoors();
+			CloseLock(sector.Tag);
+
 			List<IMyDoor> dockedDoors = GetDockedDoors(sector);
 
-			foreach (IMyDoor door in dockedDoors)
-				door.CloseDoor();
+			SetDockedOverride(sector, false);
+			//foreach (IMyDoor door in dockedDoors)
+			//	door.CloseDoor();
 
 			StageLock(sector, "7", 1);
         }
@@ -1006,6 +1009,33 @@ namespace IngameScript
 			}
 
 			return docked;
+		}
+
+
+		// GET DOCKED VENTS // - Returns list of vents in connected Docking Port
+		List<IMyAirVent> GetDockedVents(IMyDoor dockedDoor)
+        {
+			string gridID = GetKey(dockedDoor, "Grid_ID", "");
+			string[] tags = MultiTags(dockedDoor.CustomName);
+
+			List<IMyAirVent> vents = new List<IMyAirVent>();
+			GridTerminalSystem.GetBlocksOfType<IMyAirVent>(vents);
+			if (vents.Count < 1 || tags.Length < 2)
+				return vents;
+
+			List<IMyAirVent> dockedVents = new List<IMyAirVent>();
+			foreach(IMyAirVent vent in vents)
+            {
+				string ventGrid = GetKey(vent, "Grid_ID", "");
+				string ventTag = TagFromName(vent.CustomName);
+
+				if (ventGrid == gridID && (ventTag == tags[0] || ventTag == tags[1]))
+				{
+					dockedVents.Add(vent);
+				}
+            }
+
+			return dockedVents;
 		}
 
 
@@ -1078,6 +1108,18 @@ namespace IngameScript
 			foreach (IMyDoor door in dockedDoors)
 			{
 				SetKey(door, "Override", overriding.ToString());
+				if (!overriding)
+					door.CloseDoor();
+			}
+
+			// Get list of vents in docked sector and set depressurization to false.
+			List<IMyAirVent> dockedVents = GetDockedVents(dockedDoors[0]);
+			if (dockedVents.Count < 1)
+				return;
+
+			foreach (IMyAirVent vent in dockedVents)
+			{
+				vent.Depressurize = false;
 			}
 		}
 
