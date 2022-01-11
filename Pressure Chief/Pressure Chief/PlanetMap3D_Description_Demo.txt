@@ -1,0 +1,69 @@
+Version 1.2.2
+
+[h1]DESCRIPTION[/h1]
+[hr][/hr]
+This program creates a 3 dimensional representation of planets and waypoints as well as the position and heading of your ship, and projects them to a designated Display Surface.  Works both with regular text panels as well as screens built into cockpits, seats, and other terminal blocks.
+
+The script can display previously charted locations (see VANILLA PLANETS and POINTS OF INTEREST below), or it can also be used to map the locations of hitherto uncharted planets.  This feature is essential for modded planets and custom worlds.
+
+You can find a Demo Ship for the script here:
+https://steamcommunity.com/sharedfiles/filedetails/?id=2289095907
+
+
+[h1]FEATURES[/h1]
+[hr][/hr]
+[b][u]NEW FEATURE!!![/u][/b]
+[i]MULTI-SCREEN SUPPORT[/i] -  It is now possible to display multiple maps, even on a single block (provided that block has multiple screens).
+
+[i]ORBIT MODE[/i] - This mode aligns the map in parallel to the ship and the selected planet (the nearest planet by default). The selected planet also has a yellow ring drawn around it, roughly at the edge of its gravity well.  This is great for visualizing your ship's progress from the surface to space, or potentially even your ship's distance to a far-off planet.
+
+[i]CHASE MODE[/i] - Aligns the map's azimuthal rotation to that of your ship.  This doesn't currently align to the ship's pitch, but that may change in the future.
+
+
+[b][u]EXISTING FEATURES[/u]:[/b]
+[list]
+[*]3D Rendered Map
+[*]Multi-Screen Support
+[*]6 Different View Modes
+[*]Works on normal text screens as well as in embedded screens
+[*]Import Recorded Planets or Chart New Ones
+[*]Log Customizable GPS Waypoints
+[*]Import/Export Waypoints for use in Terminal
+[*]Calculate Jump Points to Planets
+[/list]
+
+[b][u]PLANNED FEATURES[/u]:[/b]
+[list]
+[*]Roll Indicator for Ship Pointer
+[*]GPS Color Options
+[/list]
+
+
+[h1]QUICK SET-UP[/h1]
+[hr][/hr]
+[olist]
+[*]Load this script on a programmable block.
+[*]Put the tag "[MAP]" in the name of the block where you want the map to be displayed. If the block has multiple screens you can change which screen displays the map by going into the programmable block's Custom Data field and changing the "MAP_Index" field.
+[*]It's recommended to map at least the basic movement and mode commands to desired hotkey bars.
+[*][i](optional)[/i] Paste "Vanilla" planet and waypoint data into the custom data field of the programmable block. (See below).
+[*][i](optional)[/i] Add the tag "[Map Data]" to the name field of a block that you want to have the Data Display screen.  This display page will give details about planets, waypoints, and the map screen itself. (See section 'Data Display Pages' below).
+[/olist]
+
+[b][i][u]Find the full guide with an extensive list of commands here[/u]:[/i][/b]
+https://steamcommunity.com/sharedfiles/filedetails/?id=2293214693
+
+
+[h1]VANILLA PLANETS[/h1]
+[hr][/hr]
+The following planets and moons are from the default star system. You can add them to the map by pasting the following data into the Custom Data field of the programmable block. They may not be accurate to some scenarios such as Never Surrender. NOTE: Be sure to include the trailing semi-colons.
+
+Planet_List=
+|EARTHLIKE;(0,0,0);60000;GREEN;;;;
+|MOON;(16388,136375,-113547);9394;GRAY;;;;
+|MARS;(1032762,134086,1632659);64606;RUST;;;;
+|EUROPA;(916410,16373.72,1616441);9600;LIGHTBLUE;;;;
+|ALIEN;(131110.8,131220.6,5731113);60894.06;MAGENTA;;;;
+|TITAN;(36385.04,226384,5796385);9238.224;CYAN;;;;
+|TRITON;(-284463.6,-2434464,365536.2);38128.81;WHITE;;;;
+|PERTAM;(-3967231.50,-32231.50,-767231.50);30066.50;BROWN;;;;
+
