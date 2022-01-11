@@ -99,8 +99,9 @@ namespace IngameScript
 		static string _gridID;
 		static string _vacTag;
 		static string _unit; // Display unit of pressure.
+		static float _atmo; // Atmospheric conversion factor decided by unit.
 		static float _factor; // Multiplier of pressure reading.
-
+		
 		// Breather Array - Used to indicate that program is running in terminal
 		static string[] _breather =    {"\\//////////////",
 										"/\\/////////////",
@@ -1225,7 +1226,7 @@ namespace IngameScript
 			position -= new Vector2(width *-0.01f, height / 3);
 			WriteText("*" + sectorA.Tag, position, TextAlignment.LEFT, textSize, _roomColor, frame);
 			position += new Vector2(width * 0.375f, height *0.365f);
-			WriteText((string.Format("{0:0.##}", (pressureA * 100 * _factor))) + _unit, position, TextAlignment.RIGHT, textSize, _textColor, frame);
+			WriteText((string.Format("{0:0.##}", (pressureA * _atmo * _factor))) + _unit, position, TextAlignment.RIGHT, textSize, _textColor, frame);
 
 			// Right Chamber
 			position = viewport.Center + new Vector2(width * 0.075f, 0);
@@ -1233,7 +1234,7 @@ namespace IngameScript
 			position -= new Vector2(width * -0.01f, height / 3);
 			WriteText(sectorB.Tag, position, TextAlignment.LEFT, textSize, _textColor, frame);
 			position += new Vector2(width * 0.375f, height * 0.365f);
-			WriteText((string.Format("{0:0.##}",(pressureB * 100 * _factor))) + _unit, position, TextAlignment.RIGHT, textSize, _textColor, frame);
+			WriteText((string.Format("{0:0.##}",(pressureB * _atmo * _factor))) + _unit, position, TextAlignment.RIGHT, textSize, _textColor, frame);
 
 			// Door Background
 			position = viewport.Center - new Vector2(width * 0.05f, 0);
@@ -1309,12 +1310,36 @@ namespace IngameScript
 
 			_vacTag = GetKey(Me, "Vac_Tag", VAC_TAG);
 
-			//Set Pressure Unit and Factor
+			//Set Pressure Unit as well as Atmospheric and User-Defined Factors
 			_unit = GetKey(Me, "Unit", UNIT);
 			if (float.TryParse(GetKey(Me, "Factor", "1"), out _factor))
 				Echo("Unit: " + _unit + "   Factor: " + _factor);
 			else
 				_statusMessage = "UNPARSABLE FACTOR INPUT!!!";
+
+			switch (_unit.ToLower())
+			{
+				case "atm":
+					_atmo = 1f;
+					break;
+				case "psi":
+					_atmo = 14.696f;
+					break;
+				case "kpa":
+					_atmo = 101.325f;
+					break;
+				case "bar":
+					_atmo = 1.013f;
+					break;
+				case "torr":
+					_atmo = 760;
+					break;
+				default:
+					_atmo = 100;
+					break;
+			}
+
+
 
 			//_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
 			_autoClose = ParseBool(GetKey(Me, "Auto-Close", "true"));
