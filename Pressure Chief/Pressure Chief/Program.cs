@@ -91,6 +91,7 @@ namespace IngameScript
 		const float THRESHHOLD = 0.2f;
 		const int SCREEN_THRESHHOLD = 180;
 		const string UNIT = "%"; // Default pressure unit.
+		const string MONITOR_TAG = "[Pressure]";
 
 
 		// Globals //
@@ -99,6 +100,7 @@ namespace IngameScript
 		static string _overview;
 		static string _gridID;
 		static string _vacTag;
+		static string _monitorTag;
 		static string _unit; // Display unit of pressure.
 		static float _atmo; // Atmospheric conversion factor decided by unit.
 		static float _factor; // Multiplier of pressure reading.
@@ -153,6 +155,7 @@ namespace IngameScript
 		static List<IMyShipConnector> _connectors;
 		static List<IMyShipMergeBlock> _mergeBlocks;
 		static List<IMyLightingBlock> _lights;
+		static List<IMyTerminalBlock> _monitors;
 
 		//Lists for script classes
 		static List<Sector> _sectors;
@@ -457,6 +460,7 @@ namespace IngameScript
 			// Print basic terminal output
 			UpdateOverview();
 			Echo(_overview);
+			UpdateMonitors();
 
 			// Check for vents to run script from
 			if (_vents.Count < 1)
@@ -714,7 +718,7 @@ namespace IngameScript
         }
 
 
-		// PRINT HEADER // Prints program data in terminal
+		// UPDATE OVERVIEW // Updates _overview string for terminal and monitors
 		void UpdateOverview()
         {
 			_overview = "PRESSURE CHIEF " + _breather[_breatherStep] + "\n--Pressure Management System--" + "\nCmd: "
@@ -722,9 +726,11 @@ namespace IngameScript
 
 			foreach (Sector sector in _sectors)
 			{
-				_overview += "\n" + sector.Type + " " + sector.Tag +" * Doors: " + sector.Doors.Count + "  * Lights: " + sector.Lights.Count;
+				_overview += "\n" + sector.Type + " " + sector.Tag + " --- " + sector.Vents[0].Status.ToString()
+					+"\n * Doors: " + sector.Doors.Count + "  * Lights: " + sector.Lights.Count;
 				if(sector.Type == "Dock")
 					_overview += "\n * Merge Blocks: " + sector.MergeBlocks.Count + "  * Connectors: " + sector.Connectors.Count;
+				
 			}
 
 			_breatherStep++;
@@ -732,6 +738,23 @@ namespace IngameScript
 				_breatherStep = 0;
 		}
 
+
+		// UPDATE MONITORS // Print Overview text to any blocks in the _monitors list.
+		void UpdateMonitors()
+        {
+			if (_monitors.Count < 1)
+				return;
+
+			foreach (IMyTextSurfaceProvider monitor in _monitors)
+			{
+				ushort index;
+				if (!UInt16.TryParse(GetKey(monitor as IMyTerminalBlock, "Index", "0"), out index))
+					index = 0;
+
+				IMyTextSurface surface = monitor.GetSurface(index);
+				surface.WriteText(_overview, false);
+			}
+        }
 
 		/* SET SECTOR COLOR // - Updates the default color for a sector
 			* Emergency bool determines if it's normal or emergency color*/			
@@ -1353,8 +1376,14 @@ namespace IngameScript
 			_lights = new List<IMyLightingBlock>();
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
+			_monitors = new List<IMyTerminalBlock>();
+			
 
 			_vacTag = GetKey(Me, "Vac_Tag", VAC_TAG);
+
+			// Central displays for overview data
+			_monitorTag = GetKey(Me, "Monitor_Tag", MONITOR_TAG);
+			GridTerminalSystem.SearchBlocksOfName(_monitorTag, _monitors);
 
 			//Set Pressure Unit as well as Atmospheric and User-Defined Factors
 			_unit = GetKey(Me, "Unit", UNIT);
