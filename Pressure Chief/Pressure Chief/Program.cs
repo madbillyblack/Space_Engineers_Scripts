@@ -96,6 +96,7 @@ namespace IngameScript
 		// Globals //
 		static string _statusMessage;
 		static string _previosCommand;
+		static string _overview;
 		static string _gridID;
 		static string _vacTag;
 		static string _unit; // Display unit of pressure.
@@ -288,6 +289,7 @@ namespace IngameScript
 			public List<IMyDoor> Doors;
 			public List<IMyTextSurfaceProvider> LCDs;
 			public List<IMyTextSurface> Surfaces;
+			public List<bool> LcdOrientations; // Bool list assigning whether LCDs are vertical.
 			public bool Override; // If True, Bulkhead ignores pressure checks and is always unlocked.
 
 			// Variables for sectors separated by bulkhead.
@@ -305,6 +307,7 @@ namespace IngameScript
 				this.Doors = new List<IMyDoor>();
 				this.LCDs = new List<IMyTextSurfaceProvider>();
 				this.Surfaces = new List<IMyTextSurface>();
+				this.LcdOrientations = new List<bool>();
 				this.Doors.Add(myDoor);
 				this.Override = false;
 
@@ -375,13 +378,14 @@ namespace IngameScript
 				for(int i = 0; i < this.LCDs.Count; i++) {
 					IMyTerminalBlock lcd = this.LCDs[i] as IMyTerminalBlock;
 					IMyTextSurface surface = this.Surfaces[i];
+					bool vertical = this.LcdOrientations[i];
 
 					string side = GetKey(lcd, "Side", "Select A or B");
 
 					if(side == "A")
-						DrawGauge(surface, this.SectorA, this.SectorB, locked);
+						DrawGauge(surface, this.SectorA, this.SectorB, locked, vertical);
 					else if(side == "B")
-						DrawGauge(surface, this.SectorB, this.SectorA, locked);
+						DrawGauge(surface, this.SectorB, this.SectorA, locked, vertical);
 				}
 			}
 		}
@@ -451,7 +455,8 @@ namespace IngameScript
 		public void Main(string arg)
 		{
 			// Print basic terminal output
-			PrintHeader();
+			UpdateOverview();
+			Echo(_overview);
 
 			// Check for vents to run script from
 			if (_vents.Count < 1)
@@ -710,25 +715,22 @@ namespace IngameScript
 
 
 		// PRINT HEADER // Prints program data in terminal
-		void PrintHeader()
+		void UpdateOverview()
         {
-			Echo("PRESSURE CHIEF " + _breather[_breatherStep]);
-			Echo("--Pressure Management System--");
-			Echo("Cmd: " + _previosCommand);
-			Echo(_statusMessage + "\n----------------------");
-			Echo("Sector Count: " + _sectors.Count);
+			_overview = "PRESSURE CHIEF " + _breather[_breatherStep] + "\n--Pressure Management System--" + "\nCmd: "
+				+ _previosCommand + "\n"+ _statusMessage + "\n----------------------" + "Sector Count: " + _sectors.Count;
+
 			foreach (Sector sector in _sectors)
 			{
-				Echo(sector.Type + " " + sector.Tag);
-				Echo(" * Doors: " + sector.Doors.Count + "  * Lights: " + sector.Lights.Count);
+				_overview += "\n" + sector.Type + " " + sector.Tag +" * Doors: " + sector.Doors.Count + "  * Lights: " + sector.Lights.Count;
 				if(sector.Type == "Dock")
-					Echo(" * Merge Blocks: " + sector.MergeBlocks.Count + "  * Connectors: " + sector.Connectors.Count);
-			}				
+					_overview += "\n * Merge Blocks: " + sector.MergeBlocks.Count + "  * Connectors: " + sector.Connectors.Count;
+			}
 
 			_breatherStep++;
 			if (_breatherStep >= _breatherLength)
 				_breatherStep = 0;
-        }
+		}
 
 
 		/* SET SECTOR COLOR // - Updates the default color for a sector
@@ -763,7 +765,6 @@ namespace IngameScript
                     {
 						lightCase = "Normal_Color";
 						sector.NormalColor = rgbCode;
-
 					}
 						
 
@@ -1194,7 +1195,7 @@ namespace IngameScript
 		// SPRITE FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------
 
 		// DRAW GAUGE // - Draws the pressure display between room the lcd is locate in and the neighboring room.
-		static void DrawGauge(IMyTextSurface drawSurface, Sector sectorA, Sector sectorB, bool locked) 
+		static void DrawGauge(IMyTextSurface drawSurface, Sector sectorA, Sector sectorB, bool locked, bool vertical) 
 		{
 			RectangleF viewport = new RectangleF((drawSurface.TextureSize - drawSurface.SurfaceSize) / 2f, drawSurface.SurfaceSize);
 
@@ -1215,10 +1216,11 @@ namespace IngameScript
 			float width = viewport.Width;
 			float textSize = 0.8f;
 			float topEdge = viewport.Center.Y - viewport.Height/2;
+			float bottomEdge = viewport.Center.Y + viewport.Height / 2;
 			if (width < SCREEN_THRESHHOLD)
 				textSize = 0.4f;
 
-			Vector2 position = viewport.Center - new Vector2(width/2, 0);
+			//Vector2 position;// = viewport.Center - new Vector2(width/2, 0);
 
 			int redA = (int) (PRES_RED * (1-pressureA));
 			int greenA = (int)(PRES_GREEN * pressureA);
@@ -1227,25 +1229,52 @@ namespace IngameScript
 			int greenB = (int)(PRES_GREEN * pressureB);
 			int blueB = (int)(PRES_BLUE * pressureB);
 
+			//Variables for position alignment and scale
+			Vector2 leftPos, leftScale, leftTextPos, rightPos, rightTextPos, rightScale, leftReadingOffset, gridScale, position;
+			TextAlignment leftChamberAlignment, rightChamberAlignment;
+
+			if(vertical)
+            {
+				leftPos = new Vector2(0, bottomEdge - height * pressureA * 0.5f);
+				leftScale = new Vector2(width * 0.425f, height * pressureA);
+				leftTextPos = new Vector2(width*0.22f, topEdge);
+				rightPos = new Vector2(width, bottomEdge - height * pressureB * 0.5f);
+				rightScale = new Vector2(-width * 0.425f, height * pressureB);
+				rightTextPos = new Vector2(width * 0.78f, topEdge);
+				leftReadingOffset = new Vector2(0, textSize * 25);
+				gridScale = new Vector2(width * 20, height);
+				leftChamberAlignment = TextAlignment.CENTER;
+				rightChamberAlignment = TextAlignment.CENTER;
+			}
+            else
+            {
+				leftPos = new Vector2(0, viewport.Center.Y);
+				leftScale = new Vector2(width * 0.425f * pressureA, height);
+				leftTextPos = new Vector2(textSize * 10, topEdge);
+				rightPos = new Vector2(width, viewport.Center.Y);
+				rightScale = new Vector2(-width * 0.425f * pressureB, height);
+				rightTextPos = new Vector2(width - textSize * 10, topEdge);
+				leftReadingOffset = new Vector2(textSize * 10, textSize * 25);
+				gridScale = new Vector2(width, height * 20);
+				leftChamberAlignment = TextAlignment.LEFT;
+				rightChamberAlignment = TextAlignment.RIGHT;
+			}
+
 			// Left Chamber
-			position = new Vector2(0, viewport.Center.Y);
-			DrawTexture("SquareSimple", position, new Vector2(width*0.425f*pressureA, height), 0, new Color(redA, greenA, blueA), frame);
-			position = new Vector2(textSize * 10, topEdge);
-			WriteText("*" + sectorA.Tag, position, TextAlignment.LEFT, textSize, _roomColor, frame);
-			position += new Vector2(textSize *10, textSize * 25);
-			WriteText((string.Format("{0:0.##}", (pressureA * _atmo * _factor))) + _unit, position, TextAlignment.LEFT, textSize * 0.75f, _textColor, frame);
+			DrawTexture("SquareSimple", leftPos, leftScale, 0, new Color(redA, greenA, blueA), frame);
+			WriteText("*" + sectorA.Tag, leftTextPos, leftChamberAlignment, textSize, _roomColor, frame);
+			leftTextPos += leftReadingOffset;
+			WriteText((string.Format("{0:0.##}", (pressureA * _atmo * _factor))) + _unit, leftTextPos, leftChamberAlignment, textSize * 0.75f, _textColor, frame);
 
 			// Right Chamber
-			position = new Vector2(width, viewport.Center.Y);
-			DrawTexture("SquareSimple", position, new Vector2(-width*0.425f*pressureB, height), 0, new Color(redB, greenB, blueB), frame);
-			position = new Vector2(width - textSize * 10, topEdge);
-			WriteText(sectorB.Tag, position, TextAlignment.RIGHT, textSize, _textColor, frame);
-			position += new Vector2(0, textSize * 25);
-			WriteText((string.Format("{0:0.##}",(pressureB * _atmo * _factor))) + _unit, position, TextAlignment.RIGHT, textSize * 0.75f, _textColor, frame);
+			DrawTexture("SquareSimple", rightPos, rightScale, 0, new Color(redB, greenB, blueB), frame);
+			WriteText(sectorB.Tag, rightTextPos, rightChamberAlignment, textSize, _textColor, frame);
+			rightTextPos += new Vector2(0, textSize * 25);
+			WriteText((string.Format("{0:0.##}", (pressureB * _atmo * _factor))) + _unit, rightTextPos, rightChamberAlignment, textSize * 0.75f, _textColor, frame);
 
 			// Grid Texture
 			position = new Vector2(0, viewport.Center.Y);
-			DrawTexture("Grid", position, new Vector2(width, height*20), 0, Color.Black, frame);
+			DrawTexture("Grid", position, gridScale, 0, Color.Black, frame);
 			position += new Vector2(1, 0);
 			DrawTexture("Grid", position, new Vector2(width, height * 20), 0, Color.Black, frame);
 
@@ -1333,7 +1362,6 @@ namespace IngameScript
 				Echo("Unit: " + _unit + "   Factor: " + _factor);
 			else
 				_statusMessage = "UNPARSABLE FACTOR INPUT!!!";
-
 			switch (_unit.ToLower())
 			{
 				case "atm":
@@ -1355,8 +1383,6 @@ namespace IngameScript
 					_atmo = 100;
 					break;
 			}
-
-
 
 			//_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
 			_autoClose = ParseBool(GetKey(Me, "Auto-Close", "true"));
@@ -1525,7 +1551,7 @@ namespace IngameScript
 		}
 
 
-		// ASSIGN LCD // Add lcds to respective lists in known Bulkhead objects.
+		// ASSIGN LCDs // Add lcds to respective lists in known Bulkhead objects.
 		void AssignLCDs()
 		{
 			if (_lcds.Count < 1)
@@ -1539,18 +1565,29 @@ namespace IngameScript
 
 				foreach (Bulkhead bulkhead in _bulkheads)
 				{
+					string subtype = lcd.BlockDefinition.SubtypeId;
 					string doorName = bulkhead.Doors[0].CustomName;
 					if (doorName.Contains(tag))
 					{
 						SetKey(lcd, "Side", "A");
+						if (subtype.Contains("Corner_LCD"))
+							EnsureKey(lcd, "Vertical", "False");
+						else
+							EnsureKey(lcd, "Vertical", "True");
 						bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
 						bulkhead.Surfaces.Add(PrepareTextSurface(lcd as IMyTextSurfaceProvider));
+						bulkhead.LcdOrientations.Add(ParseBool(GetKey(lcd, "Vertical", "False")));
 					}
 					else if (doorName.Contains(reverseTag))
 					{
 						SetKey(lcd, "Side", "B");
+						if (subtype.Contains("Corner_LCD"))
+							EnsureKey(lcd, "Vertical", "False");
+						else
+							EnsureKey(lcd, "Vertical", "True");
 						bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
 						bulkhead.Surfaces.Add(PrepareTextSurface(lcd as IMyTextSurfaceProvider));
+						bulkhead.LcdOrientations.Add(ParseBool(GetKey(lcd, "Vertical", "False")));
 					}
 				}
 			}
@@ -1576,15 +1613,19 @@ namespace IngameScript
 					{
 						SetKey(button, "Side", "A");
 						EnsureKey(button, "Screen_Index", "0");
+						EnsureKey(button, "Vertical", "True");
 						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
 						bulkhead.Surfaces.Add(PrepareTextSurface(button as IMyTextSurfaceProvider));
+						bulkhead.LcdOrientations.Add(ParseBool(GetKey(button, "Vertical", "True")));
 					}
 					else if (doorName.Contains(reverseTag))
 					{
 						SetKey(button, "Side", "B");
 						EnsureKey(button, "Screen_Index", "0");
+						EnsureKey(button, "Vertical", "True");
 						bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
 						bulkhead.Surfaces.Add(PrepareTextSurface(button as IMyTextSurfaceProvider));
+						bulkhead.LcdOrientations.Add(ParseBool(GetKey(button, "Vertical", "True")));
 					}
 				}
 			}
