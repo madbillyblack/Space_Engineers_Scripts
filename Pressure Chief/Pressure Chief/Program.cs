@@ -66,9 +66,9 @@ namespace IngameScript
 		const int BG_BLUE = 127;
 
 		// Pressurized colors // - RGB values for pressurized chambers
-		const int PRES_RED = 0;
-		const int PRES_GREEN = 4;
-		const int PRES_BLUE = 16;
+		const int PRES_RED = 64;
+		const int PRES_GREEN = 16;
+		const int PRES_BLUE = 32;
 
 		// Text Color // - General Text Color for LCDs
 		const int TEXT_RED = 255;
@@ -1201,44 +1201,61 @@ namespace IngameScript
 			float pressureA = sectorA.Vents[0].GetOxygenLevel();
 			float pressureB = sectorB.Vents[0].GetOxygenLevel();
 
+			// Set color of status frame.
+			Color statusColor;
+			if (locked)
+				statusColor = Color.Red;
+			else
+				statusColor = Color.Green;
+
+
 			var frame = drawSurface.DrawFrame();
 
 			float height = drawSurface.SurfaceSize.Y;
 			float width = viewport.Width;
 			float textSize = 0.8f;
+			float topEdge = viewport.Center.Y - viewport.Height/2;
 			if (width < SCREEN_THRESHHOLD)
 				textSize = 0.4f;
 
 			Vector2 position = viewport.Center - new Vector2(width/2, 0);
 
-			DrawTexture("SquareSimple", position, new Vector2(width, height), 0, _backgroundColor, frame);
-
-			int redA = (int) (PRES_RED * pressureA);
+			int redA = (int) (PRES_RED * (1-pressureA));
 			int greenA = (int)(PRES_GREEN * pressureA);
 			int blueA = (int)(PRES_BLUE * pressureA);
-			int redB = (int)(PRES_RED * pressureB);
+			int redB = (int)(PRES_RED * (1-pressureB));
 			int greenB = (int)(PRES_GREEN * pressureB);
 			int blueB = (int)(PRES_BLUE * pressureB);
 
 			// Left Chamber
-			position = viewport.Center - new Vector2(width *0.475f, 0);
-			DrawTexture("SquareSimple", position, new Vector2(width*0.4f, height * 0.67f), 0, new Color(redA, greenA, blueA), frame);
-			position -= new Vector2(width *-0.01f, height / 3);
+			position = new Vector2(0, viewport.Center.Y);
+			DrawTexture("SquareSimple", position, new Vector2(width*0.425f*pressureA, height), 0, new Color(redA, greenA, blueA), frame);
+			position = new Vector2(textSize * 10, topEdge);
 			WriteText("*" + sectorA.Tag, position, TextAlignment.LEFT, textSize, _roomColor, frame);
-			position += new Vector2(width * 0.375f, height *0.365f);
-			WriteText((string.Format("{0:0.##}", (pressureA * _atmo * _factor))) + _unit, position, TextAlignment.RIGHT, textSize, _textColor, frame);
+			position += new Vector2(textSize *10, textSize * 25);
+			WriteText((string.Format("{0:0.##}", (pressureA * _atmo * _factor))) + _unit, position, TextAlignment.LEFT, textSize * 0.75f, _textColor, frame);
 
 			// Right Chamber
-			position = viewport.Center + new Vector2(width * 0.075f, 0);
-			DrawTexture("SquareSimple", position, new Vector2(width*0.4f, height * 0.67f), 0, new Color(redB, greenB, blueB), frame);
-			position -= new Vector2(width * -0.01f, height / 3);
-			WriteText(sectorB.Tag, position, TextAlignment.LEFT, textSize, _textColor, frame);
-			position += new Vector2(width * 0.375f, height * 0.365f);
-			WriteText((string.Format("{0:0.##}",(pressureB * _atmo * _factor))) + _unit, position, TextAlignment.RIGHT, textSize, _textColor, frame);
+			position = new Vector2(width, viewport.Center.Y);
+			DrawTexture("SquareSimple", position, new Vector2(-width*0.425f*pressureB, height), 0, new Color(redB, greenB, blueB), frame);
+			position = new Vector2(width - textSize * 10, topEdge);
+			WriteText(sectorB.Tag, position, TextAlignment.RIGHT, textSize, _textColor, frame);
+			position += new Vector2(0, textSize * 25);
+			WriteText((string.Format("{0:0.##}",(pressureB * _atmo * _factor))) + _unit, position, TextAlignment.RIGHT, textSize * 0.75f, _textColor, frame);
+
+			// Grid Texture
+			position = new Vector2(0, viewport.Center.Y);
+			DrawTexture("Grid", position, new Vector2(width, height*20), 0, Color.Black, frame);
+			position += new Vector2(1, 0);
+			DrawTexture("Grid", position, new Vector2(width, height * 20), 0, Color.Black, frame);
+
+			// Status Frame
+			position = viewport.Center - new Vector2(width * 0.075f, 0);
+			DrawTexture("SquareSimple", position, new Vector2(width*0.15f, height), 0, statusColor, frame);
 
 			// Door Background
-			position = viewport.Center - new Vector2(width * 0.05f, 0);
-			DrawTexture("SquareSimple", position, new Vector2(width*0.1f, height * 0.5f), 0, Color.Black, frame);
+			position = viewport.Center - new Vector2(width * 0.0625f, 0);
+			DrawTexture("SquareSimple", position, new Vector2(width*0.125f, height * 0.95f), 0, Color.Black, frame);
 
 			// Door Status
 			if (locked)
@@ -1731,6 +1748,10 @@ namespace IngameScript
 			textSurface.ContentType = ContentType.SCRIPT;
 			// Make sure no built-in script has been selected
 			textSurface.Script = "";
+
+			// Set Background Color to black
+			textSurface.ScriptBackgroundColor = Color.Black;
+
 
 			return textSurface;
 		}
