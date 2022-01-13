@@ -727,7 +727,7 @@ namespace IngameScript
 			{
 				_overview = "PRESSURE CHIEF " + _breather[_breatherStep] + "\n--Pressure Management System--" + "\nCmd: "
 					+ _previosCommand + "\n"+ _statusMessage + "\n----------------------" + "Sector Count: " + _sectors.Count;
-				_overview += "\nCockpits: " + _cockpits.Count;
+	
 				foreach (Sector sector in _sectors)
 				{
 					_overview += "\n" + sector.Type + " " + sector.Tag + " --- " + sector.Vents[0].Status.ToString()
@@ -1744,17 +1744,19 @@ namespace IngameScript
 					{
 						if ((cockpit as IMyTextSurfaceProvider).SurfaceCount < 1)
 							Echo("DEAD UNICORN");
-
-						foreach (Bulkhead bulkhead in _bulkheads)
+						else
 						{
-							string doorName = bulkhead.Doors[0].CustomName;
-							if (doorName.Contains(tag))
+							foreach (Bulkhead bulkhead in _bulkheads)
 							{
-								SurfaceToBulkhead(cockpit, bulkhead, "A", "True");
-							}
-							else if (doorName.Contains(reverseTag))
-							{
-								SurfaceToBulkhead(cockpit, bulkhead, "B", "True");
+								string doorName = bulkhead.Doors[0].CustomName;
+								if (doorName.Contains(tag))
+								{
+									SurfaceToBulkhead(cockpit, bulkhead, "A", "True");
+								}
+								else if (doorName.Contains(reverseTag))
+								{
+									SurfaceToBulkhead(cockpit, bulkhead, "B", "True");
+								}
 							}
 						}
 					}
