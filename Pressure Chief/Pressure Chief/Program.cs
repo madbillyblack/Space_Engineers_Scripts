@@ -369,6 +369,7 @@ namespace IngameScript
             public List<IMyTextSurface> Surfaces;
             public List<bool> LcdOrientations; // Bool list assigning whether LCDs are vertical.
             public List<bool> LcdFlips; // List of bools that designate if sectors A & B are displayed on the right and left respectively.
+            public List<UInt16> LcdBrightnesses;
             public bool Override; // If True, Bulkhead ignores pressure checks and is always unlocked.
 
             // Variables for sectors separated by bulkhead.
@@ -388,6 +389,7 @@ namespace IngameScript
                 this.Surfaces = new List<IMyTextSurface>();
                 this.LcdOrientations = new List<bool>();
                 this.LcdFlips = new List<bool>();
+                this.LcdBrightnesses = new List<UInt16>();
                 this.Doors.Add(myDoor);
                 this.Override = false;
 
@@ -461,13 +463,14 @@ namespace IngameScript
                     IMyTextSurface surface = this.Surfaces[i];
                     bool vertical = this.LcdOrientations[i];
                     bool flipped = this.LcdFlips[i];
+                    float brightness = this.LcdBrightnesses[i] * 0.01f;
 
                     string side = GetKey(INI_HEAD, lcd, "Side", "Select A or B");
 
                     if (side == "A")
-                        DrawGauge(surface, this.SectorA, this.SectorB, locked, vertical, flipped);
+                        DrawGauge(surface, this.SectorA, this.SectorB, locked, vertical, flipped, brightness);
                     else if (side == "B")
-                        DrawGauge(surface, this.SectorB, this.SectorA, locked, vertical, flipped);
+                        DrawGauge(surface, this.SectorB, this.SectorA, locked, vertical, flipped, brightness);
                 }
             }
         }
@@ -1522,7 +1525,7 @@ namespace IngameScript
         // SPRITE FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------
 
         // DRAW GAUGE // - Draws the pressure display between room the lcd is locate in and the neighboring room.
-        static void DrawGauge(IMyTextSurface drawSurface, Sector sectorA, Sector sectorB, bool locked, bool vertical, bool flipped)
+        static void DrawGauge(IMyTextSurface drawSurface, Sector sectorA, Sector sectorB, bool locked, bool vertical, bool flipped, float brightness)
         {
             RectangleF viewport = new RectangleF((drawSurface.TextureSize - drawSurface.SurfaceSize) / 2f, drawSurface.SurfaceSize);
 
@@ -1532,9 +1535,9 @@ namespace IngameScript
             // Set color of status frame.
             Color statusColor;
             if (locked)
-                statusColor = Color.Red;
+                statusColor = Color.Red * brightness;
             else
-                statusColor = Color.Green;
+                statusColor = Color.Green * brightness;
 
 
             var frame = drawSurface.DrawFrame();
@@ -1549,12 +1552,12 @@ namespace IngameScript
 
             //Vector2 position;// = viewport.Center - new Vector2(width/2, 0);
 
-            int redA = (int)(PRES_RED * (1 - pressureA));
-            int greenA = (int)(PRES_GREEN * pressureA);
-            int blueA = (int)(PRES_BLUE * pressureA);
-            int redB = (int)(PRES_RED * (1 - pressureB));
-            int greenB = (int)(PRES_GREEN * pressureB);
-            int blueB = (int)(PRES_BLUE * pressureB);
+            int redA = (int)(PRES_RED * (1 - pressureA) * brightness);
+            int greenA = (int)(PRES_GREEN * pressureA * brightness);
+            int blueA = (int)(PRES_BLUE * pressureA * brightness);
+            int redB = (int)(PRES_RED * (1 - pressureB) * brightness);
+            int greenB = (int)(PRES_GREEN * pressureB * brightness);
+            int blueB = (int)(PRES_BLUE * pressureB * brightness);
 
             //Variables for position alignment and scale
             Vector2 leftPos, leftScale, leftTextPos, rightPos, rightTextPos, rightScale, leftReadingOffset, gridScale, position;
@@ -2044,6 +2047,12 @@ namespace IngameScript
             bulkhead.Surfaces.Add(PrepareTextSurface(block as IMyTextSurfaceProvider));
             bulkhead.LcdOrientations.Add(ParseBool(GetKey(INI_HEAD, block, "Vertical", vertical)));
             bulkhead.LcdFlips.Add(ParseBool(GetKey(INI_HEAD, block, "Flipped", "False")));
+
+            ushort brightness;
+            if(!UInt16.TryParse(GetKey(INI_HEAD, block, "Brightness", "100"), out brightness))
+                brightness = 100;
+
+            bulkhead.LcdBrightnesses.Add(brightness);
         }
 
 
