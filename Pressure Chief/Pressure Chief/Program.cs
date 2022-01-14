@@ -85,6 +85,7 @@ namespace IngameScript
 			const string CLOSER = "|]";
 			const char SPLITTER = '|';
 			const string INI_HEAD = "Pressure Chief";
+			const string MONITOR_HEAD = "Pressure Monitor";
 			const string NORMAL = "255,255,255";
 			const string EMERGENCY = "255,0,0";
 			const int DELAY = 3;
@@ -92,6 +93,7 @@ namespace IngameScript
 			const int SCREEN_THRESHHOLD = 180;
 			const string UNIT = "%"; // Default pressure unit.
 			const string MONITOR_TAG = "[Pressure]";
+			const string SLASHES = "//////////////////////////////////////////////////////////////////////////////////////////////////////";
 
 
 			// Globals //
@@ -156,7 +158,7 @@ namespace IngameScript
 			static List<IMyShipMergeBlock> _mergeBlocks;
 			static List<IMyCockpit> _cockpits;
 			static List<IMyLightingBlock> _lights;
-			static List<IMyTerminalBlock> _monitors;
+			static List<Monitor> _monitors;
 
 			//Lists for script classes
 			static List<Sector> _sectors;
@@ -198,9 +200,9 @@ namespace IngameScript
 					// Set up sector based on primary vent
 					this.Vents.Add(airVent);
 					this.Tag = TagFromName(airVent.CustomName);
-					this.NormalColor = GetKey(airVent, "Normal_Color", NORMAL);
-					this.EmergencyColor = GetKey(airVent, "Emergency_Color", EMERGENCY);
-					this.Status = GetKey(airVent, "Status", airVent.Status.ToString());
+					this.NormalColor = GetKey(INI_HEAD, airVent, "Normal_Color", NORMAL);
+					this.EmergencyColor = GetKey(INI_HEAD, airVent, "Emergency_Color", EMERGENCY);
+					this.Status = GetKey(INI_HEAD, airVent, "Status", airVent.Status.ToString());
 
 					// Designate exterior sector
 					if (this.Tag == _vacTag)
@@ -209,11 +211,11 @@ namespace IngameScript
 						this.Type = "Room";
 				}
 
-				// MONITOR - Check all pressure status between this and all neighboring sectors and update lights based on pressure status.
-				public void Monitor()
+				// CHECK - Check all pressure status between this and all neighboring sectors and update lights based on pressure status.
+				public void Check()
 				{
 					foreach (Bulkhead myBulkhead in this.Bulkheads)
-						myBulkhead.Monitor();
+						myBulkhead.Check();
 
 					if (this.Lights.Count > 0)
 					{
@@ -222,9 +224,9 @@ namespace IngameScript
 						foreach (IMyLightingBlock myLight in this.Lights)
 						{
 							if (depressurized)
-								myLight.Color = ColorFromString(GetKey(myLight, "Emergency_Color", this.EmergencyColor));
+								myLight.Color = ColorFromString(GetKey(INI_HEAD, myLight, "Emergency_Color", this.EmergencyColor));
 							else
-								myLight.Color = ColorFromString(GetKey(myLight, "Normal_Color", this.NormalColor));
+								myLight.Color = ColorFromString(GetKey(INI_HEAD, myLight, "Normal_Color", this.NormalColor));
 						}
 					}
 
@@ -236,7 +238,7 @@ namespace IngameScript
 				public void UpdateStatus()
 				{
 					IMyAirVent airVent = this.Vents[0];
-					string oldStatus = GetKey(airVent, "Status", "0");
+					string oldStatus = GetKey(INI_HEAD, airVent, "Status", "0");
 					float o2Level;
 					if (!float.TryParse(oldStatus, out o2Level))
 						o2Level = 0;
@@ -247,7 +249,7 @@ namespace IngameScript
 							this.CloseDoors();
 					}
 
-					SetKey(airVent, "Status", airVent.GetOxygenLevel().ToString());
+					SetKey(INI_HEAD, airVent, "Status", airVent.GetOxygenLevel().ToString());
 				}
 
 				// CLOSE DOORS
@@ -328,15 +330,15 @@ namespace IngameScript
 					this.VentB = this.SectorB.Vents[0];
 				}
 
-				// MONITOR - Checks pressure difference between sectors and bulkhead override status and locks/unlocks accordingly.
-				public void Monitor()
+				// CHECK - Checks pressure difference between sectors and bulkhead override status and locks/unlocks accordingly.
+				public void Check()
 				{
 					if (this.SectorA == null || this.SectorB == null)
 						return;
 
 					float pressureA = this.VentA.GetOxygenLevel();
 					float pressureB = this.VentB.GetOxygenLevel();
-					this.Override = ParseBool(GetKey(this.Doors[0], "Override", "false"));
+					this.Override = ParseBool(GetKey(INI_HEAD, this.Doors[0], "Override", "false"));
 
 					if (Math.Abs(pressureA - pressureB) < THRESHHOLD)
 					{
@@ -357,7 +359,7 @@ namespace IngameScript
 				{
 					this.Override = overrided;
 					foreach(IMyDoor door in this.Doors)
-						SetKey(door, "Override", overrided.ToString());
+						SetKey(INI_HEAD, door, "Override", overrided.ToString());
 				}
 
 				// Open - openAll variable determines if doors with AutoOpen set to false are also opened.
@@ -365,7 +367,7 @@ namespace IngameScript
 				{
 					foreach (IMyDoor myDoor in this.Doors)
 					{
-						bool auto = ParseBool(GetKey(myDoor, "AutoOpen", "true"));
+						bool auto = ParseBool(GetKey(INI_HEAD, myDoor, "AutoOpen", "true"));
 						if(auto || openAll)
 						{
 							myDoor.OpenDoor();
@@ -387,7 +389,7 @@ namespace IngameScript
 						bool vertical = this.LcdOrientations[i];
 						bool flipped = this.LcdFlips[i];
 
-						string side = GetKey(lcd, "Side", "Select A or B");
+						string side = GetKey(INI_HEAD, lcd, "Side", "Select A or B");
 
 						if(side == "A")
 							DrawGauge(surface, this.SectorA, this.SectorB, locked, vertical, flipped);
@@ -397,6 +399,104 @@ namespace IngameScript
 				}
 			}
 
+		
+		// MONITOR // Wrapper class for blocks that display pressure monitor displays.
+		public class Monitor
+        {
+			public IMyTerminalBlock Block;
+			public List<MonitorScreen> Screens;
+			public int screenCount;
+
+			public Monitor(IMyTerminalBlock block)
+            {
+				this.Block = block;
+				this.screenCount = (block as IMyTextSurfaceProvider).SurfaceCount;
+				this.Screens = new List<MonitorScreen>();
+
+				string s = GetKey(MONITOR_HEAD, block, "Screen_Indices", "0");
+				string[] screens = s.Split(',');
+
+				if (screens.Length < 1 || this.screenCount < 1)
+					return;
+
+				for (int i = 0; i < screens.Length; i++)
+				{
+					ushort index;
+					if(UInt16.TryParse(screens[i], out index))
+                    {
+						if(index < this.screenCount)
+                        {
+							MonitorScreen screen = new MonitorScreen(block, (block as IMyTextSurfaceProvider).GetSurface(index), index);
+							this.Screens.Add(screen);
+                        }
+                    }
+				}
+            }
+        }
+
+
+		// MONITOR SCREEN // Wrapper class for individual surfaces belonging to a Monitor
+		public class MonitorScreen
+        {
+			public IMyTerminalBlock ParentBlock;
+			public IMyTextSurface Surface;
+			public int ScreenIndex;
+			public List<Sector> Sectors;
+			public string IniTitle;
+			public string Header;
+			public bool ShowSectorType;
+			public bool ShowSectorStatus;
+			public bool ShowLockStatus;
+			public bool ShowDoorCount;
+			public bool ShowDoorNames;
+			public bool ShowDoorStatus;
+			public bool ShowVentCount;
+			public bool ShowLightCount;
+			public bool ShowMergeCount;
+			public bool ShowMergeNames;
+			public bool ShowMergeStatus;
+			public bool ShowConnectorCount;
+			public bool ShowConnectorNames;
+			public bool ShowConnectorStatus;
+
+			public MonitorScreen(IMyTerminalBlock block, IMyTextSurface surface, int screenIndex)
+			{
+				this.ParentBlock = block;
+				this.Surface = surface;
+				this.ScreenIndex = screenIndex;
+				this.Sectors = new List<Sector>();
+				this.IniTitle = MONITOR_HEAD + " " + screenIndex;
+				this.Header = GetKey(this.IniTitle, block, "Header", "Basic");
+
+				string sectorIni = GetKey(this.IniTitle, block, "Sectors", "");
+				string[] sectors = sectorIni.Split('\n');
+					
+				if(sectors.Length > 0)
+                {
+					foreach(string sector in sectors)
+                    {
+						Sector newSector = GetSector(sector);
+						if (newSector != null)
+							this.Sectors.Add(newSector);
+                    }
+                }
+
+				this.ShowSectorType = ParseBool(GetKey(this.IniTitle, block, "Sector_Type", "False"));
+				this.ShowSectorStatus = ParseBool(GetKey(this.IniTitle, block, "Sector_Status", "True"));
+				this.ShowLockStatus = ParseBool(GetKey(this.IniTitle, block, "Lock_Status", "False"));
+				this.ShowVentCount = ParseBool(GetKey(this.IniTitle, block, "Vent_Count", "False"));
+				this.ShowDoorCount = ParseBool(GetKey(this.IniTitle, block, "Door_Count", "True"));
+				this.ShowDoorNames = ParseBool(GetKey(this.IniTitle, block, "Door_Names", "False"));
+				this.ShowDoorStatus = ParseBool(GetKey(this.IniTitle, block, "Door_Status", "False"));
+				this.ShowLightCount = ParseBool(GetKey(this.IniTitle, block, "Light_Count", "False"));
+				this.ShowMergeCount = ParseBool(GetKey(this.IniTitle, block, "Merge_Count", "True"));
+				this.ShowMergeNames = ParseBool(GetKey(this.IniTitle, block, "Merge_Names", "False"));
+				this.ShowMergeStatus = ParseBool(GetKey(this.IniTitle, block, "Merge_Status", "False"));
+				this.ShowConnectorCount = ParseBool(GetKey(this.IniTitle, block, "Connector_Count", "True"));
+				this.ShowConnectorNames = ParseBool(GetKey(this.IniTitle, block, "Connector_Names", "False"));
+				this.ShowConnectorStatus = ParseBool(GetKey(this.IniTitle, block, "Connector_Status", "False"));
+			}
+		}
 
 			// PROGRAM /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			public Program()
@@ -412,14 +512,14 @@ namespace IngameScript
 				_textColor = new Color(TEXT_RED, TEXT_GREEN, TEXT_BLUE);
 				_roomColor = new Color(ROOM_RED, ROOM_GREEN, ROOM_BLUE);
 
-				_gridID = GetKey(Me, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+				_gridID = GetKey(INI_HEAD, Me, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 				//_autoCheck = true;
 			
 				// Assign all correctly named components to sectors.
 				Build();
 
 				// Check program block's custom data for Refresh_Rate and set UpdateFrequency accordingly.
-				string updateFactor = GetKey(Me, "Refresh_Rate", "10");
+				string updateFactor = GetKey(INI_HEAD, Me, "Refresh_Rate", "10");
 				switch (updateFactor)
 				{ 
 					case "1":
@@ -549,7 +649,7 @@ namespace IngameScript
 						case "VENT_CHECK_2":
 							Sector mySector = GetSector(cmdArg);
 							if (!UnknownSector(mySector, "Room"))
-								mySector.Monitor();
+								mySector.Check();
 							break;
 						default:
 							_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
@@ -567,7 +667,7 @@ namespace IngameScript
 
 				Sector sector = _sectors[_currentSector];
 				Echo("\nCurrent Check: " + sector.Type + " " + sector.Tag);
-				sector.Monitor();
+				sector.Check();
 			}
 
 
@@ -678,7 +778,7 @@ namespace IngameScript
 				else
 					gridID = Me.CubeGrid.EntityId.ToString();
 
-				SetKey(Me, "Grid_ID", gridID);
+				SetKey(INI_HEAD, Me, "Grid_ID", gridID);
 				_gridID = gridID;
 
 				List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
@@ -690,7 +790,7 @@ namespace IngameScript
 				foreach (IMyTerminalBlock block in blocks)
 				{ 
 					if(block.CustomName.Contains(CLOSER))
-						SetKey(block, "Grid_ID", gridID);
+						SetKey(INI_HEAD, block, "Grid_ID", gridID);
 				}
 
 				Build();
@@ -727,7 +827,7 @@ namespace IngameScript
 			{
 				_overview = "PRESSURE CHIEF " + _breather[_breatherStep] + "\n--Pressure Management System--" + "\nCmd: "
 					+ _previosCommand + "\n"+ _statusMessage + "\n----------------------" + "Sector Count: " + _sectors.Count;
-	
+				_overview += "\nMonitors: " + _monitors.Count;
 				foreach (Sector sector in _sectors)
 				{
 					_overview += "\n" + sector.Type + " " + sector.Tag + " --- " + sector.Vents[0].Status.ToString()
@@ -743,18 +843,110 @@ namespace IngameScript
 			}
 
 
-			// UPDATE MONITORS // Print Overview text to any blocks in the _monitors list.
-			void UpdateMonitors()
-			{
-				if (_monitors.Count < 1)
-					return;
+		// UPDATE MONITORS // Print Overview text to any blocks in the _monitors list.
+		void UpdateMonitors()
+		{
+			if (_monitors.Count < 1)
+				return;
 
+			foreach(Monitor monitor in _monitors)
+			{
+				if(monitor.Screens.Count > 0)
+				{
+					foreach (MonitorScreen screen in monitor.Screens)
+					{
+						string readOut = "";
+						switch (screen.Header.ToLower())
+						{
+							case "full":
+								readOut += _overview + "\n";
+								break;
+							case "basic":
+								readOut += "PRESSURE CHIEF " + SLASHES;
+								break;
+							case "blank":
+								readOut += SLASHES;
+								break;
+						}
+
+						if(screen.Sectors.Count > 0)
+                        {
+							foreach (Sector sector in screen.Sectors)
+							{
+								readOut += "\n" + sector.Tag;
+								if (screen.ShowSectorType)
+									readOut += " (" + sector.Type + ")";
+								if (screen.ShowSectorStatus)
+									readOut += " - " + sector.Vents[0].Status.ToString();
+								if (screen.ShowVentCount)
+									readOut += "\n* Vents: " + sector.Vents.Count;
+								if (screen.ShowLightCount)
+									readOut += "\n* Lights: " + sector.Lights.Count;
+
+								// Door Info
+								if (screen.ShowDoorCount)
+									readOut += "\n* Doors: " + sector.Doors.Count;
+								if (screen.ShowDoorNames)
+								{
+									foreach(IMyDoor door in sector.Doors)
+                                    {
+										readOut += "\n   - " + door.CustomName;
+										if (screen.ShowDoorStatus)
+											readOut += ": " + door.Status.ToString();
+                                    }
+								}
+
+								bool isDock = sector.Type.ToLower() == "dock";
+
+								// Connector Info
+								if (screen.ShowConnectorCount && isDock)
+									readOut += "\n* Connectors: " + sector.Connectors.Count;
+								if (screen.ShowConnectorNames && sector.Connectors.Count > 0)
+								{
+									foreach (IMyShipConnector connector in sector.Connectors)
+									{
+										readOut += "\n   - " + connector.CustomName;
+										if (screen.ShowConnectorStatus)
+											readOut += ": " + connector.Status.ToString();
+									}
+								}
+
+								// Merge Info
+								if (screen.ShowMergeCount && isDock)
+									readOut += "\n* Merge Blocks: " + sector.MergeBlocks.Count;
+								if (screen.ShowMergeNames && sector.MergeBlocks.Count > 0)
+								{
+									foreach (IMyShipMergeBlock mergeBlock in sector.MergeBlocks)
+									{
+										readOut += "\n   - " + mergeBlock.CustomName;
+										if (screen.ShowMergeStatus)
+                                        {
+											string mergeStatus;
+											bool merged = mergeBlock.IsConnected;
+											if (merged)
+												mergeStatus = "Connected";
+											else
+												mergeStatus = "Not Connected";
+
+											readOut += ": " + mergeStatus;
+										}
+									}
+								}
+								readOut += "\n";
+							}
+						}
+
+						screen.Surface.WriteText(readOut);
+					}
+	            }
+			}
+				/*
 				foreach (IMyTerminalBlock monitor in _monitors)
 				{
 					try
 					{
 						ushort index;
-						if (!UInt16.TryParse(GetKey(monitor as IMyTerminalBlock, "Monitor_Index", "0"), out index))
+						if (!UInt16.TryParse(GetKey(MONITOR_HEAD, monitor as IMyTerminalBlock, "Monitor_Index", "0"), out index))
 							index = 0;
 
 						if (index >= (monitor as IMyTextSurfaceProvider).SurfaceCount)
@@ -773,7 +965,8 @@ namespace IngameScript
 							+  _monitorTag + "' from block's name.\n";
 					}
 				}
-			}
+				*/
+		}
 
 			/* SET SECTOR COLOR // - Updates the default color for a sector
 				* Emergency bool determines if it's normal or emergency color*/			
@@ -810,12 +1003,12 @@ namespace IngameScript
 						}
 						
 
-						SetKey(sector.Vents[0], lightCase, rgbCode);
+						SetKey(INI_HEAD, sector.Vents[0], lightCase, rgbCode);
 
 						if (sector.Lights.Count > 0)
 						{
 							foreach (IMyLightingBlock light in sector.Lights)
-								SetKey(light, lightCase, rgbCode);
+								SetKey(INI_HEAD, light, lightCase, rgbCode);
 						}
 
 						return;
@@ -895,7 +1088,7 @@ namespace IngameScript
 					return;
 
 				IMyTimerBlock timer = sector.LockTimer;
-				string phase = GetKey(timer, "Phase", "0");
+				string phase = GetKey(INI_HEAD, timer, "Phase", "0");
 
 				Bulkhead bulkhead = sector.GetExteriorBulkhead();
 				if(bulkhead == null)
@@ -925,18 +1118,18 @@ namespace IngameScript
 					case "6": // OPEN SELF
 						bulkhead.Open(false);
 						_statusMessage = "Dock " + sector.Tag + " is sealed.";
-						SetKey(timer, "Phase", "0"); // Consider Removing for HATCH call
+						SetKey(INI_HEAD, timer, "Phase", "0"); // Consider Removing for HATCH call
 						break;
 					case "7": // DISENGAGE CONNECTIONS
 						ActivateDock(sector, false);
-						SetKey(timer, "Phase", "8");
+						SetKey(INI_HEAD, timer, "Phase", "8");
 						timer.TriggerDelay = 10;
 						timer.StartCountdown();
 						_statusMessage = "Dock " + sector.Tag + " disengaged.";
 						break;
 					case "8": // RE-ENGAGE CONNECTIONS & RESET
 						ActivateDock(sector, true);
-						SetKey(timer, "Phase", "0");
+						SetKey(INI_HEAD, timer, "Phase", "0");
 						_statusMessage = "Dock " + sector.Tag + " re-enabled.";
 						break;
 					default:
@@ -950,7 +1143,7 @@ namespace IngameScript
 			void TimerOverride(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, string phase)
 			{
 				_statusMessage = "Overriding Lock " + sector.Tag;
-				SetKey(timer, "Phase", phase);
+				SetKey(INI_HEAD, timer, "Phase", phase);
 				timer.TriggerDelay = 1;
 				timer.StartCountdown();
 				bulkhead.SetOverride(true);
@@ -959,15 +1152,15 @@ namespace IngameScript
 				{
 					foreach (IMyDoor door in bulkhead.Doors)
 					{
-						bool autoOpen = ParseBool(GetKey(door, "AutoOpen", "true"));
+						bool autoOpen = ParseBool(GetKey(INI_HEAD, door, "AutoOpen", "true"));
 						if (!autoOpen)
 						{
-							SetKey(door, "Override", "false");
+							SetKey(INI_HEAD, door, "Override", "false");
 						}
 					}
 				}
 
-				sector.Monitor();
+				sector.Check();
 			}
 
 
@@ -975,9 +1168,9 @@ namespace IngameScript
 			void TimerOpen(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, bool openAll)
 			{
 				bulkhead.Open(openAll);
-				SetKey(timer, "Phase", "0");
+				SetKey(INI_HEAD, timer, "Phase", "0");
 				_statusMessage = sector.Type + " " + sector.Tag + " opened.";
-				sector.Monitor();
+				sector.Check();
 			}
 
 
@@ -1065,7 +1258,7 @@ namespace IngameScript
 
 				foreach (IMyTerminalBlock door in doors)
 				{
-					if (door.CustomName.Contains(dockTag) && door.CustomName.Contains(_vacTag) && GetKey(door, "Grid_ID", "unspecified") != _gridID)
+					if (door.CustomName.Contains(dockTag) && door.CustomName.Contains(_vacTag) && GetKey(INI_HEAD, door, "Grid_ID", "unspecified") != _gridID)
 						docked.Add(door as IMyDoor);
 				}
 
@@ -1076,7 +1269,7 @@ namespace IngameScript
 			// GET DOCKED VENTS // - Returns list of vents in connected Docking Port
 			List<IMyAirVent> GetDockedVents(IMyDoor dockedDoor)
 			{
-				string gridID = GetKey(dockedDoor, "Grid_ID", "");
+				string gridID = GetKey(INI_HEAD, dockedDoor, "Grid_ID", "");
 				string[] tags = MultiTags(dockedDoor.CustomName);
 
 				List<IMyAirVent> vents = new List<IMyAirVent>();
@@ -1087,7 +1280,7 @@ namespace IngameScript
 				List<IMyAirVent> dockedVents = new List<IMyAirVent>();
 				foreach(IMyAirVent vent in vents)
 				{
-					string ventGrid = GetKey(vent, "Grid_ID", "");
+					string ventGrid = GetKey(INI_HEAD, vent, "Grid_ID", "");
 					string ventTag = TagFromName(vent.CustomName);
 
 					if (ventGrid == gridID && (ventTag == tags[0] || ventTag == tags[1]))
@@ -1112,7 +1305,7 @@ namespace IngameScript
 				GridTerminalSystem.GetBlocksOfType<IMyShipMergeBlock>(mergeBlocks);
 				foreach (IMyShipMergeBlock mergeBlock in mergeBlocks)
 				{
-					if (mergeBlock.IsConnected && GetKey(mergeBlock, "Grid_ID", "") != GetKey(Me, "Grid_ID", _gridID))
+					if (mergeBlock.IsConnected && GetKey(INI_HEAD, mergeBlock, "Grid_ID", "") != GetKey(INI_HEAD, Me, "Grid_ID", _gridID))
 					{
 						float distance = Vector3.Distance(mergeBlock.GetPosition(), pos);
 						if (distance < nearest)
@@ -1132,9 +1325,9 @@ namespace IngameScript
 			{
 				IMyTimerBlock timer = sector.LockTimer;
 				UInt32 delay;
-				SetKey(timer, "Phase", phase);
+				SetKey(INI_HEAD, timer, "Phase", phase);
 
-				if (UInt32.TryParse(GetKey(timer, "Delay", DELAY.ToString()), out delay))
+				if (UInt32.TryParse(GetKey(INI_HEAD, timer, "Delay", DELAY.ToString()), out delay))
 					delay--;
 				else
 					delay = DELAY - 1;
@@ -1148,7 +1341,7 @@ namespace IngameScript
 				if (sector.LockAlarm != null)
 				{
 					IMySoundBlock alarm = sector.LockAlarm;
-					bool autoSound = ParseBool(GetKey(alarm, "Auto-Sound-Select", "true"));
+					bool autoSound = ParseBool(GetKey(INI_HEAD, alarm, "Auto-Sound-Select", "true"));
 
 					if(autoSound)
 						alarm.SelectedSound = "SoundBlockAlert" + alert;
@@ -1170,15 +1363,15 @@ namespace IngameScript
 				{
 					if (overriding)
 					{
-						bool AutoOpen = ParseBool(GetKey(door, "AutoOpen", "true"));
+						bool AutoOpen = ParseBool(GetKey(INI_HEAD, door, "AutoOpen", "true"));
 						if(AutoOpen)
-							SetKey(door, "Override", "true");
+							SetKey(INI_HEAD, door, "Override", "true");
 						else
-							SetKey(door, "Override", "false");
+							SetKey(INI_HEAD, door, "Override", "false");
 					}
 					else
 					{
-						SetKey(door, "Override", "false");
+						SetKey(INI_HEAD, door, "Override", "false");
 						door.CloseDoor();
 					}
 				}
@@ -1225,7 +1418,7 @@ namespace IngameScript
 			// CHECK DOOR // - Power/Depower Door based on if it's EQUALIZED or OVERRIDEN
 			public static void CheckDoor(IMyDoor door, bool equalized)
 			{
-				bool doorOverride = ParseBool(GetKey(door, "Override", "false"));
+				bool doorOverride = ParseBool(GetKey(INI_HEAD, door, "Override", "false"));
 
 				if (equalized || doorOverride)
 					door.GetActionWithName("OnOff_On").Apply(door);
@@ -1425,18 +1618,19 @@ namespace IngameScript
 				_lights = new List<IMyLightingBlock>();
 				_sectors = new List<Sector>();
 				_bulkheads = new List<Bulkhead>();
-				_monitors = new List<IMyTerminalBlock>();
+				_monitors = new List<Monitor>();
 			
 
-				_vacTag = GetKey(Me, "Vac_Tag", VAC_TAG);
+				_vacTag = GetKey(INI_HEAD, Me, "Vac_Tag", VAC_TAG);
 
 				// Central displays for overview data
-				_monitorTag = GetKey(Me, "Monitor_Tag", MONITOR_TAG);
-				GridTerminalSystem.SearchBlocksOfName(_monitorTag, _monitors);
+				_monitorTag = GetKey(INI_HEAD, Me, "Monitor_Tag", MONITOR_TAG);
+				List<IMyTerminalBlock> monitors = new List<IMyTerminalBlock>();
+				GridTerminalSystem.SearchBlocksOfName(_monitorTag, monitors);
 
 				//Set Pressure Unit as well as Atmospheric and User-Defined Factors
-				_unit = GetKey(Me, "Unit", UNIT);
-				if (float.TryParse(GetKey(Me, "Factor", "1"), out _factor))
+				_unit = GetKey(INI_HEAD, Me, "Unit", UNIT);
+				if (float.TryParse(GetKey(INI_HEAD, Me, "Factor", "1"), out _factor))
 					Echo("Unit: " + _unit + "   Factor: " + _factor);
 				else
 					_statusMessage = "UNPARSABLE FACTOR INPUT!!!";
@@ -1463,7 +1657,7 @@ namespace IngameScript
 				}
 
 				//_autoCheck = ParseBool(GetKey(Me, "Auto-Check", "true"));
-				_autoClose = ParseBool(GetKey(Me, "Auto-Close", "true"));
+				_autoClose = ParseBool(GetKey(INI_HEAD, Me, "Auto-Close", "true"));
 
 				List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
 				GridTerminalSystem.SearchBlocksOfName(OPENER, blocks);
@@ -1472,7 +1666,7 @@ namespace IngameScript
 				{
 					foreach (IMyTerminalBlock block in blocks)
 					{
-						if (GetKey(block, "Grid_ID", _gridID) == GetKey(Me, "Grid_ID", _gridID))
+						if (GetKey(INI_HEAD, block, "Grid_ID", _gridID) == GetKey(INI_HEAD, Me, "Grid_ID", _gridID))
 						{
 							switch (block.BlockDefinition.TypeIdString)
 							{
@@ -1570,7 +1764,16 @@ namespace IngameScript
 							AssignConnector(connector);
 					}
 				}
+
+
+			if (monitors.Count > 0)
+			{
+				foreach (IMyTerminalBlock monitorBlock in monitors)
+				{
+					_monitors.Add(new Monitor(monitorBlock));
+				}
 			}
+		}
 
 
 			// ASSIGN DOORS // Add doors to respective lists in known Sector and Bulkhead objects.
@@ -1597,11 +1800,11 @@ namespace IngameScript
 					}
 
 					if (tags[0] == _vacTag || tags[1] == _vacTag)
-						EnsureKey(door, "AutoOpen", "true");
+						EnsureKey(INI_HEAD, door, "AutoOpen", "true");
 
-					bulkhead.Override = ParseBool(GetKey(door, "Override", "false"));
-					SetKey(door, "Vent_A", "");
-					SetKey(door, "Vent_B", "");
+					bulkhead.Override = ParseBool(GetKey(INI_HEAD, door, "Override", "false"));
+					SetKey(INI_HEAD, door, "Vent_A", "");
+					SetKey(INI_HEAD, door, "Vent_B", "");
 
 					foreach (Sector sector in _sectors)
 					{
@@ -1611,7 +1814,7 @@ namespace IngameScript
 							sector.Bulkheads.Add(bulkhead);
 							bulkhead.SectorA = sector;
 							bulkhead.VentA = sector.Vents[0];
-							SetKey(door, "Vent_A", sector.Vents[0].CustomName);
+							SetKey(INI_HEAD, door, "Vent_A", sector.Vents[0].CustomName);
 						}
 						else if (sector.Tag == tags[1])
 						{
@@ -1619,7 +1822,7 @@ namespace IngameScript
 							sector.Bulkheads.Add(bulkhead);
 							bulkhead.SectorB = sector;
 							bulkhead.VentB = sector.Vents[0];
-							SetKey(door, "Vent_B", sector.Vents[0].CustomName);
+							SetKey(INI_HEAD, door, "Vent_B", sector.Vents[0].CustomName);
 						}
 					}
 
@@ -1651,31 +1854,17 @@ namespace IngameScript
 						string doorName = bulkhead.Doors[0].CustomName;
 						if (doorName.Contains(tag))
 						{
-							//SetKey(lcd, "Side", "A");
 							if (subtype.Contains("Corner_LCD"))
-								SurfaceToBulkhead(lcd, bulkhead, "A", "False");//EnsureKey(lcd, "Vertical", "False");
+								SurfaceToBulkhead(lcd, bulkhead, "A", "False");
 							else
-								SurfaceToBulkhead(lcd, bulkhead, "A", "True");	//EnsureKey(lcd, "Vertical", "True");
-							/*
-							bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
-							bulkhead.Surfaces.Add(PrepareTextSurface(lcd as IMyTextSurfaceProvider));
-							bulkhead.LcdOrientations.Add(ParseBool(GetKey(lcd, "Vertical", "False")));
-							bulkhead.LcdFlips.Add(ParseBool(GetKey(lcd, "Flipped", "False")));
-							*/
+								SurfaceToBulkhead(lcd, bulkhead, "A", "True");
 						}
 						else if (doorName.Contains(reverseTag))
 						{
-							//SetKey(lcd, "Side", "B");
 							if (subtype.Contains("Corner_LCD"))
-								SurfaceToBulkhead(lcd, bulkhead, "B", "False");//EnsureKey(lcd, "Vertical", "False");
+								SurfaceToBulkhead(lcd, bulkhead, "B", "False");
 							else
-								SurfaceToBulkhead(lcd, bulkhead, "B", "True");//EnsureKey(lcd, "Vertical", "True");
-							/*
-							bulkhead.LCDs.Add(lcd as IMyTextSurfaceProvider);
-							bulkhead.Surfaces.Add(PrepareTextSurface(lcd as IMyTextSurfaceProvider));
-							bulkhead.LcdOrientations.Add(ParseBool(GetKey(lcd, "Vertical", "False")));
-							bulkhead.LcdFlips.Add(ParseBool(GetKey(lcd, "Flipped", "False")));
-							*/
+								SurfaceToBulkhead(lcd, bulkhead, "B", "True");
 						}
 					}
 				}
@@ -1700,28 +1889,10 @@ namespace IngameScript
 						if (doorName.Contains(tag))
 						{
 							SurfaceToBulkhead(button, bulkhead, "A", "True");
-							/*
-							SetKey(button, "Side", "A");
-							EnsureKey(button, "Screen_Index", "0");
-							EnsureKey(button, "Vertical", "True");
-							bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
-							bulkhead.Surfaces.Add(PrepareTextSurface(button as IMyTextSurfaceProvider));
-							bulkhead.LcdOrientations.Add(ParseBool(GetKey(button, "Vertical", "True")));
-							bulkhead.LcdFlips.Add(ParseBool(GetKey(button, "Flipped", "False")));
-							*/
 						}
 						else if (doorName.Contains(reverseTag))
 						{
 							SurfaceToBulkhead(button, bulkhead, "B", "True");
-							/*
-							SetKey(button, "Side", "B");
-							EnsureKey(button, "Screen_Index", "0");
-							EnsureKey(button, "Vertical", "True");
-							bulkhead.LCDs.Add(button as IMyTextSurfaceProvider);
-							bulkhead.Surfaces.Add(PrepareTextSurface(button as IMyTextSurfaceProvider));
-							bulkhead.LcdOrientations.Add(ParseBool(GetKey(button, "Vertical", "True")));
-							bulkhead.LcdFlips.Add(ParseBool(GetKey(button, "Flipped", "False")));
-							*/
 						}
 					}
 				}
@@ -1773,13 +1944,13 @@ namespace IngameScript
 			// SURFACE TO BULKHEAD // Add LCD, Surface, and related variables to lists in assigned bulkhead.
 			void SurfaceToBulkhead(IMyTerminalBlock block, Bulkhead bulkhead, string side, string vertical)
 			{
-				SetKey(block, "Side", side);
-				EnsureKey(block, "Screen_Index", "0");
-				EnsureKey(block, "Vertical", vertical);
+				SetKey(INI_HEAD, block, "Side", side);
+				EnsureKey(INI_HEAD, block, "Screen_Index", "0");
+				EnsureKey(INI_HEAD, block, "Vertical", vertical);
 				bulkhead.LCDs.Add(block as IMyTextSurfaceProvider);
 				bulkhead.Surfaces.Add(PrepareTextSurface(block as IMyTextSurfaceProvider));
-				bulkhead.LcdOrientations.Add(ParseBool(GetKey(block, "Vertical", vertical)));
-				bulkhead.LcdFlips.Add(ParseBool(GetKey(block, "Flipped", "False")));
+				bulkhead.LcdOrientations.Add(ParseBool(GetKey(INI_HEAD, block, "Vertical", vertical)));
+				bulkhead.LcdFlips.Add(ParseBool(GetKey(INI_HEAD, block, "Flipped", "False")));
 			}
 
 
@@ -1793,8 +1964,8 @@ namespace IngameScript
 					if (sector.Tag == tag)
 					{
 						sector.Lights.Add(light);
-						EnsureKey(light, "Normal_Color", light.Color.R.ToString() + "," + light.Color.G.ToString() + "," + light.Color.B.ToString());
-						EnsureKey(light, "Emergency_Color", "255,0,0");
+						EnsureKey(INI_HEAD, light, "Normal_Color", light.Color.R.ToString() + "," + light.Color.G.ToString() + "," + light.Color.B.ToString());
+						EnsureKey(INI_HEAD, light, "Emergency_Color", "255,0,0");
 
 						return;
 					}
@@ -1811,7 +1982,7 @@ namespace IngameScript
 				{
 					if (sector.Tag == tag)
 					{
-						string delayString = GetKey(timer, "Delay", "5");
+						string delayString = GetKey(INI_HEAD, timer, "Delay", "5");
 						UInt16 delay;
 
 						if (UInt16.TryParse(delayString, out delay))
@@ -1881,27 +2052,29 @@ namespace IngameScript
 
 
 			// ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
-			static void EnsureKey(IMyTerminalBlock block, string key, string defaultVal)
+			static void EnsureKey(string header, IMyTerminalBlock block, string key, string defaultVal)
 			{
-				if (!block.CustomData.Contains(INI_HEAD) || !block.CustomData.Contains(key))
-					SetKey(block, key, defaultVal);
+			//if (!block.CustomData.Contains(header) || !block.CustomData.Contains(key))
+			MyIni ini = GetIni(block);
+			if(!ini.ContainsKey(header,key))
+					SetKey(header, block, key, defaultVal);
 			}
 
 
 			// GET KEY // Gets ini value from block.  Returns default argument if doesn't exist.
-			static string GetKey(IMyTerminalBlock block, string key, string defaultVal)
+			static string GetKey(string header, IMyTerminalBlock block, string key, string defaultVal)
 			{
-				EnsureKey(block, key, defaultVal);
+				EnsureKey(header, block, key, defaultVal);
 				MyIni blockIni = GetIni(block);
-				return blockIni.Get(INI_HEAD, key).ToString();
+				return blockIni.Get(header, key).ToString();
 			}
 
 
 			// SET KEY // Update ini key for block, and write back to custom data.
-			static void SetKey(IMyTerminalBlock block, string key, string arg)
+			static void SetKey(string header, IMyTerminalBlock block, string key, string arg)
 			{
 				MyIni blockIni = GetIni(block);
-				blockIni.Set(INI_HEAD, key, arg);
+				blockIni.Set(header, key, arg);
 				block.CustomData = blockIni.ToString();
 			}
 
@@ -1930,7 +2103,7 @@ namespace IngameScript
 				byte index = 0;
 				if (lcd.SurfaceCount > 1)
 				{
-					if (!Byte.TryParse(GetKey(lcd as IMyTerminalBlock, "Screen_Index", "0"), out index) || index >= lcd.SurfaceCount)
+					if (!Byte.TryParse(GetKey(INI_HEAD, lcd as IMyTerminalBlock, "Screen_Index", "0"), out index) || index >= lcd.SurfaceCount)
 					{
 						index = 0;
 						_statusMessage = "Invalid 'Screen_Index' value in block " + (lcd as IMyTerminalBlock).CustomName;
