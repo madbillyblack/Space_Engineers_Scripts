@@ -93,7 +93,7 @@ namespace IngameScript
         const int SCREEN_THRESHHOLD = 180;
         const string UNIT = "%"; // Default pressure unit.
         const string MONITOR_TAG = "[Pressure]";
-        const string SLASHES = "//////////////////////////////////////////////////////////////////////////////////////////////////////";
+        const string SLASHES = "//////////////////////////////////////////////////////////////////////////////////////////////////////\n";
 
 
         // Globals //
@@ -539,6 +539,7 @@ namespace IngameScript
 			{
 				this.ParentBlock = block;
 				this.Surface = surface;
+                this.Surface.ContentType = ContentType.TEXT_AND_IMAGE;
 				this.ScreenIndex = screenIndex;
 				this.Sectors = new List<Sector>();
 				this.IniTitle = MONITOR_HEAD + " " + screenIndex;
@@ -639,7 +640,20 @@ namespace IngameScript
         {
             // Print basic terminal output
             UpdateOverview();
+            Echo("PRESSURE CHIEF " + _breather[_breatherStep]);
             Echo(_overview);
+
+            // Echo Sector Data to Terminal
+            string sectorData = "";
+            foreach (Sector mySector in _sectors)
+            {
+                sectorData += "\n" + mySector.Type + " " + mySector.Tag + " --- " + mySector.Vents[0].Status.ToString()
+                    + "\n * Doors: " + mySector.Doors.Count + "  * Lights: " + mySector.Lights.Count;
+                if (mySector.Type == "Dock")
+                    sectorData += "\n * Merge Blocks: " + mySector.MergeBlocks.Count + "  * Connectors: " + mySector.Connectors.Count;
+            }
+            Echo(sectorData);
+
             UpdateMonitors();
 
             // Check for vents to run script from
@@ -913,17 +927,8 @@ namespace IngameScript
         // UPDATE OVERVIEW // Updates _overview string for terminal and monitors
         void UpdateOverview()
         {
-            _overview = "PRESSURE CHIEF " + _breather[_breatherStep] + "\n--Pressure Management System--" + "\nCmd: "
+            _overview = /*"PRESSURE CHIEF " + _breather[_breatherStep] + */"--Pressure Management System--" + "\nCmd: "
                 + _previosCommand + "\n" + _statusMessage + "\n----------------------" + "Sector Count: " + _sectors.Count;
-            _overview += "\nMonitors: " + _monitors.Count;
-            foreach (Sector sector in _sectors)
-            {
-                _overview += "\n" + sector.Type + " " + sector.Tag + " --- " + sector.Vents[0].Status.ToString()
-                    + "\n * Doors: " + sector.Doors.Count + "  * Lights: " + sector.Lights.Count;
-                if (sector.Type == "Dock")
-                    _overview += "\n * Merge Blocks: " + sector.MergeBlocks.Count + "  * Connectors: " + sector.Connectors.Count;
-
-            }
 
             _breatherStep++;
             if (_breatherStep >= _breatherLength)
@@ -946,8 +951,11 @@ namespace IngameScript
 						string readOut = "";
 						switch (screen.Header.ToLower())
 						{
+                            case "breather":
+                                readOut += "PRESSURE CHIEF " + _breather[_breatherStep] + SLASHES + _overview + "\n";
+                                break;
 							case "full":
-								readOut += _overview + "\n";
+								readOut += "PRESSURE CHIEF " + SLASHES + _overview + "\n";
 								break;
 							case "basic":
 								readOut += "PRESSURE CHIEF " + SLASHES;
@@ -955,32 +963,39 @@ namespace IngameScript
 							case "blank":
 								readOut += SLASHES;
 								break;
+                            case "none":
+                                break;
+                            default:
+                                readOut = screen.Header + "\n";
+                                break;
 						}
 
 						if(screen.Sectors.Count > 0)
                         {
 							foreach (Sector sector in screen.Sectors)
 							{
-								readOut += "\n" + sector.Tag;
+								readOut += sector.Tag;
 								if (screen.ShowSectorType)
 									readOut += " (" + sector.Type + ")";
 								if (screen.ShowSectorStatus)
 									readOut += " - " + sector.Vents[0].Status.ToString();
+                                readOut += "\n";
 								if (screen.ShowVentCount)
-									readOut += "\n* Vents: " + sector.Vents.Count;
+									readOut += "* Vents: " + sector.Vents.Count + "\n";
 								if (screen.ShowLightCount)
-									readOut += "\n* Lights: " + sector.Lights.Count;
+									readOut += "* Lights: " + sector.Lights.Count + "\n";
 
 								// Door Info
 								if (screen.ShowDoorCount)
-									readOut += "\n* Doors: " + sector.Doors.Count;
+									readOut += "* Doors: " + sector.Doors.Count + "\n";
 								if (screen.ShowDoorNames)
 								{
 									foreach(IMyDoor door in sector.Doors)
                                     {
-										readOut += "\n   - " + door.CustomName;
+										readOut += "   - " + door.CustomName;
 										if (screen.ShowDoorStatus)
 											readOut += ": " + door.Status.ToString();
+                                        readOut += "\n";
                                     }
 								}
 
@@ -988,25 +1003,26 @@ namespace IngameScript
 
 								// Connector Info
 								if (screen.ShowConnectorCount && isDock)
-									readOut += "\n* Connectors: " + sector.Connectors.Count;
+									readOut += "* Connectors: " + sector.Connectors.Count + "\n";
 								if (screen.ShowConnectorNames && sector.Connectors.Count > 0)
 								{
 									foreach (IMyShipConnector connector in sector.Connectors)
 									{
-										readOut += "\n   - " + connector.CustomName;
+										readOut += "   - " + connector.CustomName;
 										if (screen.ShowConnectorStatus)
 											readOut += ": " + connector.Status.ToString();
-									}
+                                        readOut += "\n";
+                                    }
 								}
 
 								// Merge Info
 								if (screen.ShowMergeCount && isDock)
-									readOut += "\n* Merge Blocks: " + sector.MergeBlocks.Count;
+									readOut += "* Merge Blocks: " + sector.MergeBlocks.Count + "\n";
 								if (screen.ShowMergeNames && sector.MergeBlocks.Count > 0)
 								{
 									foreach (IMyShipMergeBlock mergeBlock in sector.MergeBlocks)
 									{
-										readOut += "\n   - " + mergeBlock.CustomName;
+										readOut += "   - " + mergeBlock.CustomName;
 										if (screen.ShowMergeStatus)
                                         {
 											string mergeStatus;
@@ -1018,9 +1034,9 @@ namespace IngameScript
 
 											readOut += ": " + mergeStatus;
 										}
-									}
+                                        readOut += "\n";
+                                    }
 								}
-								readOut += "\n";
 							}
 						}
 
@@ -1055,6 +1071,7 @@ namespace IngameScript
 				}
 				*/
 		}
+
 
         /* SET SECTOR PARAMETER // - Updates the default color for a sector
             * Emergency bool determines if it's normal or emergency color*/
@@ -1130,7 +1147,13 @@ namespace IngameScript
                 return;
 
             sector.CloseDoors();
-            sector.Vents[0].Depressurize = true;
+            if(sector.Vents.Count > 0)
+            {
+                foreach (IMyAirVent vent in sector.Vents)
+                {
+                    vent.Depressurize = true;
+                }
+            }
 
             StageLock(sector, phase, 1); // alert sound 1
         }
@@ -1145,7 +1168,13 @@ namespace IngameScript
                 return;
 
             sector.CloseDoors();
-            sector.Vents[0].Depressurize = false;
+            if (sector.Vents.Count > 0)
+            {
+                foreach (IMyAirVent vent in sector.Vents)
+                {
+                    vent.Depressurize = false;
+                } 
+            }
 
             foreach (Bulkhead bulkhead in sector.Bulkheads)
             {
@@ -1719,11 +1748,6 @@ namespace IngameScript
 
             _vacTag = GetKey(INI_HEAD, Me, "Vac_Tag", VAC_TAG);
 
-            // Central displays for overview data
-            _monitorTag = GetKey(INI_HEAD, Me, "Monitor_Tag", MONITOR_TAG);
-            List<IMyTerminalBlock> monitors = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(_monitorTag, monitors);
-
             //Set Pressure Unit as well as Atmospheric and User-Defined Factors
             _unit = GetKey(INI_HEAD, Me, "Unit", UNIT);
             if (float.TryParse(GetKey(INI_HEAD, Me, "Factor", "1"), out _factor))
@@ -1861,14 +1885,7 @@ namespace IngameScript
                 }
             }
 
-
-            if (monitors.Count > 0)
-            {
-                foreach (IMyTerminalBlock monitorBlock in monitors)
-                {
-                    _monitors.Add(new Monitor(monitorBlock));
-                }
-            }
+            AssignMonitors();
         }
 
 
@@ -2152,6 +2169,23 @@ namespace IngameScript
             }
         }
 
+
+        //ASSIGN MONITORS// Get and set up blocks and surfaces designated as monitors
+        void AssignMonitors()
+        {
+            // Central displays for overview data
+            _monitorTag = GetKey(INI_HEAD, Me, "Monitor_Tag", MONITOR_TAG);
+            List<IMyTerminalBlock> monitors = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(_monitorTag, monitors);
+
+            if (monitors.Count > 0)
+            {
+                foreach (IMyTerminalBlock monitorBlock in monitors)
+                {
+                    _monitors.Add(new Monitor(monitorBlock));
+                }
+            }
+        }
 
 
         // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
