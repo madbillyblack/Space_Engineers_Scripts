@@ -994,7 +994,14 @@ namespace IngameScript
                                     {
 										readOut += "   - " + door.CustomName;
 										if (screen.ShowDoorStatus)
-											readOut += ": " + door.Status.ToString();
+                                        {
+                                            readOut += ": " + door.Status.ToString();
+                                            if (door.IsWorking)
+                                                readOut += ", Unlocked";
+                                            else
+                                                readOut += ", Locked";
+                                        }
+
                                         readOut += "\n";
                                     }
 								}
