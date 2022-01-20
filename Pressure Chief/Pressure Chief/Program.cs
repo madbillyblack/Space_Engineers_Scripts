@@ -150,15 +150,12 @@ namespace IngameScript
 		//Lists for tagged blocks
 		static List<IMyAirVent> _vents;
 		static List<IMyDoor> _doors;
-		static List<IMyTextPanel> _lcds;
-		static List<IMyButtonPanel> _buttons;
 		static List<IMyTerminalBlock> _surfaceProviders;
 		static List<IMyTerminalBlock> _unusable;
 		static List<IMySoundBlock> _lockAlarms;
 		static List<IMyTimerBlock> _lockTimers;
 		static List<IMyShipConnector> _connectors;
 		static List<IMyShipMergeBlock> _mergeBlocks;
-		static List<IMyCockpit> _cockpits;
 		static List<IMyLightingBlock> _lights;
 		static List<Monitor> _monitors;
 
@@ -1745,13 +1742,10 @@ namespace IngameScript
 		{
 			_vents = new List<IMyAirVent>();
 			_doors = new List<IMyDoor>();
-			_lcds = new List<IMyTextPanel>();
-			_buttons = new List<IMyButtonPanel>();
 			_lockAlarms = new List<IMySoundBlock>();
 			_lockTimers = new List<IMyTimerBlock>();
 			_connectors = new List<IMyShipConnector>();
 			_mergeBlocks = new List<IMyShipMergeBlock>();
-			_cockpits = new List<IMyCockpit>();
 			_lights = new List<IMyLightingBlock>();
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
@@ -1815,13 +1809,6 @@ namespace IngameScript
 							case "MyObjectBuilder_TextPanel":
 								_surfaceProviders.Add(block);
 								break;
-/*							case "MyObjectBuilder_ButtonPanel":
-								if (block.BlockDefinition.SubtypeId == "LargeSciFiButtonTerminal" || block.BlockDefinition.SubtypeId == "LargeSciFiButtonPanel")
-									_buttons.Add(block as IMyButtonPanel);
-								break;*/
-							case "MyObjectBuilder_Cockpit":
-								_cockpits.Add(block as IMyCockpit);
-								break;
 							case "MyObjectBuilder_SoundBlock":
 								_lockAlarms.Add(block as IMySoundBlock);
 								break;
@@ -1867,8 +1854,6 @@ namespace IngameScript
 				// Assign double-tagged components
 				AssignDoors();
 				AssignLCDs();
-				//AssignButtons();
-				AssignCockpits();
 
 				// Assign single-tagged components
 				if (_lights.Count > 0)
@@ -2036,76 +2021,6 @@ namespace IngameScript
 			_statusMessage = "UNUSABLE BLOCKS:";
 			foreach (IMyTerminalBlock block in _unusable)
 				_statusMessage += "\n* " + block.CustomName;
-		}
-
-
-		// ASSIGN BUTTONS // Add buttons to lcd lists in known Bulkhead objects.
-		void AssignButtons()
-		{
-			if (_buttons.Count < 1)
-				return;
-
-			foreach (IMyButtonPanel button in _buttons)
-			{
-				string[] tags = MultiTags(button.CustomName);
-				string tag = tags[0] + SPLITTER + tags[1];
-				string reverseTag = tags[1] + SPLITTER + tags[0];
-
-				foreach (Bulkhead bulkhead in _bulkheads)
-				{
-					string doorName = bulkhead.Doors[0].CustomName;
-					if (doorName.Contains(tag))
-					{
-						SurfaceToBulkhead(button, bulkhead, "A", "True");
-					}
-					else if (doorName.Contains(reverseTag))
-					{
-						SurfaceToBulkhead(button, bulkhead, "B", "True");
-					}
-				}
-			}
-		}
-
-
-		// ASSIGN COCKPITS // Add cockpits to their designated sectors.
-		void AssignCockpits()
-		{
-			if (_cockpits.Count < 1)
-				return;
-
-			foreach (IMyCockpit cockpit in _cockpits)
-			{
-				string[] tags = MultiTags(cockpit.CustomName);
-				string tag = tags[0] + SPLITTER + tags[1];
-				string reverseTag = tags[1] + SPLITTER + tags[0];
-
-				try
-				{
-					if ((cockpit as IMyTextSurfaceProvider).SurfaceCount < 1)
-						Echo("DEAD UNICORN");
-					else
-					{
-						foreach (Bulkhead bulkhead in _bulkheads)
-						{
-							string doorName = bulkhead.Doors[0].CustomName;
-							if (doorName.Contains(tag))
-							{
-								SurfaceToBulkhead(cockpit, bulkhead, "A", "True");
-							}
-							else if (doorName.Contains(reverseTag))
-							{
-								SurfaceToBulkhead(cockpit, bulkhead, "B", "True");
-							}
-						}
-					}
-				}
-				catch
-				{
-					string e = cockpit.CustomName + " does not contain any valid display surfaces!\nPlease remove Sector Tag!";
-					Echo(e);
-					_statusMessage = e;
-				}
-			}
 		}
 
 
