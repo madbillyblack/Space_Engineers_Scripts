@@ -2539,21 +2539,33 @@ public void DrawWaypoints(StarMap map)
 	}
 	foreach(Waypoint waypoint in _waypointList)
 	{
+
 		if(waypoint.isActive)
 		{
+
 			float rotationMod = 0;
 			Color markerColor = ColorSwitch(waypoint.color, true);
-			
-			float coordZ = waypoint.transformedCoords[map.number].Z;
+		
 			float gpsScale = 1;
+			float coordZ;
+		
+		
+			try
+			{
+				coordZ = waypoint.transformedCoords[map.number].Z;
+			}
+			catch
+			{
+				return;
+			}
 			
 			bool activePoint = (map.activeWaypointName != "") && (waypoint.name == map.activeWaypointName);
 
-			
+		
 			if(map.gpsState == 1 && !activePoint)
 				gpsScale = FOCAL_MOD * map.focalLength /coordZ;//coordZ / (-2 * focalRadius) + 1.5f;
 			
-			
+
 				
 			float iconSize = markerSize * gpsScale;
 			
@@ -2638,7 +2650,7 @@ public void DrawWaypoints(StarMap map)
 					default:
 						break;
 				}
-				
+			
 				if(activePoint){
 					position = startPosition - new Vector2(0.9f * markerSize, 0.33f * markerSize);
 					DrawText("|________", position, fontSize, TextAlignment.LEFT, Color.White);
