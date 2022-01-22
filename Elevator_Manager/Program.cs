@@ -48,6 +48,7 @@ namespace IngameScript
 			public UInt16 State;
 			public int Number;
 			public int GroundFloor;
+			public float TravelTime;
 
 			public Elevator(IMyTimerBlock timer)
 			{
@@ -57,7 +58,6 @@ namespace IngameScript
 				this.DisplayBlocks = new List<IMyTerminalBlock>();
 				
 				this.Timer = timer;
-				
 
 				int[] tags = SplitTag(TagFromName(timer.CustomName));
 
@@ -72,17 +72,6 @@ namespace IngameScript
 				{
 					this.State = 0;
 				}
-				/*
-				int groundFloor;
-				if (int.TryParse(GetKey(timer, INI_HEAD, "Ground_Floor", "0"), out groundFloor))
-				{
-					this.GroundFloor = groundFloor;
-				}
-				else
-				{
-					this.GroundFloor = 0;
-				}
-				*/
 			}
 
 			public void SortFloors(bool lowToHigh)
@@ -109,8 +98,54 @@ namespace IngameScript
 					if (length < 2)
 						return;
 				}
+			}
 
+			// GO TO FLOOR //
+			public void GoToFloor(int floorNumber)
+			{
+				if (this.Floors.Count < 2)
+					return;
 
+				foreach(Floor floor in this.Floors)
+				{
+					if(floor.Number > floorNumber)
+					{
+						floor.Deactivate();
+					}
+					else
+					{
+						floor.Activate();
+					}
+				}
+
+				this.Timer.StartCountdown();
+			}
+
+			// SET TRAVEL TIME // - based on speed and distance of slowest/longest pistons.
+			public void SetTravelTime()
+			{
+				if (this.Floors.Count < 2)
+					return;
+
+				float time = 0;
+				foreach(Floor floor in this.Floors)
+				{
+					if (floor.Pistons.Count > 0)
+					{
+						foreach(ElevatorPiston piston in floor.Pistons)
+						{
+							float pistonTime = 2 * (piston.Max - piston.Min) / piston.Speed;
+							if(pistonTime > time)
+							{
+								time = pistonTime;
+							}
+						}
+					}
+				}
+
+				this.TravelTime = time;
+				this.Timer.TriggerDelay = time;
+				SetKey(this.Timer, INI_HEAD, "Travel_Time",time.ToString("n2"));
 			}
 		}
 
@@ -130,6 +165,30 @@ namespace IngameScript
 				this.Doors = new List<IMyDoor>();
 				this.Sensors = new List<IMySensorBlock>();
 				this.IsGround = false;
+			}
+
+			// ACTIVATE // - Activate all pistons associated with this floor.
+			public void Activate()
+			{
+				if (this.Pistons.Count < 1)
+					return;
+
+				foreach(ElevatorPiston piston in this.Pistons)
+				{
+					piston.Activate();
+				}
+			}
+
+			// DEACTIVATE // - Deactivate all pistons associate with this floor.
+			public void Deactivate()
+			{
+				if (this.Pistons.Count < 1)
+					return;
+
+				foreach (ElevatorPiston piston in this.Pistons)
+				{
+					piston.Deactivate();
+				}
 			}
 		}
 
@@ -169,6 +228,32 @@ namespace IngameScript
 				else
 					this.Speed = Math.Abs(piston.Velocity);
 			}
+
+			// ACTIVATE // - Set Piston to its Activated Position
+			public void Activate()
+			{
+				if(this.Inverted)
+				{
+					this.Piston.Retract();
+				}
+				else
+				{
+					this.Piston.Extend();
+				}
+			}
+
+			// DEACTIVATE // - Set Piston to its Deactivated Position
+			public void Deactivate()
+			{
+				if (this.Inverted)
+				{
+					this.Piston.Extend();
+				}
+				else
+				{
+					this.Piston.Retract();
+				}
+			}
 		}
 
 
@@ -202,7 +287,7 @@ namespace IngameScript
 		public Program()
 		{
 			Build();
-			Runtime.UpdateFrequency = UpdateFrequency.Update100;
+			//Runtime.UpdateFrequency = UpdateFrequency.Update100;
 		}
 
 		public void Save(){}
@@ -211,8 +296,6 @@ namespace IngameScript
 		// MAIN ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public void Main(string argument, UpdateType updateSource)
 		{
-			Echo(_statusMessage);
-
 			if (_elevators.Count < 1)
 				return;
 
@@ -238,14 +321,66 @@ namespace IngameScript
 								Echo("   - " + door.CustomName);
 							}
 						}
-						Echo("\n");
 					}
 				}
 			}
+
+			if (argument == "")
+			{
+				Echo(_statusMessage);
+				return;
+			}
+				
+			string[] args = argument.Split(' ');
+			string arg = args[0];
+			string argData = "";
+			if(args.Length > 1)
+			{
+				for(int i = 1; i < args.Length; i++)
+				{
+					argData += args[i] + " ";
+				}
+
+				argData.Trim();
+			}
+			
+			switch(arg.ToUpper())
+			{
+				case "REFRESH":
+					Build();
+					break;
+				case "GO_TO":
+				case "GOTO":
+					GoTo(argData);
+					break;
+				default:
+					_statusMessage = "Unrecognized Command: " + argument;
+					break;
+			}
+
+
+			Echo(_statusMessage);
 		}
 
 
 		// FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// GO TO //
+		public void GoTo(string tag)
+		{
+			string[] tags = tag.Split(SPLITTER);
+			int floorNumber;
+			Elevator elevator = ElevatorFromTag(tag);
+
+			// Abort if no floor arg, no elevator returned, or floor arg is unparsible.
+			if (tags.Length != 2 || elevator == null || !int.TryParse(tags[1], out floorNumber))
+			{
+				_statusMessage = "Invalid GOTO arg: " + tag;
+				return;
+			}
+
+			elevator.GoToFloor(floorNumber);
+		}
 
 		// INIT FUNCTIONS ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -310,6 +445,8 @@ namespace IngameScript
 			// Assign Ground Floor for each elevator after basic floors have been built.
 			foreach(Elevator elevator in _elevators)
 			{
+				elevator.SetTravelTime();
+
 				elevator.SortFloors(true);
 				int bottom = elevator.Floors[0].Number - 1;
 
@@ -460,7 +597,7 @@ namespace IngameScript
 			//if (!block.CustomData.Contains(header) || !block.CustomData.Contains(key))
 			MyIni ini = GetIni(block);
 			if (!ini.ContainsKey(header, key))
-				SetKey(header, block, key, defaultVal);
+				SetKey(block, header, key, defaultVal);
 		}
 
 
@@ -474,7 +611,7 @@ namespace IngameScript
 
 
 		// SET KEY // Update ini key for block, and write back to custom data.
-		static void SetKey(string header, IMyTerminalBlock block, string key, string arg)
+		static void SetKey(IMyTerminalBlock block, string header, string key, string arg)
 		{
 			MyIni blockIni = GetIni(block);
 			blockIni.Set(header, key, arg);
