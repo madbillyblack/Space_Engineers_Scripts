@@ -29,6 +29,7 @@ namespace IngameScript
 		const string PLATFORM_TAG = "MAIN";
 		const int ERROR = 10000; // (Hopefully) Unusable value that can be used as an error for Shaft and Floor counts.
 		const char SPLITTER = ':';
+		const float P_TOLERANCE = 0.25f;
 
 		// Globals
 		public List<Elevator> _elevators;
@@ -74,6 +75,7 @@ namespace IngameScript
 				}
 			}
 
+			// SORT FLOORS //
 			public void SortFloors(bool lowToHigh)
 			{
 				int length = this.Floors.Count;
@@ -106,6 +108,8 @@ namespace IngameScript
 				if (this.Floors.Count < 2)
 					return;
 
+				this.Platform.CloseDoors();
+
 				foreach(Floor floor in this.Floors)
 				{
 					if(floor.Number > floorNumber)
@@ -118,6 +122,7 @@ namespace IngameScript
 					}
 				}
 
+				this.Timer.TriggerDelay = this.TravelTime;
 				this.Timer.StartCountdown();
 			}
 
@@ -146,6 +151,23 @@ namespace IngameScript
 				this.TravelTime = time;
 				this.Timer.TriggerDelay = time;
 				SetKey(this.Timer, INI_HEAD, "Travel_Time",time.ToString("n2"));
+			}
+
+			// HAS ARRIVED //
+			public bool HasArrived()
+			{
+				if (this.Floors.Count < 2)
+					return true;
+
+				foreach(Floor floor in this.Floors)
+				{
+					if(!floor.AtTarget())
+					{
+						return false;
+					}
+				}
+
+				return true;
 			}
 		}
 
@@ -190,6 +212,29 @@ namespace IngameScript
 					piston.Deactivate();
 				}
 			}
+
+			// AT TARGET //
+			public bool AtTarget()
+			{
+				if(this.Pistons.Count > 0)
+				{
+					foreach(ElevatorPiston piston in this.Pistons)
+					{
+						float pos = piston.Piston.CurrentPosition;
+						float target;
+
+						if (piston.Retracting)
+							target = piston.Min;
+						else
+							target = piston.Max;
+
+						if (Math.Abs(pos - target) > P_TOLERANCE)
+							return false;
+					}
+				}
+
+				return true;
+			}
 		}
 
 
@@ -198,6 +243,7 @@ namespace IngameScript
 		{
 			public IMyPistonBase Piston;
 			public bool Inverted;
+			public bool Retracting;
 			public float Max;
 			public float Min;
 			public float Speed;
@@ -206,6 +252,12 @@ namespace IngameScript
 			{
 				this.Piston = piston;
 				this.Inverted = ParseBool(GetKey(piston, INI_HEAD, "Inverted", "False"));
+
+				float velocity = piston.Velocity;
+				if (velocity < 0)
+					this.Retracting = true;
+				else
+					this.Retracting = false;
 
 				// Set Max
 				float max;
@@ -235,10 +287,12 @@ namespace IngameScript
 				if(this.Inverted)
 				{
 					this.Piston.Retract();
+					this.Retracting = true;
 				}
 				else
 				{
 					this.Piston.Extend();
+					this.Retracting = false;
 				}
 			}
 
@@ -248,10 +302,12 @@ namespace IngameScript
 				if (this.Inverted)
 				{
 					this.Piston.Extend();
+					this.Retracting = false;
 				}
 				else
 				{
 					this.Piston.Retract();
+					this.Retracting = true;
 				}
 			}
 		}
@@ -265,6 +321,43 @@ namespace IngameScript
 			public Platform()
 			{
 				this.Doors = new List<IMyDoor>();
+			}
+
+			// OPEN DOORS //
+			public void OpenDoors()
+			{
+				if (this.Doors.Count < 1)
+					return;
+
+				foreach(IMyDoor door in this.Doors)
+				{
+					door.GetActionWithName("OnOff_On").Apply(door);
+					door.OpenDoor();
+				}
+			}
+
+			// CLOSE DOORS //
+			public void CloseDoors()
+			{
+				if (this.Doors.Count < 1)
+					return;
+
+				foreach (IMyDoor door in this.Doors)
+				{
+					door.CloseDoor();
+				}
+			}
+
+			// LOCK DOORS //
+			public void LockDoors()
+			{
+				if (this.Doors.Count < 1)
+					return;
+
+				foreach (IMyDoor door in this.Doors)
+				{
+					door.GetActionWithName("OnOff_Off").Apply(door);
+				}
 			}
 		}
 
@@ -353,6 +446,9 @@ namespace IngameScript
 				case "GOTO":
 					GoTo(argData);
 					break;
+				case "TIMER_CALL":
+					TimerCall(argData);
+					break;
 				default:
 					_statusMessage = "Unrecognized Command: " + argument;
 					break;
@@ -381,6 +477,25 @@ namespace IngameScript
 
 			elevator.GoToFloor(floorNumber);
 		}
+
+
+		// TIMER CALL //
+		public void TimerCall(string elevatorTag)
+		{
+			Elevator elevator = ElevatorFromTag(elevatorTag);
+
+			if(elevator.HasArrived())
+			{
+				elevator.Platform.OpenDoors();
+			}
+			else
+			{
+				elevator.Timer.TriggerDelay = 5;
+				elevator.Timer.StartCountdown();
+			}
+		}
+
+
 
 		// INIT FUNCTIONS ----------------------------------------------------------------------------------------------------------------------------------
 
