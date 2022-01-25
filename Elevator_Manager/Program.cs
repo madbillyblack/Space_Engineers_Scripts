@@ -29,12 +29,14 @@ namespace IngameScript
 		const string PLATFORM_TAG = "MAIN";
 		const int ERROR = 10000; // (Hopefully) Unusable value that can be used as an error for Shaft and Floor counts.
 		const char SPLITTER = ':';
-		const float P_TOLERANCE = 0.25f;
+		const float P_TOLERANCE = 0.25f; //Acceptable distance threshold (in meters) for floor pistons to be considered in position.
+		const float DEFAULT_TIME = 10;
+		const string DELAY_LABEL = "Delay_Floor_";
 
 		// Globals
 		public List<Elevator> _elevators;
 		string _unusable;
-		public string _statusMessage;
+		public static string _statusMessage;
 
 		// CLASSES /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -112,29 +114,39 @@ namespace IngameScript
 
 				foreach(Floor floor in this.Floors)
 				{
-					if(floor.Number > floorNumber)
+
+
+					if (floor.Number > floorNumber)
 					{
 						floor.Deactivate();
 					}
+					else if (floor.Number == floorNumber)
+					{
+						this.Timer.TriggerDelay = floor.TravelTime;
+						floor.Activate();
+					}
 					else
 					{
-						floor.Activate();
+						floor.Activate();						
 					}
 				}
 
-				this.Timer.TriggerDelay = this.TravelTime;
+				//this.Timer.TriggerDelay = this.TravelTime;
 				this.Timer.StartCountdown();
 			}
 
-			// SET TRAVEL TIME // - based on speed and distance of slowest/longest pistons.
-			public void SetTravelTime()
+			// UPDATE TRAVEL TIMES //
+			public void UpdateTravelTimes()
 			{
-				if (this.Floors.Count < 2)
+				if (this.Floors.Count < 1)
 					return;
-
-				float time = 0;
+				
+				//float time = 0;
+				
 				foreach(Floor floor in this.Floors)
 				{
+					floor.TravelTime = ParseFloat(GetKey(this.Timer, INI_HEAD, DELAY_LABEL + floor.Number, DEFAULT_TIME.ToString()), DEFAULT_TIME);
+					/*
 					if (floor.Pistons.Count > 0)
 					{
 						foreach(ElevatorPiston piston in floor.Pistons)
@@ -146,12 +158,41 @@ namespace IngameScript
 							}
 						}
 					}
+					*/
 				}
 
+				/*
 				this.TravelTime = time;
 				this.Timer.TriggerDelay = time;
 				SetKey(this.Timer, INI_HEAD, "Travel_Time",time.ToString("n2"));
+				*/
 			}
+
+
+			// SET TRAVEL TIMES
+			public void SetTravelTimes(string arg)
+			{
+				if (this.NoFloors())
+					return;
+
+				// May seem redundant, but this is here so that an empty arg doesn't trigger _statusMessage.
+				if (arg.Trim() == "")
+					arg = DEFAULT_TIME.ToString();
+
+				float number;
+				if(!float.TryParse(arg, out number))
+				{
+					_statusMessage = "Unreadable Time Input: " + arg;
+					number = DEFAULT_TIME;
+				}
+
+				foreach(Floor floor in this.Floors)
+				{
+					this.TravelTime = number;
+					SetKey(this.Timer, INI_HEAD, DELAY_LABEL + floor.Number, number.ToString());
+				}
+			}
+
 
 			// HAS ARRIVED //
 			public bool HasArrived()
@@ -169,6 +210,19 @@ namespace IngameScript
 
 				return true;
 			}
+
+
+			// NO FLOORS //
+			public bool NoFloors()
+			{
+				if(this.Floors.Count < 1)
+				{
+					_statusMessage = "Elevator " + this.Number + " has no floors!";
+					return true;
+				}
+
+				return false;
+			}
 		}
 
 
@@ -176,17 +230,21 @@ namespace IngameScript
 		public class Floor
 		{
 			public int Number;
+			public Elevator Elevator;
 			public List<ElevatorPiston> Pistons;
 			public List<IMyDoor> Doors;
 			public List<IMySensorBlock> Sensors;
 			public bool IsGround;
-			public Floor(int number)
+			public float TravelTime;
+			public Floor(int number, Elevator elevator)
 			{
 				this.Number = number;
+				this.Elevator = elevator;
 				this.Pistons = new List<ElevatorPiston>();
 				this.Doors = new List<IMyDoor>();
 				this.Sensors = new List<IMySensorBlock>();
 				this.IsGround = false;
+				this.TravelTime = ParseFloat(GetKey(elevator.Timer, INI_HEAD, DELAY_LABEL + number, DEFAULT_TIME.ToString()), DEFAULT_TIME);
 			}
 
 			// ACTIVATE // - Activate all pistons associated with this floor.
@@ -259,26 +317,9 @@ namespace IngameScript
 				else
 					this.Retracting = false;
 
-				// Set Max
-				float max;
-				if (float.TryParse(GetKey(piston, INI_HEAD, "Max", piston.MaxLimit.ToString()), out max))
-					this.Max = max;
-				else
-					this.Max = piston.MaxLimit;
-
-				// Set Min
-				float min;
-				if (float.TryParse(GetKey(piston, INI_HEAD, "Min", piston.MinLimit.ToString()), out min))
-					this.Min = min;
-				else
-					this.Min = piston.MinLimit;
-
-				// Set Min
-				float speed;
-				if (float.TryParse(GetKey(piston, INI_HEAD, "Speed", piston.Velocity.ToString()), out speed))
-					this.Speed = Math.Abs(speed);
-				else
-					this.Speed = Math.Abs(piston.Velocity);
+				this.Max = ParseFloat(GetKey(piston, INI_HEAD, "Max", piston.MaxLimit.ToString()), piston.MaxLimit);
+				this.Min = ParseFloat(GetKey(piston, INI_HEAD, "Min", piston.MinLimit.ToString()), piston.MinLimit);
+				this.Speed = Math.Abs(ParseFloat(GetKey(piston, INI_HEAD, "Speed", piston.Velocity.ToString()), piston.Velocity));
 			}
 
 			// ACTIVATE // - Set Piston to its Activated Position
@@ -392,32 +433,7 @@ namespace IngameScript
 			if (_elevators.Count < 1)
 				return;
 
-			foreach (Elevator elevator in _elevators)
-			{
-				Echo("\nELEVATOR " + elevator.Number);
-				if(elevator.Floors.Count > 0)
-				{
-					foreach(Floor floor in elevator.Floors)
-					{
-						Echo("\n* Floor " + floor.Number);
-						if(floor.Pistons.Count > 0)
-						{
-							foreach(ElevatorPiston piston in floor.Pistons)
-							{
-								Echo("   - " + piston.Piston.CustomName);
-							}
-						}
-						if(floor.Doors.Count > 0)
-						{
-							foreach(IMyDoor door in floor.Doors)
-							{
-								Echo("   - " + door.CustomName);
-							}
-						}
-					}
-				}
-			}
-
+			Echo("Cmd: " + argument);
 			if (argument == "")
 			{
 				Echo(_statusMessage);
@@ -439,6 +455,9 @@ namespace IngameScript
 			
 			switch(arg.ToUpper())
 			{
+				case "TIMER_CALL":
+					TimerCall(argData);
+					break;
 				case "REFRESH":
 					Build();
 					break;
@@ -446,16 +465,41 @@ namespace IngameScript
 				case "GOTO":
 					GoTo(argData);
 					break;
-				case "TIMER_CALL":
-					TimerCall(argData);
+				case "SET_TIMES":
+					SetElevatorTimes(argData);
 					break;
 				default:
 					_statusMessage = "Unrecognized Command: " + argument;
 					break;
 			}
 
-
 			Echo(_statusMessage);
+
+			foreach (Elevator elevator in _elevators)
+			{
+				Echo("\nELEVATOR " + elevator.Number);
+				if (elevator.Floors.Count > 0)
+				{
+					foreach (Floor floor in elevator.Floors)
+					{
+						Echo("\n* Floor " + floor.Number + " - Delay: " + floor.TravelTime.ToString());
+						if (floor.Pistons.Count > 0)
+						{
+							foreach (ElevatorPiston piston in floor.Pistons)
+							{
+								Echo("   - " + piston.Piston.CustomName);
+							}
+						}
+						if (floor.Doors.Count > 0)
+						{
+							foreach (IMyDoor door in floor.Doors)
+							{
+								Echo("   - " + door.CustomName);
+							}
+						}
+					}
+				}
+			}
 		}
 
 
@@ -495,6 +539,30 @@ namespace IngameScript
 			}
 		}
 
+
+		// SET ELEVATOR TIMES //
+		public void SetElevatorTimes(string arg)
+		{
+			string[] args = arg.Split(' ');
+			if (args.Length < 1)
+			{
+				_statusMessage = "Incomplete Command.  Please include Elevator Number and Desired Delay Length!";
+				return;
+			}
+
+			Elevator elevator = ElevatorFromTag(args[0]);
+			if (elevator == null)
+				return;
+
+			string value;
+
+			if (args.Length < 2)
+				value = "";
+			else
+				value = args[1];
+
+			elevator.SetTravelTimes(value);
+		}
 
 
 		// INIT FUNCTIONS ----------------------------------------------------------------------------------------------------------------------------------
@@ -560,7 +628,7 @@ namespace IngameScript
 			// Assign Ground Floor for each elevator after basic floors have been built.
 			foreach(Elevator elevator in _elevators)
 			{
-				elevator.SetTravelTime();
+				//elevator.UpdateTravelTimes();
 
 				elevator.SortFloors(true);
 				int bottom = elevator.Floors[0].Number - 1;
@@ -570,7 +638,7 @@ namespace IngameScript
 					elevator.GroundFloor = bottom;
 				}
 
-				Floor floor = new Floor(elevator.GroundFloor);
+				Floor floor = new Floor(elevator.GroundFloor, elevator);
 				elevator.Floors.Add(floor);
 			}
 
@@ -673,7 +741,7 @@ namespace IngameScript
 					return;
 				}
 
-				floor = new Floor(floorNumber);
+				floor = new Floor(floorNumber, elevator);
 				elevator.Floors.Add(floor);
 			}
 
@@ -752,6 +820,17 @@ namespace IngameScript
 
 
 		// TOOL FUNCTIONS -------------------------------------------------------------------------------------------------------------------------------
+
+		// PARSE FLOAT //
+		static float ParseFloat(string numString, float defaultValue)
+		{
+			float number;
+			if (!float.TryParse(numString, out number))
+				number = defaultValue;
+
+			return number;
+		}
+
 
 		// PARSE BOOL //
 		static bool ParseBool(string val)
