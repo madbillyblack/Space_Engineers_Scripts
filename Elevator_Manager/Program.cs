@@ -26,17 +26,34 @@ namespace IngameScript
 		const string INI_HEAD = "Elevator";
 		const string OPENER = "ELV[";
 		const string CLOSER = "]";
+		const string DEFAULT_LOG_TAG = "ELV_LOG";
 		const string PLATFORM_TAG = "MAIN";
 		const int ERROR = 10000; // (Hopefully) Unusable value that can be used as an error for Shaft and Floor counts.
 		const char SPLITTER = ':';
 		const float P_TOLERANCE = 0.25f; //Acceptable distance threshold (in meters) for floor pistons to be considered in position.
 		const float DEFAULT_TIME = 10;
+		const float DEFAULT_CLOSE_TIME = 2;
+		const float DEFAULT_WAIT_TIME = 5;
+		const float AUX_DELAY = 5;
 		const string DELAY_LABEL = "Delay_Floor_";
+
+		const float SENSOR_BOTTOM = 0.1f;
+		const float SENSOR_TOP = 0.1f;
+		const float SENSOR_LEFT = 0.1f;
+		const float SENSOR_RIGHT = 0.1f;
+		const float SENSOR_FRONT = 4;
+		const float SENSOR_BACK = 4;
+
+		
+
 
 		// Globals
 		public List<Elevator> _elevators;
+		public List<IMyTextSurface> _logSreens;
+
 		string _unusable;
 		public static string _statusMessage;
+		public static string _logTag;
 
 		// CLASSES /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -48,10 +65,14 @@ namespace IngameScript
 			public List<IMyTerminalBlock> DisplayBlocks;
 			public IMyTimerBlock Timer;
 			public Platform Platform;
-			public UInt16 State;
+			public UInt16 Phase;
 			public int Number;
+			public int CurrentFloor;
 			public int GroundFloor;
 			public float TravelTime;
+			public float CloseTime;
+			public float WaitTime;
+			public bool GoingUp;
 
 			public Elevator(IMyTimerBlock timer)
 			{
@@ -61,19 +82,23 @@ namespace IngameScript
 				this.DisplayBlocks = new List<IMyTerminalBlock>();
 				
 				this.Timer = timer;
+				this.GoingUp = ParseBool(GetKey(timer, INI_HEAD, "Going_Up", "true"));
+				this.CurrentFloor = ParseInt(GetKey(timer, INI_HEAD, "Current_Floor", "0"), 0);
+				this.CloseTime = ParseFloat(GetKey(timer, INI_HEAD, "Close_Time", DEFAULT_CLOSE_TIME.ToString()), DEFAULT_CLOSE_TIME);
+				this.WaitTime = ParseFloat(GetKey(timer, INI_HEAD, "Wait_Time", DEFAULT_WAIT_TIME.ToString()), DEFAULT_WAIT_TIME);
 
 				int[] tags = SplitTag(TagFromName(timer.CustomName));
 
 				this.Number = tags[0];
 
-				ushort state;
-				if (UInt16.TryParse(GetKey(timer, INI_HEAD, "State", "0"), out state))
+				ushort phase;
+				if (UInt16.TryParse(GetKey(timer, INI_HEAD, "Phase", "0"), out phase))
 				{
-					this.State = state;
+					this.Phase = phase;
 				}
 				else
 				{
-					this.State = 0;
+					this.Phase = 0;
 				}
 			}
 
@@ -110,11 +135,20 @@ namespace IngameScript
 				if (this.Floors.Count < 2)
 					return;
 
-				this.Platform.CloseDoors();
+				//this.LockDoors();
 
 				foreach(Floor floor in this.Floors)
 				{
-
+					if(floorNumber < this.CurrentFloor)
+					{
+						this.GoingUp = false;
+						SetKey(this.Timer, INI_HEAD, "Going_Up", "false");
+					}
+					else
+					{
+						this.GoingUp = true;
+						SetKey(this.Timer, INI_HEAD, "Going_Up", "true");
+					}
 
 					if (floor.Number > floorNumber)
 					{
@@ -132,7 +166,49 @@ namespace IngameScript
 				}
 
 				//this.Timer.TriggerDelay = this.TravelTime;
+				this.Phase = 2;
+				SetKey(this.Timer, INI_HEAD, "Phase", "2");
 				this.Timer.StartCountdown();
+			}
+
+			// SORT QUEUE //
+			public void SortQueue()
+			{
+				if (this.FloorQueue.Count < 2)
+					return;
+
+				List<Page> listA = new List<Page>();
+				List<Page> listB = new List<Page>();
+
+				if (this.GoingUp)
+				{
+					foreach(Page page in this.FloorQueue)
+					{
+						if (page.Up && page.Floor >= this.CurrentFloor)
+							listA.Add(page);
+						else
+							listB.Add(page);
+					}
+
+					SortPages(listA, true);
+					SortPages(listB, false);
+				}
+				else
+				{
+					foreach (Page page in this.FloorQueue)
+					{
+						if (!page.Up && page.Floor <= this.CurrentFloor)
+							listA.Add(page);
+						else
+							listB.Add(page);
+					}
+
+					SortPages(listA, false);
+					SortPages(listB, true);
+				}
+
+				listA.AddList(listB);
+				this.FloorQueue = listA;
 			}
 
 			// UPDATE TRAVEL TIMES //
@@ -160,14 +236,12 @@ namespace IngameScript
 					}
 					*/
 				}
-
 				/*
 				this.TravelTime = time;
 				this.Timer.TriggerDelay = time;
 				SetKey(this.Timer, INI_HEAD, "Travel_Time",time.ToString("n2"));
 				*/
 			}
-
 
 			// SET TRAVEL TIMES
 			public void SetTravelTimes(string arg)
@@ -193,7 +267,6 @@ namespace IngameScript
 				}
 			}
 
-
 			// HAS ARRIVED //
 			public bool HasArrived()
 			{
@@ -211,7 +284,6 @@ namespace IngameScript
 				return true;
 			}
 
-
 			// NO FLOORS //
 			public bool NoFloors()
 			{
@@ -222,6 +294,124 @@ namespace IngameScript
 				}
 
 				return false;
+			}
+
+			// OPEN DOORS //
+			public void OpenDoors()
+			{
+				if (this.NoFloors() || !this.HasArrived())
+					return;
+
+				this.Platform.OpenDoors();
+
+				foreach (Floor floor in this.Floors)
+				{
+					if (floor.Number == this.CurrentFloor)
+					{
+						floor.OpenDoors();
+					}
+				}
+			}
+
+			// CLOSE DOORS //
+			public void CloseDoors()
+			{
+				if (this.NoFloors())
+					return;
+
+				this.Platform.CloseDoors();
+
+				foreach (Floor floor in this.Floors)
+				{
+					floor.CloseDoors();
+				}
+			}
+
+			// LOCK DOORS //
+			public void LockDoors()
+			{
+				if (this.NoFloors())
+					return;
+
+				this.Platform.LockDoors();
+				foreach(Floor floor in this.Floors)
+				{
+					floor.LockDoors();
+				}
+			}
+
+
+
+			// SET PHASE //
+			public void SetPhase(ushort phase)
+			{
+				this.Phase = phase;
+				SetKey(this.Timer, INI_HEAD, "Phase", phase.ToString());
+			}
+
+			// START DELAY //
+			public void StartDelay(float delay)
+			{
+				this.Timer.TriggerDelay = delay;
+				this.Timer.StartCountdown();
+			}
+
+			// GO TO NEXT //
+			public void GoToNext()
+			{ 
+				// If Queue is empty or next floor is current floor STOP
+				if(this.FloorQueue.Count < 1)// || FloorQueue[0].Floor == this.CurrentFloor
+				{
+					this.SetPhase(0);
+					this.Timer.StopCountdown();
+					return;
+				}
+
+				this.GoToFloor(this.FloorQueue[0].Floor);
+				this.SetPhase(2);
+			}
+
+			// CHECK ARRIVAL //
+			public void CheckArrival()
+			{
+				if (this.HasArrived())
+				{
+					this.OpenDoors();
+					if(this.FloorQueue.Count > 0)
+					{
+						this.FloorQueue.Remove(this.FloorQueue[0]);
+					}
+					this.SetPhase(0);
+					this.StartDelay(DEFAULT_WAIT_TIME);
+				}
+				else
+				{
+					this.StartDelay(AUX_DELAY);
+				}
+			}
+
+			// PAGE DIRECTION //
+			public bool GetPageDirection(int destination, string direction)
+			{
+				bool goingUp;
+
+				switch (direction.ToLower())
+				{
+					case "up":
+						goingUp = true;
+						break;
+					case "down":
+						goingUp = false;
+						break;
+					default:
+						if (destination < this.CurrentFloor)
+							goingUp = false;
+						else
+							goingUp = true;
+						break;
+				}
+
+				return goingUp;
 			}
 		}
 
@@ -293,6 +483,44 @@ namespace IngameScript
 
 				return true;
 			}
+
+			// OPEN DOORS //
+			public void OpenDoors()
+			{
+				if (this.Doors.Count < 1)
+					return;
+
+				foreach(IMyDoor door in this.Doors)
+				{
+					door.GetActionWithName("OnOff_On").Apply(door);
+					door.OpenDoor();
+				}
+			}
+
+			// CLOSE DOORS //
+			public void CloseDoors()
+			{
+				if (this.Doors.Count < 1)
+					return;
+
+				foreach (IMyDoor door in this.Doors)
+				{
+					//door.GetActionWithName("OnOff_On").Apply(door);
+					door.CloseDoor();
+				}
+			}
+
+			// LOCK DOORS //
+			public void LockDoors()
+			{
+				if (this.Doors.Count < 1)
+					return;
+
+				foreach (IMyDoor door in this.Doors)
+				{
+					door.GetActionWithName("OnOff_Off").Apply(door);
+				}
+			}
 		}
 
 
@@ -317,9 +545,19 @@ namespace IngameScript
 				else
 					this.Retracting = false;
 
+				
+
 				this.Max = ParseFloat(GetKey(piston, INI_HEAD, "Max", piston.MaxLimit.ToString()), piston.MaxLimit);
+				piston.MaxLimit = this.Max;
 				this.Min = ParseFloat(GetKey(piston, INI_HEAD, "Min", piston.MinLimit.ToString()), piston.MinLimit);
+				piston.MinLimit = this.Min;
 				this.Speed = Math.Abs(ParseFloat(GetKey(piston, INI_HEAD, "Speed", piston.Velocity.ToString()), piston.Velocity));
+
+				velocity = this.Speed;
+				if (this.Retracting)
+					velocity *= -1;
+
+				piston.Velocity = velocity;
 			}
 
 			// ACTIVATE // - Set Piston to its Activated Position
@@ -406,8 +644,8 @@ namespace IngameScript
 		// Page //
 		public class Page
 		{
-			int Floor;
-			bool Up;
+			public int Floor;
+			public bool Up;
 
 			public Page(int floor, bool up)
 			{
@@ -451,6 +689,7 @@ namespace IngameScript
 				}
 
 				argData.Trim();
+				Echo("Data: " + argData);
 			}
 			
 			switch(arg.ToUpper())
@@ -458,12 +697,25 @@ namespace IngameScript
 				case "TIMER_CALL":
 					TimerCall(argData);
 					break;
+				case "SENSOR_CALL":
+				case "SENSOR_IN":
+					SensorCall(argData, true);
+					break;
 				case "REFRESH":
 					Build();
 					break;
 				case "GO_TO":
 				case "GOTO":
 					GoTo(argData);
+					break;
+				case "PAGE_UP":
+					PageElevator(argData, "up");
+					break;
+				case "PAGE_DOWN":
+					PageElevator(argData, "down");
+					break;
+				case "PAGE":
+					PageElevator(argData, "none");
 					break;
 				case "SET_TIMES":
 					SetElevatorTimes(argData);
@@ -474,12 +726,49 @@ namespace IngameScript
 			}
 
 			Echo(_statusMessage);
+			if(_logSreens.Count > 0)
+			{
+				foreach(IMyTextSurface screen in _logSreens)
+				{
+					InsertText(screen, "Cmd: " + argument);
+
+					if(_statusMessage != "")
+						InsertText(screen, "\nAlert: " + _statusMessage);
+				}
+			}
 
 			foreach (Elevator elevator in _elevators)
 			{
-				Echo("\nELEVATOR " + elevator.Number);
+				string elevatorDirection;
+				if (elevator.GoingUp)
+					elevatorDirection = "Up";
+				else
+					elevatorDirection = "Down";
+
+				Echo("\nELEVATOR " + elevator.Number + " - Going " + elevatorDirection);
+				Echo("Current Floor: " + elevator.CurrentFloor);
+				Echo("\nArrived: " + elevator.HasArrived().ToString());
+
 				if (elevator.Floors.Count > 0)
 				{
+					Echo("Queue:");
+					if(elevator.FloorQueue.Count > 0)
+					{
+						foreach(Page page in elevator.FloorQueue)
+						{
+							string direction;
+							if (page.Up)
+								direction = "Up";
+							else
+								direction = "Down";
+							Echo("Floor " + page.Floor + " - " + direction);
+						}
+					}
+					else
+					{
+						Echo("  <EMPTY>");
+					}
+					/*
 					foreach (Floor floor in elevator.Floors)
 					{
 						Echo("\n* Floor " + floor.Number + " - Delay: " + floor.TravelTime.ToString());
@@ -497,13 +786,98 @@ namespace IngameScript
 								Echo("   - " + door.CustomName);
 							}
 						}
-					}
+						
+					}*/
 				}
 			}
 		}
 
 
 		// FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// PAGE Elevator//
+		public void PageElevator(string arg, string direction)
+		{
+			string[] args = arg.Trim().Split(SPLITTER);
+
+			if(args.Length != 2)
+			{
+				_statusMessage = "INVALID PAGE ARGUMENT!\nPlease follow format <Elevator> <Floor>";
+				return;
+			}
+
+			Elevator elevator = ElevatorFromTag(args[0]);
+			int floor = ParseInt(args[1], 0);
+
+			bool goingUp = elevator.GetPageDirection(floor, direction);
+
+			Page page = new Page(floor, goingUp);
+
+			if(DuplicatePages(page, elevator.FloorQueue))
+				return;
+
+			if (elevator.CurrentFloor == floor && elevator.HasArrived())
+			{
+				elevator.OpenDoors();
+				elevator.SetPhase(2);
+				elevator.StartDelay(elevator.WaitTime);
+			}
+			else if(elevator.FloorQueue.Count == 0)//!elevator.Timer.IsCountingDown
+			{
+				elevator.CloseDoors();
+				elevator.SetPhase(1);
+				elevator.StartDelay(elevator.CloseTime);
+				elevator.Timer.StartCountdown();
+			}
+
+			elevator.FloorQueue.Add(page);
+			elevator.SortQueue();
+		}
+
+
+		// SORT PAGES //
+		public static void SortPages(List<Page> list, bool lowToHigh)
+		{
+			int length = list.Count;
+			if (length < 2)
+				return;
+
+			for (int e = 0; e < list.Count - 1; e++)
+			{
+				for (int f = 1; f < length; f++)
+				{
+					Page pageA = list[f - 1];
+					Page pageB = list[f];
+
+					if ((lowToHigh && pageA.Floor > pageB.Floor) || (!lowToHigh && pageA.Floor < pageB.Floor))
+					{
+						list[f - 1] = pageB;
+						list[f] = pageA;
+					}
+				}
+
+				length--;
+				if (length < 2)
+					return;
+			}
+		}
+
+
+		// DUPLICATE PAGES // - Returns true if list contains page matching the current page.
+		bool DuplicatePages(Page newPage, List<Page> pages)
+		{
+			if(pages.Count > 0)
+			{
+				foreach(Page page in pages)
+				{
+					if (page.Floor == newPage.Floor && page.Up == newPage.Up)
+						return true;
+				}
+			}
+
+			return false;
+		}
+
 
 		// GO TO //
 		public void GoTo(string tag)
@@ -527,15 +901,58 @@ namespace IngameScript
 		public void TimerCall(string elevatorTag)
 		{
 			Elevator elevator = ElevatorFromTag(elevatorTag);
-
-			if(elevator.HasArrived())
+			if(elevator == null)
 			{
-				elevator.Platform.OpenDoors();
+				_statusMessage = "No Elevator " + elevatorTag + "found!";
+				return;
 			}
-			else
+
+			switch(ParseInt(GetKey(elevator.Timer, INI_HEAD, "Phase", "0"), 0))
 			{
-				elevator.Timer.TriggerDelay = 5;
-				elevator.Timer.StartCountdown();
+				case 0:
+					elevator.CloseDoors();
+					elevator.SetPhase(1);
+					elevator.StartDelay(elevator.CloseTime);
+					break;
+				case 1:
+					if(elevator.FloorQueue.Count > 0)
+						elevator.LockDoors();
+					elevator.GoToNext(); //Sends Elevator to next floor, or stops if Queue is empty.
+					break;
+				case 2:
+					elevator.CheckArrival();
+					break;
+				default:
+					_statusMessage = "Invalid Timer Phase! Please check Custom Data of timer block.";
+					break;
+			}
+
+
+
+		}
+
+
+		// SENSOR CALL //
+		public void SensorCall(string tag, bool detected)
+		{
+			Elevator elevator = ElevatorFromTag(tag);
+			if(elevator == null)
+			{
+				_statusMessage = "Elevator not Found!";
+				return;
+			}
+
+			Floor floor = FloorFromTag(elevator, tag);
+			if(floor == null)
+			{
+				_statusMessage = "Invalid Floor Tag!";
+				return;
+			}
+
+			if(detected)
+			{
+				elevator.CurrentFloor = floor.Number;
+				SetKey(elevator.Timer, INI_HEAD, "Current_Floor", elevator.CurrentFloor.ToString());
 			}
 		}
 
@@ -573,6 +990,8 @@ namespace IngameScript
 			_statusMessage = "";
 			_unusable = "";
 			_elevators = new List<Elevator>();
+			_logSreens = new List<IMyTextSurface>();
+			_logTag = GetKey(Me, INI_HEAD, "Log_Tag", DEFAULT_LOG_TAG);
 
 			// Create local lists.
 			List<IMyDoor> doors = new List<IMyDoor>();
@@ -642,14 +1061,11 @@ namespace IngameScript
 				elevator.Floors.Add(floor);
 			}
 
-
-
 			if (doors.Count > 0)
 			{
 				foreach (IMyDoor door in doors)
 					AssignDoor(door);
 			}
-
 
 			if (sensors.Count > 0)
 			{
@@ -660,17 +1076,19 @@ namespace IngameScript
 			if(leftovers.Count > 0)
 			{
 				foreach (IMyTerminalBlock surfaceBlock in leftovers)
-					CheckSurfaces(surfaceBlock);
+					AssignSurfaces(surfaceBlock);
 			}
+
+			AssignLogs();
 		}
 
 
-		// CHECK SURFACES // Check if terminal block has surfaces that can be used to display gauges.
-		void CheckSurfaces(IMyTerminalBlock block)
+		// ASSIGN SURFACES // Check if terminal block has surfaces that can be used to display gauges.
+		void AssignSurfaces(IMyTerminalBlock block)
 		{
 			try
 			{
-				if (block.CustomName.Contains(SPLITTER) && (block as IMyTextSurfaceProvider).SurfaceCount > 0)
+				if (block.CustomName.Contains(SPLITTER) && HasSurfaces(block))
 				{
 					Elevator elevator = ElevatorFromTag(TagFromName(block.CustomName));
 					elevator.DisplayBlocks.Add(block);
@@ -686,6 +1104,70 @@ namespace IngameScript
 				_unusable += "\n* " + block.CustomName;
 				return;
 			}
+		}
+
+
+		// HAS SURFACES //
+		bool HasSurfaces(IMyTerminalBlock block)
+		{
+			try
+			{
+				if ((block as IMyTextSurfaceProvider).SurfaceCount > 0)
+					return true;
+				else
+					return false;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
+
+		// ASSIGN LOGS //
+		void AssignLogs()
+		{
+			List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+			GridTerminalSystem.SearchBlocksOfName(_logTag, blocks);
+
+			foreach(IMyTerminalBlock block in blocks)
+			{
+				if(HasSurfaces(block))
+				{
+					_logSreens.AddRange(ScreensFromData(block as IMyTextSurfaceProvider, "indexes"));
+				}
+			}
+
+			if(_logSreens.Count > 0)
+			{
+				foreach(IMyTextSurface screen in _logSreens)
+				{
+					screen.ContentType = ContentType.TEXT_AND_IMAGE;
+					screen.WriteText("---NEW LOAD---");
+				}
+			}
+		}
+
+
+		// SCREENS FROM DATA //
+		List<IMyTextSurface> ScreensFromData(IMyTextSurfaceProvider block, string key)
+		{
+			List<IMyTextSurface> screens = new List<IMyTextSurface>();
+
+			string[] entries = GetKey(block as IMyTerminalBlock, INI_HEAD, key, "0").Split(',');
+			if (entries.Length > 0)
+			{
+				foreach (string entry in entries)
+				{
+					int index = ParseInt(entry, 0);
+					if(index < block.SurfaceCount)
+					{
+						screens.Add(block.GetSurface(index));
+					}
+				}
+			}
+
+			return screens;
 		}
 
 
@@ -768,6 +1250,29 @@ namespace IngameScript
 			if (floor == null)
 				return;
 
+			// Disable un-needed functions
+			sensor.DetectAsteroids = false;
+			sensor.DetectEnemy = false;
+			sensor.DetectFloatingObjects = false;
+			sensor.DetectLargeShips = false;
+			sensor.DetectOwner = true;
+			sensor.DetectPlayers = false;
+			sensor.DetectStations = false;
+
+			// Enable required functions
+			sensor.DetectFriendly = true;
+			sensor.DetectNeutral = true;
+			sensor.DetectSubgrids = true;
+
+			// Set Configurable parameters
+			sensor.PlayProximitySound = ParseBool(GetKey(sensor, INI_HEAD, "Proximity_Sound", "false"));
+			sensor.LeftExtend = ParseFloat(GetKey(sensor, INI_HEAD, "Left_Extent", SENSOR_LEFT.ToString()), SENSOR_LEFT);
+			sensor.RightExtend = ParseFloat(GetKey(sensor, INI_HEAD, "Right_Extent", SENSOR_RIGHT.ToString()), SENSOR_RIGHT);
+			sensor.TopExtend = ParseFloat(GetKey(sensor, INI_HEAD, "Top_Extent", SENSOR_TOP.ToString()), SENSOR_TOP);
+			sensor.BottomExtend = ParseFloat(GetKey(sensor, INI_HEAD, "Bottom_Extent", SENSOR_BOTTOM.ToString()), SENSOR_BOTTOM);
+			sensor.FrontExtend = ParseFloat(GetKey(sensor, INI_HEAD, "Front_Extent", SENSOR_FRONT.ToString()), SENSOR_FRONT);
+			sensor.BackExtend = ParseFloat(GetKey(sensor, INI_HEAD, "Back_Extent", SENSOR_BACK.ToString()), SENSOR_BACK);
+
 			floor.Sensors.Add(sensor);
 		}
 
@@ -829,6 +1334,17 @@ namespace IngameScript
 				number = defaultValue;
 
 			return number;
+		}
+
+
+		// PARSE INT //
+		static int ParseInt(string arg, int defaultVal)
+		{
+			int number;
+			if (int.TryParse(arg, out number))
+				return number;
+			else
+				return defaultVal;
 		}
 
 
@@ -925,6 +1441,12 @@ namespace IngameScript
 			}
 
 			return parsed;
+		}
+
+		// INSERT TEXT
+		static void InsertText(IMyTextSurface surface, string text)
+		{
+			surface.WriteText(text + "\n" + surface.GetText());
 		}
 	}
 }
