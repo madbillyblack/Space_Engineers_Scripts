@@ -34,7 +34,7 @@ namespace IngameScript
 		const float DEFAULT_TIME = 10;
 		const float DEFAULT_CLOSE_TIME = 2;
 		const float DEFAULT_WAIT_TIME = 5;
-		const float AUX_DELAY = 5;
+		const float AUX_DELAY = 3;
 		const string DELAY_LABEL = "Delay_Floor_";
 
 		const float SENSOR_BOTTOM = 0.1f;
@@ -44,7 +44,14 @@ namespace IngameScript
 		const float SENSOR_FRONT = 4;
 		const float SENSOR_BACK = 4;
 
-		
+		// Color Constants
+		const int ON_RED = 255;
+		const int ON_GREEN = 215;
+		const int ON_BLUE = 0;
+
+		const int OFF_RED = 165;
+		const int OFF_GREEN = 42;
+		const int OFF_BLUE = 42;
 
 
 		// Globals
@@ -55,6 +62,9 @@ namespace IngameScript
 		public static string _statusMessage;
 		public static string _logTag;
 
+		public Color _onColor;
+		public Color _offColor;
+
 		// CLASSES /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		// ELEVATOR //
@@ -62,7 +72,8 @@ namespace IngameScript
 		{
 			public List<Floor> Floors;
 			public List<Page> FloorQueue;
-			public List<IMyTerminalBlock> DisplayBlocks;
+			//public List<IMyTerminalBlock> DisplayBlocks;
+			public List<Display> Displays;
 			public IMyTimerBlock Timer;
 			public Platform Platform;
 			public UInt16 Phase;
@@ -73,16 +84,19 @@ namespace IngameScript
 			public float CloseTime;
 			public float WaitTime;
 			public bool GoingUp;
+			public bool Travelling;
 
 			public Elevator(IMyTimerBlock timer)
 			{
 				this.Platform = new Platform();
 				this.Floors = new List<Floor>();
 				this.FloorQueue = new List<Page>();
-				this.DisplayBlocks = new List<IMyTerminalBlock>();
+				//this.DisplayBlocks = new List<IMyTerminalBlock>();
+				this.Displays = new List<Display>();
 				
 				this.Timer = timer;
 				this.GoingUp = ParseBool(GetKey(timer, INI_HEAD, "Going_Up", "true"));
+				this.Travelling = ParseBool(GetKey(timer, INI_HEAD, "Travelling", "true"));
 				this.CurrentFloor = ParseInt(GetKey(timer, INI_HEAD, "Current_Floor", "0"), 0);
 				this.CloseTime = ParseFloat(GetKey(timer, INI_HEAD, "Close_Time", DEFAULT_CLOSE_TIME.ToString()), DEFAULT_CLOSE_TIME);
 				this.WaitTime = ParseFloat(GetKey(timer, INI_HEAD, "Wait_Time", DEFAULT_WAIT_TIME.ToString()), DEFAULT_WAIT_TIME);
@@ -135,8 +149,6 @@ namespace IngameScript
 				if (this.Floors.Count < 2)
 					return;
 
-				//this.LockDoors();
-
 				foreach(Floor floor in this.Floors)
 				{
 					if(floorNumber < this.CurrentFloor)
@@ -156,7 +168,7 @@ namespace IngameScript
 					}
 					else if (floor.Number == floorNumber)
 					{
-						this.Timer.TriggerDelay = floor.TravelTime;
+						this.Timer.TriggerDelay = AUX_DELAY;//floor.TravelTime;
 						floor.Activate();
 					}
 					else
@@ -179,6 +191,7 @@ namespace IngameScript
 
 				List<Page> listA = new List<Page>();
 				List<Page> listB = new List<Page>();
+				List<Page> listC = new List<Page>();
 
 				if (this.GoingUp)
 				{
@@ -186,12 +199,15 @@ namespace IngameScript
 					{
 						if (page.Up && page.Floor >= this.CurrentFloor)
 							listA.Add(page);
+						else if (page.Up && page.Floor < this.CurrentFloor)
+							listC.Add(page);
 						else
 							listB.Add(page);
 					}
 
 					SortPages(listA, true);
 					SortPages(listB, false);
+					SortPages(listC, true);
 				}
 				else
 				{
@@ -199,15 +215,25 @@ namespace IngameScript
 					{
 						if (!page.Up && page.Floor <= this.CurrentFloor)
 							listA.Add(page);
+						else if (!page.Up && page.Floor > this.CurrentFloor)
+							listC.Add(page);
 						else
 							listB.Add(page);
 					}
 
 					SortPages(listA, false);
 					SortPages(listB, true);
+					SortPages(listC, false);
 				}
 
+				// Reverse Elevator direction if first queue is empty
+				/*if(listA.Count == 0)
+				{
+					this.GoingUp = !this.GoingUp;
+				}*/
+
 				listA.AddList(listB);
+				listA.AddList(listC);
 				this.FloorQueue = listA;
 			}
 
@@ -340,7 +366,12 @@ namespace IngameScript
 				}
 			}
 
-
+			// SET TRAVEL //
+			public void SetTravel(bool travelling)
+			{
+				this.Travelling = travelling;
+				SetKey(this.Timer, INI_HEAD, "Travelling", travelling.ToString());
+			}
 
 			// SET PHASE //
 			public void SetPhase(ushort phase)
@@ -364,6 +395,7 @@ namespace IngameScript
 				{
 					this.SetPhase(0);
 					this.Timer.StopCountdown();
+					this.SetTravel(false);
 					return;
 				}
 
@@ -381,7 +413,7 @@ namespace IngameScript
 					{
 						this.FloorQueue.Remove(this.FloorQueue[0]);
 					}
-					this.SetPhase(0);
+					this.SetPhase(3);
 					this.StartDelay(DEFAULT_WAIT_TIME);
 				}
 				else
@@ -655,6 +687,31 @@ namespace IngameScript
 		}
 
 
+		public class Display
+		{
+			public IMyTextSurface Surface;
+			public bool ShowAll;
+			public int Floor;
+
+			public Display(IMyTerminalBlock block, int index, Elevator elevator)
+			{
+				string screenData = GetKey(block, INI_HEAD, "Screen_" + index + "_Floor", "All");
+
+
+				if(screenData.ToLower() == "all")
+				{
+					this.ShowAll = true;
+				}
+				else
+				{
+					this.Floor = ParseInt(screenData, elevator.GroundFloor);
+				}
+
+				this.Surface = (block as IMyTextSurfaceProvider).GetSurface(index);
+				PrepareTextSurface(this.Surface);
+			}
+		}
+
 		// CONSTRUCTOR /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public Program()
 		{
@@ -672,57 +729,54 @@ namespace IngameScript
 				return;
 
 			Echo("Cmd: " + argument);
-			if (argument == "")
+			if (argument != "")
 			{
-				Echo(_statusMessage);
-				return;
-			}
-				
-			string[] args = argument.Split(' ');
-			string arg = args[0];
-			string argData = "";
-			if(args.Length > 1)
-			{
-				for(int i = 1; i < args.Length; i++)
+				string[] args = argument.Split(' ');
+				string arg = args[0];
+				string argData = "";
+				if (args.Length > 1)
 				{
-					argData += args[i] + " ";
+					for (int i = 1; i < args.Length; i++)
+					{
+						argData += args[i] + " ";
+					}
+
+					argData.Trim();
+					//Echo("Data: " + argData);
 				}
 
-				argData.Trim();
-				Echo("Data: " + argData);
-			}
-			
-			switch(arg.ToUpper())
-			{
-				case "TIMER_CALL":
-					TimerCall(argData);
-					break;
-				case "SENSOR_CALL":
-				case "SENSOR_IN":
-					SensorCall(argData, true);
-					break;
-				case "REFRESH":
-					Build();
-					break;
-				case "GO_TO":
-				case "GOTO":
-					GoTo(argData);
-					break;
-				case "PAGE_UP":
-					PageElevator(argData, "up");
-					break;
-				case "PAGE_DOWN":
-					PageElevator(argData, "down");
-					break;
-				case "PAGE":
-					PageElevator(argData, "none");
-					break;
-				case "SET_TIMES":
-					SetElevatorTimes(argData);
-					break;
-				default:
-					_statusMessage = "Unrecognized Command: " + argument;
-					break;
+				switch (arg.ToUpper())
+				{
+					case "TIMER_CALL":
+						TimerCall(argData);
+						break;
+					case "SENSOR_CALL":
+					case "SENSOR_IN":
+						SensorCall(argData, true);
+						break;
+					case "REFRESH":
+						Build();
+						break;
+					case "GO_TO":
+					case "GOTO":
+						GoTo(argData);
+						break;
+					case "PAGE_UP":
+						PageElevator(argData, "up");
+						break;
+					case "PAGE_DOWN":
+						PageElevator(argData, "down");
+						break;
+					case "PAGE":
+						PageElevator(argData, "none");
+						break;
+					case "SET_TIMES":
+						SetElevatorTimes(argData);
+						break;
+					default:
+						_statusMessage = "Unrecognized Command: " + argument;
+						break;
+				}
 			}
 
 			Echo(_statusMessage);
@@ -746,8 +800,9 @@ namespace IngameScript
 					elevatorDirection = "Down";
 
 				Echo("\nELEVATOR " + elevator.Number + " - Going " + elevatorDirection);
-				Echo("Current Floor: " + elevator.CurrentFloor);
-				Echo("\nArrived: " + elevator.HasArrived().ToString());
+				Echo("Floor: " + elevator.CurrentFloor + " - Phase: " + elevator.Phase);
+				Echo("Screens: " + elevator.Displays.Count);
+				Echo("Arrived: " + elevator.HasArrived().ToString());
 
 				if (elevator.Floors.Count > 0)
 				{
@@ -813,8 +868,17 @@ namespace IngameScript
 
 			Page page = new Page(floor, goingUp);
 
-			if(DuplicatePages(page, elevator.FloorQueue))
+			if(elevator.FloorQueue.Count < 1)
+			{
+				if (floor > elevator.CurrentFloor)
+					elevator.GoingUp = true;
+				else
+					elevator.GoingUp = false;
+			}
+			else if(DuplicatePages(page, elevator.FloorQueue))
+			{
 				return;
+			}
 
 			if (elevator.CurrentFloor == floor && elevator.HasArrived())
 			{
@@ -827,11 +891,16 @@ namespace IngameScript
 				elevator.CloseDoors();
 				elevator.SetPhase(1);
 				elevator.StartDelay(elevator.CloseTime);
-				elevator.Timer.StartCountdown();
 			}
 
 			elevator.FloorQueue.Add(page);
 			elevator.SortQueue();
+
+			// If elevator is mid-travel, send elevator to next floor in queue. Current floor excluded to avoid hiccups.
+			if(elevator.Phase == 2 && elevator.FloorQueue[0].Floor != elevator.CurrentFloor)
+			{
+				elevator.GoToNext();
+			}
 		}
 
 
@@ -849,6 +918,7 @@ namespace IngameScript
 					Page pageA = list[f - 1];
 					Page pageB = list[f];
 
+					//if ((lowToHigh && pageA.Floor > pageB.Floor && !pageA.Up) || (!lowToHigh && pageA.Floor < pageB.Floor && pageA.Up))
 					if ((lowToHigh && pageA.Floor > pageB.Floor) || (!lowToHigh && pageA.Floor < pageB.Floor))
 					{
 						list[f - 1] = pageB;
@@ -910,6 +980,7 @@ namespace IngameScript
 			switch(ParseInt(GetKey(elevator.Timer, INI_HEAD, "Phase", "0"), 0))
 			{
 				case 0:
+				case 3:
 					elevator.CloseDoors();
 					elevator.SetPhase(1);
 					elevator.StartDelay(elevator.CloseTime);
@@ -992,6 +1063,9 @@ namespace IngameScript
 			_elevators = new List<Elevator>();
 			_logSreens = new List<IMyTextSurface>();
 			_logTag = GetKey(Me, INI_HEAD, "Log_Tag", DEFAULT_LOG_TAG);
+
+			_onColor = new Color(ON_RED, ON_GREEN, ON_BLUE);
+			_offColor = new Color(OFF_RED, OFF_GREEN, OFF_BLUE);
 
 			// Create local lists.
 			List<IMyDoor> doors = new List<IMyDoor>();
@@ -1084,14 +1158,25 @@ namespace IngameScript
 
 
 		// ASSIGN SURFACES // Check if terminal block has surfaces that can be used to display gauges.
-		void AssignSurfaces(IMyTerminalBlock block)
+		public void AssignSurfaces(IMyTerminalBlock block)
 		{
+			IMyTextSurfaceProvider screenHaver = block as IMyTextSurfaceProvider;
+
 			try
 			{
-				if (block.CustomName.Contains(SPLITTER) && HasSurfaces(block))
+				if (block.CustomName.Contains(OPENER) && HasSurfaces(block))
 				{
 					Elevator elevator = ElevatorFromTag(TagFromName(block.CustomName));
-					elevator.DisplayBlocks.Add(block);
+					//elevator.DisplayBlocks.Add(block);
+					for(int i = 0; i < screenHaver.SurfaceCount; i++)
+					{
+						string floor = GetKey(block, INI_HEAD, "Screen_" + i + "_Floor", "");
+						if (floor != "")
+						{
+							Display lcd = new Display(block, i, elevator);
+							elevator.Displays.Add(lcd);
+						}
+					}
 				}
 				else
 				{
@@ -1321,6 +1406,55 @@ namespace IngameScript
 			}
 
 			return iniOuti;
+		}
+
+
+		// SPRIT FUNCTIONS ------------------------------------------------------------------------------------------------------------------------------
+		
+		// DRAW TEXTURE //
+		static void DrawTexture(string shape, Vector2 position, Vector2 scale, float rotation, Color color, MySpriteDrawFrame frame)
+		{
+			MySprite sprite = new MySprite()
+			{
+				Type = SpriteType.TEXTURE,
+				Data = shape,
+				Position = position,
+				RotationOrScale = rotation,
+				Size = scale,
+				Color = color
+			};
+
+			frame.Add(sprite);
+		}
+
+
+		// WRITE TEXT //
+		static void WriteText(string text, Vector2 position, TextAlignment alignment, float scale, Color color, MySpriteDrawFrame frame)
+		{
+			var sprite = new MySprite()
+			{
+				Type = SpriteType.TEXT,
+				Data = text,
+				Position = position,
+				RotationOrScale = scale,
+				Color = color,
+				Alignment = alignment,
+				FontId = "White"
+			};
+			frame.Add(sprite);
+		}
+
+
+		// PREPARE TEXT SURFACE
+		public static void PrepareTextSurface(IMyTextSurface textSurface)
+		{
+			// Set the sprite display mode
+			textSurface.ContentType = ContentType.SCRIPT;
+			// Make sure no built-in script has been selected
+			textSurface.Script = "";
+
+			// Set Background Color to black
+			textSurface.ScriptBackgroundColor = Color.Black;
 		}
 
 
