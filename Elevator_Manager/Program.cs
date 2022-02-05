@@ -44,14 +44,16 @@ namespace IngameScript
 		const float SENSOR_FRONT = 4;
 		const float SENSOR_BACK = 4;
 
-		// Color Constants
-		const int ON_RED = 255;
-		const int ON_GREEN = 215;
-		const int ON_BLUE = 0;
+		const int MARGIN = 10;
 
-		const int OFF_RED = 165;
-		const int OFF_GREEN = 42;
-		const int OFF_BLUE = 42;
+		// Color Constants
+		const int ON_RED = 127;
+		const int ON_GREEN = 127;
+		const int ON_BLUE = 127;
+
+		const int OFF_RED = 24;
+		const int OFF_GREEN = 16;
+		const int OFF_BLUE = 64;
 
 
 		// Globals
@@ -62,8 +64,8 @@ namespace IngameScript
 		public static string _statusMessage;
 		public static string _logTag;
 
-		public Color _onColor;
-		public Color _offColor;
+		public static Color _onColor;
+		public static Color _offColor;
 
 		// CLASSES /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -322,6 +324,20 @@ namespace IngameScript
 				return false;
 			}
 
+			// GET FLOOR //
+			public Floor GetFloor(int number)
+			{
+				if(this.Floors.Count > 0)
+				{
+					foreach(Floor floor in this.Floors)
+					{
+						if (floor.Number == number)
+							return floor;
+					}
+				}
+				return null;
+			}
+
 			// OPEN DOORS //
 			public void OpenDoors()
 			{
@@ -444,6 +460,17 @@ namespace IngameScript
 				}
 
 				return goingUp;
+			}
+
+			public void DrawDisplays()
+			{
+				if (this.Displays.Count < 1)
+					return;
+
+				foreach (Display display in this.Displays)
+				{
+					DrawDisplay(display, this);
+				}
 			}
 		}
 
@@ -692,23 +719,55 @@ namespace IngameScript
 			public IMyTextSurface Surface;
 			public bool ShowAll;
 			public int Floor;
+			public Color OnColor;
+			public Color OffColor;
+			public string Shape;
 
 			public Display(IMyTerminalBlock block, int index, Elevator elevator)
 			{
-				string screenData = GetKey(block, INI_HEAD, "Screen_" + index + "_Floor", "All");
+				string floorData = GetKey(block, INI_HEAD, "Screen_" + index + "_Floor", "All");
 
 
-				if(screenData.ToLower() == "all")
+				if(floorData.ToLower() == "all")
 				{
 					this.ShowAll = true;
 				}
 				else
 				{
-					this.Floor = ParseInt(screenData, elevator.GroundFloor);
+					this.Floor = ParseInt(floorData, elevator.GroundFloor);
 				}
 
 				this.Surface = (block as IMyTextSurfaceProvider).GetSurface(index);
 				PrepareTextSurface(this.Surface);
+
+
+				string shape = GetKey(block, INI_HEAD, "Shape", "Square");
+				switch(shape.ToUpper())
+				{
+					case "TRIANGLE":
+						this.Shape = "Triangle";
+						break;
+					case "TRIANGLEINVERTED":
+					case "TRIANGLE_INVERTED":
+					case "TRIANGLE INVERTED":
+						this.Shape = "TriangleInverted";
+						break;
+					case "CIRCLE":
+						this.Shape = "Circle";
+						break;
+					case "SQUARETAPERED":
+						this.Shape = "SquareTapered";
+						break;
+					case "FULL":
+						this.Shape = "Full";
+						break;
+					default:
+						this.Shape = "SquareTapered";
+						break;
+				}
+
+				this.OnColor = ColorFromString(GetKey(block, INI_HEAD, "On_Color", ON_RED + "," + ON_GREEN + "," + ON_BLUE));
+				this.OffColor = ColorFromString(GetKey(block, INI_HEAD, "Off_Color", OFF_RED + "," + OFF_GREEN + "," + OFF_BLUE));
 			}
 		}
 
@@ -1025,6 +1084,8 @@ namespace IngameScript
 				elevator.CurrentFloor = floor.Number;
 				SetKey(elevator.Timer, INI_HEAD, "Current_Floor", elevator.CurrentFloor.ToString());
 			}
+
+			elevator.DrawDisplays();
 		}
 
 
@@ -1132,7 +1193,9 @@ namespace IngameScript
 				}
 
 				Floor floor = new Floor(elevator.GroundFloor, elevator);
-				elevator.Floors.Add(floor);
+				elevator.Floors.Insert(0,floor);
+
+
 			}
 
 			if (doors.Count > 0)
@@ -1153,6 +1216,14 @@ namespace IngameScript
 					AssignSurfaces(surfaceBlock);
 			}
 
+			if(_elevators.Count > 0)
+			{
+				foreach(Elevator elevator in _elevators)
+				{
+					elevator.DrawDisplays();
+				}
+			}
+
 			AssignLogs();
 		}
 
@@ -1170,7 +1241,11 @@ namespace IngameScript
 					//elevator.DisplayBlocks.Add(block);
 					for(int i = 0; i < screenHaver.SurfaceCount; i++)
 					{
-						string floor = GetKey(block, INI_HEAD, "Screen_" + i + "_Floor", "");
+						string filler = "";
+						if (i == 0)
+							filler = "All";
+
+						string floor = GetKey(block, INI_HEAD, "Screen_" + i + "_Floor", filler);
 						if (floor != "")
 						{
 							Display lcd = new Display(block, i, elevator);
@@ -1410,7 +1485,110 @@ namespace IngameScript
 
 
 		// SPRIT FUNCTIONS ------------------------------------------------------------------------------------------------------------------------------
-		
+
+		// DRAW GAUGE // - Draws the pressure display between room the lcd is locate in and the neighboring room.
+		static void DrawDisplay(Display display, Elevator elevator)
+		{
+			IMyTextSurface drawSurface = display.Surface;
+			
+			// Get Single or All Floors for Display
+			List<Floor> floors;
+			if (display.ShowAll)
+			{
+				floors = elevator.Floors;
+			}
+			else
+			{
+				floors = new List<Floor>();
+				Floor newFloor = elevator.GetFloor(display.Floor);
+				if (newFloor == null)
+				{
+					_statusMessage = "Unrecognized Floor " +  display.Floor + " in Elevator " + elevator.Number + "!!!";
+					return;
+				}
+
+				floors.Add(newFloor);
+			}
+	
+			RectangleF viewport = new RectangleF((drawSurface.TextureSize - drawSurface.SurfaceSize) / 2f, drawSurface.SurfaceSize);
+			var frame = drawSurface.DrawFrame();
+
+			float size = Math.Min(viewport.Height, viewport.Width);
+			float totalWidth = size * floors.Count;
+
+			if(totalWidth > viewport.Width)
+			{
+				size = viewport.Width / floors.Count;
+				totalWidth = viewport.Width;
+			}
+			
+			float textSize = size * 0.03f;
+
+			
+			Vector2 scale = new Vector2(size - MARGIN, size - MARGIN);
+			string shape = display.Shape;
+
+			float horizontalOffset = 0;
+
+			// Fill display if shape is "Full"
+			if (display.Shape == "Full")
+			{
+				shape = "SquareSimple";
+				scale.Y = viewport.Height;
+
+				if (!display.ShowAll)
+				{
+					scale.X = viewport.Width;
+					totalWidth = viewport.Width;
+					horizontalOffset = size * 0.25f;
+				}	
+			}
+			else if(display.Shape == "TriangleInverted")
+			{
+				shape = "Triangle";
+				scale.Y *= -1;
+			}
+
+			Vector2 position = viewport.Center - new Vector2(totalWidth * 0.5f, 0);
+
+			float offset;
+			if (shape == "Triangle")
+			{
+				offset = -size * 0.2f;
+				textSize *= 0.75f;
+				if (display.Shape == "TriangleInverted")
+					offset = -size * 0.5f;
+			}
+			else
+			{
+				offset = -size * 0.45f;
+			}
+
+			foreach (Floor floor in floors)
+			{
+				Color color;
+				Color textColor;
+				if (floor.Number == elevator.CurrentFloor)
+				{
+					color = display.OnColor;
+					textColor = display.OffColor;
+				}
+				else
+				{
+					color = display.OffColor;
+					textColor = display.OnColor;
+				}
+
+				DrawTexture(shape, position + new Vector2(MARGIN * 0.5f, 0), scale, 0, color, frame);
+				WriteText(floor.Number.ToString(), position + new Vector2(size * 0.5f + horizontalOffset, offset), TextAlignment.CENTER, textSize, textColor, frame);
+			
+				position += new Vector2(size, 0);
+			}
+
+			frame.Dispose();
+		}
+
+
 		// DRAW TEXTURE //
 		static void DrawTexture(string shape, Vector2 position, Vector2 scale, float rotation, Color color, MySpriteDrawFrame frame)
 		{
@@ -1581,6 +1759,25 @@ namespace IngameScript
 		static void InsertText(IMyTextSurface surface, string text)
 		{
 			surface.WriteText(text + "\n" + surface.GetText());
+		}
+
+
+		// COLOR FROM STRING // Returns color based on comma separated RGB value.
+		static Color ColorFromString(string rgb)
+		{
+			string[] values = rgb.Split(',');
+			if (values.Length < 3)
+				return Color.Black;
+
+			byte[] outputs = new byte[3];
+			for (int i = 0; i < 3; i++)
+			{
+				bool success = byte.TryParse(values[i], out outputs[i]);
+				if (!success)
+					outputs[i] = 0;
+			}
+
+			return new Color(outputs[0], outputs[1], outputs[2]);
 		}
 	}
 }
