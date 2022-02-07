@@ -151,19 +151,19 @@ namespace IngameScript
 				if (this.Floors.Count < 2)
 					return;
 
-				foreach(Floor floor in this.Floors)
+				if (floorNumber < this.CurrentFloor)
 				{
-					if(floorNumber < this.CurrentFloor)
-					{
-						this.GoingUp = false;
-						SetKey(this.Timer, INI_HEAD, "Going_Up", "false");
-					}
-					else
-					{
-						this.GoingUp = true;
-						SetKey(this.Timer, INI_HEAD, "Going_Up", "true");
-					}
+					this.GoingUp = false;
+					SetKey(this.Timer, INI_HEAD, "Going_Up", "false");
+				}
+				else
+				{
+					this.GoingUp = true;
+					SetKey(this.Timer, INI_HEAD, "Going_Up", "true");
+				}
 
+				foreach (Floor floor in this.Floors)
+				{
 					if (floor.Number > floorNumber)
 					{
 						floor.Deactivate();
@@ -462,6 +462,7 @@ namespace IngameScript
 				return goingUp;
 			}
 
+			// DRAW DISPLAYS //
 			public void DrawDisplays()
 			{
 				if (this.Displays.Count < 1)
@@ -738,7 +739,7 @@ namespace IngameScript
 				}
 
 				this.Surface = (block as IMyTextSurfaceProvider).GetSurface(index);
-				PrepareTextSurface(this.Surface);
+				PrepareTextSurface(this.Surface, GetKey(block, INI_HEAD, "Background_Color", "0,0,0"));
 
 
 				string shape = GetKey(block, INI_HEAD, "Shape", "Square");
@@ -751,6 +752,9 @@ namespace IngameScript
 					case "TRIANGLE_INVERTED":
 					case "TRIANGLE INVERTED":
 						this.Shape = "TriangleInverted";
+						break;
+					case "DIRECTIONAL":
+						this.Shape = "Directional";
 						break;
 					case "CIRCLE":
 						this.Shape = "Circle";
@@ -926,7 +930,7 @@ namespace IngameScript
 			bool goingUp = elevator.GetPageDirection(floor, direction);
 
 			Page page = new Page(floor, goingUp);
-
+			/*
 			if(elevator.FloorQueue.Count < 1)
 			{
 				if (floor > elevator.CurrentFloor)
@@ -934,7 +938,7 @@ namespace IngameScript
 				else
 					elevator.GoingUp = false;
 			}
-			else if(DuplicatePages(page, elevator.FloorQueue))
+			else */if(DuplicatePages(page, elevator.FloorQueue))
 			{
 				return;
 			}
@@ -1057,8 +1061,7 @@ namespace IngameScript
 					break;
 			}
 
-
-
+			elevator.DrawDisplays();
 		}
 
 
@@ -1486,7 +1489,7 @@ namespace IngameScript
 
 		// SPRIT FUNCTIONS ------------------------------------------------------------------------------------------------------------------------------
 
-		// DRAW GAUGE // - Draws the pressure display between room the lcd is locate in and the neighboring room.
+		// DRAW DISPLAY // - Draws Display showing current position of elevator
 		static void DrawDisplay(Display display, Elevator elevator)
 		{
 			IMyTextSurface drawSurface = display.Surface;
@@ -1543,10 +1546,14 @@ namespace IngameScript
 					horizontalOffset = size * 0.25f;
 				}	
 			}
-			else if(display.Shape == "TriangleInverted")
+			else if(display.Shape == "TriangleInverted" || (display.Shape == "Directional" && !elevator.GoingUp))
 			{
 				shape = "Triangle";
 				scale.Y *= -1;
+			}
+			else if(display.Shape == "Directional" && elevator.GoingUp)
+			{
+				shape = "Triangle";
 			}
 
 			Vector2 position = viewport.Center - new Vector2(totalWidth * 0.5f, 0);
@@ -1556,7 +1563,7 @@ namespace IngameScript
 			{
 				offset = -size * 0.2f;
 				textSize *= 0.75f;
-				if (display.Shape == "TriangleInverted")
+				if (display.Shape == "TriangleInverted" || (display.Shape == "Directional" && !elevator.GoingUp))
 					offset = -size * 0.5f;
 			}
 			else
@@ -1587,6 +1594,9 @@ namespace IngameScript
 
 			frame.Dispose();
 		}
+
+		// DRAW TRIANGLES //
+
 
 
 		// DRAW TEXTURE //
@@ -1624,15 +1634,15 @@ namespace IngameScript
 
 
 		// PREPARE TEXT SURFACE
-		public static void PrepareTextSurface(IMyTextSurface textSurface)
+		public static void PrepareTextSurface(IMyTextSurface textSurface, string backgroundColor)
 		{
 			// Set the sprite display mode
 			textSurface.ContentType = ContentType.SCRIPT;
 			// Make sure no built-in script has been selected
 			textSurface.Script = "";
 
-			// Set Background Color to black
-			textSurface.ScriptBackgroundColor = Color.Black;
+			// Set Background Color
+			textSurface.ScriptBackgroundColor = ColorFromString(backgroundColor);
 		}
 
 
