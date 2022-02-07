@@ -722,7 +722,9 @@ namespace IngameScript
 			public int Floor;
 			public Color OnColor;
 			public Color OffColor;
+			public string ShapeName;
 			public string Shape;
+
 
 			public Display(IMyTerminalBlock block, int index, Elevator elevator)
 			{
@@ -742,19 +744,14 @@ namespace IngameScript
 				PrepareTextSurface(this.Surface, GetKey(block, INI_HEAD, "Background_Color", "0,0,0"));
 
 
-				string shape = GetKey(block, INI_HEAD, "Shape", "Square");
-				switch(shape.ToUpper())
+				this.ShapeName = GetKey(block, INI_HEAD, "Shape", "Square");
+				switch(this.ShapeName.ToUpper())
 				{
 					case "TRIANGLE":
-						this.Shape = "Triangle";
-						break;
 					case "TRIANGLEINVERTED":
-					case "TRIANGLE_INVERTED":
-					case "TRIANGLE INVERTED":
-						this.Shape = "TriangleInverted";
-						break;
 					case "DIRECTIONAL":
-						this.Shape = "Directional";
+					case "SCI-FI":
+						this.Shape = "Triangle";
 						break;
 					case "CIRCLE":
 						this.Shape = "Circle";
@@ -763,10 +760,8 @@ namespace IngameScript
 						this.Shape = "SquareTapered";
 						break;
 					case "FULL":
-						this.Shape = "Full";
-						break;
 					default:
-						this.Shape = "SquareTapered";
+						this.Shape = "SquareSimple";
 						break;
 				}
 
@@ -1530,13 +1525,13 @@ namespace IngameScript
 			
 			Vector2 scale = new Vector2(size - MARGIN, size - MARGIN);
 			string shape = display.Shape;
+			string shapeName = display.ShapeName.ToUpper();
 
 			float horizontalOffset = 0;
 
 			// Fill display if shape is "Full"
-			if (display.Shape == "Full")
+			if (shapeName == "FULL")
 			{
-				shape = "SquareSimple";
 				scale.Y = viewport.Height;
 
 				if (!display.ShowAll)
@@ -1546,24 +1541,17 @@ namespace IngameScript
 					horizontalOffset = size * 0.25f;
 				}	
 			}
-			else if(display.Shape == "TriangleInverted" || (display.Shape == "Directional" && !elevator.GoingUp))
+			else if(shapeName == "TRIANGLEINVERTED" || (shapeName == "DIRECTIONAL" && !elevator.GoingUp))
 			{
-				shape = "Triangle";
 				scale.Y *= -1;
 			}
-			else if(display.Shape == "Directional" && elevator.GoingUp)
-			{
-				shape = "Triangle";
-			}
-
-			Vector2 position = viewport.Center - new Vector2(totalWidth * 0.5f, 0);
-
+			
 			float offset;
 			if (shape == "Triangle")
 			{
 				offset = -size * 0.2f;
 				textSize *= 0.75f;
-				if (display.Shape == "TriangleInverted" || (display.Shape == "Directional" && !elevator.GoingUp))
+				if (shapeName == "TRIANGLEINVERTED" || (shapeName == "DIRECTIONAL" && !elevator.GoingUp))
 					offset = -size * 0.5f;
 			}
 			else
@@ -1571,10 +1559,24 @@ namespace IngameScript
 				offset = -size * 0.45f;
 			}
 
+			if(shapeName == "SCI-FI")
+			{
+				size *= 0.5f;
+				totalWidth *= 0.5f;
+			}
+
+			Vector2 position = viewport.Center - new Vector2(totalWidth * 0.5f, 0);
+			Vector2 startPosition = position;
+			if(shapeName == "SCI-FI" && elevator.Floors.Count % 2 == 0)
+			{
+				position -= new Vector2(size * 0.5f,0);
+			}
+
 			foreach (Floor floor in floors)
 			{
 				Color color;
 				Color textColor;
+				Vector2 newPosition = position;
 				if (floor.Number == elevator.CurrentFloor)
 				{
 					color = display.OnColor;
@@ -1587,8 +1589,25 @@ namespace IngameScript
 				}
 
 				DrawTexture(shape, position + new Vector2(MARGIN * 0.5f, 0), scale, 0, color, frame);
-				WriteText(floor.Number.ToString(), position + new Vector2(size * 0.5f + horizontalOffset, offset), TextAlignment.CENTER, textSize, textColor, frame);
-			
+				if(shapeName == "SCI-FI")
+				{
+					if(scale.Y < 0)
+					{
+						offset = -size;
+					}
+					else
+					{
+						offset = -size * 0.4f;
+					}	
+
+					WriteText(floor.Number.ToString(), position + new Vector2(size + horizontalOffset, offset), TextAlignment.CENTER, textSize, textColor, frame);
+					scale.Y *= -1;
+				}
+				else
+				{
+					WriteText(floor.Number.ToString(), position + new Vector2(size * 0.5f + horizontalOffset, offset), TextAlignment.CENTER, textSize, textColor, frame);
+				}
+				
 				position += new Vector2(size, 0);
 			}
 
