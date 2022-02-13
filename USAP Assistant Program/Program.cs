@@ -76,6 +76,7 @@ namespace IngameScript
         string _statusMessage;
         string _gridID;
         int _loadCount;
+        bool _unloaded;
         string _shipTag;
 
         string _refTag;
@@ -126,87 +127,51 @@ namespace IngameScript
         // MAIN // -------------------------------------------------------------------------------------------------------------------------------------
         public void Main(string argument, UpdateType updateSource)
         {
+            _unloaded = false;
+
             if (argument == "")
             {
                 manageCargo();
             }
+            else
+			{
+                switch(argument.ToUpper())
+				{
+                    case "REFRESH":
+                        Build();
+                        break;
+                    case "UNLOAD":
+                        // TODO - individual cargo commands
+                        break;
+                    case "RELOAD":
+                        // TODO
+                        break;
+                    case "REFUEL":
+                        // TODO
+                        break;
+                    case "ESCAPE_THRUSTERS_ON":
+                        // TODO - Escape Thruster functions
+                        break;
+                    case "ESCAPE_THRUSTERS_OFF":
+                        // TODO
+                        break;
+                    case "TOGGLE_ESCAPE_THRUSTERS":
+                        // TODO
+                        break;
+                    default:
+                        _statusMessage = "UNRECOGNIZED COMMAND: " + argument;
+                        break;
+				}
+			}
 
             Echo(_statusMessage);
-            /*
-            MyIniParseResult result;
-			if (!_ini.TryParse(Me.CustomData, out result))
-				throw new Exception(result.ToString());
 
-			_shipTag = _ini.Get(INI_HEAD, "shipTag").ToString();
-
-			_refTag = _ini.Get(INI_HEAD, "referenceBlock").ToString();
-
-			_combatShip = _ini.Get(INI_HEAD, "combatShip").ToBoolean();
-
-			_miningShip = _ini.Get(INI_HEAD, "miningShip").ToBoolean();
-
-			_largeGrid = _ini.Get(INI_HEAD, "largeGrid").ToBoolean();
-
-			int errorCount = 0;
-
-			if (_shipTag == "<Unset>")
+            // If cargo successfully unloaded, increment load count.
+            if (_unloaded)
 			{
-				Echo("SETUP: Please set shipTag parameter in Custom Data!\n");
-				errorCount++;
+                _loadCount++;
 			}
-
-			if (_refTag == "<Unset>")
-			{
-				Echo("SETUP: Please set referenceBlock parameter in Custom Data!\n");
-				errorCount++;
-			}
-
-			if (errorCount == 0)
-			{
-				if (argument != "")
-				{
-					string[] argArray = argument.Split(' ');
-					string action = argArray[0];
-
-					switch (action)
-					{
-						case ARGUMENT_A:
-							Activate(TIMER_A);
-							break;
-						case ARGUMENT_B:
-							Activate(TIMER_B);
-							break;
-						case "ResetCount":
-							_loadCount = 0;
-							displayLoadCount();
-							break;
-						case "SetCount":
-							if (argArray.Length > 1)
-							{
-								string qty = argArray[1];
-								_loadCount = int.Parse(qty);
-								displayLoadCount();
-							}
-							break;
-						default:
-							Echo("Invalid Argument");
-							break;
-					}
-				}
-				else
-				{
-					if (_combatShip)
-					{
-						Reload();
-					}
-
-					if (_miningShip)
-					{
-						Unload();
-					}
-				}
-			}
-            */
+            displayLoadCount();
         }
 
 
@@ -250,7 +215,6 @@ namespace IngameScript
             }
 
             List<IMyCargoContainer> ammoSupplies = new List<IMyCargoContainer>();
-            List<IMyCargoContainer> fuelSupplies = new List<IMyCargoContainer>();
             List<IMyCargoContainer> oreContainers = new List<IMyCargoContainer>();
 
             foreach (IMyCargoContainer cargoBlock in cargoBlocks)
@@ -262,16 +226,27 @@ namespace IngameScript
                     ammoSupplies.Add(cargoBlock);
                 }
 
-                if (name.Contains(FUEL_SUPPLY))
-                {
-                    fuelSupplies.Add(cargoBlock);
-                }
-
                 if (name.Contains(DEST))
                 {
                     oreContainers.Add(cargoBlock);
                 }
             }
+
+            List<IMyReactor> tempList = new List<IMyReactor>();
+            GridTerminalSystem.GetBlocksOfType<IMyReactor>(tempList);
+
+            List<IMyReactor> fuelSupplies = new List<IMyReactor>();
+            
+            if(tempList.Count > 0)
+			{
+                foreach(IMyReactor reactor in tempList)
+				{
+                    if(reactor.CustomName.Contains(FUEL_SUPPLY))
+					{
+                        fuelSupplies.Add(reactor);
+					}
+				}
+			}
 
             foreach (IMyTerminalBlock block in _inventories)
             {
@@ -279,18 +254,19 @@ namespace IngameScript
 
                 if (name.Contains(MAG_TAG))
                 {
-                    Echo("Reload" + name);
+                    Echo("Reload: " + name);
                     Reload(block, ammoSupplies);
                 }
 
                 if (name.Contains(REACTOR))
                 {
-                    Echo("Refuel" + name);
+                    Echo("Refuel: " + name);
+                    Refuel(block, fuelSupplies);
                 }
 
                 if (name.Contains(PAYLOAD))
                 {
-                    Echo("Unload" + name);
+                    Echo("Unload: " + name);
                 }
             }
         }
@@ -311,15 +287,6 @@ namespace IngameScript
 
             IMyInventory magInv = magazine.GetInventory(0);
 
-            /*
-            int gatQty = ParseInt(GetKey(magazine, INI_HEAD, "NATO_25x184mm", "0"),0);
-            int missileQty = ParseInt(GetKey(magazine, INI_HEAD, "Missile200mm", "0"), 0);
-            int artilleryQty = ParseInt(GetKey(magazine, INI_HEAD, "LargeCalibreAmmo", "0"), 0);
-            int assaultQty = ParseInt(GetKey(magazine, INI_HEAD, "MediumCalibreAmmo", "0"), 0);
-            int autoQty = ParseInt(GetKey(magazine, INI_HEAD, "AutocannonClip", "0"), 0);
-            int railQty = ParseInt(GetKey(magazine, INI_HEAD, "LargeRailgunAmmo", "0"), 0);
-            int miniRailQty = ParseInt(GetKey(magazine, INI_HEAD, "SmallRailgunAmmo", "0"), 0);
-            */
             foreach (IMyCargoContainer supply in supplyBlocks)
             {
                 if (supply.HasInventory)
@@ -330,15 +297,6 @@ namespace IngameScript
                     {
                         ensureMinimumAmount(supplyInv, magInv, loadouts[i][0], ParseInt(loadouts[i][1], 1));
                     }
-                    /*
-                    ensureMinimumAmount(supplyInv, magInv, "NATO_25x184mm", gatQty);
-                    ensureMinimumAmount(supplyInv, magInv, "Missile200mm", miniRailQty);
-                    ensureMinimumAmount(supplyInv, magInv, "LargeCalibreAmmo", artilleryQty);
-                    ensureMinimumAmount(supplyInv, magInv, "MediumCalibreAmmo", assaultQty);
-                    ensureMinimumAmount(supplyInv, magInv, "AutocannonClip", autoQty);
-                    ensureMinimumAmount(supplyInv, magInv, "LargeRailgunAmmo", railQty);
-                    ensureMinimumAmount(supplyInv, magInv, "SmallRailgunAmmo", miniRailQty);
-                    */
                 }
             }
         }
@@ -346,8 +304,20 @@ namespace IngameScript
 
 
         //Finds all reactors containing defined tag, and loads them with defined amounts of fuel. 
-        void Refuel(string dest, int fuel_qty)
+        void Refuel(IMyTerminalBlock reactor, List<IMyReactor> fuelSupplies)//string dest, int fuel_qty)
         {
+            if (fuelSupplies.Count < 1)
+                return;
+
+            IMyInventory destInv = reactor.GetInventory(0);
+            int fuel_qty = ParseInt(GetKey(reactor, INI_HEAD, "Uranium", "50"), 50);
+
+            foreach(IMyReactor supplyReactor in fuelSupplies)
+			{
+                IMyInventory sourceInv = supplyReactor.GetInventory(0);
+                ensureMinimumAmount(sourceInv, destInv, FUEL, fuel_qty);
+            }
+            /*
             //Builds list of all source inventories. 
             List<IMyTerminalBlock> source_list = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName(SOURCE, source_list);
@@ -380,51 +350,44 @@ namespace IngameScript
                 }
 
             }
+            */
         }
 
 
-        void Unload()
+        void Unload(IMyTerminalBlock payload, List<IMyCargoContainer> oreContainers)
         {
-            _loadCount += 1;
-            Echo(_loadCount.ToString());
-            List<IMyTerminalBlock> source_list = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(PAYLOAD, source_list);
+            //_loadCount += 1;
+            //Echo(_loadCount.ToString());
 
-            List<IMyTerminalBlock> dest_list = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(DEST, dest_list);
+            if (oreContainers.Count < 1)
+                return;
 
-            for (int c = 0; c < source_list.Count; c++)
+            var sourceInv = payload.GetInventory(0);
+            foreach(IMyCargoContainer container in oreContainers)
             {
-                var source = source_list[c];
-                if (source.HasInventory && source.CustomName.Contains(_shipTag))
+                if (container.HasInventory)
                 {
-                    var sourceInv = source.GetInventory(0);
-                    for (int d = 0; d < dest_list.Count; d++)
+                    var destInv = container.GetInventory(0);
+                    if (!destInv.IsFull)
                     {
-                        var dest = dest_list[d];
-                        if (dest.HasInventory)
-                        {
-                            var destInv = dest.GetInventory(0);
-                            if (!destInv.IsFull)
+                        List<MyInventoryItem> items = new List<MyInventoryItem>();
+                        sourceInv.GetItems(items);
+                        if(items.Count > 0)
+						{
+                            foreach (MyInventoryItem item in items)
                             {
-                                List<MyInventoryItem> items = new List<MyInventoryItem>();
-                                sourceInv.GetItems(items);
-                                for (int i = 0; i < items.Count; i++)
+                                Echo(item.Type.ToString());
+                                if (item.Type.ToString().Contains("MyObjectBuilder_Ore"))
                                 {
-                                    MyInventoryItem item = items[i];
-                                    Echo(item.Type.ToString());
-                                    if (item.Type.ToString().Contains("MyObjectBuilder_Ore"))
-                                    {
-                                        sourceInv.TransferItemTo(destInv, 0, null, true, null);
-                                    }
+                                    sourceInv.TransferItemTo(destInv, 0, null, true, null);
+                                    _unloaded = true;
                                 }
                             }
                         }
                     }
                 }
             }
-
-            displayLoadCount();
+            //displayLoadCount();
         }
 
 
@@ -694,12 +657,19 @@ namespace IngameScript
             if (num < 1)
                 return;
 
+            int initialSupply = numberOfItemInContainer(dest, itemType);
+
             while (!hasEnoughOfItem(dest, itemType, num))
             {
                 int? index = indexOfItem(source, itemType);
                 if (index == null)
                     return;
+
                 source.TransferItemTo(dest, (int)index, null, true, num - numberOfItemInContainer(dest, itemType));
+
+                // If there's still the same number in the container after attempting to transfer, STOP.
+                if (numberOfItemInContainer(dest, itemType) == initialSupply)
+                    return;
             }
         }
 
