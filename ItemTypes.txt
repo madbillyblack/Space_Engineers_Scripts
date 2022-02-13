@@ -1,0 +1,20 @@
+SHIP AMMO:
+MyObjectBuilder_AmmoMagazine/LargeCalibreAmmo
+MyObjectBuilder_AmmoMagazine/MediumCalibreAmmo
+MyObjectBuilder_AmmoMagazine/AutocannonClip
+MyObjectBuilder_AmmoMagazine/LargeRailgunAmmo
+MyObjectBuilder_AmmoMagazine/SmallRailgunAmmo
+MyObjectBuilder_AmmoMagazine/NATO_25x184mm
+MyObjectBuilder_AmmoMagazine/Missile200mm
+
+CHARACTER AMMO:
+MyObjectBuilder_AmmoMagazine/NATO_5p56x45mm
+MyObjectBuilder_AmmoMagazine/AutomaticRifleGun_Mag_20rd
+MyObjectBuilder_AmmoMagazine/RapidFireAutomaticRifleGun_Mag_50rd
+MyObjectBuilder_AmmoMagazine/UltimateAutomaticRifleGun_Mag_30rd
+MyObjectBuilder_AmmoMagazine/PreciseAutomaticRifleGun_Mag_5rd
+
+CHARACTER WEAPONS:
+
+CHARACTER TOOLS:
+
