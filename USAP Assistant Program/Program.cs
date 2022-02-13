@@ -20,8 +20,8 @@ using VRageMath;
 
 namespace IngameScript
 {
-	partial class Program : MyGridProgram
-	{
+    partial class Program : MyGridProgram
+    {
         //DEFINITIONS:
         //Values and strings inside quotes can be changed here.
 
@@ -87,17 +87,17 @@ namespace IngameScript
 
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
-		{
+        {
             if (Storage.Length > 0)
             {
-                try 
+                try
                 {
                     _loadCount = int.Parse(Storage);
                 }
                 catch
-				{
+                {
                     _loadCount = 0;
-                }    
+                }
             }
             else
             {
@@ -117,19 +117,19 @@ namespace IngameScript
             */
         }
 
-		public void Save()
-		{
-			Storage = _loadCount.ToString();
-		}
+        public void Save()
+        {
+            Storage = _loadCount.ToString();
+        }
 
 
         // MAIN // -------------------------------------------------------------------------------------------------------------------------------------
-		public void Main(string argument, UpdateType updateSource)
-		{
-            if(argument == "")
-			{
+        public void Main(string argument, UpdateType updateSource)
+        {
+            if (argument == "")
+            {
                 manageCargo();
-			}
+            }
 
             Echo(_statusMessage);
             /*
@@ -244,7 +244,7 @@ namespace IngameScript
             List<IMyCargoContainer> cargoBlocks = new List<IMyCargoContainer>();
             GridTerminalSystem.GetBlocksOfType<IMyCargoContainer>(cargoBlocks);
             if (cargoBlocks.Count < 1)
-			{
+            {
                 _statusMessage = "No Inventories to interface with.";
                 return;
             }
@@ -253,60 +253,65 @@ namespace IngameScript
             List<IMyCargoContainer> fuelSupplies = new List<IMyCargoContainer>();
             List<IMyCargoContainer> oreContainers = new List<IMyCargoContainer>();
 
-            foreach(IMyCargoContainer cargoBlock in cargoBlocks)
-			{
+            foreach (IMyCargoContainer cargoBlock in cargoBlocks)
+            {
                 string name = cargoBlock.CustomName;
-                
+
                 if (name.Contains(AMMO_SUPPLY))
-				{
+                {
                     ammoSupplies.Add(cargoBlock);
-				}
+                }
 
-                if(name.Contains(FUEL_SUPPLY))
-				{
+                if (name.Contains(FUEL_SUPPLY))
+                {
                     fuelSupplies.Add(cargoBlock);
-				}
+                }
 
-                if(name.Contains(DEST))
-				{
+                if (name.Contains(DEST))
+                {
                     oreContainers.Add(cargoBlock);
-				}
-			}
+                }
+            }
 
             foreach (IMyTerminalBlock block in _inventories)
-			{
+            {
                 string name = block.CustomName;
 
-                if(name.Contains(MAG_TAG))
-				{
+                if (name.Contains(MAG_TAG))
+                {
                     Echo("Reload" + name);
                     Reload(block, ammoSupplies);
                 }
-                
-                if(name.Contains(REACTOR))
-				{
+
+                if (name.Contains(REACTOR))
+                {
                     Echo("Refuel" + name);
-				}
+                }
 
                 if (name.Contains(PAYLOAD))
                 {
                     Echo("Unload" + name);
                 }
-			}
+            }
         }
 
 
         // RELOAD // - Finds all inventories containing defined tag, and loads them with defined amounts of ammo.
         void Reload(IMyTerminalBlock magazine, List<IMyCargoContainer> supplyBlocks)
         {
+            // Convert Loadout Key into 2D array of format [Ammotype][AmmoQty]
+            string[][] loadouts = StringTo2DArray(GetKey(magazine, INI_HEAD, "Loadout", ""), '\n', ':');
 
-            if (supplyBlocks.Count < 1 || !magazine.HasInventory)
+            if (supplyBlocks.Count < 1 || !magazine.HasInventory || loadouts.Length < 1)
             {
                 return;
             }
 
+
+
             IMyInventory magInv = magazine.GetInventory(0);
 
+            /*
             int gatQty = ParseInt(GetKey(magazine, INI_HEAD, "NATO_25x184mm", "0"),0);
             int missileQty = ParseInt(GetKey(magazine, INI_HEAD, "Missile200mm", "0"), 0);
             int artilleryQty = ParseInt(GetKey(magazine, INI_HEAD, "LargeCalibreAmmo", "0"), 0);
@@ -314,13 +319,18 @@ namespace IngameScript
             int autoQty = ParseInt(GetKey(magazine, INI_HEAD, "AutocannonClip", "0"), 0);
             int railQty = ParseInt(GetKey(magazine, INI_HEAD, "LargeRailgunAmmo", "0"), 0);
             int miniRailQty = ParseInt(GetKey(magazine, INI_HEAD, "SmallRailgunAmmo", "0"), 0);
-
+            */
             foreach (IMyCargoContainer supply in supplyBlocks)
-			{
-                if(supply.HasInventory)
-				{
+            {
+                if (supply.HasInventory)
+                {
                     IMyInventory supplyInv = supply.GetInventory(0);
 
+                    for (int i = 0; i < loadouts.Length; i++)
+                    {
+                        ensureMinimumAmount(supplyInv, magInv, loadouts[i][0], ParseInt(loadouts[i][1], 1));
+                    }
+                    /*
                     ensureMinimumAmount(supplyInv, magInv, "NATO_25x184mm", gatQty);
                     ensureMinimumAmount(supplyInv, magInv, "Missile200mm", miniRailQty);
                     ensureMinimumAmount(supplyInv, magInv, "LargeCalibreAmmo", artilleryQty);
@@ -328,6 +338,7 @@ namespace IngameScript
                     ensureMinimumAmount(supplyInv, magInv, "AutocannonClip", autoQty);
                     ensureMinimumAmount(supplyInv, magInv, "LargeRailgunAmmo", railQty);
                     ensureMinimumAmount(supplyInv, magInv, "SmallRailgunAmmo", miniRailQty);
+                    */
                 }
             }
         }
@@ -481,16 +492,16 @@ namespace IngameScript
                 newID = Me.CubeGrid.EntityId.ToString();
 
             SetKey(Me, INI_HEAD, "Grid_ID", newID);
-            
+
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
 
             foreach (IMyTerminalBlock block in blocks)
             {
                 if (block.CustomData.Contains(_gridID))
-                SetKey(block, INI_HEAD, "Grid_ID", newID);
+                    SetKey(block, INI_HEAD, "Grid_ID", newID);
             }
- 
+
             _gridID = newID;
             Build();
         }
@@ -499,21 +510,21 @@ namespace IngameScript
 
         // BUILD //
         public void Build()
-		{
+        {
             _statusMessage = "";
             _gridID = GetKey(Me, INI_HEAD, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 
             // Establish user defined reference block.  If none, set program block as reference.
             string refTag = GetKey(Me, INI_HEAD, "Reference", Me.CustomName);
-			try 
+            try
             {
                 _refBlock = GridTerminalSystem.GetBlockWithName(refTag);
                 Echo(_refBlock.CustomName);
             }
             catch
-			{
+            {
                 _refBlock = Me;
-			}
+            }
 
             _refDistance = ParseInt(GetKey(Me, INI_HEAD, "Ref_Distance", "12"), 12);
 
@@ -522,8 +533,8 @@ namespace IngameScript
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
 
 
-            foreach(IMyTerminalBlock block in blocks)
-			{
+            foreach (IMyTerminalBlock block in blocks)
+            {
                 string name = block.CustomName;
                 if (block.HasInventory)
                 {
@@ -542,64 +553,81 @@ namespace IngameScript
                         AddToInventories(block);
                     }
                 }
-			}
-            
+            }
+
             _escapeThrusters = new List<IMyThrust>();
-		}
+        }
 
 
         // SET MAG AMMOUNTS //
         public void SetMagAmounts(IMyTerminalBlock block)
-		{
+        {
             string name = block.CustomName;
             if (!name.Contains(MAG_TAG + "]") && !name.Contains(":"))
                 return;
 
             string tag = TagFromName(name);
+            string loadout = "";
 
-            switch(tag.ToUpper())
-			{
+            switch (tag.ToUpper())
+            {
                 case "GENERAL":
-                    EnsureLoadout(block, new int[] { 5, 5, 5, 5, 5, 5, 5});
+                    //EnsureLoadout(block, new int[] { 5, 5, 5, 5, 5, 5, 5});
+                    loadout = "NATO_25x184mm:1\n" +
+                              "Missile200mm:1\n" +
+                              "LargeCalibreAmmo:1\n" +
+                              "MediumCalibreAmmo:1\n" +
+                              "AutocannonClip:1\n" +
+                              "LargeRailgunAmmo:1\n" +
+                              "SmallRailgunAmmo:1";
                     break;
                 case GATLING:
-                    EnsureLoadout(block, new int[] { 7, 0, 0, 0, 0, 0, 0 });
+                    //EnsureLoadout(block, new int[] { 7, 0, 0, 0, 0, 0, 0 });
+                    loadout = "NATO_25x184mm:7";
                     break;
                 case MISSILE:
-                    EnsureLoadout(block, new int[] { 0, 5, 0, 0, 0, 0, 0 });
+                    //EnsureLoadout(block, new int[] { 0, 5, 0, 0, 0, 0, 0 });
+                    loadout = "Missile200mm:4";
                     break;
                 case ARTILLERY:
-                    EnsureLoadout(block, new int[] { 0, 0, 10, 0, 0, 0, 0 });
+                    //EnsureLoadout(block, new int[] { 0, 0, 10, 0, 0, 0, 0 });
+                    loadout = "LargeCalibreAmmo:3";
                     break;
                 case ASSAULT:
-                    EnsureLoadout(block, new int[] { 0, 0, 0, 10, 0, 0, 0 });
+                    //EnsureLoadout(block, new int[] { 0, 0, 0, 10, 0, 0, 0 });
+                    loadout = "MediumCalibreAmmo:2";
                     break;
                 case AUTO:
-                    EnsureLoadout(block, new int[] { 0, 0, 0, 0, 5, 0, 0 });
+                    //EnsureLoadout(block, new int[] { 0, 0, 0, 0, 5, 0, 0 });
+                    loadout = "AutocannonClip:5";
                     break;
                 case RAIL:
-                    EnsureLoadout(block, new int[] { 0, 0, 0, 0, 0, 4, 0 });
+                    //EnsureLoadout(block, new int[] { 0, 0, 0, 0, 0, 4, 0 });
+                    loadout = "LargeRailgunAmmo:1";
                     break;
                 case MINI_RAIL:
-                    EnsureLoadout(block, new int[] { 0, 0, 0, 0, 0, 0, 8 });
+                    //EnsureLoadout(block, new int[] { 0, 0, 0, 0, 0, 0, 8 });
+                    loadout = "SmallRailgunAmmo:6";
                     break;
-			}
-		}
+            }
+
+            EnsureKey(block, INI_HEAD, "Loadout", loadout);
+        }
 
 
         // ADD TO INVENTORIES //
         public void AddToInventories(IMyTerminalBlock block)
-		{
-            if(GetKey(block, INI_HEAD, "Grid_ID", _gridID) == _gridID)
-			{
+        {
+            if (GetKey(block, INI_HEAD, "Grid_ID", _gridID) == _gridID)
+            {
                 _inventories.Add(block);
-			}
-		}
+            }
+        }
 
 
         // TAG FROM NAME //  Gets specific tag from MAG name.
         public string TagFromName(string name)
-		{
+        {
             string tag = "";
             if (name.Contains(MAG_TAG + "]"))
                 return "GENERAL";
@@ -615,14 +643,14 @@ namespace IngameScript
             _statusMessage = tag;
 
             return tag;
-		}
+        }
 
 
         // ENSURE LOADOUT // -  Ensures that inventory block has loadout parameters
         public void EnsureLoadout(IMyTerminalBlock block, int[] amounts)
         {
             if (amounts.Length < 7)
-                amounts = new int[] {0,0,0,0,0,0,0};
+                amounts = new int[] { 0, 0, 0, 0, 0, 0, 0 };
 
             EnsureKey(block, INI_HEAD, "NATO_25x184mm", amounts[0].ToString());
             EnsureKey(block, INI_HEAD, "Missile200mm", amounts[1].ToString());
@@ -646,61 +674,72 @@ namespace IngameScript
                 return defaultVal;
         }
 
+
+        // BORROWED FUNCTIONS // -------------------------------------------------------------------------------------------------------------------------
+        public string[][] StringTo2DArray(string source, char separatorOuter, char separatorInner)
+        {
+            return source
+                   .Split(separatorOuter)
+                   .Select(x => x.Split(separatorInner))
+                   .ToArray();
+        }
+
+
         //---------------------------------------------------------------------------------//
         //ALL CODE BELOW THIS POINT WRITTEN BY PILOTERROR42//
         //---------------------------------------------------------------------------------//
 
         void ensureMinimumAmount(IMyInventory source, IMyInventory dest, string itemType, int num)
-		{
+        {
             if (num < 1)
                 return;
 
-			while (!hasEnoughOfItem(dest, itemType, num))
-			{
-				int? index = indexOfItem(source, itemType);
-				if (index == null)
-					return;
-				source.TransferItemTo(dest, (int)index, null, true, num - numberOfItemInContainer(dest, itemType));
-			}
-		}
+            while (!hasEnoughOfItem(dest, itemType, num))
+            {
+                int? index = indexOfItem(source, itemType);
+                if (index == null)
+                    return;
+                source.TransferItemTo(dest, (int)index, null, true, num - numberOfItemInContainer(dest, itemType));
+            }
+        }
 
 
-		bool hasEnoughOfItem(IMyInventory inventoryToSearch, string itemName, int minAmount)
-		{
-			return numberOfItemInContainer(inventoryToSearch, itemName) >= minAmount;
-		}
+        bool hasEnoughOfItem(IMyInventory inventoryToSearch, string itemName, int minAmount)
+        {
+            return numberOfItemInContainer(inventoryToSearch, itemName) >= minAmount;
+        }
 
 
-		int numberOfItemInContainer(IMyInventory inventoryToSearch, string itemName)
-		{
-			int total = 0;
-			List<MyInventoryItem> items = new List<MyInventoryItem>();
-			inventoryToSearch.GetItems(items);
+        int numberOfItemInContainer(IMyInventory inventoryToSearch, string itemName)
+        {
+            int total = 0;
+            List<MyInventoryItem> items = new List<MyInventoryItem>();
+            inventoryToSearch.GetItems(items);
 
-			for (int c = 0; c < items.Count; c++)
-			{
-				if (items[c].Type.ToString().Contains(itemName))
-				{
-					total += (int)(items[c].Amount);
-				}
-			}
-			return total;
-		}
+            for (int c = 0; c < items.Count; c++)
+            {
+                if (items[c].Type.ToString().Contains(itemName))
+                {
+                    total += (int)(items[c].Amount);
+                }
+            }
+            return total;
+        }
 
 
-		Nullable<int> indexOfItem(IMyInventory source, string item)
-		{
-			List<MyInventoryItem> items = new List<MyInventoryItem>();
-			source.GetItems(items);
-			for (int c = 0; c < items.Count; c++)
-			{
-				if (items[c].Type.ToString().Contains(item))
-				{
-					return c;
-				}
-			}
-			return null;
-		}
+        Nullable<int> indexOfItem(IMyInventory source, string item)
+        {
+            List<MyInventoryItem> items = new List<MyInventoryItem>();
+            source.GetItems(items);
+            for (int c = 0; c < items.Count; c++)
+            {
+                if (items[c].Type.ToString().Contains(item))
+                {
+                    return c;
+                }
+            }
+            return null;
+        }
 
-	}
+    }
 }
