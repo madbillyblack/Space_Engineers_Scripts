@@ -30,7 +30,7 @@ namespace IngameScript
         const string DEST = "[ORE]";
         const string MAG_TAG = "[MAG";
         const string REACTOR = "[PWR]";
-        const string FUEL_SUPPLY = "[IGT]";
+        const string FUEL_SUPPLY = "[SRC]";
         const string AMMO_SUPPLY = "[WEP]";
 
         const string GATLING = "GATLING";
@@ -62,6 +62,7 @@ namespace IngameScript
         const string MISL = "Missile200mm";
         const int MISSILE_VOLUME = 60;
         const string FUEL = "Uranium";
+        const string LOAD_TAG = "[LOAD]";
 
         /* DEFAULT_MAG
         ---> Default Load Out for Unspecified Mag Blocks*/
@@ -75,8 +76,11 @@ namespace IngameScript
 
         string _statusMessage;
         string _gridID;
+
         int _loadCount;
         bool _unloaded;
+        bool _unloadPossible;
+        IMyTerminalBlock _loadCounter;
         string _shipTag;
 
         string _refTag;
@@ -170,6 +174,7 @@ namespace IngameScript
             if (_unloaded)
 			{
                 _loadCount++;
+                Echo("Load Count: " + _loadCount);
 			}
             displayLoadCount();
         }
@@ -196,7 +201,6 @@ namespace IngameScript
                     }
                 }
             }
-
         }
 
 
@@ -267,6 +271,7 @@ namespace IngameScript
                 if (name.Contains(PAYLOAD))
                 {
                     Echo("Unload: " + name);
+                    Unload(block, oreContainers);
                 }
             }
         }
@@ -317,48 +322,12 @@ namespace IngameScript
                 IMyInventory sourceInv = supplyReactor.GetInventory(0);
                 ensureMinimumAmount(sourceInv, destInv, FUEL, fuel_qty);
             }
-            /*
-            //Builds list of all source inventories. 
-            List<IMyTerminalBlock> source_list = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(SOURCE, source_list);
-
-            //Builds list of all destination inventories. 
-            List<IMyTerminalBlock> dest_list = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(dest, dest_list);
-
-            //Cycles through destination inventories. 
-            for (int c = 0; c < dest_list.Count; c++)
-            {
-                IMyTerminalBlock destBlock = dest_list[c];
-                if (destBlock.HasInventory)
-                {
-                    //Cycles through source inventories. 
-                    for (int d = 0; d < source_list.Count; d++)
-                    {
-                        IMyTerminalBlock sourceBlock = source_list[d];
-                        if (sourceBlock.HasInventory)
-                        {
-                            //Retrieve source and destination inventories. 
-                            IMyInventory sourceInv = source_list[d].GetInventory(0);
-                            IMyInventory destInv = destBlock.GetInventory(0);
-
-                            //Load Selected Reactor With Uranium 
-                            ensureMinimumAmount(sourceInv, destInv, FUEL, fuel_qty);
-                        }
-
-                    }
-                }
-
-            }
-            */
+            
         }
 
 
         void Unload(IMyTerminalBlock payload, List<IMyCargoContainer> oreContainers)
         {
-            //_loadCount += 1;
-            //Echo(_loadCount.ToString());
-
             if (oreContainers.Count < 1)
                 return;
 
@@ -387,15 +356,22 @@ namespace IngameScript
                     }
                 }
             }
-            //displayLoadCount();
         }
 
 
         void displayLoadCount()
         {
-            IMyTerminalBlock ref_block = GridTerminalSystem.GetBlockWithName(_refTag);
+            if (_loadCounter == null || !_unloadPossible)
+                return;
+
+            if(_loadCounter.CustomData != "" && !_loadCounter.CustomData.Contains("Load Count:"))
+			{
+                _statusMessage = "Conflicting Custom Data in Load Counter! Please check block's name and Custom Data!";
+                return;
+			}
+
             string message = "Load Count: " + _loadCount.ToString();
-            ref_block.CustomData = message;
+            _loadCounter.CustomData = message;
         }
 
         // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
@@ -469,6 +445,7 @@ namespace IngameScript
             Build();
         }
 
+
         // INIT FUNCTIONS // --------------------------------------------------------------------------------------------------------------------------
 
         // BUILD //
@@ -476,6 +453,8 @@ namespace IngameScript
         {
             _statusMessage = "";
             _gridID = GetKey(Me, INI_HEAD, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+            _loadCounter = GetLoadCounter();
+            _unloadPossible = false;
 
             // Establish user defined reference block.  If none, set program block as reference.
             string refTag = GetKey(Me, INI_HEAD, "Reference", Me.CustomName);
@@ -504,6 +483,7 @@ namespace IngameScript
                     if (name.Contains(PAYLOAD))
                     {
                         AddToInventories(block);
+                        _unloadPossible = true;
                     }
                     else if (name.Contains(MAG_TAG))
                     {
@@ -526,7 +506,7 @@ namespace IngameScript
         public void SetMagAmounts(IMyTerminalBlock block)
         {
             string name = block.CustomName;
-            if (!name.Contains(MAG_TAG + "]") && !name.Contains(":"))
+            if ((!name.Contains(MAG_TAG + "]") && !name.Contains(":")) || GetKey(block, INI_HEAD, "Grid_ID", _gridID) != _gridID)
                 return;
 
             string tag = TagFromName(name);
@@ -622,6 +602,26 @@ namespace IngameScript
             EnsureKey(block, INI_HEAD, "AutocannonClip", amounts[4].ToString());
             EnsureKey(block, INI_HEAD, "LargeRailgunAmmo", amounts[5].ToString());
             EnsureKey(block, INI_HEAD, "SmallRailgunAmmo", amounts[6].ToString());
+        }
+
+
+        // GET LOAD COUNTER //
+        IMyTerminalBlock GetLoadCounter()
+        {
+            List<IMyTerminalBlock> counters = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(LOAD_TAG, counters);
+
+            foreach (IMyTerminalBlock block in counters)
+			{
+                if(!block.CustomData.Contains(INI_HEAD))
+				{
+                    return block;
+				}
+			}
+
+            _statusMessage = "No valid Load Counter block found.  Load counter should contain tag '" + LOAD_TAG
+                            +"' in the name, and have contain any Custom Data parameters for other functions!";
+            return null;
         }
 
 
