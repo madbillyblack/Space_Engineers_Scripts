@@ -51,9 +51,6 @@ namespace IngameScript
         const string ARGUMENT_A = "HangarDoor";
         const string ARGUMENT_B = "TimerB";
 
-        //Max distance (in meters) that program will check for timer
-        const int REF_DIST = 12;
-
         //INVENTORY CONSTANTS:
         //-------------------------------------------------------------------
         const string SOURCE = "[SRC]";
@@ -81,11 +78,8 @@ namespace IngameScript
         bool _unloaded;
         bool _unloadPossible;
         IMyTerminalBlock _loadCounter;
-        string _shipTag;
 
-        string _refTag;
         public IMyTerminalBlock _refBlock;
-        int _refDistance;
 
         List<IMyTerminalBlock> _inventories;
         List<IMyThrust> _escapeThrusters;
@@ -163,7 +157,7 @@ namespace IngameScript
                         // TODO
                         break;
                     default:
-                        _statusMessage = "UNRECOGNIZED COMMAND: " + argument;
+                        TriggerCall(argument);
                         break;
 				}
 			}
@@ -185,22 +179,65 @@ namespace IngameScript
         // ACTIVATE // - Finds and activates "Timer Block A" which is linked to detaching mechanisms. 
         public void Activate(string trigger)
         {
-            List<IMyTerminalBlock> timers_list = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(trigger, timers_list);
-            if (timers_list.Count > 0)
+            List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyTimerBlock>(timers);
+            if (timers.Count < 1 || _refBlock == null)
+                return;
+
+            List<IMyTimerBlock> triggerTimers = new List<IMyTimerBlock>();
+            foreach(IMyTimerBlock timer in timers)
+			{
+                if (timer.CustomName.Contains(trigger))
+                    triggerTimers.Add(timer);
+			}
+            if (triggerTimers.Count < 1)
+			{
+                _statusMessage = "No Timers of name " + trigger + " found.";
+                return;
+            }
+
+            IMyTimerBlock timerToTrigger = triggerTimers[0];
+            var distance = Vector3D.Distance(_refBlock.GetPosition(), timerToTrigger.GetPosition());
+
+            // Check to see if any other triggers are closer than the one in the list. If they are, make them the dominant trigger.
+            foreach (IMyTimerBlock triggerTimer in triggerTimers)
             {
-                IMyTerminalBlock ref_block = GridTerminalSystem.GetBlockWithName(_refTag) as IMyTerminalBlock;
-                double max_dist = REF_DIST;
-                for (int i = 0; i < timers_list.Count; i++)
+                var newDistance = Vector3D.Distance(_refBlock.GetPosition(), triggerTimer.GetPosition());
+                if (newDistance < distance)
                 {
-                    var distance = Vector3D.Distance(ref_block.GetPosition(), timers_list[i].GetPosition());
-                    IMyTerminalBlock timer = timers_list[i] as IMyTimerBlock;
-                    if (distance < max_dist)
-                    {
-                        timer.GetActionWithName("TriggerNow").Apply(timer);
-                    }
+                    distance = newDistance;
+                    timerToTrigger = triggerTimer;
                 }
             }
+
+            timerToTrigger.GetActionWithName("TriggerNow").Apply(timerToTrigger);
+            Echo("Activate: " + timerToTrigger.CustomName);
+        }
+
+
+        // TRIGGER CALL //
+        public void TriggerCall(string arg)
+		{
+            if(arg.ToUpper().StartsWith("TRIGGER_"))
+			{
+
+                // Format the argument into a trigger key to read from program block's INI.
+                string[] args = arg.Split('_');
+                if(args.Length < 2)
+				{
+                    _statusMessage = "Invalid Trigger Command: " + arg;
+                    return;
+				}
+                string triggerKey = "Trigger_" + args[1];
+
+                // Get a timer name/tag from the INI and try to activate the nearest timer with that name.
+                string timerName = GetKey(Me, INI_HEAD, triggerKey , "Timer Block");
+                Activate(timerName);
+                
+                return;
+			}
+
+            _statusMessage = "UNRECOGNIZED COMMAND: " + arg;
         }
 
 
@@ -308,7 +345,7 @@ namespace IngameScript
 
 
 
-        //Finds all reactors containing defined tag, and loads them with defined amounts of fuel. 
+        // REFUEL //Finds all reactors containing defined tag, and loads them with defined amounts of fuel. 
         void Refuel(IMyTerminalBlock reactor, List<IMyReactor> fuelSupplies)//string dest, int fuel_qty)
         {
             if (fuelSupplies.Count < 1)
@@ -326,6 +363,7 @@ namespace IngameScript
         }
 
 
+        // UNLOAD //
         void Unload(IMyTerminalBlock payload, List<IMyCargoContainer> oreContainers)
         {
             if (oreContainers.Count < 1)
@@ -359,6 +397,7 @@ namespace IngameScript
         }
 
 
+        // DISPLAY LOAD COUNT //
         void displayLoadCount()
         {
             if (_loadCounter == null || !_unloadPossible)
@@ -373,6 +412,7 @@ namespace IngameScript
             string message = "Load Count: " + _loadCount.ToString();
             _loadCounter.CustomData = message;
         }
+
 
         // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -468,12 +508,11 @@ namespace IngameScript
                 _refBlock = Me;
             }
 
-            _refDistance = ParseInt(GetKey(Me, INI_HEAD, "Ref_Distance", "12"), 12);
-
             _inventories = new List<IMyTerminalBlock>();
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
 
+            EnsureKey(Me, INI_HEAD, "Trigger_Door", "Door Timer");
 
             foreach (IMyTerminalBlock block in blocks)
             {
