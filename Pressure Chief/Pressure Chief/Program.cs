@@ -183,6 +183,7 @@ namespace IngameScript
 			public string Status; // Current pressure status read from main Vents[0]
 			public IMyTimerBlock LockTimer;
 			public IMySoundBlock LockAlarm;
+			public bool IsPressurized;
 
 			// Constructor - Vent required
 			public Sector(IMyAirVent airVent)
@@ -202,6 +203,7 @@ namespace IngameScript
 				this.NormalColor = GetKey(INI_HEAD, airVent, "Normal_Color", NORMAL);
 				this.EmergencyColor = GetKey(INI_HEAD, airVent, "Emergency_Color", EMERGENCY);
 				this.Status = GetKey(INI_HEAD, airVent, "Status", airVent.Status.ToString());
+				this.IsPressurized = airVent.GetOxygenLevel() >= 1 - THRESHHOLD;
 
 				// Designate exterior sector
 				if (this.Tag == _vacTag)
@@ -213,48 +215,20 @@ namespace IngameScript
 			// CHECK - Check all pressure status between this and all neighboring sectors and update lights based on pressure status.
 			public void Check()
 			{
+				// If no status change from last cycle, stop.
+
+
 				foreach (Bulkhead myBulkhead in this.Bulkheads)
-					myBulkhead.Check();
-
-				if (this.Lights.Count > 0)
 				{
-					bool depressurized = this.Vents[0].GetOxygenLevel() < 0.7 || this.Vents[0].Depressurize;
-
-					foreach (IMyLightingBlock myLight in this.Lights)
-					{
-						if (depressurized)
-						{
-							myLight.Color = ColorFromString(GetKey(INI_HEAD, myLight, "Emergency_Color", this.EmergencyColor));
-							try
-							{
-								myLight.Radius = float.Parse(GetKey(INI_HEAD, myLight, "Emergency_Radius", "0"));
-								myLight.Intensity = float.Parse(GetKey(INI_HEAD, myLight, "Emergency_Intensity", "0"));
-							}
-							catch
-							{
-								_statusMessage = "WARNING: " + myLight.CustomName +
-												"\ncontains invalid parameters!" +
-												"\nCheck Custom Data inputs!";
-							}
-						}
-						else
-						{
-							myLight.Color = ColorFromString(GetKey(INI_HEAD, myLight, "Normal_Color", this.NormalColor));
-
-							try
-							{
-								myLight.Radius = float.Parse(GetKey(INI_HEAD, myLight, "Normal_Radius", "0"));
-								myLight.Intensity = float.Parse(GetKey(INI_HEAD, myLight, "Normal_Intensity", "0"));
-							}
-							catch
-							{
-								_statusMessage = "WARNING: " + myLight.CustomName +
-												"\ncontains invalid parameters!" +
-												"\nCheck Custom Data inputs!";
-							}
-						}	 
-					}
+						myBulkhead.Check();
 				}
+
+				if (!this.HasChanged())
+					return;
+
+				this.SetPressureStatus();
+
+				this.LightCheck();
 
 				if (_autoClose)
 					this.UpdateStatus();
@@ -357,6 +331,78 @@ namespace IngameScript
 						SetKey(INI_HEAD, light, "Normal_Intensity", intensity);
 				}
 			}
+
+			// HAS CHANGED // Returns whether SECTROR's pressure has changed since last cycle.
+			public bool HasChanged()
+			{
+				bool oldStatus = this.IsPressurized;
+				bool newStatus = this.Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD;
+
+				if (oldStatus == newStatus)
+					return false;
+				else
+					return true;
+			}
+
+			// SET PRESSURE STATUS // Update IsPressurized bool based on Vent Pressure.
+			public void SetPressureStatus()
+			{
+				this.IsPressurized = this.Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD;
+			}
+
+			public void SetPressureStatus(bool doorOverride)
+			{
+				bool pressurized = this.Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD;
+
+				if (pressurized && !doorOverride)
+					this.IsPressurized = true;
+				else
+					this.IsPressurized = false;
+			}
+
+			// LIGHT CHECK //
+			public void LightCheck()
+			{
+				if (this.Lights.Count < 1)
+					return;
+
+				bool depressurized = this.Vents[0].GetOxygenLevel() < 0.7 || this.Vents[0].Depressurize;
+
+				foreach (IMyLightingBlock myLight in this.Lights)
+				{
+					if (depressurized)
+					{
+						myLight.Color = ColorFromString(GetKey(INI_HEAD, myLight, "Emergency_Color", this.EmergencyColor));
+						try
+						{
+							myLight.Radius = float.Parse(GetKey(INI_HEAD, myLight, "Emergency_Radius", "0"));
+							myLight.Intensity = float.Parse(GetKey(INI_HEAD, myLight, "Emergency_Intensity", "0"));
+						}
+						catch
+						{
+							_statusMessage = "WARNING: " + myLight.CustomName +
+											"\ncontains invalid parameters!" +
+											"\nCheck Custom Data inputs!";
+						}
+					}
+					else
+					{
+						myLight.Color = ColorFromString(GetKey(INI_HEAD, myLight, "Normal_Color", this.NormalColor));
+
+						try
+						{
+							myLight.Radius = float.Parse(GetKey(INI_HEAD, myLight, "Normal_Radius", "0"));
+							myLight.Intensity = float.Parse(GetKey(INI_HEAD, myLight, "Normal_Intensity", "0"));
+						}
+						catch
+						{
+							_statusMessage = "WARNING: " + myLight.CustomName +
+											"\ncontains invalid parameters!" +
+											"\nCheck Custom Data inputs!";
+						}
+					}
+				}
+			}
 		}
 
 
@@ -409,9 +455,15 @@ namespace IngameScript
 				if (this.SectorA == null || this.SectorB == null)
 					return;
 
+				this.DrawGauges();
+
+				this.Override = ParseBool(GetKey(INI_HEAD, this.Doors[0], "Override", "false"));
+				if(!(this.Override || this.SectorA.HasChanged() || this.SectorB.HasChanged()))
+					return;
+
 				float pressureA = this.VentA.GetOxygenLevel();
 				float pressureB = this.VentB.GetOxygenLevel();
-				this.Override = ParseBool(GetKey(INI_HEAD, this.Doors[0], "Override", "false"));
+
 
 				if (Math.Abs(pressureA - pressureB) < THRESHHOLD)
 				{
@@ -423,8 +475,6 @@ namespace IngameScript
 					foreach (IMyDoor door in this.Doors)
 						CheckDoor(door, false);
 				}
-
-				this.DrawGauges();
 			}
 
 			// Set Override - Set's override status and updates custom data.
@@ -1158,6 +1208,8 @@ namespace IngameScript
 			sector.CloseDoors();
 			if(sector.Vents.Count > 0)
 			{
+				sector.SetPressureStatus(true);
+
 				foreach (IMyAirVent vent in sector.Vents)
 				{
 					vent.Depressurize = true;
