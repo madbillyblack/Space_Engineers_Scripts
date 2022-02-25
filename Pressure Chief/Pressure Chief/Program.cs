@@ -2079,7 +2079,7 @@ namespace IngameScript
 		// SURFACE TO BULKHEAD // Add LCD, Surface, and related variables to lists in assigned bulkhead.
 		void SurfaceToBulkhead(IMyTerminalBlock block, Bulkhead bulkhead, string side, string vertical)
 		{
-			SetKey(INI_HEAD, block, "Side", side);
+			EnsureKey(INI_HEAD, block, "Side", side);
 			EnsureKey(INI_HEAD, block, "Screen_Index", "0");
 			EnsureKey(INI_HEAD, block, "Vertical", vertical);
 			bulkhead.LCDs.Add(block as IMyTextSurfaceProvider);
