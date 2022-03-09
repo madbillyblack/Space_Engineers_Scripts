@@ -220,7 +220,7 @@ namespace IngameScript
 
 				foreach (Bulkhead myBulkhead in this.Bulkheads)
 				{
-						myBulkhead.Check();
+					myBulkhead.Check();
 				}
 
 				if (!this.HasChanged())
@@ -402,6 +402,22 @@ namespace IngameScript
 						}
 					}
 				}
+			}
+
+
+			// DOCKED // Returns if sector is docked to another grid
+			public bool Docked()
+			{
+				if (this.Type != "DOCK" || this.MergeBlocks.Count < 1)
+					return false;
+
+				foreach(IMyShipMergeBlock mergeBlock in this.MergeBlocks)
+				{
+					if (mergeBlock.IsConnected)
+						return true;
+				}
+
+				return false;
 			}
 		}
 
@@ -1205,6 +1221,12 @@ namespace IngameScript
 			if (UnknownSector(sector, "Lock"))
 				return;
 
+			if(sector.Docked() && !openAll)
+			{
+				SetDockedOverride(sector, true);
+				return;
+			}
+
 			sector.CloseDoors();
 			if(sector.Vents.Count > 0)
 			{
@@ -1227,6 +1249,10 @@ namespace IngameScript
 
 			if (UnknownSector(sector, "Lock"))
 				return;
+
+			// Restore Docked sector to normal status.
+			if (sector.Docked())
+				SetDockedOverride(sector, false);
 
 			sector.CloseDoors();
 			if (sector.Vents.Count > 0)
