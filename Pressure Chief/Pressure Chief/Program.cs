@@ -85,14 +85,14 @@ namespace IngameScript
 		const string CLOSER = "|]";
 		const char SPLITTER = '|';
 		const string INI_HEAD = "Pressure Chief";
-		const string MONITOR_HEAD = "Pressure Monitor";
+		const string MONITOR_HEAD = "Pressure Data";
 		const string NORMAL = "255,255,255";
 		const string EMERGENCY = "255,0,0";
 		const int DELAY = 3;
 		const float THRESHHOLD = 0.2f;
 		const int SCREEN_THRESHHOLD = 180;
 		const string UNIT = "%"; // Default pressure unit.
-		const string MONITOR_TAG = "[Pressure]";
+		const string DATA_TAG = "[P_Data]";
 		const string SLASHES = "//////////////////////////////////////////////////////////////////////////////////////////////////////\n";
 
 
@@ -102,7 +102,7 @@ namespace IngameScript
 		static string _overview;
 		static string _gridID;
 		static string _vacTag;
-		static string _monitorTag;
+		static string _dataTag;
 		static string _unit; // Display unit of pressure.
 		static float _atmo; // Atmospheric conversion factor decided by unit.
 		static float _factor; // Multiplier of pressure reading.
@@ -157,7 +157,7 @@ namespace IngameScript
 		static List<IMyShipConnector> _connectors;
 		static List<IMyShipMergeBlock> _mergeBlocks;
 		static List<IMyLightingBlock> _lights;
-		static List<Monitor> _monitors;
+		static List<DataDisplay> _dataDisplays;
 
 		//Lists for script classes
 		static List<Sector> _sectors;
@@ -542,17 +542,17 @@ namespace IngameScript
 
 
 		// MONITOR // Wrapper class for blocks that display pressure monitor displays.
-		public class Monitor
+		public class DataDisplay
 		{
 			public IMyTerminalBlock Block;
-			public List<MonitorScreen> Screens;
+			public List<DataScreen> Screens;
 			public int screenCount;
 
-			public Monitor(IMyTerminalBlock block)
+			public DataDisplay(IMyTerminalBlock block)
 			{
 				this.Block = block;
 				this.screenCount = (block as IMyTextSurfaceProvider).SurfaceCount;
-				this.Screens = new List<MonitorScreen>();
+				this.Screens = new List<DataScreen>();
 
 				string s = GetKey(MONITOR_HEAD, block, "Screen_Indices", "0");
 				string[] screens = s.Split(',');
@@ -567,7 +567,7 @@ namespace IngameScript
 					{
 						if(index < this.screenCount)
 						{
-							MonitorScreen screen = new MonitorScreen(block, (block as IMyTextSurfaceProvider).GetSurface(index), index);
+							DataScreen screen = new DataScreen(block, (block as IMyTextSurfaceProvider).GetSurface(index), index);
 							this.Screens.Add(screen);
 						}
 					}
@@ -577,7 +577,7 @@ namespace IngameScript
 
 
 		// MONITOR SCREEN // Wrapper class for individual surfaces belonging to a Monitor
-		public class MonitorScreen
+		public class DataScreen
 		{
 			public IMyTerminalBlock ParentBlock;
 			public IMyTextSurface Surface;
@@ -600,7 +600,7 @@ namespace IngameScript
 			public bool ShowConnectorNames;
 			public bool ShowConnectorStatus;
 
-			public MonitorScreen(IMyTerminalBlock block, IMyTextSurface surface, int screenIndex)
+			public DataScreen(IMyTerminalBlock block, IMyTextSurface surface, int screenIndex)
 			{
 				this.ParentBlock = block;
 				this.Surface = surface;
@@ -719,7 +719,7 @@ namespace IngameScript
 			}
 			Echo(sectorData);
 
-			UpdateMonitors();
+			UpdateData();
 
 			// Check for vents to run script from
 			if (_vents.Count < 1)
@@ -1004,17 +1004,17 @@ namespace IngameScript
 		}
 
 
-		// UPDATE MONITORS // Print Overview text to any blocks in the _monitors list.
-		void UpdateMonitors()
+		// UPDATE MONITORS // Print Overview text to any blocks in the _dataDisplays list.
+		void UpdateData()
 		{
-			if (_monitors.Count < 1)
+			if (_dataDisplays.Count < 1)
 				return;
 
-			foreach(Monitor monitor in _monitors)
+			foreach(DataDisplay display in _dataDisplays)
 			{
-				if(monitor.Screens.Count > 0)
+				if(display.Screens.Count > 0)
 				{
-					foreach (MonitorScreen screen in monitor.Screens)
+					foreach (DataScreen screen in display.Screens)
 					{
 						string readOut = "";
 						switch (screen.Header.ToLower())
@@ -1117,34 +1117,8 @@ namespace IngameScript
 
 						screen.Surface.WriteText(readOut);
 					}
-			}
-			}
-				/*
-				foreach (IMyTerminalBlock monitor in _monitors)
-				{
-					try
-					{
-						ushort index;
-						if (!UInt16.TryParse(GetKey(MONITOR_HEAD, monitor as IMyTerminalBlock, "Monitor_Index", "0"), out index))
-							index = 0;
-
-						if (index >= (monitor as IMyTextSurfaceProvider).SurfaceCount)
-						{
-							index = 0;
-							_statusMessage = "WARNING: " + monitor.CustomName + "\nUser defined Screen Index too large." +
-								"\n* Remember that screens index from 0.\n* Highest index should be one less than screen count.";
-						}
-
-						IMyTextSurface surface = (monitor as IMyTextSurfaceProvider).GetSurface(index);
-						surface.WriteText(_overview, false);
-					}
-					catch
-					{
-						_statusMessage = "WARNING: " + monitor.CustomName + "\nis not a valid Text Surface Provider. \nPlease remove '"
-							+  _monitorTag + "' from block's name.\n";
-					}
 				}
-				*/
+			}
 		}
 
 
@@ -1827,7 +1801,7 @@ namespace IngameScript
 			_lights = new List<IMyLightingBlock>();
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
-			_monitors = new List<Monitor>();
+			_dataDisplays = new List<DataDisplay>();
 			_surfaceProviders = new List<IMyTerminalBlock>();
 			_unusable = new List<IMyTerminalBlock>();
 
@@ -1965,7 +1939,7 @@ namespace IngameScript
 				}
 			}
 
-			AssignMonitors();
+			AssignDataDisplays();
 		}
 
 
@@ -2218,19 +2192,20 @@ namespace IngameScript
 		}
 
 
-		//ASSIGN MONITORS// Get and set up blocks and surfaces designated as monitors
-		void AssignMonitors()
+		//ASSIGN DATA DISPLAYS// Get and set up blocks and surfaces designated as data displays
+		void AssignDataDisplays()
 		{
 			// Central displays for overview data
-			_monitorTag = GetKey(INI_HEAD, Me, "Monitor_Tag", MONITOR_TAG);
-			List<IMyTerminalBlock> monitors = new List<IMyTerminalBlock>();
-			GridTerminalSystem.SearchBlocksOfName(_monitorTag, monitors);
+			_dataTag = GetKey(INI_HEAD, Me, "Data_Tag", DATA_TAG);
+			List<IMyTerminalBlock> dataBlocks = new List<IMyTerminalBlock>();
+			GridTerminalSystem.SearchBlocksOfName(_dataTag, dataBlocks);
 
-			if (monitors.Count > 0)
+			if (dataBlocks.Count > 0)
 			{
-				foreach (IMyTerminalBlock monitorBlock in monitors)
+				foreach (IMyTerminalBlock dataBlock in dataBlocks)
 				{
-					_monitors.Add(new Monitor(monitorBlock));
+					if(GetKey(INI_HEAD, dataBlock, "Grid_ID", _gridID) == _gridID)
+						_dataDisplays.Add(new DataDisplay(dataBlock));
 				}
 			}
 		}
