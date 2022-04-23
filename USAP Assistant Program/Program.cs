@@ -26,12 +26,16 @@ namespace IngameScript
         //Values and strings inside quotes can be changed here.
 
         const string INI_HEAD = "USAP";
+        const string SHARED = "Shared Data";
         const string PAYLOAD = "[MIN]";
         const string DEST = "[ORE]";
         const string MAG_TAG = "[MAG";
         const string REACTOR = "[PWR]";
         const string FUEL_SUPPLY = "[SRC]";
         const string AMMO_SUPPLY = "[WEP]";
+        const string COMP_TAG = "[CST]";
+        const string COMP_SUPPLY = "[CMP]";
+        const string GAS_TAG = "[H2O]";
 
         const string GATLING = "GATLING";
         const string MISSILE = "MISSILE";
@@ -40,6 +44,70 @@ namespace IngameScript
         const string AUTO = "AUTO";
         const string RAIL = "RAIL";
         const string MINI_RAIL = "MINI-RAIL";
+        const string LOADOUT = "Loadout";
+        const string DEFAULT_PROFILE =  "BulletproofGlass:0\n" +
+                                        "Computer:0\n" +
+                                        "Construction:0\n" +
+                                        "Detector:0\n" +
+                                        "Display:0\n" +
+                                        "Explosives:0\n" +
+                                        "Girder:0\n" +
+                                        "GravityGenerator:0\n" +
+                                        "InteriorPlate:0\n" +
+                                        "LargeTube:0\n" +
+                                        "Medical:0\n" +
+                                        "MetalGrid:0\n" +
+                                        "Motor:0\n" +
+                                        "PowerCell:0\n" +
+                                        "RadioCommunication:0\n" +
+                                        "Reactor:0\n" +
+                                        "SmallTube:0\n" +
+                                        "SolarCell:0\n" +
+                                        "SteelPlate:0\n" +
+                                        "Superconductor:0\n" +
+                                        "Thrust:0";
+        const string DEFAULT_BASIC =    "BulletproofGlass:50\n" +
+                                        "Computer:250\n" +
+                                        "Construction:1500\n" +
+                                        "Detector:0\n" +
+                                        "Display:25\n" +
+                                        "Explosives:0\n" +
+                                        "Girder:25\n" +
+                                        "GravityGenerator:0\n" +
+                                        "InteriorPlate:250\n" +
+                                        "LargeTube:25\n" +
+                                        "Medical:0\n" +
+                                        "MetalGrid:150\n" +
+                                        "Motor:100\n" +
+                                        "PowerCell:25\n" +
+                                        "RadioCommunication:0\n" +
+                                        "Reactor:0\n" +
+                                        "SmallTube:500\n" +
+                                        "SolarCell:0\n" +
+                                        "SteelPlate:1500\n" +
+                                        "Superconductor:0\n" +
+                                        "Thrust:0";
+        const string DEFAULT_ADVANCED = "BulletproofGlass:50\n" +
+                                        "Computer:750\n" +
+                                        "Construction:1000\n" +
+                                        "Detector:25\n" +
+                                        "Display:25\n" +
+                                        "Explosives:0\n" +
+                                        "Girder:25\n" +
+                                        "GravityGenerator:4\n" +
+                                        "InteriorPlate:125\n" +
+                                        "LargeTube:25\n" +
+                                        "Medical:0\n" +
+                                        "MetalGrid:25\n" +
+                                        "Motor:100\n" +
+                                        "PowerCell:25\n" +
+                                        "RadioCommunication:10\n" +
+                                        "Reactor:100\n" +
+                                        "SmallTube:250\n" +
+                                        "SolarCell:50\n" +
+                                        "SteelPlate:1000\n" +
+                                        "Superconductor:150\n" +
+                                        "Thrust:75";
 
         //TIMER CONSTANTS:
         //-----------------------------------------------------------
@@ -77,13 +145,17 @@ namespace IngameScript
         int _loadCount;
         bool _unloaded;
         bool _unloadPossible;
+        bool _hasComponentCargo;
         IMyTerminalBlock _loadCounter;
 
         public IMyTerminalBlock _refBlock;
 
         List<IMyTerminalBlock> _inventories;
+        //List<IMyTerminalBlock> _magazines;
+        //List<IMyTerminalBlock> _reactors;
+        //List<IMyTerminalBlock> _constructionCargo;
         List<IMyThrust> _escapeThrusters;
-
+        
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
         {
@@ -129,11 +201,25 @@ namespace IngameScript
 
             if (argument == "")
             {
-                manageCargo();
+                ManageCargo();
             }
             else
 			{
-                switch(argument.ToUpper())
+                string[] args = argument.Split(' ');
+                string arg = args[0].ToUpper();
+
+                string cmdArg = "";
+                if(args.Length > 1)
+                {
+                    for(int i = 1; i < args.Length; i++)
+                    {
+                        cmdArg += args[i] + " ";
+                    }
+
+                    cmdArg = cmdArg.Trim();
+                }
+
+                switch(arg)
 				{
                     case "REFRESH":
                         Build();
@@ -155,6 +241,12 @@ namespace IngameScript
                         break;
                     case "TOGGLE_ESCAPE_THRUSTERS":
                         // TODO
+                        break;
+                    case "SELECT_PROFILE":
+                        SelectProfile(cmdArg);
+                        break;
+                    case "UPDATE_PROFILES":
+                        UpdateProfiles();
                         break;
                     default:
                         TriggerCall(argument);
@@ -242,7 +334,7 @@ namespace IngameScript
 
 
         // MANAGE CARGO //
-        void manageCargo()
+        void ManageCargo()
         {
             if (_inventories.Count < 1)
                 return;
@@ -257,6 +349,7 @@ namespace IngameScript
 
             List<IMyCargoContainer> ammoSupplies = new List<IMyCargoContainer>();
             List<IMyCargoContainer> oreContainers = new List<IMyCargoContainer>();
+            List<IMyCargoContainer> compSupplies = new List<IMyCargoContainer>();
 
             foreach (IMyCargoContainer cargoBlock in cargoBlocks)
             {
@@ -270,6 +363,11 @@ namespace IngameScript
                 if (name.Contains(DEST))
                 {
                     oreContainers.Add(cargoBlock);
+                }
+
+                if(name.Contains(COMP_SUPPLY))
+                {
+                    compSupplies.Add(cargoBlock);
                 }
             }
 
@@ -310,24 +408,35 @@ namespace IngameScript
                     Echo("Unload: " + name);
                     Unload(block, oreContainers);
                 }
+
+                if (name.Contains(COMP_TAG))
+                {
+                    Echo("Resupply: " + name);
+                    Unload(block, compSupplies);
+                    Reload(block, compSupplies);
+                }
+
+                if (name.Contains(GAS_TAG))
+                {
+                    Echo("Resupply: " + name);
+                    Reload(block, oreContainers);
+                }
             }
         }
 
 
         // RELOAD // - Finds all inventories containing defined tag, and loads them with defined amounts of ammo.
-        void Reload(IMyTerminalBlock magazine, List<IMyCargoContainer> supplyBlocks)
+        void Reload(IMyTerminalBlock destination, List<IMyCargoContainer> supplyBlocks)
         {
             // Convert Loadout Key into 2D array of format [Ammotype][AmmoQty]
-            string[][] loadouts = StringTo2DArray(GetKey(magazine, INI_HEAD, "Loadout", ""), '\n', ':');
+            string[][] loadouts = StringTo2DArray(GetKey(destination, INI_HEAD, LOADOUT, ""), '\n', ':');
 
-            if (supplyBlocks.Count < 1 || !magazine.HasInventory || loadouts.Length < 1)
+            if (supplyBlocks.Count < 1 || !destination.HasInventory || loadouts.Length < 1)
             {
                 return;
             }
 
-
-
-            IMyInventory magInv = magazine.GetInventory(0);
+            IMyInventory magInv = destination.GetInventory(0);
 
             foreach (IMyCargoContainer supply in supplyBlocks)
             {
@@ -359,7 +468,6 @@ namespace IngameScript
                 IMyInventory sourceInv = supplyReactor.GetInventory(0);
                 ensureMinimumAmount(sourceInv, destInv, FUEL, fuel_qty);
             }
-            
         }
 
 
@@ -383,7 +491,7 @@ namespace IngameScript
 						{
                             foreach (MyInventoryItem item in items)
                             {
-                                Echo(item.Type.ToString());
+                                //Echo(item.Type.ToString());
                                 if (item.Type.ToString().Contains("MyObjectBuilder_Ore"))
                                 {
                                     sourceInv.TransferItemTo(destInv, 0, null, true, null);
@@ -470,7 +578,7 @@ namespace IngameScript
             else
                 newID = Me.CubeGrid.EntityId.ToString();
 
-            SetKey(Me, INI_HEAD, "Grid_ID", newID);
+            SetKey(Me, SHARED, "Grid_ID", newID);
 
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
@@ -478,7 +586,7 @@ namespace IngameScript
             foreach (IMyTerminalBlock block in blocks)
             {
                 if (block.CustomData.Contains(_gridID))
-                    SetKey(block, INI_HEAD, "Grid_ID", newID);
+                    SetKey(block, SHARED, "Grid_ID", newID);
             }
 
             _gridID = newID;
@@ -492,9 +600,10 @@ namespace IngameScript
         public void Build()
         {
             _statusMessage = "";
-            _gridID = GetKey(Me, INI_HEAD, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+            _gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
             _loadCounter = GetLoadCounter();
             _unloadPossible = false;
+            _hasComponentCargo = false;
 
             // Establish user defined reference block.  If none, set program block as reference.
             string refTag = GetKey(Me, INI_HEAD, "Reference", Me.CustomName);
@@ -509,6 +618,7 @@ namespace IngameScript
             }
 
             _inventories = new List<IMyTerminalBlock>();
+            _escapeThrusters = new List<IMyThrust>();
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
 
@@ -516,25 +626,13 @@ namespace IngameScript
 
             foreach (IMyTerminalBlock block in blocks)
             {
-                string name = block.CustomName;
-                if (block.HasInventory)
-                {
-                    if (name.Contains(PAYLOAD))
-                    {
-                        AddToInventories(block);
-                        _unloadPossible = true;
-                    }
-                    else if (name.Contains(MAG_TAG))
-                    {
-                        SetMagAmounts(block);
-                        AddToInventories(block);
-                    }
-                    else if (name.Contains(REACTOR))
-                    {
-                        EnsureKey(block, INI_HEAD, "Uranium", "50");
-                        AddToInventories(block);
-                    }
-                }
+                if (block.HasInventory && GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
+                    AddToInventories(block);
+            }
+
+            if(_hasComponentCargo)
+            {
+                EnsureProfiles();
             }
 
             _escapeThrusters = new List<IMyThrust>();
@@ -545,7 +643,7 @@ namespace IngameScript
         public void SetMagAmounts(IMyTerminalBlock block)
         {
             string name = block.CustomName;
-            if ((!name.Contains(MAG_TAG + "]") && !name.Contains(":")) || GetKey(block, INI_HEAD, "Grid_ID", _gridID) != _gridID)
+            if ((!name.Contains(MAG_TAG + "]") && !name.Contains(":")) || GetKey(block, SHARED, "Grid_ID", _gridID) != _gridID)
                 return;
 
             string tag = TagFromName(name);
@@ -554,7 +652,6 @@ namespace IngameScript
             switch (tag.ToUpper())
             {
                 case "GENERAL":
-                    //EnsureLoadout(block, new int[] { 5, 5, 5, 5, 5, 5, 5});
                     loadout = "NATO_25x184mm:1\n" +
                               "Missile200mm:1\n" +
                               "LargeCalibreAmmo:1\n" +
@@ -564,46 +661,202 @@ namespace IngameScript
                               "SmallRailgunAmmo:1";
                     break;
                 case GATLING:
-                    //EnsureLoadout(block, new int[] { 7, 0, 0, 0, 0, 0, 0 });
                     loadout = "NATO_25x184mm:7";
                     break;
                 case MISSILE:
-                    //EnsureLoadout(block, new int[] { 0, 5, 0, 0, 0, 0, 0 });
                     loadout = "Missile200mm:4";
                     break;
                 case ARTILLERY:
-                    //EnsureLoadout(block, new int[] { 0, 0, 10, 0, 0, 0, 0 });
                     loadout = "LargeCalibreAmmo:3";
                     break;
                 case ASSAULT:
-                    //EnsureLoadout(block, new int[] { 0, 0, 0, 10, 0, 0, 0 });
                     loadout = "MediumCalibreAmmo:2";
                     break;
                 case AUTO:
-                    //EnsureLoadout(block, new int[] { 0, 0, 0, 0, 5, 0, 0 });
                     loadout = "AutocannonClip:5";
                     break;
                 case RAIL:
-                    //EnsureLoadout(block, new int[] { 0, 0, 0, 0, 0, 4, 0 });
                     loadout = "LargeRailgunAmmo:1";
                     break;
                 case MINI_RAIL:
-                    //EnsureLoadout(block, new int[] { 0, 0, 0, 0, 0, 0, 8 });
                     loadout = "SmallRailgunAmmo:6";
                     break;
             }
 
-            EnsureKey(block, INI_HEAD, "Loadout", loadout);
+            EnsureKey(block, INI_HEAD, LOADOUT, loadout);
         }
 
+
+        // ENSURE PROFILES // Ensure that program block has construction profiles
+        public void EnsureProfiles()
+        {
+            string [] profiles = GetKey(Me, INI_HEAD, "Profiles", "Basic, Advanced").Split(',');
+
+            if (profiles.Length < 1)
+                return;
+
+            foreach(string profile in profiles)
+            {
+                string header = "Profile: " + profile.Trim();
+
+                // Decide the default loadout profile if none already exists.
+                string loadout;
+                switch (profile.Trim().ToUpper())
+                {
+                    case "BASIC":
+                        loadout = DEFAULT_BASIC;
+                        break;
+                    case "ADVANCED":
+                        loadout = DEFAULT_ADVANCED;
+                        break;
+                    default:
+                        loadout = DEFAULT_PROFILE;
+                        break;
+                }
+
+                EnsureKey(Me, header, LOADOUT, loadout);
+            }
+
+            UpdateProfiles();
+        }
+
+
+        // SELECT PROFILE // - Internal function for choosing profile
+        public void SelectProfile(string profileName)
+        {
+            // Search for profile in 
+            if (profileName == "" || !Me.CustomData.ToLower().Contains(profileName.ToLower() + "]"))
+            {
+                _statusMessage = "No Profile named \"" + profileName + "\" found!";
+                return;
+            }
+
+            SetActiveProfile(profileName);
+            UpdateProfiles();
+        }
+
+
+        // GET ACTIVE PROFILE // - Returns Active Profile as 2D array
+        public string [][] GetActiveProfile()
+        {
+            string[] profiles = GetKey(Me, INI_HEAD, "Profiles", DEFAULT_PROFILE).Split(',');
+
+            if (profiles.Length > 0)
+            {
+                string activeProfile = "Profile: " + profiles[0];
+                return StringTo2DArray(GetKey(Me, activeProfile, LOADOUT, DEFAULT_BASIC), '\n', ':');
+            }
+            else
+            {
+                return StringTo2DArray(DEFAULT_BASIC, '\n', ':');
+            }  
+        }
+
+
+        // SET ACTIVE PROFILE // - Designate Active Profile by making it the first entry in the Profile Key List.
+        public void SetActiveProfile(string profileName)
+        {
+            string[] profiles = GetKey(Me, INI_HEAD, "Profiles", "").Split(',');
+            if (profiles.Length < 2)
+                return;
+
+            for(int i = 1; i < profiles.Length; i++)
+            {
+                if(profiles[i].Trim().ToLower() == profileName.ToLower())
+                {
+                    // Switch the old and new active profiles
+                    profiles[i] = profiles[0];
+                    profiles[0] = profileName;
+
+                    // Rebuild the Profile Key List.
+                    string profileList = profiles[0];
+                    for(int j = 1; j < profiles.Length; j++)
+                    {
+                        profileList += " ," + profiles[j];
+                    }
+
+                    SetKey(Me, INI_HEAD, "Profiles", profileList);
+                    return;
+                }
+            }
+        }
+
+
+        // UPDATE PROFILES // - Set profiles of all component cargoes, based on profile template saved in program block.
+                            // Profiles are proportional to large grid small cargo container: 15,625 L
+        public void UpdateProfiles()
+        {
+            if (_inventories.Count < 1 || !_hasComponentCargo)
+                return;
+
+            string[][] profileData = GetActiveProfile();
+
+            foreach (IMyTerminalBlock block in _inventories)
+            {
+                if (block.CustomName.Contains(COMP_TAG))
+                {
+                    //Get Ratio of container's volume to reference container size
+                    float volumeRatio = (float)block.GetInventory(0).MaxVolume / 15.625f;
+                    string loadout = "";
+
+                    for (int c = 0; c < profileData.GetLength(0); c++)
+                    {
+                        double amount = Math.Floor((float) ParseInt(profileData[c][1], 0) * volumeRatio);
+                        string number = ((int)amount).ToString();
+
+                        loadout += profileData[c][0] + ":" + number + "\n";
+                    }
+
+                    SetKey(block, INI_HEAD, LOADOUT, loadout);
+                }
+            }  
+        }
+
+
+        // CONNECTED TO COMPONENT SUPPLY // - True if ship is connected to station with designated COMP SUPPLY inventories
+        public bool ConnectedToComponentSupply()
+        {
+            List<IMyTerminalBlock> compSupplies = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(COMP_SUPPLY, compSupplies);
+
+            if (compSupplies.Count > 0)
+                return true;
+            else
+                return false;
+        }
 
         // ADD TO INVENTORIES //
         public void AddToInventories(IMyTerminalBlock block)
         {
-            if (GetKey(block, INI_HEAD, "Grid_ID", _gridID) == _gridID)
+            string name = block.CustomName;
+
+            if (name.Contains(PAYLOAD))
             {
-                _inventories.Add(block);
+                _unloadPossible = true;
             }
+            else if (name.Contains(MAG_TAG))
+            {
+                SetMagAmounts(block);
+            }
+            else if (name.Contains(COMP_TAG))
+            {
+                EnsureKey(block, INI_HEAD, LOADOUT, DEFAULT_PROFILE);
+                _hasComponentCargo = true;
+            }
+            else if (name.Contains(REACTOR) && block.BlockDefinition.TypeIdString.ToLower().Contains("reactor"))
+            {
+                EnsureKey(block, INI_HEAD, "Uranium", "100");
+            }
+            else if (name.Contains(GAS_TAG) && block.BlockDefinition.TypeIdString.ToLower().Contains("oxygengenerator"))
+            {
+                EnsureKey(block, INI_HEAD, "Ice", "2702");
+            }
+            else
+            {
+                return;
+            }
+
+            _inventories.Add(block);
         }
 
 
@@ -658,8 +911,8 @@ namespace IngameScript
 				}
 			}
 
-            _statusMessage = "No valid Load Counter block found.  Load counter should contain tag '" + LOAD_TAG
-                            +"' in the name, and have contain any Custom Data parameters for other functions!";
+            /*_statusMessage = "No valid Load Counter block found.  Load counter should contain tag '" + LOAD_TAG
+                            +"' in the name, and have contain any Custom Data parameters for other functions!";*/
             return null;
         }
 
@@ -708,7 +961,10 @@ namespace IngameScript
 
                 // If there's still the same number in the container after attempting to transfer, STOP.
                 if (numberOfItemInContainer(dest, itemType) == initialSupply)
+                {
+                    _statusMessage = "WARNING: Failed to transfer item of type " + itemType + "!";
                     return;
+                }
             }
         }
 
@@ -749,6 +1005,5 @@ namespace IngameScript
             }
             return null;
         }
-
     }
 }
