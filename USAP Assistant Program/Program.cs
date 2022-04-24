@@ -793,7 +793,7 @@ namespace IngameScript
 
             foreach (IMyTerminalBlock block in _inventories)
             {
-                if (block.CustomName.Contains(COMP_TAG))
+                if (block.CustomName.Contains(COMP_TAG) && ParseBool(GetKey(block, INI_HEAD, "Sync_To_Profiles", "false")))
                 {
                     //Get Ratio of container's volume to reference container size
                     float volumeRatio = (float)block.GetInventory(0).MaxVolume / 15.625f;
@@ -840,6 +840,7 @@ namespace IngameScript
             }
             else if (name.Contains(COMP_TAG))
             {
+                EnsureKey(block, INI_HEAD, "Sync_To_Profiles", "True");
                 EnsureKey(block, INI_HEAD, LOADOUT, DEFAULT_PROFILE);
                 _hasComponentCargo = true;
             }
@@ -927,6 +928,19 @@ namespace IngameScript
                 return number;
             else
                 return defaultVal;
+        }
+
+
+        // PARSE BOOL //
+        static bool ParseBool(string val)
+        {
+            string uVal = val.ToUpper();
+            if (uVal == "TRUE" || uVal == "T" || uVal == "1")
+            {
+                return true;
+            }
+
+            return false;
         }
 
 
