@@ -22,21 +22,23 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
+        // USER CONSTANTS:
+        const string ORE_DEST = "[ORE]"; // Destination for Ore Drop Offs
+        const string FUEL_SUPPLY = "[SRC]"; // Source inventory tag for refueling.
+        const string AMMO_SUPPLY = "[WEP]"; // Source inventory tag for rearming.
+        const string COMP_SUPPLY = "[CMP]"; // Source inventory tag for re-stocking components.
+        const string GAS_TAG = "[H2O]"; // Destination inventory tag for re-stocking ice.
+        const string ICE_SUPPLY = "[ORE]"; // Destination inventory tag for re-stocking ice.
+
         //DEFINITIONS:
-        //Values and strings inside quotes can be changed here.
 
         const string INI_HEAD = "USAP";
         const string SHARED = "Shared Data";
         const string PAYLOAD = "[MIN]";
-        const string DEST = "[ORE]";
         const string MAG_TAG = "[MAG";
         const string REACTOR = "[PWR]";
-        const string FUEL_SUPPLY = "[SRC]";
-        const string AMMO_SUPPLY = "[WEP]";
         const string COMP_TAG = "[CST]";
-        const string COMP_SUPPLY = "[CMP]";
-        const string GAS_TAG = "[H2O]";
-
+        
         const string GATLING = "GATLING";
         const string MISSILE = "MISSILE";
         const string ARTILLERY = "ARTILLERY";
@@ -150,10 +152,12 @@ namespace IngameScript
 
         public IMyTerminalBlock _refBlock;
 
-        List<IMyTerminalBlock> _inventories;
-        //List<IMyTerminalBlock> _magazines;
-        //List<IMyTerminalBlock> _reactors;
-        //List<IMyTerminalBlock> _constructionCargo;
+        //List<IMyTerminalBlock> _inventories;
+        List<IMyTerminalBlock> _magazines;
+        List<IMyTerminalBlock> _reactors;
+        List<IMyTerminalBlock> _miningCargos;
+        List<IMyTerminalBlock> _constructionCargos;
+        List<IMyTerminalBlock> _o2Generators;
         List<IMyThrust> _escapeThrusters;
         
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
@@ -225,13 +229,19 @@ namespace IngameScript
                         Build();
                         break;
                     case "UNLOAD":
-                        // TODO - individual cargo commands
+                        Unstock(_miningCargos, ORE_DEST);
+                        Unstock(_constructionCargos, COMP_SUPPLY);
                         break;
                     case "RELOAD":
-                        // TODO
+                        Restock(_magazines, AMMO_SUPPLY);
                         break;
                     case "REFUEL":
-                        // TODO
+                        Restock(_reactors, FUEL_SUPPLY);
+                        Restock(_o2Generators, ICE_SUPPLY);
+                        break;
+                    case "RESUPPLY":
+                        Unstock(_constructionCargos, COMP_SUPPLY);
+                        Restock(_constructionCargos, COMP_SUPPLY);
                         break;
                     case "ESCAPE_THRUSTERS_ON":
                         // TODO - Escape Thruster functions
@@ -336,6 +346,16 @@ namespace IngameScript
         // MANAGE CARGO //
         void ManageCargo()
         {
+            Unstock(_miningCargos, ORE_DEST);
+
+            Restock(_magazines, AMMO_SUPPLY);
+            Restock(_reactors, FUEL_SUPPLY);
+            Restock(_o2Generators, ICE_SUPPLY);
+
+            Unstock(_constructionCargos, COMP_SUPPLY);
+            Restock(_constructionCargos, COMP_SUPPLY);
+
+            /*
             if (_inventories.Count < 1)
                 return;
 
@@ -360,7 +380,7 @@ namespace IngameScript
                     ammoSupplies.Add(cargoBlock);
                 }
 
-                if (name.Contains(DEST))
+                if (name.Contains(ORE_DEST))
                 {
                     oreContainers.Add(cargoBlock);
                 }
@@ -422,11 +442,12 @@ namespace IngameScript
                     Reload(block, oreContainers);
                 }
             }
+            */
         }
 
 
         // RELOAD // - Finds all inventories containing defined tag, and loads them with defined amounts of ammo.
-        void Reload(IMyTerminalBlock destination, List<IMyCargoContainer> supplyBlocks)
+        void Reload(IMyTerminalBlock destination, List<IMyTerminalBlock> supplyBlocks)
         {
             // Convert Loadout Key into 2D array of format [Ammotype][AmmoQty]
             string[][] loadouts = StringTo2DArray(GetKey(destination, INI_HEAD, LOADOUT, ""), '\n', ':');
@@ -438,7 +459,7 @@ namespace IngameScript
 
             IMyInventory magInv = destination.GetInventory(0);
 
-            foreach (IMyCargoContainer supply in supplyBlocks)
+            foreach (IMyTerminalBlock supply in supplyBlocks)
             {
                 if (supply.HasInventory)
                 {
@@ -453,32 +474,72 @@ namespace IngameScript
         }
 
 
-
         // REFUEL //Finds all reactors containing defined tag, and loads them with defined amounts of fuel. 
-        void Refuel(IMyTerminalBlock reactor, List<IMyReactor> fuelSupplies)//string dest, int fuel_qty)
+        void Refuel()
         {
+            if (_reactors.Count < 1)
+                return;
+
+            List<IMyTerminalBlock> fuelSupplies = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(FUEL_SUPPLY, fuelSupplies);
+
             if (fuelSupplies.Count < 1)
                 return;
 
-            IMyInventory destInv = reactor.GetInventory(0);
-            int fuel_qty = ParseInt(GetKey(reactor, INI_HEAD, "Uranium", "50"), 50);
+            foreach(IMyTerminalBlock reactor in _reactors)
+            {
+                IMyInventory destInv = reactor.GetInventory(0);
+                int fuel_qty = ParseInt(GetKey(reactor, INI_HEAD, "Uranium", "50"), 50);
 
-            foreach(IMyReactor supplyReactor in fuelSupplies)
-			{
-                IMyInventory sourceInv = supplyReactor.GetInventory(0);
-                ensureMinimumAmount(sourceInv, destInv, FUEL, fuel_qty);
+                foreach (IMyReactor fuelSupply in fuelSupplies)
+                {
+                    IMyInventory sourceInv = fuelSupply.GetInventory(0);
+                    ensureMinimumAmount(sourceInv, destInv, FUEL, fuel_qty);
+                }
+            }
+        }
+
+
+        // RESTOCK //
+        void Restock(List<IMyTerminalBlock> destBlocks, string sourceTag)
+        {
+            if (destBlocks.Count < 1)
+                return;
+
+            List<IMyTerminalBlock> sourceBlocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(sourceTag, sourceBlocks);
+            if (sourceBlocks.Count < 1)
+                return;
+
+            foreach (IMyTerminalBlock destBlock in destBlocks)
+                Reload(destBlock, sourceBlocks);
+        }
+
+
+        // UNSTOCK //
+        void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag)
+        {
+            if (sourceBlocks.Count < 1)
+                return;
+
+            List<IMyTerminalBlock> destBlocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(destTag, destBlocks);
+
+            foreach(IMyTerminalBlock sourceBlock in sourceBlocks)
+            {
+                Unload(sourceBlock, destBlocks);
             }
         }
 
 
         // UNLOAD //
-        void Unload(IMyTerminalBlock payload, List<IMyCargoContainer> oreContainers)
+        void Unload(IMyTerminalBlock payload, List<IMyTerminalBlock> destBlocks)
         {
-            if (oreContainers.Count < 1)
+             if (destBlocks.Count < 1)
                 return;
 
             var sourceInv = payload.GetInventory(0);
-            foreach(IMyCargoContainer container in oreContainers)
+            foreach(IMyCargoContainer container in destBlocks)
             {
                 if (container.HasInventory)
                 {
@@ -617,12 +678,21 @@ namespace IngameScript
                 _refBlock = Me;
             }
 
-            _inventories = new List<IMyTerminalBlock>();
             _escapeThrusters = new List<IMyThrust>();
+
+
+            // Ensure Default Trigger Call Parameter
+            EnsureKey(Me, INI_HEAD, "Trigger_Door", "Door Timer");
+
+            // Create inventory lists
+            _magazines = new List<IMyTerminalBlock>();
+            _reactors = new List<IMyTerminalBlock>();
+            _constructionCargos = new List<IMyTerminalBlock>();
+            _miningCargos = new List<IMyTerminalBlock>();
+            _o2Generators = new List<IMyTerminalBlock>();
+
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
-
-            EnsureKey(Me, INI_HEAD, "Trigger_Door", "Door Timer");
 
             foreach (IMyTerminalBlock block in blocks)
             {
@@ -630,12 +700,11 @@ namespace IngameScript
                     AddToInventories(block);
             }
 
+            // Make sure that any construction cargos have a profile in custom data.
             if(_hasComponentCargo)
             {
                 EnsureProfiles();
             }
-
-            _escapeThrusters = new List<IMyThrust>();
         }
 
 
@@ -786,12 +855,12 @@ namespace IngameScript
                             // Profiles are proportional to large grid small cargo container: 15,625 L
         public void UpdateProfiles()
         {
-            if (_inventories.Count < 1 || !_hasComponentCargo)
+            if (_constructionCargos.Count < 1 || !_hasComponentCargo)
                 return;
 
             string[][] profileData = GetActiveProfile();
 
-            foreach (IMyTerminalBlock block in _inventories)
+            foreach (IMyTerminalBlock block in _constructionCargos)
             {
                 if (block.CustomName.Contains(COMP_TAG) && ParseBool(GetKey(block, INI_HEAD, "Sync_To_Profiles", "false")))
                 {
@@ -833,31 +902,30 @@ namespace IngameScript
             if (name.Contains(PAYLOAD))
             {
                 _unloadPossible = true;
+                _miningCargos.Add(block);
             }
             else if (name.Contains(MAG_TAG))
             {
                 SetMagAmounts(block);
+                _magazines.Add(block);
             }
             else if (name.Contains(COMP_TAG))
             {
                 EnsureKey(block, INI_HEAD, "Sync_To_Profiles", "True");
                 EnsureKey(block, INI_HEAD, LOADOUT, DEFAULT_PROFILE);
                 _hasComponentCargo = true;
+                _constructionCargos.Add(block);
             }
             else if (name.Contains(REACTOR) && block.BlockDefinition.TypeIdString.ToLower().Contains("reactor"))
             {
-                EnsureKey(block, INI_HEAD, "Uranium", "100");
+                EnsureKey(block, INI_HEAD, LOADOUT, "Ingot/Uranium:100");
+                _reactors.Add(block);
             }
             else if (name.Contains(GAS_TAG) && block.BlockDefinition.TypeIdString.ToLower().Contains("oxygengenerator"))
             {
-                EnsureKey(block, INI_HEAD, "Ice", "2702");
+                EnsureKey(block, INI_HEAD, LOADOUT, "Ore/Ice:2702");
+                _o2Generators.Add(block);
             }
-            else
-            {
-                return;
-            }
-
-            _inventories.Add(block);
         }
 
 
