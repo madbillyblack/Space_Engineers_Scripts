@@ -111,35 +111,13 @@ namespace IngameScript
                                         "Superconductor:150\n" +
                                         "Thrust:75";
 
-        //TIMER CONSTANTS:
-        //-----------------------------------------------------------
-        //Names of timers to activate:
-        const string TIMER_A = "Door Timer";
-        const string TIMER_B = "Timer B";
-
-        //Program Run Argument that will activate timer
-        const string ARGUMENT_A = "HangarDoor";
-        const string ARGUMENT_B = "TimerB";
-
         //INVENTORY CONSTANTS:
         //-------------------------------------------------------------------
-        const string SOURCE = "[SRC]";
+
         const string AMMO = "NATO_25x184mm";
-        const int AMMO_VOLUME = 16;
         const string MISL = "Missile200mm";
-        const int MISSILE_VOLUME = 60;
         const string FUEL = "Uranium";
         const string LOAD_TAG = "[LOAD]";
-
-        /* DEFAULT_MAG
-        ---> Default Load Out for Unspecified Mag Blocks*/
-        const int DEFAULT_AMMO = 50;
-        const int DEFAULT_MISSILE = 0;
-
-        //Default Custom Data
-        const string DEFAULT_DATA = "[USAP]\nshipTag=<Unset>\nreferenceBlock=<Unset>\ncombatShip=true\nminingShip=false\nlargeGrid=false\n---\n";
-
-        //MyIni _ini = new MyIni();
 
         string _statusMessage;
         string _gridID;
@@ -180,16 +158,6 @@ namespace IngameScript
             }
 
             Build();
-
-            /*
-            if (!Me.CustomData.Contains(INI_HEAD))
-            {
-                String newData = Me.CustomData;
-                newData = newData.Insert(0, DEFAULT_DATA);
-                Me.CustomData = newData;
-                Echo("SETUP: New Instance of Script. Please set parameters in Custom Data.\n");
-            }
-            */
         }
 
         public void Save()
@@ -257,6 +225,9 @@ namespace IngameScript
                         break;
                     case "UPDATE_PROFILES":
                         UpdateProfiles();
+                        break;
+                    case "SET_GRID_ID":
+                        SetGridID(cmdArg);
                         break;
                     default:
                         TriggerCall(argument);
@@ -354,95 +325,6 @@ namespace IngameScript
 
             Unstock(_constructionCargos, COMP_SUPPLY);
             Restock(_constructionCargos, COMP_SUPPLY);
-
-            /*
-            if (_inventories.Count < 1)
-                return;
-
-            List<IMyCargoContainer> cargoBlocks = new List<IMyCargoContainer>();
-            GridTerminalSystem.GetBlocksOfType<IMyCargoContainer>(cargoBlocks);
-            if (cargoBlocks.Count < 1)
-            {
-                _statusMessage = "No Inventories to interface with.";
-                return;
-            }
-
-            List<IMyCargoContainer> ammoSupplies = new List<IMyCargoContainer>();
-            List<IMyCargoContainer> oreContainers = new List<IMyCargoContainer>();
-            List<IMyCargoContainer> compSupplies = new List<IMyCargoContainer>();
-
-            foreach (IMyCargoContainer cargoBlock in cargoBlocks)
-            {
-                string name = cargoBlock.CustomName;
-
-                if (name.Contains(AMMO_SUPPLY))
-                {
-                    ammoSupplies.Add(cargoBlock);
-                }
-
-                if (name.Contains(ORE_DEST))
-                {
-                    oreContainers.Add(cargoBlock);
-                }
-
-                if(name.Contains(COMP_SUPPLY))
-                {
-                    compSupplies.Add(cargoBlock);
-                }
-            }
-
-            List<IMyReactor> tempList = new List<IMyReactor>();
-            GridTerminalSystem.GetBlocksOfType<IMyReactor>(tempList);
-
-            List<IMyReactor> fuelSupplies = new List<IMyReactor>();
-            
-            if(tempList.Count > 0)
-			{
-                foreach(IMyReactor reactor in tempList)
-				{
-                    if(reactor.CustomName.Contains(FUEL_SUPPLY))
-					{
-                        fuelSupplies.Add(reactor);
-					}
-				}
-			}
-
-            foreach (IMyTerminalBlock block in _inventories)
-            {
-                string name = block.CustomName;
-
-                if (name.Contains(MAG_TAG))
-                {
-                    Echo("Reload: " + name);
-                    Reload(block, ammoSupplies);
-                }
-
-                if (name.Contains(REACTOR))
-                {
-                    Echo("Refuel: " + name);
-                    Refuel(block, fuelSupplies);
-                }
-
-                if (name.Contains(PAYLOAD))
-                {
-                    Echo("Unload: " + name);
-                    Unload(block, oreContainers);
-                }
-
-                if (name.Contains(COMP_TAG))
-                {
-                    Echo("Resupply: " + name);
-                    Unload(block, compSupplies);
-                    Reload(block, compSupplies);
-                }
-
-                if (name.Contains(GAS_TAG))
-                {
-                    Echo("Resupply: " + name);
-                    Reload(block, oreContainers);
-                }
-            }
-            */
         }
 
 
@@ -631,26 +513,26 @@ namespace IngameScript
 
 
         // SET GRID ID // Updates Grid ID parameter for all designated blocks in Grid, then rebuilds the grid.
-        void UpdateGridID(string arg)
+        void SetGridID(string arg)
         {
-            string newID;
+            string gridID;
             if (arg != "")
-                newID = arg;
+                gridID = arg;
             else
-                newID = Me.CubeGrid.EntityId.ToString();
+                gridID = Me.CubeGrid.EntityId.ToString();
 
-            SetKey(Me, SHARED, "Grid_ID", newID);
+            SetKey(Me, SHARED, "Grid_ID", gridID);
+            _gridID = gridID;
 
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
 
             foreach (IMyTerminalBlock block in blocks)
             {
-                if (block.CustomData.Contains(_gridID))
-                    SetKey(block, SHARED, "Grid_ID", newID);
+                if (block.CustomData.Contains(SHARED))
+                    SetKey(block, SHARED, "Grid_ID", gridID);
             }
 
-            _gridID = newID;
             Build();
         }
 

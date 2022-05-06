@@ -86,6 +86,7 @@ namespace IngameScript
 
 
 		// OTHER CONSTANTS //
+		const string SHARED = "Shared Data";
 		const string SYNC_TAG = "[SYNC]"; //Tag used to indicate master sync computer.
 		const int BAR_HEIGHT = 20; //Default height of parameter bars
 		const int TOP_MARGIN = 8; // Margin for top and bottom of frame

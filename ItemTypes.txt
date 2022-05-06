@@ -48,6 +48,9 @@ MyObjectBuilder_PhysicalGunObject/WelderItem
 MyObjectBuilder_GasContainerObject/HydrogenBottle
 MyObjectBuilder_OxygenContainerObject/OxygenBottle
 
+Missile Cargo
+
+
 CHARACTER MISC:
 MyObjectBuilder_Component/Canvas
 MyObjectBuilder_ConsumableItem/ClangCola

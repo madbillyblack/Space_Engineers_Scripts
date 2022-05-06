@@ -85,6 +85,7 @@ namespace IngameScript
 		const string CLOSER = "|]";
 		const char SPLITTER = '|';
 		const string INI_HEAD = "Pressure Chief";
+		const string SHARED = "Shared Data";
 		const string MONITOR_HEAD = "Pressure Data";
 		const string NORMAL = "255,255,255";
 		const string EMERGENCY = "255,0,0";
@@ -106,6 +107,7 @@ namespace IngameScript
 		static string _unit; // Display unit of pressure.
 		static float _atmo; // Atmospheric conversion factor decided by unit.
 		static float _factor; // Multiplier of pressure reading.
+		static string _systemsName;
 
 		// Breather Array - Used to indicate that program is running in terminal
 		static string[] _breather =	{"\\//////////////",
@@ -654,7 +656,7 @@ namespace IngameScript
 			_textColor = new Color(TEXT_RED, TEXT_GREEN, TEXT_BLUE);
 			_roomColor = new Color(ROOM_RED, ROOM_GREEN, ROOM_BLUE);
 
-			_gridID = GetKey(INI_HEAD, Me, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+			_gridID = GetKey(SHARED, Me, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 			//_autoCheck = true;
 
 			// Assign all correctly named components to sectors.
@@ -948,19 +950,16 @@ namespace IngameScript
 			else
 				gridID = Me.CubeGrid.EntityId.ToString();
 
-			SetKey(INI_HEAD, Me, "Grid_ID", gridID);
+			SetKey(SHARED, Me, "Grid_ID", gridID);
 			_gridID = gridID;
 
 			List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-			GridTerminalSystem.SearchBlocksOfName(OPENER, blocks);
-
-			if (blocks.Count < 1)
-				return;
+			GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
 
 			foreach (IMyTerminalBlock block in blocks)
 			{
-				if (block.CustomName.Contains(CLOSER))
-					SetKey(INI_HEAD, block, "Grid_ID", gridID);
+				if (block.CustomData.Contains(SHARED))
+					SetKey(SHARED, block, "Grid_ID", gridID);
 			}
 
 			Build();
@@ -1443,7 +1442,7 @@ namespace IngameScript
 
 			foreach (IMyTerminalBlock door in doors)
 			{
-				if (door.CustomName.Contains(dockTag) && door.CustomName.Contains(_vacTag) && GetKey(INI_HEAD, door, "Grid_ID", "unspecified") != _gridID)
+				if (door.CustomName.Contains(dockTag) && door.CustomName.Contains(_vacTag) && GetKey(SHARED, door, "Grid_ID", "unspecified") != _gridID)
 					docked.Add(door as IMyDoor);
 			}
 
@@ -1454,7 +1453,7 @@ namespace IngameScript
 		// GET DOCKED VENTS // - Returns list of vents in connected Docking Port
 		List<IMyAirVent> GetDockedVents(IMyDoor dockedDoor)
 		{
-			string gridID = GetKey(INI_HEAD, dockedDoor, "Grid_ID", "");
+			string gridID = GetKey(SHARED, dockedDoor, "Grid_ID", "");
 			string[] tags = MultiTags(dockedDoor.CustomName);
 
 			List<IMyAirVent> vents = new List<IMyAirVent>();
@@ -1465,7 +1464,7 @@ namespace IngameScript
 			List<IMyAirVent> dockedVents = new List<IMyAirVent>();
 			foreach (IMyAirVent vent in vents)
 			{
-				string ventGrid = GetKey(INI_HEAD, vent, "Grid_ID", "");
+				string ventGrid = GetKey(SHARED, vent, "Grid_ID", "");
 				string ventTag = TagFromName(vent.CustomName);
 
 				if (ventGrid == gridID && (ventTag == tags[0] || ventTag == tags[1]))
@@ -1490,7 +1489,7 @@ namespace IngameScript
 			GridTerminalSystem.GetBlocksOfType<IMyShipMergeBlock>(mergeBlocks);
 			foreach (IMyShipMergeBlock mergeBlock in mergeBlocks)
 			{
-				if (mergeBlock.IsConnected && GetKey(INI_HEAD, mergeBlock, "Grid_ID", "") != GetKey(INI_HEAD, Me, "Grid_ID", _gridID))
+				if (mergeBlock.IsConnected && GetKey(SHARED, mergeBlock, "Grid_ID", "") != GetKey(SHARED, Me, "Grid_ID", _gridID))
 				{
 					float distance = Vector3.Distance(mergeBlock.GetPosition(), pos);
 					if (distance < nearest)
@@ -1559,6 +1558,9 @@ namespace IngameScript
 					SetKey(INI_HEAD, door, "Override", "false");
 					door.CloseDoor();
 				}
+
+				// Toggle Systems off if docking and on if undocking
+				ToggleSystems(!overriding);
 			}
 
 			// Get list of vents in docked sector and set depressurization to false.
@@ -1610,6 +1612,29 @@ namespace IngameScript
 			else
 				door.GetActionWithName("OnOff_Off").Apply(door);
 		}
+
+
+		// TOGGLE SYSTEMS // - Toggles Systems Group off/on when docking/undocking.
+		public void ToggleSystems(bool toggleOn)
+        {
+			if (_systemsName == "")
+				return;
+
+			List<IMyTerminalBlock>  systemBlocks = new List<IMyTerminalBlock>();
+			IMyBlockGroup systemGroup = GridTerminalSystem.GetBlockGroupWithName(_systemsName);
+
+			// Terminate if no group found.
+			if (systemGroup == null)
+				return;
+
+			string action = "OnOff_Off";
+			if (toggleOn)
+				action = "OnOff_On";
+
+			systemGroup.GetBlocks(systemBlocks);
+			foreach (IMyTerminalBlock block in systemBlocks)
+				block.GetActionWithName(action).Apply(block);
+        }
 
 
 		// SPRITE FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------
@@ -1804,9 +1829,9 @@ namespace IngameScript
 			_dataDisplays = new List<DataDisplay>();
 			_surfaceProviders = new List<IMyTerminalBlock>();
 			_unusable = new List<IMyTerminalBlock>();
-
-
+			
 			_vacTag = GetKey(INI_HEAD, Me, "Vac_Tag", VAC_TAG);
+			_systemsName = GetKey(INI_HEAD, Me, "Systems_Group", "");
 
 			//Set Pressure Unit as well as Atmospheric and User-Defined Factors
 			_unit = GetKey(INI_HEAD, Me, "Unit", UNIT);
@@ -1846,7 +1871,7 @@ namespace IngameScript
 			{
 				foreach (IMyTerminalBlock block in blocks)
 				{
-					if (GetKey(INI_HEAD, block, "Grid_ID", _gridID) == GetKey(INI_HEAD, Me, "Grid_ID", _gridID))
+					if (GetKey(SHARED, block, "Grid_ID", _gridID) == GetKey(SHARED, Me, "Grid_ID", _gridID))
 					{
 						switch (block.BlockDefinition.TypeIdString)
 						{
@@ -2204,7 +2229,7 @@ namespace IngameScript
 			{
 				foreach (IMyTerminalBlock dataBlock in dataBlocks)
 				{
-					if(GetKey(INI_HEAD, dataBlock, "Grid_ID", _gridID) == _gridID)
+					if(GetKey(SHARED, dataBlock, "Grid_ID", _gridID) == _gridID)
 						_dataDisplays.Add(new DataDisplay(dataBlock));
 				}
 			}
