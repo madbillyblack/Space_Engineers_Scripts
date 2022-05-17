@@ -54,6 +54,18 @@ namespace IngameScript
 
 				return new Color(outputs[0], outputs[1], outputs[2]);
 			}
+
+
+			// PARSE FLOAT //
+			public static float ParseFloat(string numberString)
+			{
+				float number;
+
+				if (Single.TryParse(numberString, out number))
+					return number;
+				else
+					return float.MinValue;
+			}
 		}
     }
 }

@@ -29,6 +29,7 @@ namespace IngameScript
 			public List<IMyDoor> Doors;
 			public List<IMyTextSurfaceProvider> LCDs;
 			public List<IMyTextSurface> Surfaces;
+			public List<GaugeSurface> Gauges;
 			public List<bool> LcdOrientations; // Bool list assigning whether LCDs are vertical.
 			public List<bool> LcdFlips; // List of bools that designate if sectors A & B are displayed on the right and left respectively.
 			public List<UInt16> LcdBrightnesses;
@@ -50,6 +51,7 @@ namespace IngameScript
 				Doors = new List<IMyDoor>();
 				LCDs = new List<IMyTextSurfaceProvider>();
 				Surfaces = new List<IMyTextSurface>();
+				Gauges = new List<GaugeSurface>();
 				LcdOrientations = new List<bool>();
 				LcdFlips = new List<bool>();
 				LcdBrightnesses = new List<UInt16>();
@@ -57,8 +59,8 @@ namespace IngameScript
 				Doors.Add(myDoor);
 				Override = false;
 
-				TagA = IniKey.GetKey(myDoor, INI_HEAD, "Sector_A", "");
-				TagB = IniKey.GetKey(myDoor, INI_HEAD, "Sector_B", "");
+				TagA = IniKey.GetKey(myDoor, INI_HEAD, "Sector_A", "").Trim();
+				TagB = IniKey.GetKey(myDoor, INI_HEAD, "Sector_B", "").Trim();
 			}
 
 			// CHECK // - Checks pressure difference between sectors and bulkhead override status and locks/unlocks accordingly.
@@ -112,71 +114,20 @@ namespace IngameScript
 			// DRAW GAUGES // - Calls DrawGauge with side parameters for all LCD displays in Bulkhead
 			public void DrawGauges()
 			{
-				if (Surfaces.Count < 1)
+				if (Gauges.Count < 1)
 					return;
 
 				bool locked = !Doors[0].IsWorking;
 
-				for (int i = 0; i < LCDs.Count; i++)
+				foreach(GaugeSurface gauge in Gauges)
 				{
-					IMyTerminalBlock lcd = LCDs[i] as IMyTerminalBlock;
-					IMyTextSurface surface = Surfaces[i];
-					bool vertical = LcdOrientations[i];
-					bool flipped = LcdFlips[i];
-					float brightness = LcdBrightnesses[i] * 0.01f;
-
-					string side = IniKey.GetKey(lcd, INI_HEAD, "Side", "Select A or B");
-
-					if (side == "A")
-						DrawGauge(surface, Sectors[0], Sectors[1], locked, vertical, flipped, brightness, false);
-					else if (side == "B")
-						DrawGauge(surface, Sectors[1], Sectors[0], locked, vertical, flipped, brightness, false);
+					if (gauge.Side == "A")
+						DrawGauge(gauge, Sectors[0], Sectors[1], locked, false);
+					else if (gauge.Side == "B")
+						DrawGauge(gauge, Sectors[1], Sectors[0], locked, false);
 					else
-						DrawGauge(surface, Sectors[0], Sectors[1], locked, vertical, flipped, brightness, true);
+						DrawGauge(gauge, Sectors[0], Sectors[1], locked, true);
 				}
-			}
-
-			// SURFACE TO BULKHEAD // Add LCD, Surface, and related variables to lists in assigned bulkhead.
-			public void AddSurfaceFromBlock(IMyTerminalBlock block)
-			{
-				string name = block.CustomName;
-				string side;
-				string tagA = "(" + IniKey.GetKey(block, INI_HEAD, "Sector_A", "") + ")";
-				string tagB = "(" + IniKey.GetKey(block, INI_HEAD, "Sector_B", "") + ")";
-
-				if (name.Contains(tagA) && name.Contains(TagB))
-                {
-					_buildMessage += "WARNING: LCD " + name + " is named with tags for both its sectors!\nOnly include a tag for the sector it is pysically located in!";
-					side = "Select A or B";
-				}	
-				else if (name.Contains(tagA))
-					side = "A";
-				else if (name.Contains(tagB))
-					side = "B";
-				else
-					side = "Select A or B";
-
-				IniKey.EnsureKey(block, INI_HEAD, "Side", side);
-
-
-				bool vertical;
-				if (block.BlockDefinition.SubtypeId.ToString().Contains("Corner_LCD"))
-					vertical = false;
-				else
-					vertical = true;
-
-				IniKey.EnsureKey(block, INI_HEAD, "Screen_Index", "0");
-				IniKey.EnsureKey(block, INI_HEAD, "Vertical", vertical.ToString());
-				LCDs.Add(block as IMyTextSurfaceProvider);
-				Surfaces.Add(MyScreen.PrepareTextSurface(block as IMyTextSurfaceProvider));
-				LcdOrientations.Add(Util.ParseBool(IniKey.GetKey(block, INI_HEAD, "Vertical", vertical.ToString())));
-				LcdFlips.Add(Util.ParseBool(IniKey.GetKey(block, INI_HEAD, "Flipped", "False")));
-
-				ushort brightness;
-				if (!UInt16.TryParse(IniKey.GetKey(block, INI_HEAD, "Brightness", "100"), out brightness))
-					brightness = 100;
-
-				LcdBrightnesses.Add(brightness);
 			}
 		}
 	}

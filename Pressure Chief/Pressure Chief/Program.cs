@@ -58,7 +58,7 @@ namespace IngameScript
 		//////////////////////////// v1.0
 
 		// USER CONSTANTS -  Feel free to change as needed -------------------------------------------------------------------------------------------------
-		const string VAC_TAG = "EXT"; // Tag used to designate External reference vents (i.e. Vacuum vents).
+		const string VAC_TAG = "Exterior"; // Tag used to designate External reference vents (i.e. Vacuum vents).
 
 		// Background Colors // - RGB values for LCD background
 		const int BG_RED = 127;
@@ -85,6 +85,7 @@ namespace IngameScript
 		const string CLOSER = "|]";
 		const char SPLITTER = '|';
 		const string INI_HEAD = "Pressure Chief";
+		const string GAUGE_HEAD = "Pressure Gauge";
 		const string SHARED = "Shared Data";
 		const string MONITOR_HEAD = "Pressure Data";
 		const string NORMAL = "255,255,255";
@@ -151,18 +152,11 @@ namespace IngameScript
 		static Color _textColor; //Global used to store default text color of LCD displays
 		static Color _roomColor; //Global used to store highlight text color for room in which LCD is located
 
-		//Lists for tagged blocks
-		static List<IMyTerminalBlock> _surfaceProviders;
-		static List<IMyTerminalBlock> _unusable;
-
-
-		static List<DataDisplay> _dataDisplays;
+		//Lists	
 		static List<IMyBlockGroup> _sectorGroups;
-
-		//Lists for script classes
 		static List<Sector> _sectors;
 		static List<Bulkhead> _bulkheads;
-
+		static List<DataDisplay> _dataDisplays;
 
 		// PROGRAM /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public Program()
@@ -344,9 +338,6 @@ namespace IngameScript
 						if (!UnknownSector(mySector, "Room"))
 							mySector.Check();
 						break;
-					case "PRINT_UNUSABLE":
-						PrintUnusable();
-						break;
 					default:
 						_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
 						break;
@@ -365,7 +356,7 @@ namespace IngameScript
 		{
 			foreach (Sector sector in _sectors)
 			{
-				if (sector.Name == name)
+				if (sector.Name.Trim() == name.Trim())
 					return sector;
 			}
 
@@ -515,11 +506,14 @@ namespace IngameScript
 		void Build()
 		{
 			// Initialize global groups
-			_buildMessage = "";
+			_buildMessage = "BUILD: ";
 			_sectorGroups = new List<IMyBlockGroup>();
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
 			_dataDisplays = new List<DataDisplay>();
+			_vacTag = IniKey.GetKey(Me, INI_HEAD, "Vac_Tag", VAC_TAG);
+			_systemsName = IniKey.GetKey(Me, INI_HEAD, "Systems_Group", "");
+			_autoClose = Util.ParseBool(IniKey.GetKey(Me, INI_HEAD, "Auto-Close", "true"));
 
 			// Get tagged Sector Groups and add to List
 
@@ -528,6 +522,7 @@ namespace IngameScript
 			if (groups.Count < 1)
 				return;
 
+			// Collect groups with sector tag
 			foreach(IMyBlockGroup group in groups)
             {
 				if (group.Name.ToUpper().Contains(GROUP_TAG) && group.Name.Contains(":"))
@@ -535,8 +530,11 @@ namespace IngameScript
             }
 
 			if (_sectorGroups.Count < 1)
+            {
+				_statusMessage = "NO SECTOR GROUPS LOCATED!";
 				return;
-
+			}
+				
 			// Add Sector Names to all doors in groups so that they can be used to build bulkhead objects.
 			MarkDoorsAndScreens();
 
@@ -551,10 +549,13 @@ namespace IngameScript
 					_sectors.Add(new Sector(sectorGroup));
 			}
 
-			_unusable = new List<IMyTerminalBlock>();
-			
-			_vacTag = IniKey.GetKey(Me, INI_HEAD, "Vac_Tag", VAC_TAG);
-			_systemsName = IniKey.GetKey(Me, INI_HEAD, "Systems_Group", "");
+			// Add LCD Blocks from sector groups
+			foreach (IMyBlockGroup group in _sectorGroups)
+				AssignLCDBlocks(group);
+
+			// Add LCD Blocks from Pressure Data group
+			AssignDataDisplays();
+
 
 			//Set Pressure Unit as well as Atmospheric and User-Defined Factors
 			_unit = IniKey.GetKey(Me, INI_HEAD, "Unit", UNIT);
@@ -583,8 +584,6 @@ namespace IngameScript
 					_atmo = 100;
 					break;
 			}
-
-			_autoClose = Util.ParseBool(IniKey.GetKey(Me, INI_HEAD, "Auto-Close", "true"));
 
 			_statusMessage = _buildMessage;
 		}
@@ -617,7 +616,7 @@ namespace IngameScript
 						foreach (IMyTextSurfaceProvider lcdBlock in lcdBlocks)
                         {
 							if(lcdBlock.SurfaceCount > 0)
-								MarkBlock(lcdBlock as IMyTerminalBlock, sectorName);
+								MarkLCDBlock(lcdBlock as IMyTerminalBlock, sectorName);
 						}
 					}
 				}
@@ -626,24 +625,59 @@ namespace IngameScript
 
 
 		// MARK BLOCK // Mark Doors and LCD blocks with both of their sectors so that they can later be assigned to the appropriate Bulkhead.
-		static void MarkBlock(IMyTerminalBlock block, string sectorName)
+		static void MarkBlock(IMyDoor door, string sectorName)
         {
-			string sectorA = IniKey.GetKey(block, INI_HEAD, "Sector_A", "");
-			string sectorB = IniKey.GetKey(block, INI_HEAD, "Sector_B", "");
+			IniKey.EnsureKey(door, SHARED, "Grid_ID", _gridID);
+
+			string sectorA = IniKey.GetKey(door, INI_HEAD, "Sector_A", "");
+			string sectorB = IniKey.GetKey(door, INI_HEAD, "Sector_B", "");
 
 			if (sectorA == "" && sectorB.ToUpper() != sectorName.ToUpper())
 			{
-				IniKey.SetKey(block, INI_HEAD, "Sector_A", sectorName);
-				_buildMessage += block.CustomName + "Added to [" + sectorName + "]";
+				IniKey.SetKey(door, INI_HEAD, "Sector_A", sectorName);
+				_buildMessage += door.CustomName + "Added to [" + sectorName + "]";
 			}
 			else if (sectorB == "" && sectorA.ToUpper() != sectorName.ToUpper())
 			{
-				IniKey.SetKey(block, INI_HEAD, "Sector_B", sectorName);
-				_buildMessage += block.CustomName + "Added to [" + sectorName + "]";
+				IniKey.SetKey(door, INI_HEAD, "Sector_B", sectorName);
+				_buildMessage += door.CustomName + "Added to [" + sectorName + "]";
 			}
 			else if (sectorA.ToUpper() != sectorName.ToUpper() && sectorB.ToUpper() != sectorName.ToUpper())
 			{
-				_buildMessage += "WARNING: " + block.CustomName + " is assigned to more than two sector groups!";
+				_buildMessage += "WARNING: " + door.CustomName + " is assigned to more than two sector groups!";
+			}
+		}
+
+
+		// MARK LCD BLOCK //
+		static void MarkLCDBlock(IMyTerminalBlock block, string sectorName)
+        {
+			IniKey.EnsureKey(block, SHARED, "Grid_ID", _gridID);
+
+			IniKey.SetKey(block, GAUGE_HEAD, "Added", "False");
+
+			string sectorList = IniKey.GetKey(block, GAUGE_HEAD, "Sectors", "");
+
+			if(sectorList == "")
+            {
+				IniKey.SetKey(block, GAUGE_HEAD, "Sectors", sectorName);
+			}
+            else
+            {
+				string[] sectorStrings = sectorList.Split('\n');
+				string newList = "";
+
+				foreach(string sectorString in sectorStrings)
+                {
+					if (sectorString.Trim() == sectorName)
+						return;
+					else
+						newList += sectorString.Trim() + "\n";
+                }
+
+				newList += sectorName;
+
+				IniKey.SetKey(block, GAUGE_HEAD, "Sectors", newList);
 			}
 		}
 
@@ -677,36 +711,49 @@ namespace IngameScript
         }
 
 
-		// PRINT UNUSABLE // Add names of unusable blocks to Status Message for.
-		void PrintUnusable()
-		{
-			if(_unusable.Count < 1)
-			{
-				_statusMessage = "No Unusable Blocks";
-				return;
-			}
-
-			_statusMessage = "UNUSABLE BLOCKS:";
-			foreach (IMyTerminalBlock block in _unusable)
-				_statusMessage += "\n* " + block.CustomName;
-		}
-
-
 		//ASSIGN DATA DISPLAYS// Get and set up blocks and surfaces designated as data displays
 		void AssignDataDisplays()
 		{
-			// Central displays for overview data
-			_dataTag = IniKey.GetKey(Me, INI_HEAD, "Data_Tag", DATA_TAG);
-			List<IMyTerminalBlock> dataBlocks = new List<IMyTerminalBlock>();
-			GridTerminalSystem.SearchBlocksOfName(_dataTag, dataBlocks);
-			
+			IMyBlockGroup dataGroup = GridTerminalSystem.GetBlockGroupWithName(IniKey.GetKey(Me, INI_HEAD, "Data_Group", "Pressure Data"));
+			if (dataGroup == null)
+            {
+				_buildMessage += "\nOptional: No Pressure Data group found.";
+				return;
+			}
+				
 
-			if (dataBlocks.Count > 0)
+			List<IMyTerminalBlock> dataBlocks = new List<IMyTerminalBlock>();
+			dataGroup.GetBlocks(dataBlocks);
+
+
+			foreach (IMyTerminalBlock dataBlock in dataBlocks)
 			{
-				foreach (IMyTerminalBlock dataBlock in dataBlocks)
+				if((dataBlock as IMyTextSurfaceProvider).SurfaceCount > 0 && IniKey.GetKey(dataBlock, SHARED, "Grid_ID", _gridID) == _gridID)
+					_dataDisplays.Add(new DataDisplay(dataBlock));
+			}
+		}
+
+
+		// ASSIGN LCD BLOCKS
+		private void AssignLCDBlocks(IMyBlockGroup group)
+		{
+			List<IMyTextSurfaceProvider> lcdBlocks = new List<IMyTextSurfaceProvider>();
+			group.GetBlocksOfType<IMyTextSurfaceProvider>(lcdBlocks);
+
+			if (lcdBlocks.Count < 1)
+				return;
+
+			foreach (IMyTextSurfaceProvider lcdBlock in lcdBlocks)
+			{
+				if (lcdBlock.SurfaceCount > 0)
 				{
-					if(IniKey.GetKey(dataBlock, SHARED, "Grid_ID", _gridID) == _gridID)
-						_dataDisplays.Add(new DataDisplay(dataBlock));
+					bool added = Util.ParseBool(IniKey.GetKey(lcdBlock as IMyTerminalBlock, GAUGE_HEAD, "Added", "True"));
+
+					if (!added)
+					{
+						IniKey.SetKey(lcdBlock as IMyTerminalBlock, GAUGE_HEAD, "Added", "True");
+						GaugeBlock gaugeBlock = new GaugeBlock(lcdBlock as IMyTerminalBlock);
+					}
 				}
 			}
 		}

@@ -31,14 +31,14 @@ namespace IngameScript
 
 			public DataDisplay(IMyTerminalBlock block)
 			{
-				this.Block = block;
-				this.screenCount = (block as IMyTextSurfaceProvider).SurfaceCount;
-				this.Screens = new List<DataScreen>();
+				Block = block;
+				screenCount = (block as IMyTextSurfaceProvider).SurfaceCount;
+				Screens = new List<DataScreen>();
 
 				string s = IniKey.GetKey(block, MONITOR_HEAD, "Screen_Indices", "0");
 				string[] screens = s.Split(',');
 
-				if (screens.Length < 1 || this.screenCount < 1)
+				if (screens.Length < 1 || screenCount < 1)
 					return;
 
 				for (int i = 0; i < screens.Length; i++)
@@ -46,10 +46,10 @@ namespace IngameScript
 					ushort index;
 					if (UInt16.TryParse(screens[i], out index))
 					{
-						if (index < this.screenCount)
+						if (index < screenCount)
 						{
 							DataScreen screen = new DataScreen(block, (block as IMyTextSurfaceProvider).GetSurface(index), index);
-							this.Screens.Add(screen);
+							Screens.Add(screen);
 						}
 					}
 				}
@@ -60,10 +60,10 @@ namespace IngameScript
 		// DATA SCREEN // Wrapper class for individual surfaces belonging to a Monitor
 		public class DataScreen
 		{
+			public List<Sector> Sectors;
 			public IMyTerminalBlock ParentBlock;
 			public IMyTextSurface Surface;
 			public int ScreenIndex;
-			public List<Sector> Sectors;
 			public string IniTitle;
 			public string Header;
 			public bool ShowSectorType;
@@ -83,15 +83,16 @@ namespace IngameScript
 
 			public DataScreen(IMyTerminalBlock block, IMyTextSurface surface, int screenIndex)
 			{
-				this.ParentBlock = block;
-				this.Surface = surface;
-				this.Surface.ContentType = ContentType.TEXT_AND_IMAGE;
-				this.ScreenIndex = screenIndex;
-				this.Sectors = new List<Sector>();
-				this.IniTitle = MONITOR_HEAD + " " + screenIndex;
-				this.Header = IniKey.GetKey(block, this.IniTitle, "Header", "Basic");
+				Sectors = new List<Sector>();
+				ParentBlock = block;
+				Surface = surface;
+				Surface.ContentType = ContentType.TEXT_AND_IMAGE;
+				ScreenIndex = screenIndex;
+				
+				IniTitle = MONITOR_HEAD + " " + screenIndex;
+				Header = IniKey.GetKey(block, IniTitle, "Header", "Basic");
 
-				string sectorIni = IniKey.GetKey(block, this.IniTitle, "Sectors", "");
+				string sectorIni = IniKey.GetKey(block, IniTitle, "Sectors", "");
 				string[] sectors = sectorIni.Split('\n');
 
 				if (sectors.Length > 0)
@@ -100,27 +101,25 @@ namespace IngameScript
 					{
 						Sector newSector = GetSector(sector);
 						if (newSector != null)
-							this.Sectors.Add(newSector);
+							Sectors.Add(newSector);
 					}
 				}
 
-				this.ShowSectorType = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Sector_Type", "False"));
-				this.ShowSectorStatus = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Sector_Status", "True"));
-				this.ShowLockStatus = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Lock_Status", "False"));
-				this.ShowVentCount = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Vent_Count", "False"));
-				this.ShowDoorCount = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Door_Count", "True"));
-				this.ShowDoorNames = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Door_Names", "False"));
-				this.ShowDoorStatus = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Door_Status", "False"));
-				this.ShowLightCount = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Light_Count", "False"));
-				this.ShowMergeCount = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Merge_Count", "True"));
-				this.ShowMergeNames = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Merge_Names", "False"));
-				this.ShowMergeStatus = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Merge_Status", "False"));
-				this.ShowConnectorCount = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Connector_Count", "True"));
-				this.ShowConnectorNames = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Connector_Names", "False"));
-				this.ShowConnectorStatus = Util.ParseBool(IniKey.GetKey(block, this.IniTitle, "Connector_Status", "False"));
+				ShowSectorType = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Sector_Type", "False"));
+				ShowSectorStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Sector_Status", "True"));
+				ShowLockStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Lock_Status", "False"));
+				ShowVentCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Vent_Count", "False"));
+				ShowDoorCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Door_Count", "True"));
+				ShowDoorNames = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Door_Names", "False"));
+				ShowDoorStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Door_Status", "False"));
+				ShowLightCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Light_Count", "False"));
+				ShowMergeCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Merge_Count", "True"));
+				ShowMergeNames = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Merge_Names", "False"));
+				ShowMergeStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Merge_Status", "False"));
+				ShowConnectorCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Connector_Count", "True"));
+				ShowConnectorNames = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Connector_Names", "False"));
+				ShowConnectorStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Connector_Status", "False"));
 			}
-
-
 		}
 
 		// UPDATE MONITORS // Print Overview text to any blocks in the _dataDisplays list.

@@ -30,10 +30,11 @@ namespace IngameScript
 			public List<IMyAirVent> Vents;
 			public List<IMyDoor> Doors;
 			public List<PressureLight> Lights;
-			public List<IMyTextSurface> Surfaces; // LCD screens used to display pressure readings
+			//public List<IMyTextSurface> Surfaces; // LCD screens used to display pressure readings
 			public List<IMyShipMergeBlock> MergeBlocks;
 			public List<IMyShipConnector> Connectors;
-			public List<Bulkhead> Bulkheads;
+			//public List<Bulkhead> Bulkheads;
+			public List<GaugeSurface> Gauges;
 			public string Type; // Room, Lock, Dock, or Vacuum
 			public string NormalColor; // Default pressurized light color for sector
 			public string EmergencyColor; // Default depressurized light color for sector
@@ -41,6 +42,7 @@ namespace IngameScript
 			public IMyTimerBlock LockTimer;
 			public IMySoundBlock LockAlarm;
 			public bool IsPressurized;
+			public bool Depressurizing;
 			public bool HasChanged;
 
 			// Constructor
@@ -52,21 +54,16 @@ namespace IngameScript
 				Lights = new List<PressureLight>();
 				MergeBlocks = new List<IMyShipMergeBlock>();
 				Connectors = new List<IMyShipConnector>();
-				Surfaces = new List<IMyTextSurface>(); //OBSOLETE
-				Bulkheads = new List<Bulkhead>(); //OBSOLETE
+				Gauges = new List<GaugeSurface>();
+				//Surfaces = new List<IMyTextSurface>(); //OBSOLETE
+				//Bulkheads = new List<Bulkhead>(); //OBSOLETE
 
 				Group = blockGroup;
 				SetName();
 				AssignVents();
 				AssignDoors(); //And add to Bulkhead
 				AssignLights();
-				AssignLCDBlocks();
 				AssignTimer();
-			
-
-				// OLD //////////////////////////////////////////////////////////////////////////////////////
-
-
 			}
 
 
@@ -147,41 +144,6 @@ namespace IngameScript
 			}
 
 
-			// ASSIGN LCD BLOCKS
-			private void AssignLCDBlocks()
-			{
-				List<IMyTextSurfaceProvider> lcdBlocks = new List<IMyTextSurfaceProvider>();
-				Group.GetBlocksOfType<IMyTextSurfaceProvider>(lcdBlocks);
-
-				if (lcdBlocks.Count < 1)
-					return;
-
-				foreach (IMyTextSurfaceProvider lcdBlock in lcdBlocks)
-				{
-					if(lcdBlock.SurfaceCount > 0)
-                    {
-						string sectorA = IniKey.GetKey(lcdBlock as IMyTerminalBlock, INI_HEAD, "Sector_A", "");
-						string sectorB = IniKey.GetKey(lcdBlock as IMyTerminalBlock, INI_HEAD, "Sector_B", "");
-
-						if (sectorA == "" || sectorB == "")
-						{
-							_buildMessage += "LCD Block " + (lcdBlock as IMyTerminalBlock).CustomName
-							+ " is missing sector tags.\n* Please check Custom Data and ensure block is assigned to exactly 2 Sector Groups.";
-							return;
-						}
-
-						string tag = sectorA + "," + sectorB;
-						Bulkhead bulkhead = GetBulkhead(tag);
-
-						if (bulkhead != null)
-						{
-							bulkhead.AddSurfaceFromBlock(lcdBlock as IMyTerminalBlock);
-						}
-					}
-				}
-			}
-
-
 			// ASSIGN TIMER
 			private void AssignTimer()
 			{
@@ -257,12 +219,15 @@ namespace IngameScript
 			public void Check()
 			{
 				bool pressurized = Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD;
-				if (IsPressurized == pressurized)
+				bool depressurize = Vents[0].Depressurize;
+				if (IsPressurized == pressurized && Depressurizing == depressurize)
 					HasChanged = false;
 				else
 					HasChanged = true;
 
 				IsPressurized = pressurized;
+				DrawGauges();
+
 
 				if (!HasChanged)
 					return;
@@ -310,7 +275,7 @@ namespace IngameScript
 			// GET EXTERIOR BULKHEAD - Returns bulkhead between this sector and exterior
 			public Bulkhead GetExteriorBulkhead()
 			{
-				if (Bulkheads.Count > 0)
+				if (_bulkheads.Count > 0)
 				{
 					// Return null if exterior vent.
 					if (Name == _vacTag)
@@ -319,9 +284,9 @@ namespace IngameScript
 						return null;
 					}
 
-					foreach (Bulkhead bulkhead in Bulkheads)
+					foreach (Bulkhead bulkhead in _bulkheads)
 					{
-						if (bulkhead.TagB == _vacTag || bulkhead.TagA == _vacTag)
+						if (bulkhead.Sectors.Contains(this) && bulkhead.Sectors.Contains(GetSector(_vacTag)))
 							return bulkhead;
 					}
 				}
@@ -416,14 +381,13 @@ namespace IngameScript
 
 				foreach (PressureLight myLight in Lights)
 				{
-					if (pressurized)
+					if (!pressurized || Vents[0].Depressurize)
 					{
-						myLight.LightBlock.Color = Util.ColorFromString(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Normal_Color", NormalColor));
-
+						myLight.LightBlock.Color = Util.ColorFromString(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Emergency_Color", EmergencyColor));
 						try
 						{
-							myLight.LightBlock.Radius = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Normal_Radius", "0"));
-							myLight.LightBlock.Intensity = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Normal_Intensity", "0"));
+							myLight.LightBlock.Radius = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Emergency_Radius", "0"));
+							myLight.LightBlock.Intensity = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Emergency_Intensity", "0"));
 						}
 						catch
 						{
@@ -434,11 +398,12 @@ namespace IngameScript
 					}
 					else
 					{
-						myLight.LightBlock.Color = Util.ColorFromString(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Emergency_Color", EmergencyColor));
+						myLight.LightBlock.Color = Util.ColorFromString(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Normal_Color", NormalColor));
+
 						try
 						{
-							myLight.LightBlock.Radius = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Emergency_Radius", "0"));
-							myLight.LightBlock.Intensity = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Emergency_Intensity", "0"));
+							myLight.LightBlock.Radius = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Normal_Radius", "0"));
+							myLight.LightBlock.Intensity = float.Parse(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Normal_Intensity", "0"));
 						}
 						catch
 						{
@@ -465,6 +430,19 @@ namespace IngameScript
 
 				return false;
 			}
+
+
+			// DRAW GAUGES //
+			public void DrawGauges()
+            {
+				if (Gauges.Count < 1)
+					return;
+
+				foreach(GaugeSurface gauge in Gauges)
+                {
+					DrawSingleSectorGauge(gauge, this);
+                }
+            }
 		}
 	}
 }

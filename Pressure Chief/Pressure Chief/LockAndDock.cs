@@ -80,13 +80,9 @@ namespace IngameScript
 				}
 			}
 
-			foreach (Bulkhead bulkhead in sector.Bulkheads)
-			{
-				if (bulkhead.TagB == _vacTag || bulkhead.TagA == _vacTag)
-				{
-					bulkhead.SetOverride(false);
-				}
-			}
+			Bulkhead bulkhead = sector.GetExteriorBulkhead();
+			if(bulkhead != null)
+				bulkhead.SetOverride(false);
 		}
 
 
