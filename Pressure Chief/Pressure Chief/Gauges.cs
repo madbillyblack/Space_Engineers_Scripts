@@ -28,6 +28,7 @@ namespace IngameScript
             public List<GaugeSurface> Surfaces;
             public List<Sector> Sectors;
 
+			// CONSTRUCTOR
             public GaugeBlock(IMyTerminalBlock block)
             {
                 Block = block;
@@ -40,15 +41,12 @@ namespace IngameScript
                 string[] sectorStrings = IniKey.GetKey(Block, GAUGE_HEAD, "Sectors", "").Split('\n');
                 foreach(string sectorString in sectorStrings)
                 {
-                    _buildMessage += "\n[" + sectorString + "]";
                     Sector sector = GetSector(sectorString);
                     if (sector != null)
                     {
-                        _buildMessage += "-- " + sector.Name + "--";
                         Sectors.Add(sector);
                     }  
                 }
-                _buildMessage += "\n * Sectors Count: " + Sectors.Count;
 
                 // Set INI Key bool parameters for whether each screen should display a gauge.
                 for(int i = 0; i < (Block as IMyTextSurfaceProvider).SurfaceCount; i++)
@@ -74,7 +72,7 @@ namespace IngameScript
                             {
                                 sectorB = IniKey.GetKey(Block, gaugeHead, "Sector_B", Sectors[1].Name);
                                 Bulkhead bulkhead = GetBulkhead(sectorA + "," + sectorB);
-                                _buildMessage += "\nAdding surface " + i + " of " + Block.CustomName + " to bulkhead [" + sectorA + "," + sectorB + "]";
+                                _buildMessage += "\nAssigning surface " + i + " of " + Block.CustomName + " to bulkhead [" + sectorA + "," + sectorB + "]";
 
                                 if (bulkhead != null)
                                     bulkhead.Gauges.Add(new GaugeSurface(this, i, bulkhead.Sectors, true));
@@ -116,31 +114,31 @@ namespace IngameScript
             public bool Flipped;
             public bool IsDouble;
             public float Brightness;
+			public Sector SectorA;
+			public Sector SectorB;
 
+			// CONSTRUCTOR
             public GaugeSurface(GaugeBlock owner, int screenIndex, List<Sector> sectors, bool doubleScreen)
             {
                 Index = screenIndex;
                 Surface = (owner.Block as IMyTextSurfaceProvider).GetSurface(Index);
                 string gaugeHead = GAUGE_HEAD + " " + Index;
                 IsDouble = doubleScreen;
+				SectorA = sectors[0];
+				SectorB = sectors[1];
 
                 // Determine which side of the bulkhead the LCD is on.
                 string blockName = owner.Block.CustomName;
                 string defaultSide;
 
-				if(sectors.Count > 1)
-                {
-					if (IsDouble || blockName.Contains("(" + sectors[0].Name + ")"))
-						defaultSide = "A";
-					else if (blockName.Contains("(" + sectors[1].Name + ")"))
-						defaultSide = "B";
-					else
-						defaultSide = "Select A or B";
-
-					Side = IniKey.GetKey(owner.Block, gaugeHead, "Side", defaultSide);
-				}
+				if (IsDouble || blockName.Contains("(" + sectors[0].Name + ")"))
+					defaultSide = "A";
+				else if (blockName.Contains("(" + sectors[1].Name + ")"))
+					defaultSide = "B";
 				else
-					Side = "";                
+					defaultSide = "Select A or B";
+
+				Side = IniKey.GetKey(owner.Block, gaugeHead, "Side", defaultSide);
                 
                 bool vert;
                 if (owner.Block.BlockDefinition.SubtypeId.ToString().Contains("Corner_LCD"))
@@ -324,8 +322,6 @@ namespace IngameScript
 
 		public static void DrawSingleSectorGauge(GaugeSurface gauge, Sector sector)
         {
-			_statusMessage = "Drawing Gauge for " + sector.Name;
-
 			IMyTextSurface drawSurface = gauge.Surface;
 			var frame = drawSurface.DrawFrame();
 			bool vertical = gauge.Vertical;

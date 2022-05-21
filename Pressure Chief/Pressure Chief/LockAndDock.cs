@@ -281,7 +281,7 @@ namespace IngameScript
 					if (overriding)
 					{
 						bool autoOpen = Util.ParseBool(IniKey.GetKey(door, INI_HEAD, "AutoOpen", "true"));
-						bool exterior = IniKey.GetKey(door, INI_HEAD, "Sector_A", "") == VAC_TAG || IniKey.GetKey(door, INI_HEAD, "Sector_B", "") == VAC_TAG;
+						bool exterior = IniKey.GetKey(door, INI_HEAD, "Sector_A", "") == _vacTag || IniKey.GetKey(door, INI_HEAD, "Sector_B", "") == _vacTag;
 						if (autoOpen && exterior)
 							IniKey.SetKey(door, INI_HEAD, "Override", "true");
 						else

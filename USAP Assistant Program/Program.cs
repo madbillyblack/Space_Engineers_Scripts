@@ -229,6 +229,30 @@ namespace IngameScript
                     case "SET_GRID_ID":
                         SetGridID(cmdArg);
                         break;
+                    case "ADD_PREFIX":
+                        AddTags(cmdArg, true);
+                        break;
+                    case "ADD_SUFFIX":
+                        AddTags(cmdArg, false);
+                        break;
+                    case "DELETE_PREFIX":
+                        RemoveTags(cmdArg, true);
+                        break;
+                    case "DELETE_SUFFIX":
+                        RemoveTags(cmdArg, false);
+                        break;
+                    case "REPLACE_PREFIX":
+                        ReplaceTags(args, true);
+                        break;
+                    case "REPLACE_SUFFIX":
+                        ReplaceTags(args, false);
+                        break;
+                    case "SWAP_TO_PREFIX":
+                        SwapTags(cmdArg, true);
+                        break;
+                    case "SWAP_TO_SUFFIX":
+                        SwapTags(cmdArg, false);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;

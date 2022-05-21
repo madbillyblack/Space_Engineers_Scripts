@@ -122,11 +122,11 @@ namespace IngameScript
 				foreach(GaugeSurface gauge in Gauges)
 				{
 					if (gauge.Side == "A")
-						DrawGauge(gauge, Sectors[0], Sectors[1], locked, false);
+						DrawGauge(gauge, gauge.SectorA, gauge.SectorB, locked, false);
 					else if (gauge.Side == "B")
-						DrawGauge(gauge, Sectors[1], Sectors[0], locked, false);
+						DrawGauge(gauge, gauge.SectorB, gauge.SectorA, locked, false);
 					else
-						DrawGauge(gauge, Sectors[0], Sectors[1], locked, true);
+						DrawGauge(gauge, gauge.SectorA, gauge.SectorB, locked, true);
 				}
 			}
 		}

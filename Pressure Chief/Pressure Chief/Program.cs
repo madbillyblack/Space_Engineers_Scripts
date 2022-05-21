@@ -45,12 +45,6 @@ namespace IngameScript
 
 
 
-		// START HERE ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
 		//////////////////////////////////
 		//		PRESSURE CHIEF			  		  //
 		// Pressure management script 	//
@@ -81,9 +75,6 @@ namespace IngameScript
 		const int ROOM_BLUE = 0;
 
 		// AVOID CHANGING ANYTHING BELOW THIS LINE!!!!!-----------------------------------------------------------------------------------------------------
-		const string OPENER = "[|";
-		const string CLOSER = "|]";
-		const char SPLITTER = '|';
 		const string INI_HEAD = "Pressure Chief";
 		const string GAUGE_HEAD = "Pressure Gauge";
 		const string SHARED = "Shared Data";
@@ -106,7 +97,6 @@ namespace IngameScript
 		static string _overview;
 		static string _gridID;
 		static string _vacTag;
-		static string _dataTag;
 		static string _unit; // Display unit of pressure.
 		static float _atmo; // Atmospheric conversion factor decided by unit.
 		static float _factor; // Multiplier of pressure reading.
@@ -338,6 +328,12 @@ namespace IngameScript
 						if (!UnknownSector(mySector, "Room"))
 							mySector.Check();
 						break;
+					case "CLEAR":
+						_statusMessage = "";
+						break;
+					case "SHOW_BUILD":
+						_statusMessage = _buildMessage;
+						break;
 					default:
 						_statusMessage = "UNRECOGNIZED COMMAND: " + arg;
 						break;
@@ -531,7 +527,7 @@ namespace IngameScript
 
 			if (_sectorGroups.Count < 1)
             {
-				_statusMessage = "NO SECTOR GROUPS LOCATED!";
+				_buildMessage += "\nNO SECTOR GROUPS LOCATED!";
 				return;
 			}
 				
@@ -585,7 +581,7 @@ namespace IngameScript
 					break;
 			}
 
-			_statusMessage = _buildMessage;
+			//_statusMessage = _buildMessage;
 		}
 
 
@@ -635,16 +631,16 @@ namespace IngameScript
 			if (sectorA == "" && sectorB.ToUpper() != sectorName.ToUpper())
 			{
 				IniKey.SetKey(door, INI_HEAD, "Sector_A", sectorName);
-				_buildMessage += door.CustomName + "Added to [" + sectorName + "]";
+				_buildMessage += "\n" + door.CustomName + "Added to [" + sectorName + "]";
 			}
 			else if (sectorB == "" && sectorA.ToUpper() != sectorName.ToUpper())
 			{
 				IniKey.SetKey(door, INI_HEAD, "Sector_B", sectorName);
-				_buildMessage += door.CustomName + "Added to [" + sectorName + "]";
+				_buildMessage += "\n" + door.CustomName + "Added to [" + sectorName + "]";
 			}
 			else if (sectorA.ToUpper() != sectorName.ToUpper() && sectorB.ToUpper() != sectorName.ToUpper())
 			{
-				_buildMessage += "WARNING: " + door.CustomName + " is assigned to more than two sector groups!";
+				_buildMessage += "\nWARNING: " + door.CustomName + " is assigned to more than two sector groups!";
 			}
 		}
 

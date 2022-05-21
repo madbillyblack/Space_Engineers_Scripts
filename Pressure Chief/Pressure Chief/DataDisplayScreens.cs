@@ -66,6 +66,7 @@ namespace IngameScript
 			public int ScreenIndex;
 			public string IniTitle;
 			public string Header;
+			public bool ShowBuild;
 			public bool ShowSectorType;
 			public bool ShowSectorStatus;
 			public bool ShowLockStatus;
@@ -105,6 +106,7 @@ namespace IngameScript
 					}
 				}
 
+				ShowBuild = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Show_Build", "False"));
 				ShowSectorType = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Sector_Type", "False"));
 				ShowSectorStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Sector_Status", "True"));
 				ShowLockStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Lock_Status", "False"));
@@ -156,6 +158,9 @@ namespace IngameScript
 								readOut = screen.Header + "\n";
 								break;
 						}
+
+						if (screen.ShowBuild)
+							readOut += _buildMessage + "\n";
 
 						if (screen.Sectors.Count > 0)
 						{

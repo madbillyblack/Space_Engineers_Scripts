@@ -73,7 +73,7 @@ namespace IngameScript
 				string[] nameArray = Group.Name.Split(':');
 				if (nameArray.Length < 2)
 				{
-					_buildMessage += "INVALID SECTOR GROUP NAME!\n" + Group.Name;
+					_buildMessage += "\nINVALID SECTOR GROUP NAME!\n - " + Group.Name;
 					return;
 				}
 				Name = nameArray[1].Trim();
@@ -92,7 +92,7 @@ namespace IngameScript
 				Group.GetBlocksOfType<IMyAirVent>(Vents);
 				if (Vents.Count < 1)
 				{
-					_buildMessage += "NO AIR VENTS ASSIGNED TO GROUP " + Group.Name + "!";
+					_buildMessage += "\nNO AIR VENTS ASSIGNED TO GROUP\n - " + Group.Name + "!";
 					return;
 				}
 
@@ -113,7 +113,7 @@ namespace IngameScript
 				Group.GetBlocksOfType<IMyDoor>(Doors);
 				if (Doors.Count < 1)
 				{
-					_buildMessage += "NO DOORS ASSIGNED TO GROUP" + Group.Name + "!";
+					_buildMessage += "\nNO DOORS ASSIGNED TO GROUP\n - " + Group.Name + "!";
 					return;
 				}
 
@@ -154,11 +154,11 @@ namespace IngameScript
 					return;
 				else if (timers.Count > 1)
 				{
-					_buildMessage += "WARNING: Sector " + Name + " has more than 1 timer assigned.\n* Only timer " + timers[0].CustomName + " will be used.";
+					_buildMessage += "\nWARNING: Sector " + Name + " has more than 1 timer assigned.\n * Only timer " + timers[0].CustomName + " will be used.";
 				}
 				else if (Type == "Vacuum")
                 {
-					_buildMessage += "WARNING: Exterior Sector has no purpose for a Timer block. Either remove timer from Exterior Sector Group, or Rename Group to not be exterior.";
+					_buildMessage += "\nWARNING: Exterior Sector has no purpose for a Timer block. Either remove timer from Exterior Sector Group, or Rename Group to not be exterior.";
 					return;
                 }
 
@@ -181,13 +181,13 @@ namespace IngameScript
 					return;
 				else if (soundBlocks.Count > 1)
 				{
-					_buildMessage += "WARNING: Sector " + Name + " has more than 1 sound block assigned.\n* Only sound block " + soundBlocks[0].CustomName + " will be used.";
+					_buildMessage += "\nWARNING: Sector " + Name + " has more than 1 sound block assigned.\n * Only sound block " + soundBlocks[0].CustomName + " will be used.";
 				}
 
 				LockAlarm = soundBlocks[0];
 
 				if (LockTimer == null)
-					_buildMessage += "WARNING: Sector " + Name + " has sound block assigned but no timer\n* Air Locks require a timer to function!";
+					_buildMessage += "\nWARNING: Sector " + Name + " has sound block assigned but no timer\n * Air Locks require a timer to function!";
 			}
 
 
@@ -210,7 +210,7 @@ namespace IngameScript
 
 				if (Connectors.Count > 0 && MergeBlocks.Count < 1)
 				{
-					_buildMessage += "WARNING: Secctor " + Name + " has no merge blocks assigned.\n* Docking Ports require at least 1 merge block in order to function.";
+					_buildMessage += "\nWARNING: Sector " + Name + " has no merge blocks assigned.\n * Docking Ports require at least 1 merge block in order to function.";
 				}
 			}
 
@@ -226,6 +226,7 @@ namespace IngameScript
 					HasChanged = true;
 
 				IsPressurized = pressurized;
+				Depressurizing = depressurize;
 				DrawGauges();
 
 
