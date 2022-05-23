@@ -63,6 +63,7 @@ namespace IngameScript
 				AssignVents();
 				AssignDoors(); //And add to Bulkhead
 				AssignLights();
+				UpdateLights(IsPressurized);
 				AssignTimer();
 			}
 
@@ -382,6 +383,8 @@ namespace IngameScript
 
 				foreach (PressureLight myLight in Lights)
 				{
+					myLight.SetState(pressurized);
+					/*
 					if (!pressurized || Vents[0].Depressurize)
 					{
 						myLight.LightBlock.Color = Util.ColorFromString(IniKey.GetKey(myLight.LightBlock, INI_HEAD, "Emergency_Color", EmergencyColor));
@@ -413,6 +416,7 @@ namespace IngameScript
 											"\nCheck Custom Data inputs!";
 						}
 					}
+					*/
 				}
 			}
 

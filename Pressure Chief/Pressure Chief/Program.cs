@@ -541,7 +541,7 @@ namespace IngameScript
 				List<IMyAirVent> tempVents = new List<IMyAirVent>();
 				sectorGroup.GetBlocksOfType<IMyAirVent>(tempVents);
 
-				if(tempVents.Count > 0 && IniKey.GetKey(tempVents[0], SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString()) == _gridID)
+				if(tempVents.Count > 0 && IniKey.GetKey(tempVents[0], SHARED, "Grid_ID", _gridID) == _gridID)
 					_sectors.Add(new Sector(sectorGroup));
 			}
 

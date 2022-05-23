@@ -64,7 +64,7 @@ namespace IngameScript
 				if (Single.TryParse(numberString, out number))
 					return number;
 				else
-					return float.MinValue;
+					return 0;
 			}
 		}
     }
