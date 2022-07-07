@@ -414,11 +414,13 @@ namespace IngameScript
 				if(FloorQueue.Count < 1)// || FloorQueue[0].Floor == this.CurrentFloor
 				{
 					SetPhase(0);
+					//StopMusic();
 					Timer.StopCountdown();
 					SetTravel(false);
 					return;
 				}
 
+				PlayMusic();
 				this.GoToFloor(this.FloorQueue[0].Floor);
 				this.SetPhase(2);
 			}
@@ -432,6 +434,8 @@ namespace IngameScript
 					if(this.FloorQueue.Count > 0)
 					{
 						this.FloorQueue.Remove(this.FloorQueue[0]);
+						if (FloorQueue.Count < 1)
+							StopMusic();
 					}
 					this.SetPhase(3);
 					this.StartDelay(DEFAULT_WAIT_TIME);
@@ -482,24 +486,29 @@ namespace IngameScript
 			// PLAY MUSIC //
 			public void PlayMusic()
             {
+				if (PlayingMusic || SoundBlocks.Count < 1)
+					return;
+
+				PlayingMusic = true;
+				foreach (IMySoundBlock soundBlock in SoundBlocks)
+                {
+					soundBlock.Play();
+				}
+            }
+
+
+			// STOP MUSIC //
+			public void StopMusic()
+			{
 				if (SoundBlocks.Count < 1)
 					return;
 
+				PlayingMusic = false;
 				foreach (IMySoundBlock soundBlock in SoundBlocks)
-                {
-					if (Phase == 0)
-                    {
-						soundBlock.Stop();
-						PlayingMusic = false;
-
-					}
-					else if (!PlayingMusic && Phase == 2)
-                    {
-						soundBlock.Play();
-						PlayingMusic = true;
-					}
+				{
+					soundBlock.Stop();
 				}
-            }
+			}
 		}
 
 
@@ -1073,7 +1082,9 @@ namespace IngameScript
 					break;
 				case 1:
 					if(elevator.FloorQueue.Count > 0)
+                    {
 						elevator.LockDoors();
+					}
 					elevator.GoToNext(); //Sends Elevator to next floor, or stops if Queue is empty.
 					break;
 				case 2:
@@ -1085,7 +1096,6 @@ namespace IngameScript
 			}
 
 			elevator.DrawDisplays();
-			elevator.PlayMusic();
 		}
 
 
