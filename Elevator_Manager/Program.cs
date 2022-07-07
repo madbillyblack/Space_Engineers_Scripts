@@ -76,6 +76,7 @@ namespace IngameScript
 			public List<Page> FloorQueue;
 			//public List<IMyTerminalBlock> DisplayBlocks;
 			public List<Display> Displays;
+			public List<IMySoundBlock> SoundBlocks;
 			public IMyTimerBlock Timer;
 			public Platform Platform;
 			public UInt16 Phase;
@@ -87,6 +88,7 @@ namespace IngameScript
 			public float WaitTime;
 			public bool GoingUp;
 			public bool Travelling;
+			public bool PlayingMusic;
 
 			public Elevator(IMyTimerBlock timer)
 			{
@@ -97,11 +99,13 @@ namespace IngameScript
 				this.Displays = new List<Display>();
 				
 				this.Timer = timer;
+				SoundBlocks = new List<IMySoundBlock>();
 				this.GoingUp = ParseBool(GetKey(timer, INI_HEAD, "Going_Up", "true"));
 				this.Travelling = ParseBool(GetKey(timer, INI_HEAD, "Travelling", "true"));
 				this.CurrentFloor = ParseInt(GetKey(timer, INI_HEAD, "Current_Floor", "0"), 0);
 				this.CloseTime = ParseFloat(GetKey(timer, INI_HEAD, "Close_Time", DEFAULT_CLOSE_TIME.ToString()), DEFAULT_CLOSE_TIME);
 				this.WaitTime = ParseFloat(GetKey(timer, INI_HEAD, "Wait_Time", DEFAULT_WAIT_TIME.ToString()), DEFAULT_WAIT_TIME);
+				PlayingMusic = false;
 
 				int[] tags = SplitTag(TagFromName(timer.CustomName));
 
@@ -407,11 +411,11 @@ namespace IngameScript
 			public void GoToNext()
 			{ 
 				// If Queue is empty or next floor is current floor STOP
-				if(this.FloorQueue.Count < 1)// || FloorQueue[0].Floor == this.CurrentFloor
+				if(FloorQueue.Count < 1)// || FloorQueue[0].Floor == this.CurrentFloor
 				{
-					this.SetPhase(0);
-					this.Timer.StopCountdown();
-					this.SetTravel(false);
+					SetPhase(0);
+					Timer.StopCountdown();
+					SetTravel(false);
 					return;
 				}
 
@@ -473,6 +477,29 @@ namespace IngameScript
 					DrawDisplay(display, this);
 				}
 			}
+
+
+			// PLAY MUSIC //
+			public void PlayMusic()
+            {
+				if (SoundBlocks.Count < 1)
+					return;
+
+				foreach (IMySoundBlock soundBlock in SoundBlocks)
+                {
+					if (Phase == 0)
+                    {
+						soundBlock.Stop();
+						PlayingMusic = false;
+
+					}
+					else if (!PlayingMusic && Phase == 2)
+                    {
+						soundBlock.Play();
+						PlayingMusic = true;
+					}
+				}
+            }
 		}
 
 
@@ -786,6 +813,14 @@ namespace IngameScript
 			if (_elevators.Count < 1)
 				return;
 
+			foreach(Elevator elevator in _elevators)
+            {
+				Echo("\nElevator " + elevator.Number);
+				Echo("  * Floors: " + elevator.Floors.Count);
+				Echo("  * Current: " + elevator.CurrentFloor);
+				Echo("  * Sound Blocks: " + elevator.SoundBlocks.Count);
+            }
+
 			Echo("Cmd: " + argument);
 			if (argument != "")
 			{
@@ -925,15 +960,8 @@ namespace IngameScript
 			bool goingUp = elevator.GetPageDirection(floor, direction);
 
 			Page page = new Page(floor, goingUp);
-			/*
-			if(elevator.FloorQueue.Count < 1)
-			{
-				if (floor > elevator.CurrentFloor)
-					elevator.GoingUp = true;
-				else
-					elevator.GoingUp = false;
-			}
-			else */if(DuplicatePages(page, elevator.FloorQueue))
+
+			if(DuplicatePages(page, elevator.FloorQueue))
 			{
 				return;
 			}
@@ -1057,6 +1085,7 @@ namespace IngameScript
 			}
 
 			elevator.DrawDisplays();
+			elevator.PlayMusic();
 		}
 
 
@@ -1222,6 +1251,7 @@ namespace IngameScript
 				}
 			}
 
+			AssignSoundBlocks();
 			AssignLogs();
 		}
 
@@ -1281,6 +1311,33 @@ namespace IngameScript
 			}
 		}
 
+
+		// ASSIGN SOUND BLOCKS //
+		void AssignSoundBlocks()
+        {
+			List<IMySoundBlock> soundBlocks = new List<IMySoundBlock>();
+			GridTerminalSystem.GetBlocksOfType<IMySoundBlock>(soundBlocks);
+
+			if (soundBlocks.Count < 1)
+				return;
+
+			foreach(IMySoundBlock soundBlock in soundBlocks)
+            {
+				foreach(Elevator elevator in _elevators)
+                {
+					if(soundBlock.CustomName.Contains(OPENER + elevator.Number + CLOSER))
+                    {
+						elevator.SoundBlocks.Add(soundBlock);
+						if (!soundBlock.IsSoundSelected)
+                        {
+							soundBlock.SelectedSound = "MusComp_11";
+							soundBlock.Range = 7.5f;
+							soundBlock.Volume = 0.25f;
+						}
+                    }
+                }
+            }
+        }
 
 		// ASSIGN LOGS //
 		void AssignLogs()
@@ -1613,9 +1670,6 @@ namespace IngameScript
 
 			frame.Dispose();
 		}
-
-		// DRAW TRIANGLES //
-
 
 
 		// DRAW TEXTURE //
