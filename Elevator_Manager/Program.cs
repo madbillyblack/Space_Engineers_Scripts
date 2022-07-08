@@ -1419,6 +1419,11 @@ namespace IngameScript
 			if (floor == null)
 				return;
 
+			if(door.CustomData.Contains("Pressure Chief"))
+            {
+				EnsureKey(door, "Pressure Chief", "Elevator_Door", "True");
+            }
+
 			floor.Doors.Add(door);
 		}
 

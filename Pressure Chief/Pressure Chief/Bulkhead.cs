@@ -34,6 +34,7 @@ namespace IngameScript
 			public List<bool> LcdFlips; // List of bools that designate if sectors A & B are displayed on the right and left respectively.
 			public List<UInt16> LcdBrightnesses;
 			public bool Override; // If True, Bulkhead ignores pressure checks and is always unlocked.
+			public bool ElevatorDoor;
 
 			// Variables for sectors separated by bulkhead.
 			//public Sector SectorA;
@@ -56,6 +57,12 @@ namespace IngameScript
 				LcdFlips = new List<bool>();
 				LcdBrightnesses = new List<UInt16>();
 
+				// Check to see if door is also being used by Elevator Manager Script
+				if (myDoor.CustomData.Contains("Elevator_Door"))
+					ElevatorDoor = Util.ParseBool(IniKey.GetKey(myDoor, INI_HEAD, "Elevator_Door", "False"));
+				else
+					ElevatorDoor = false;
+
 				Doors.Add(myDoor);
 				Override = false;
 
@@ -74,12 +81,12 @@ namespace IngameScript
 
 				Override = Util.ParseBool(IniKey.GetKey(Doors[0], INI_HEAD, "Override", "false"));
 
-				if (Sectors[0].IsPressurized == Sectors[1].IsPressurized || Override)
+				if ((Sectors[0].IsPressurized == Sectors[1].IsPressurized && !ElevatorDoor) || Override)
 				{
 					foreach (IMyDoor door in Doors)
 						door.GetActionWithName("OnOff_On").Apply(door);
 				}
-				else
+				else if(Sectors[0].IsPressurized != Sectors[1].IsPressurized)
 				{
 					foreach (IMyDoor door in Doors)
 						door.GetActionWithName("OnOff_Off").Apply(door);
