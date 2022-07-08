@@ -58,7 +58,7 @@ namespace IngameScript
 
 		// Globals
 		public List<Elevator> _elevators;
-		public List<IMyTextSurface> _logSreens;
+		public List<IMyTextSurface> _logScreens;
 
 		string _unusable;
 		public static string _statusMessage;
@@ -597,11 +597,13 @@ namespace IngameScript
 					else
 						lockDown = false;
 
-					if(!lockDown)
-                    {
+					if (!lockDown)
+					{
 						door.GetActionWithName("OnOff_On").Apply(door);
 						door.OpenDoor();
 					}
+					else
+						_statusMessage = "Can't open Elevator-" + Elevator.Number + " Floor-" + Number + "\n  due to pressure differential.";
 				}
 			}
 
@@ -894,14 +896,17 @@ namespace IngameScript
 			}
 
 			Echo(_statusMessage);
-			if(_logSreens.Count > 0)
+			if(_logScreens.Count > 0)
 			{
-				foreach(IMyTextSurface screen in _logSreens)
+				foreach(IMyTextSurface screen in _logScreens)
 				{
 					InsertText(screen, "Cmd: " + argument);
 
 					if(_statusMessage != "")
-						InsertText(screen, "\nAlert: " + _statusMessage);
+                    {
+						InsertText(screen, "\nALERT: " + _statusMessage);
+						_statusMessage = "";
+					}
 				}
 			}
 
@@ -1171,7 +1176,7 @@ namespace IngameScript
 			_statusMessage = "";
 			_unusable = "";
 			_elevators = new List<Elevator>();
-			_logSreens = new List<IMyTextSurface>();
+			_logScreens = new List<IMyTextSurface>();
 			_logTag = GetKey(Me, INI_HEAD, "Log_Tag", DEFAULT_LOG_TAG);
 
 			_onColor = new Color(ON_RED, ON_GREEN, ON_BLUE);
@@ -1371,13 +1376,13 @@ namespace IngameScript
 			{
 				if(HasSurfaces(block))
 				{
-					_logSreens.AddRange(ScreensFromData(block as IMyTextSurfaceProvider, "indexes"));
+					_logScreens.AddRange(ScreensFromData(block as IMyTextSurfaceProvider, "indexes"));
 				}
 			}
 
-			if(_logSreens.Count > 0)
+			if(_logScreens.Count > 0)
 			{
-				foreach(IMyTextSurface screen in _logSreens)
+				foreach(IMyTextSurface screen in _logScreens)
 				{
 					screen.ContentType = ContentType.TEXT_AND_IMAGE;
 					screen.WriteText("---NEW LOAD---");
