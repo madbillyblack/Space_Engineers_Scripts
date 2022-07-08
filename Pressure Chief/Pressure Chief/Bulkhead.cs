@@ -81,15 +81,26 @@ namespace IngameScript
 
 				Override = Util.ParseBool(IniKey.GetKey(Doors[0], INI_HEAD, "Override", "false"));
 
-				if ((Sectors[0].IsPressurized == Sectors[1].IsPressurized && !ElevatorDoor) || Override)
+				if (Sectors[0].IsPressurized == Sectors[1].IsPressurized || Override)
 				{
 					foreach (IMyDoor door in Doors)
-						door.GetActionWithName("OnOff_On").Apply(door);
+					{
+						if (ElevatorDoor && !Override)
+							IniKey.SetKey(door, INI_HEAD, "Lock_Down", "False");
+						else
+							door.GetActionWithName("OnOff_On").Apply(door);
+					}		
 				}
-				else if(Sectors[0].IsPressurized != Sectors[1].IsPressurized)
+				else
 				{
 					foreach (IMyDoor door in Doors)
+                    {
 						door.GetActionWithName("OnOff_Off").Apply(door);
+						if(ElevatorDoor)
+                        {
+							IniKey.SetKey(door, INI_HEAD, "Lock_Down", "True");
+                        }
+					}
 				}
 
 				DrawGauges();

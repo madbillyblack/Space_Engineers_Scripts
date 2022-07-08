@@ -588,8 +588,20 @@ namespace IngameScript
 
 				foreach(IMyDoor door in this.Doors)
 				{
-					door.GetActionWithName("OnOff_On").Apply(door);
-					door.OpenDoor();
+					// Check if elevator doors are locked down by pressure chief program
+					bool lockDown;
+					if (door.CustomData.Contains("Pressure Chief"))
+					{
+						lockDown = ParseBool(GetKey(door, "Pressure Chief", "Lock_Down", "False"));
+					}
+					else
+						lockDown = false;
+
+					if(!lockDown)
+                    {
+						door.GetActionWithName("OnOff_On").Apply(door);
+						door.OpenDoor();
+					}
 				}
 			}
 
