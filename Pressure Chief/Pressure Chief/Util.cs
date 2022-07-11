@@ -66,6 +66,23 @@ namespace IngameScript
 				else
 					return 0;
 			}
+
+
+			// PARSE INT //
+			public static int ParseUInt(string value)
+            {
+				UInt32 number;
+				try
+                {
+					number = UInt32.Parse(value);
+                }
+				catch
+                {
+					number = 0;
+                }
+
+				return (int)number;
+            }
 		}
     }
 }

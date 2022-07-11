@@ -545,6 +545,7 @@ namespace IngameScript
 					_sectors.Add(new Sector(sectorGroup));
 			}
 
+
 			// Add LCD Blocks from sector groups
 			foreach (IMyBlockGroup group in _sectorGroups)
 				AssignLCDBlocks(group);
@@ -582,6 +583,7 @@ namespace IngameScript
 			}
 
 			//_statusMessage = _buildMessage;
+			SetAutoCloseDelays();
 		}
 
 
@@ -753,6 +755,30 @@ namespace IngameScript
 				}
 			}
 		}
+
+
+		// SET AUTOCLOSE DELAYS
+		public void SetAutoCloseDelays()
+        {
+			if (_sectors.Count < 1)
+				return;
+
+			foreach(Sector sector in _sectors)
+            {
+				if(sector.Vents.Count > 0)
+                {
+					IMyAirVent vent = sector.Vents[0];
+
+					// If sector is a dock or lock, disable autoclose by default
+					if (sector.Type != "Room")
+						IniKey.EnsureKey(vent, INI_HEAD, "Auto_Close_Delay", "0");
+					
+						
+					sector.AutoCloseDelay = Util.ParseUInt(IniKey.GetKey(vent, INI_HEAD, "Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);
+					sector.CurrentDelayTime = sector.AutoCloseDelay;
+				}
+            }
+        }
 
 		// END HERE ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

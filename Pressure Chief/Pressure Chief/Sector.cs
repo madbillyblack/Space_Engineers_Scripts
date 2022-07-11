@@ -44,6 +44,10 @@ namespace IngameScript
 			public bool IsPressurized;
 			public bool Depressurizing;
 			public bool HasChanged;
+			public int AutoCloseDelay;
+			public int CurrentDelayTime;
+
+
 
 			// Constructor
 			public Sector(IMyBlockGroup blockGroup)
@@ -229,7 +233,7 @@ namespace IngameScript
 				IsPressurized = pressurized;
 				Depressurizing = depressurize;
 				DrawGauges();
-
+				AutoClose();
 
 				if (!HasChanged)
 					return;
@@ -435,6 +439,42 @@ namespace IngameScript
 
 				return false;
 			}
+
+
+			// AUTO CLOSE //
+			public void AutoClose()
+            {
+				// If delay set to 0 or no doors open exit
+				if (AutoCloseDelay < 1 || !HasOpenDoors())
+                {
+					CurrentDelayTime = AutoCloseDelay;
+					return;
+				}
+					
+
+				CurrentDelayTime--;
+				if (CurrentDelayTime < 1)
+					CloseDoors();
+            }
+
+
+			// HAS OPEN DOORS //
+			public bool HasOpenDoors()
+            {
+				if(Doors.Count > 0)
+                {
+					foreach(IMyDoor door in Doors)
+                    {
+						if(door.OpenRatio > 0.9f)
+                        {
+							return true;
+                        }
+                    }
+                }
+
+				return false;
+            }
+
 
 
 			// DRAW GAUGES //
