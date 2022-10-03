@@ -197,8 +197,8 @@ namespace IngameScript
                         Build();
                         break;
                     case "UNLOAD":
-                        Unstock(_miningCargos, ORE_DEST);
-                        Unstock(_constructionCargos, COMP_SUPPLY);
+                        Unstock(_miningCargos, ORE_DEST, false);
+                        Unstock(_constructionCargos, COMP_SUPPLY, true);
                         break;
                     case "RELOAD":
                         Restock(_magazines, AMMO_SUPPLY);
@@ -208,7 +208,7 @@ namespace IngameScript
                         Restock(_o2Generators, ICE_SUPPLY);
                         break;
                     case "RESUPPLY":
-                        Unstock(_constructionCargos, COMP_SUPPLY);
+                        Unstock(_constructionCargos, COMP_SUPPLY, true);
                         Restock(_constructionCargos, COMP_SUPPLY);
                         break;
                     case "ESCAPE_THRUSTERS_ON":
@@ -341,13 +341,13 @@ namespace IngameScript
         // MANAGE CARGO //
         void ManageCargo()
         {
-            Unstock(_miningCargos, ORE_DEST);
+            Unstock(_miningCargos, ORE_DEST, false);
 
             Restock(_magazines, AMMO_SUPPLY);
             Restock(_reactors, FUEL_SUPPLY);
             Restock(_o2Generators, ICE_SUPPLY);
 
-            Unstock(_constructionCargos, COMP_SUPPLY);
+            Unstock(_constructionCargos, COMP_SUPPLY, true);
             Restock(_constructionCargos, COMP_SUPPLY);
         }
 
@@ -418,12 +418,15 @@ namespace IngameScript
                 return;
 
             foreach (IMyTerminalBlock destBlock in destBlocks)
+            {
+                Echo("Resupply: " + destBlock.CustomName);
                 Reload(destBlock, sourceBlocks);
+            } 
         }
 
 
         // UNSTOCK //
-        void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag)
+        void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag, bool includeComponents)
         {
             if (sourceBlocks.Count < 1)
                 return;
@@ -433,20 +436,23 @@ namespace IngameScript
 
             foreach(IMyTerminalBlock sourceBlock in sourceBlocks)
             {
-                Unload(sourceBlock, destBlocks);
+                Unload(sourceBlock, destBlocks, includeComponents);
             }
         }
 
 
         // UNLOAD //
-        void Unload(IMyTerminalBlock payload, List<IMyTerminalBlock> destBlocks)
+        void Unload(IMyTerminalBlock payload, List<IMyTerminalBlock> destBlocks, bool includeComponents)
         {
              if (destBlocks.Count < 1)
                 return;
 
+            Echo("Unloading " + payload.CustomName);
+
             var sourceInv = payload.GetInventory(0);
             foreach(IMyCargoContainer container in destBlocks)
             {
+                Echo("Destination: " + container.CustomName);
                 if (container.HasInventory)
                 {
                     var destInv = container.GetInventory(0);
@@ -459,7 +465,7 @@ namespace IngameScript
                             foreach (MyInventoryItem item in items)
                             {
                                 //Echo(item.Type.ToString());
-                                if (item.Type.ToString().Contains("MyObjectBuilder_Ore"))
+                                if (item.Type.ToString().Contains("MyObjectBuilder_Ore") || (includeComponents && item.Type.ToString().Contains("MyObjectBuilder_Component")))
                                 {
                                     sourceInv.TransferItemTo(destInv, 0, null, true, null);
                                     _unloaded = true;
@@ -708,6 +714,8 @@ namespace IngameScript
 
             SetActiveProfile(profileName);
             UpdateProfiles();
+            Unstock(_constructionCargos, COMP_SUPPLY, true);
+            Restock(_constructionCargos, COMP_SUPPLY);
         }
 
 
@@ -747,7 +755,7 @@ namespace IngameScript
                     string profileList = profiles[0];
                     for(int j = 1; j < profiles.Length; j++)
                     {
-                        profileList += " ," + profiles[j];
+                        profileList += "," + profiles[j];
                     }
 
                     SetKey(Me, INI_HEAD, "Profiles", profileList);
