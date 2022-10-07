@@ -171,12 +171,10 @@ namespace IngameScript
         {
             _unloaded = false;
 
-            if (argument == "")
-            {
-                ManageCargo();
-            }
-            else
+            if(!string.IsNullOrEmpty(argument))
 			{
+                Echo("CMD: " + argument);
+
                 string[] args = argument.Split(' ');
                 string arg = args[0].ToUpper();
 
@@ -258,8 +256,12 @@ namespace IngameScript
                         break;
 				}
 			}
+            else
+            {
+                Echo("NO ARGUMENT");
+            }
 
-            Echo(_statusMessage);
+            Echo("STATUS: " + _statusMessage);
 
             // If cargo successfully unloaded, increment load count.
             if (_unloaded)
@@ -450,7 +452,7 @@ namespace IngameScript
             Echo("Unloading " + payload.CustomName);
 
             var sourceInv = payload.GetInventory(0);
-            foreach(IMyCargoContainer container in destBlocks)
+            foreach(IMyTerminalBlock container in destBlocks)
             {
                 Echo("Destination: " + container.CustomName);
                 if (container.HasInventory)
