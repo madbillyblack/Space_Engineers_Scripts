@@ -117,7 +117,7 @@ namespace IngameScript
         const string AMMO = "NATO_25x184mm";
         const string MISL = "Missile200mm";
         const string FUEL = "Uranium";
-        const string LOAD_TAG = "[LOAD]";
+        const string LOAD_TAG = "Load Counter";
 
         string _statusMessage;
         string _gridID;
@@ -127,6 +127,7 @@ namespace IngameScript
         bool _unloadPossible;
         bool _hasComponentCargo;
         IMyTerminalBlock _loadCounter;
+        IMyTextSurface _countSurface;
 
         public IMyTerminalBlock _refBlock;
 
@@ -251,6 +252,12 @@ namespace IngameScript
                     case "SWAP_TO_SUFFIX":
                         SwapTags(cmdArg, false);
                         break;
+                    case "SET_LOAD_COUNT":
+                        SetLoadCount(cmdArg);
+                        break;
+                    case "RESET_LOAD_COUNT":
+                        SetLoadCount("0");
+                        break;
                     default:
                         TriggerCall(argument);
                         break;
@@ -270,6 +277,13 @@ namespace IngameScript
                 Echo("Load Count: " + _loadCount);
 			}
             displayLoadCount();
+
+            Echo("UNLOAD POSSIBLE: " + _unloadPossible.ToString());
+
+            if (_loadCounter != null)
+                Echo(_loadCounter.CustomName);
+            else
+                Echo("No Load Counter Found");
         }
 
 
@@ -483,17 +497,26 @@ namespace IngameScript
         // DISPLAY LOAD COUNT //
         void displayLoadCount()
         {
-            if (_loadCounter == null || !_unloadPossible)
+            if (_countSurface == null || !_unloadPossible)
                 return;
+ 
+            _countSurface.WriteText("Load Count: " + _loadCount.ToString());
+        }
 
-            if(_loadCounter.CustomData != "" && !_loadCounter.CustomData.Contains("Load Count:"))
-			{
-                _statusMessage = "Conflicting Custom Data in Load Counter! Please check block's name and Custom Data!";
+
+        // SET LOAD COUNT //
+        void SetLoadCount(string arg)
+        {
+            int value = ParseInt(arg, 0);
+
+            if(value < 0)
+            {
+                Echo("INVALID LOAD COUNT VALUE: " + arg);
                 return;
-			}
+            }
 
-            string message = "Load Count: " + _loadCount.ToString();
-            _loadCounter.CustomData = message;
+            _loadCount = value;
+            displayLoadCount();
         }
 
 
@@ -576,7 +599,6 @@ namespace IngameScript
         {
             _statusMessage = "";
             _gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
-            _loadCounter = GetLoadCounter();
             _unloadPossible = false;
             _hasComponentCargo = false;
 
@@ -613,6 +635,9 @@ namespace IngameScript
                 if (block.HasInventory && GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
                     AddToInventories(block);
             }
+
+            if (_unloadPossible)
+                AssignLoadCounter();
 
             // Make sure that any construction cargos have a profile in custom data.
             if(_hasComponentCargo)
@@ -883,22 +908,49 @@ namespace IngameScript
 
 
         // GET LOAD COUNTER //
-        IMyTerminalBlock GetLoadCounter()
+        void AssignLoadCounter()
         {
             List<IMyTerminalBlock> counters = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName(LOAD_TAG, counters);
 
             foreach (IMyTerminalBlock block in counters)
 			{
+                if(GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
+                {
+                    IMyTextSurfaceProvider counter = block as IMyTextSurfaceProvider;
+                    int surfaceCount = counter.SurfaceCount;
+                    int index = ParseInt(GetKey(block, INI_HEAD, "Counter_Index", "0"), 0);
+
+                    if(index > -1 && index < surfaceCount)
+                    {
+                        _loadCounter = counter as IMyTerminalBlock;
+                        _countSurface = counter.GetSurface(index);
+                        _countSurface.ContentType = ContentType.TEXT_AND_IMAGE;
+                        displayLoadCount();
+                        return;
+                    }
+                    /*
+                    try
+                    {
+                        
+
+                    }
+                    catch
+                    {
+                        Echo("INVALID SCREEN INDEX for " + _loadCounter.CustomName);
+                    }
+                    */
+                }
+                /*
                 if(!block.CustomData.Contains(INI_HEAD))
 				{
                     return block;
 				}
+                */
 			}
 
             /*_statusMessage = "No valid Load Counter block found.  Load counter should contain tag '" + LOAD_TAG
                             +"' in the name, and have contain any Custom Data parameters for other functions!";*/
-            return null;
         }
 
 
