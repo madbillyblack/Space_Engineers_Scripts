@@ -123,11 +123,14 @@ namespace IngameScript
         string _gridID;
 
         int _loadCount;
+        int _runningNumber;
         bool _unloaded;
         bool _unloadPossible;
         bool _hasComponentCargo;
+        bool _escapeThrustersOn;
         IMyTerminalBlock _loadCounter;
         IMyTextSurface _countSurface;
+        IMyShipController _cockpit;
 
         public IMyTerminalBlock _refBlock;
 
@@ -137,6 +140,8 @@ namespace IngameScript
         List<IMyTerminalBlock> _miningCargos;
         List<IMyTerminalBlock> _constructionCargos;
         List<IMyTerminalBlock> _o2Generators;
+
+        string _escapeTag;
         List<IMyThrust> _escapeThrusters;
         
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
@@ -144,18 +149,30 @@ namespace IngameScript
         {
             if (Storage.Length > 0)
             {
+                string[] storageData = Storage.Split(';');
+
                 try
                 {
-                    _loadCount = int.Parse(Storage);
+                    _loadCount = int.Parse(storageData[0]);
                 }
                 catch
                 {
                     _loadCount = 0;
                 }
+
+                try
+                {
+                    _escapeThrustersOn = ParseBool(storageData[1]);
+                }
+                catch
+                {
+                    _escapeThrustersOn = false;
+                }
             }
             else
             {
                 _loadCount = 0;
+                _escapeThrustersOn = false;
             }
 
             Build();
@@ -163,7 +180,9 @@ namespace IngameScript
 
         public void Save()
         {
-            Storage = _loadCount.ToString();
+            string loadCount = _loadCount.ToString();
+            string escapeActive = _escapeThrustersOn.ToString();
+            Storage = loadCount + ";" + escapeActive;
         }
 
 
@@ -171,6 +190,9 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             _unloaded = false;
+
+            Echo("... " + _runningNumber);
+            _runningNumber++;
 
             if(!string.IsNullOrEmpty(argument))
 			{
@@ -211,13 +233,16 @@ namespace IngameScript
                         Restock(_constructionCargos, COMP_SUPPLY);
                         break;
                     case "ESCAPE_THRUSTERS_ON":
-                        // TODO - Escape Thruster functions
+                        EscapeThrustersOn();
                         break;
                     case "ESCAPE_THRUSTERS_OFF":
-                        // TODO
+                        EscapeThrustersOff();
                         break;
                     case "TOGGLE_ESCAPE_THRUSTERS":
-                        // TODO
+                        if (_escapeThrustersOn)
+                            EscapeThrustersOff();
+                        else
+                            EscapeThrustersOn();
                         break;
                     case "SELECT_PROFILE":
                         SelectProfile(cmdArg);
@@ -520,6 +545,55 @@ namespace IngameScript
         }
 
 
+        // ESCAPE THRUSTERS ON //
+        void EscapeThrustersOn()
+        {
+            if (_escapeThrusters.Count < 1)
+                return;
+
+            _escapeThrustersOn = true;
+            Runtime.UpdateFrequency = UpdateFrequency.Update10;
+            //TODO
+        }
+
+
+        // ESCAPE THRUSTERS OFF //
+        void EscapeThrustersOff()
+        {
+            _escapeThrustersOn = false;
+            _runningNumber = 0;
+            Runtime.UpdateFrequency = UpdateFrequency.None;
+            //TODO
+        }
+
+        // ASSIGN COCKPIT //
+        void AssignCockpit()
+        {
+            List<IMyShipController> controllers = new List<IMyShipController>();
+            GridTerminalSystem.GetBlocksOfType<IMyShipController>(controllers);
+            
+            if(controllers.Count < 1)
+            {
+                _statusMessage += "NO CONTROLLERS FOUND!\n";
+                return;
+            }
+            
+            string name = GetKey(Me, INI_HEAD, "Cockpit", "");
+
+            foreach(IMyShipController controller in controllers)
+            {
+                if(controller.CustomName == name)
+                {
+                    _cockpit = controller;
+                    return;
+                }
+            }
+
+            // If no perfect match found, choose first controller in list.
+            _cockpit = controllers[0];
+            SetKey(Me, INI_HEAD, "Cockpit", _cockpit.CustomName);
+        }
+
         // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
 
         // ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
@@ -601,6 +675,7 @@ namespace IngameScript
             _gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
             _unloadPossible = false;
             _hasComponentCargo = false;
+            _runningNumber = 0;
 
             // Establish user defined reference block.  If none, set program block as reference.
             string refTag = GetKey(Me, INI_HEAD, "Reference", Me.CustomName);
@@ -644,6 +719,16 @@ namespace IngameScript
             {
                 EnsureProfiles();
             }
+
+            AssignThrusters();
+
+            if (_escapeThrusters.Count > 0)
+                AssignCockpit();
+
+            if (_escapeThrustersOn)
+                Runtime.UpdateFrequency = UpdateFrequency.Update10;
+            else
+                Runtime.UpdateFrequency = UpdateFrequency.None;
         }
 
 
@@ -907,39 +992,39 @@ namespace IngameScript
         }
 
 
-        // GET LOAD COUNTER //
+        // ASSIGN LOAD COUNTER //
         void AssignLoadCounter()
         {
             List<IMyTerminalBlock> counters = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName(LOAD_TAG, counters);
 
             foreach (IMyTerminalBlock block in counters)
-			{
-                if(GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
+            {
+                if (GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
                 {
                     IMyTextSurfaceProvider counter = block as IMyTextSurfaceProvider;
                     int surfaceCount = counter.SurfaceCount;
                     int index = ParseInt(GetKey(block, INI_HEAD, "Counter_Index", "0"), 0);
 
-                    if(surfaceCount < 1)
+                    if (surfaceCount < 1)
                     {
                         _statusMessage += "DESIGNATED LOAD COUNTER is INVALID: Contains no Display Surfaces!\n";
                         return;
                     }
-                    else if(index >= surfaceCount)
+                    else if (index >= surfaceCount)
                     {
                         index = surfaceCount - 1;
                         SetKey(block, INI_HEAD, "Counter_Index", index.ToString());
-                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName +"\n-->Index reset to " + index + "\n";
+                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to " + index + "\n";
                     }
-                    else if(index < 0)
+                    else if (index < 0)
                     {
                         index = 0;
                         SetKey(block, INI_HEAD, "Counter_Index", "0");
                         _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to 0\n";
                     }
 
-                    if(index > -1 && index < surfaceCount)
+                    if (index > -1 && index < surfaceCount)
                     {
                         _loadCounter = counter as IMyTerminalBlock;
                         _countSurface = counter.GetSurface(index);
@@ -947,28 +1032,30 @@ namespace IngameScript
                         displayLoadCount();
                         return;
                     }
-                    /*
-                    try
-                    {
-                        
-
-                    }
-                    catch
-                    {
-                        Echo("INVALID SCREEN INDEX for " + _loadCounter.CustomName);
-                    }
-                    */
                 }
-                /*
-                if(!block.CustomData.Contains(INI_HEAD))
-				{
-                    return block;
-				}
-                */
-			}
+            }
+        }
 
-            /*_statusMessage = "No valid Load Counter block found.  Load counter should contain tag '" + LOAD_TAG
-                            +"' in the name, and have contain any Custom Data parameters for other functions!";*/
+
+        // ASSIGN THRUSTERS //
+        void AssignThrusters()
+        {
+            _escapeThrusters = new List<IMyThrust>();
+            _escapeTag = GetKey(Me, INI_HEAD, "Escape_Thrusters", "");
+
+            if (_escapeTag == "")
+                return;
+
+            IMyBlockGroup escapeGroup = GridTerminalSystem.GetBlockGroupWithName(_escapeTag);
+            
+            if(escapeGroup == null)
+            {
+                _statusMessage += "NO GROUP WITH NAME \"" + _escapeTag + "\" FOUND!\n";
+                return;
+            }
+
+            escapeGroup.GetBlocksOfType<IMyThrust>(_escapeThrusters);
+            _statusMessage += "ESCAPE THRUSTERS: " + _escapeTag + "\nThruster Count: " + _escapeThrusters.Count + "\n";
         }
 
 
