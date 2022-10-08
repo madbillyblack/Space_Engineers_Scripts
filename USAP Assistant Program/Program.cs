@@ -921,6 +921,24 @@ namespace IngameScript
                     int surfaceCount = counter.SurfaceCount;
                     int index = ParseInt(GetKey(block, INI_HEAD, "Counter_Index", "0"), 0);
 
+                    if(surfaceCount < 1)
+                    {
+                        _statusMessage += "DESIGNATED LOAD COUNTER is INVALID: Contains no Display Surfaces!\n";
+                        return;
+                    }
+                    else if(index >= surfaceCount)
+                    {
+                        index = surfaceCount - 1;
+                        SetKey(block, INI_HEAD, "Counter_Index", index.ToString());
+                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName +"\n-->Index reset to " + index + "\n";
+                    }
+                    else if(index < 0)
+                    {
+                        index = 0;
+                        SetKey(block, INI_HEAD, "Counter_Index", "0");
+                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to 0\n";
+                    }
+
                     if(index > -1 && index < surfaceCount)
                     {
                         _loadCounter = counter as IMyTerminalBlock;
