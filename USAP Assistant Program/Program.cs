@@ -130,7 +130,12 @@ namespace IngameScript
         bool _escapeThrustersOn;
         IMyTerminalBlock _loadCounter;
         IMyTextSurface _countSurface;
+
+        // Escape Thruster variables
         IMyShipController _cockpit;
+        float _maxSpeed = 99;
+        float _targetRatio = 0.95f;
+
 
         public IMyTerminalBlock _refBlock;
 
@@ -303,12 +308,8 @@ namespace IngameScript
 			}
             displayLoadCount();
 
-            Echo("UNLOAD POSSIBLE: " + _unloadPossible.ToString());
-
-            if (_loadCounter != null)
-                Echo(_loadCounter.CustomName);
-            else
-                Echo("No Load Counter Found");
+            if (_escapeThrustersOn)
+                Echo("Velocity Cos:\n" + GetVelocityCos());
         }
 
 
@@ -577,10 +578,10 @@ namespace IngameScript
                 _statusMessage += "NO CONTROLLERS FOUND!\n";
                 return;
             }
-            
+
             string name = GetKey(Me, INI_HEAD, "Cockpit", "");
 
-            foreach(IMyShipController controller in controllers)
+            foreach (IMyShipController controller in controllers)
             {
                 if(controller.CustomName == name)
                 {
@@ -723,7 +724,10 @@ namespace IngameScript
             AssignThrusters();
 
             if (_escapeThrusters.Count > 0)
+            {
                 AssignCockpit();
+                _maxSpeed = ParseFloat(GetKey(Me, INI_HEAD, "Max_Speed", "99"), 99);
+            }
 
             if (_escapeThrustersOn)
                 Runtime.UpdateFrequency = UpdateFrequency.Update10;
@@ -970,7 +974,7 @@ namespace IngameScript
             Echo("Length: " + length);
             tag = tag.Substring(0, length);//Length of tag
             Echo(tag);
-            _statusMessage = tag;
+            //_statusMessage = tag;
 
             return tag;
         }
@@ -1059,16 +1063,44 @@ namespace IngameScript
         }
 
 
+        public double GetVelocityCos()
+        {
+            Vector3D target = _maxSpeed * _cockpit.WorldMatrix.Forward;
+            Vector3D actual = _cockpit.GetShipVelocities().LinearVelocity;
+
+            string vec1 = "Target Vector:\n" + target + "\n";
+            string vec2 = "Actual Vector:\n" + actual + "\n";
+            
+
+            double cos = ((target.X * actual.X) + (target.Y + actual.Y) + (target.Z * actual.Z)) / (_maxSpeed * actual.Length());
+            string length = "Speed:\n" + actual.Length();
+            _statusMessage = vec1 + vec2 + length;
+
+            return cos;
+        }
+
+
         // TOOL FUNCTIONS // ---------------------------------------------------------------------------------------------------------------------------
 
         // PARSE INT //
-        static int ParseInt(string arg, int defaultVal)
+        static int ParseInt(string arg, int defaultValue)
         {
             int number;
             if (int.TryParse(arg, out number))
                 return number;
             else
-                return defaultVal;
+                return defaultValue;
+        }
+
+
+        // PARSE FLOAT //
+        static float ParseFloat(string arg, float defaultValue)
+        {
+            float number;
+            if (float.TryParse(arg, out number))
+                return number;
+            else
+                return defaultValue;
         }
 
 
