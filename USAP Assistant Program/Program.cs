@@ -118,12 +118,15 @@ namespace IngameScript
         const string MISL = "Missile200mm";
         const string FUEL = "Uranium";
         const string LOAD_TAG = "Load Counter";
+        const double TIME_STEP = 1.0 / 6.0;
+        const int SAFETY_HEIGHT = 1000;
 
         string _statusMessage;
         string _gridID;
 
         int _loadCount;
         int _runningNumber;
+        const int RUN_CAP = 20;
         bool _unloaded;
         bool _unloadPossible;
         bool _hasComponentCargo;
@@ -133,8 +136,8 @@ namespace IngameScript
 
         // Escape Thruster variables
         IMyShipController _cockpit;
-        float _maxSpeed = 99;
-        float _targetRatio = 0.95f;
+        float _maxSpeed = 100;
+        PID _pid;
 
 
         public IMyTerminalBlock _refBlock;
@@ -308,8 +311,21 @@ namespace IngameScript
 			}
             displayLoadCount();
 
-            if (_escapeThrustersOn)
-                Echo("Velocity Cos:\n" + GetVelocityCos());
+            if (_escapeThrustersOn && ((updateSource & UpdateType.Update10) != -0))
+            {
+                if(_runningNumber > RUN_CAP)
+                {
+                    _runningNumber = 0;
+                    SafetyCheck();
+                    CheckGravity();
+                }
+
+                double velocity = GetForwardVelocity();
+                double error = _maxSpeed - velocity;
+                double control = _pid.Control(error);
+
+                ThrottleThrusters((float)control);          
+            }
         }
 
 
@@ -553,8 +569,8 @@ namespace IngameScript
                 return;
 
             _escapeThrustersOn = true;
+            _pid = new PID(1, 0, 0, TIME_STEP);
             Runtime.UpdateFrequency = UpdateFrequency.Update10;
-            //TODO
         }
 
 
@@ -564,7 +580,7 @@ namespace IngameScript
             _escapeThrustersOn = false;
             _runningNumber = 0;
             Runtime.UpdateFrequency = UpdateFrequency.None;
-            //TODO
+            ThrottleThrusters(0);
         }
 
         // ASSIGN COCKPIT //
@@ -594,6 +610,59 @@ namespace IngameScript
             _cockpit = controllers[0];
             SetKey(Me, INI_HEAD, "Cockpit", _cockpit.CustomName);
         }
+
+
+        // THROTTLE THRUSTERS //
+        void ThrottleThrusters(float input)
+        {
+            if (_escapeThrusters.Count < 1)
+                return;
+
+            foreach(IMyThrust thruster in _escapeThrusters)
+            {
+                thruster.ThrustOverridePercentage = input;
+            }
+        }
+
+
+        // CHECK GRAVITY //
+        void CheckGravity()
+        {
+            if (_cockpit.GetNaturalGravity().Length() < 0.0001)
+            {
+                EscapeThrustersOff();
+                _statusMessage += "GRAVITY WELL VACATED\nThrusters Disengaged\n";
+            }   
+        }
+
+
+        // SAFETY CHECK //
+        void SafetyCheck()
+        {
+            double altitude;
+            if(_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out altitude))
+            {
+                if (altitude < SAFETY_HEIGHT)
+                {
+                    double speed = _cockpit.GetShipVelocities().LinearVelocity.Length();
+                   
+                    if(speed > 0)
+                    {
+                        Vector3D gravity = _cockpit.GetNaturalGravity();
+
+                        //Get cosine of angle between heading and gravity vector
+                        double cos = Vector3D.Dot(_cockpit.WorldMatrix.Forward, gravity) / gravity.Length();
+
+                        if(cos > 0.707) // If angle is within 45 degrees of gravity vector, disengage escape thrusters
+                        {
+                            EscapeThrustersOff();
+                            _statusMessage += "SAFETY THRUSTER DISENGAGE!\n";
+                        }
+                    }
+                }  
+            }   
+        }
+
 
         // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -726,7 +795,7 @@ namespace IngameScript
             if (_escapeThrusters.Count > 0)
             {
                 AssignCockpit();
-                _maxSpeed = ParseFloat(GetKey(Me, INI_HEAD, "Max_Speed", "99"), 99);
+                _maxSpeed = ParseFloat(GetKey(Me, INI_HEAD, "Max_Speed", "100"), 100);
             }
 
             if (_escapeThrustersOn)
@@ -1063,20 +1132,10 @@ namespace IngameScript
         }
 
 
-        public double GetVelocityCos()
+        // GET FORWARD VELOCITY //
+        public double GetForwardVelocity()
         {
-            Vector3D target = _maxSpeed * _cockpit.WorldMatrix.Forward;
-            Vector3D actual = _cockpit.GetShipVelocities().LinearVelocity;
-
-            string vec1 = "Target Vector:\n" + target + "\n";
-            string vec2 = "Actual Vector:\n" + actual + "\n";
-            
-
-            double cos = ((target.X * actual.X) + (target.Y + actual.Y) + (target.Z * actual.Z)) / (_maxSpeed * actual.Length());
-            string length = "Speed:\n" + actual.Length();
-            _statusMessage = vec1 + vec2 + length;
-
-            return cos;
+            return Vector3D.Dot(_cockpit.WorldMatrix.Forward, _cockpit.GetShipVelocities().LinearVelocity);
         }
 
 
