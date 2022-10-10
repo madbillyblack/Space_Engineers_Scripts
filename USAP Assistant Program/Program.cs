@@ -29,6 +29,10 @@ namespace IngameScript
         const string COMP_SUPPLY = "[CMP]"; // Source inventory tag for re-stocking components.
         const string GAS_TAG = "[H2O]"; // Destination inventory tag for re-stocking ice.
         const string ICE_SUPPLY = "[ORE]"; // Destination inventory tag for re-stocking ice.
+        const string LOAD_TAG = "Load Counter"; // Tag for block that displays load count
+        const string THRUST_DISPLAY = "Thrust Display"; // Tag for block that displays escape thruster override percentage.
+        const int RUN_CAP = 10;
+
 
         //DEFINITIONS:
 
@@ -117,7 +121,7 @@ namespace IngameScript
         const string AMMO = "NATO_25x184mm";
         const string MISL = "Missile200mm";
         const string FUEL = "Uranium";
-        const string LOAD_TAG = "Load Counter";
+        
         const double TIME_STEP = 1.0 / 6.0;
         const int SAFETY_HEIGHT = 1000;
 
@@ -126,13 +130,13 @@ namespace IngameScript
 
         int _loadCount;
         int _runningNumber;
-        const int RUN_CAP = 20;
         bool _unloaded;
         bool _unloadPossible;
         bool _hasComponentCargo;
         bool _escapeThrustersOn;
         IMyTerminalBlock _loadCounter;
         IMyTextSurface _countSurface;
+        IMyTextSurface _thrustSurface;
 
         // Escape Thruster variables
         IMyShipController _cockpit;
@@ -311,20 +315,20 @@ namespace IngameScript
 			}
             displayLoadCount();
 
-            if (_escapeThrustersOn && ((updateSource & UpdateType.Update10) != -0))
+            if (_escapeThrustersOn)// && ((updateSource & UpdateType.Update10) != -0))
             {
-                if(_runningNumber > RUN_CAP)
+                double velocity = GetForwardVelocity();
+                double error = _maxSpeed - velocity;
+                double control = _pid.Control(error);
+
+                ThrottleThrusters((float)control);
+
+                if (_runningNumber > RUN_CAP)
                 {
                     _runningNumber = 0;
                     SafetyCheck();
                     CheckGravity();
                 }
-
-                double velocity = GetForwardVelocity();
-                double error = _maxSpeed - velocity;
-                double control = _pid.Control(error);
-
-                ThrottleThrusters((float)control);          
             }
         }
 
@@ -546,6 +550,9 @@ namespace IngameScript
         }
 
 
+        // DISPLAY THRUST //
+
+
         // SET LOAD COUNT //
         void SetLoadCount(string arg)
         {
@@ -577,11 +584,12 @@ namespace IngameScript
         // ESCAPE THRUSTERS OFF //
         void EscapeThrustersOff()
         {
+            ThrottleThrusters(0);
             _escapeThrustersOn = false;
             _runningNumber = 0;
             Runtime.UpdateFrequency = UpdateFrequency.None;
-            ThrottleThrusters(0);
         }
+
 
         // ASSIGN COCKPIT //
         void AssignCockpit()
@@ -622,13 +630,15 @@ namespace IngameScript
             {
                 thruster.ThrustOverridePercentage = input;
             }
+
+            DisplayThrust(_escapeThrusters[0].ThrustOverridePercentage);
         }
 
 
         // CHECK GRAVITY //
         void CheckGravity()
         {
-            if (_cockpit.GetNaturalGravity().Length() < 0.0001)
+            if (_cockpit.GetNaturalGravity().Length() < 0.04)
             {
                 EscapeThrustersOff();
                 _statusMessage += "GRAVITY WELL VACATED\nThrusters Disengaged\n";
@@ -1071,6 +1081,9 @@ namespace IngameScript
             List<IMyTerminalBlock> counters = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName(LOAD_TAG, counters);
 
+            if (counters.Count < 1)
+                return;
+
             foreach (IMyTerminalBlock block in counters)
             {
                 if (GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
@@ -1129,6 +1142,7 @@ namespace IngameScript
 
             escapeGroup.GetBlocksOfType<IMyThrust>(_escapeThrusters);
             _statusMessage += "ESCAPE THRUSTERS: " + _escapeTag + "\nThruster Count: " + _escapeThrusters.Count + "\n";
+            AssignThrustDisplay();
         }
 
 
@@ -1136,6 +1150,71 @@ namespace IngameScript
         public double GetForwardVelocity()
         {
             return Vector3D.Dot(_cockpit.WorldMatrix.Forward, _cockpit.GetShipVelocities().LinearVelocity);
+        }
+
+
+        // ASSIGN THRUST DISPLAY //
+        void AssignThrustDisplay()
+        {
+            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(THRUST_DISPLAY, blocks);
+
+            if (blocks.Count < 1)
+                return;
+
+            foreach (IMyTerminalBlock block in blocks)
+            {
+                if (GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
+                {
+                    IMyTextSurfaceProvider displayBlock = block as IMyTextSurfaceProvider;
+                    int surfaceCount = displayBlock.SurfaceCount;
+                    int index = ParseInt(GetKey(block, INI_HEAD, "Thrust_Display_Index", "0"), 0);
+
+                    if (surfaceCount < 1)
+                    {
+                        _statusMessage += "DESIGNATED LOAD COUNTER is INVALID: Contains no Display Surfaces!\n";
+                        return;
+                    }
+                    else if (index >= surfaceCount)
+                    {
+                        index = surfaceCount - 1;
+                        SetKey(block, INI_HEAD, "Thrust_Display_Index", index.ToString());
+                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to " + index + "\n";
+                    }
+                    else if (index < 0)
+                    {
+                        index = 0;
+                        SetKey(block, INI_HEAD, "Thrust_Display_Index", "0");
+                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to 0\n";
+                    }
+
+                    if (index > -1 && index < surfaceCount)
+                    {
+                        _thrustSurface = displayBlock.GetSurface(index);
+                        _thrustSurface.ContentType = ContentType.TEXT_AND_IMAGE;
+                        DisplayThrust(0);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // DISPLAY THRUST //
+        void DisplayThrust(float power)
+        {
+            if (_thrustSurface == null)
+                return;
+
+            int value = (int) (power * 100);
+            string output = value + "%";
+
+            if (value == 0)
+                output = "OFF";
+            /*
+            else if (value > 100)
+                output = "100%";
+            */
+            _thrustSurface.WriteText("Auto-Throttle: " + output);
         }
 
 
