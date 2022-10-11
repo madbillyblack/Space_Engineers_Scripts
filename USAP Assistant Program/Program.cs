@@ -33,6 +33,11 @@ namespace IngameScript
         const string THRUST_DISPLAY = "Thrust Display"; // Tag for block that displays escape thruster override percentage.
         const int RUN_CAP = 10;
 
+        // CONTROLLER CONSTANTS:
+        const double TIME_STEP = 1.0 / 6.0;
+        const double KP = 1;
+        const double KI = 0;
+        const double KD = 0;
 
         //DEFINITIONS:
 
@@ -122,7 +127,6 @@ namespace IngameScript
         const string MISL = "Missile200mm";
         const string FUEL = "Uranium";
         
-        const double TIME_STEP = 1.0 / 6.0;
         const int SAFETY_HEIGHT = 1000;
 
         string _statusMessage;
@@ -300,7 +304,7 @@ namespace IngameScript
                         break;
 				}
 			}
-            else
+            else if (!_escapeThrustersOn)
             {
                 Echo("NO ARGUMENT");
             }
@@ -576,7 +580,7 @@ namespace IngameScript
                 return;
 
             _escapeThrustersOn = true;
-            _pid = new PID(1, 0, 0, TIME_STEP);
+            _pid = new PID(KP, KI, KD, TIME_STEP);
             Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
@@ -1202,19 +1206,22 @@ namespace IngameScript
         // DISPLAY THRUST //
         void DisplayThrust(float power)
         {
-            if (_thrustSurface == null)
-                return;
+
 
             int value = (int) (power * 100);
             string output = value + "%";
 
             if (value == 0)
                 output = "OFF";
-            /*
-            else if (value > 100)
-                output = "100%";
-            */
-            _thrustSurface.WriteText("Auto-Throttle: " + output);
+
+            output = "Auto-Throttle: " + output;
+
+            Echo(output);
+
+            if (_thrustSurface == null)
+                return;
+
+            _thrustSurface.WriteText(output);
         }
 
 
