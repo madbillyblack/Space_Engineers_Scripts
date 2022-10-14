@@ -83,6 +83,7 @@ namespace IngameScript
 			public int Number;
 			public int CurrentFloor;
 			public int GroundFloor;
+			public int TopFloor;
 			public float TravelTime;
 			public float CloseTime;
 			public float WaitTime;
@@ -92,54 +93,54 @@ namespace IngameScript
 
 			public Elevator(IMyTimerBlock timer)
 			{
-				this.Platform = new Platform();
-				this.Floors = new List<Floor>();
-				this.FloorQueue = new List<Page>();
-				//this.DisplayBlocks = new List<IMyTerminalBlock>();
-				this.Displays = new List<Display>();
+				Platform = new Platform();
+				Floors = new List<Floor>();
+				FloorQueue = new List<Page>();
+				//DisplayBlocks = new List<IMyTerminalBlock>();
+				Displays = new List<Display>();
 				
-				this.Timer = timer;
+				Timer = timer;
 				SoundBlocks = new List<IMySoundBlock>();
-				this.GoingUp = ParseBool(GetKey(timer, INI_HEAD, "Going_Up", "true"));
-				this.Travelling = ParseBool(GetKey(timer, INI_HEAD, "Travelling", "true"));
-				this.CurrentFloor = ParseInt(GetKey(timer, INI_HEAD, "Current_Floor", "0"), 0);
-				this.CloseTime = ParseFloat(GetKey(timer, INI_HEAD, "Close_Time", DEFAULT_CLOSE_TIME.ToString()), DEFAULT_CLOSE_TIME);
-				this.WaitTime = ParseFloat(GetKey(timer, INI_HEAD, "Wait_Time", DEFAULT_WAIT_TIME.ToString()), DEFAULT_WAIT_TIME);
+				GoingUp = ParseBool(GetKey(timer, INI_HEAD, "Going_Up", "true"));
+				Travelling = ParseBool(GetKey(timer, INI_HEAD, "Travelling", "true"));
+				CurrentFloor = ParseInt(GetKey(timer, INI_HEAD, "Current_Floor", "0"), 0);
+				CloseTime = ParseFloat(GetKey(timer, INI_HEAD, "Close_Time", DEFAULT_CLOSE_TIME.ToString()), DEFAULT_CLOSE_TIME);
+				WaitTime = ParseFloat(GetKey(timer, INI_HEAD, "Wait_Time", DEFAULT_WAIT_TIME.ToString()), DEFAULT_WAIT_TIME);
 				PlayingMusic = false;
 
 				int[] tags = SplitTag(TagFromName(timer.CustomName));
 
-				this.Number = tags[0];
+				Number = tags[0];
 
 				ushort phase;
 				if (UInt16.TryParse(GetKey(timer, INI_HEAD, "Phase", "0"), out phase))
 				{
-					this.Phase = phase;
+					Phase = phase;
 				}
 				else
 				{
-					this.Phase = 0;
+					Phase = 0;
 				}
 			}
 
 			// SORT FLOORS //
 			public void SortFloors(bool lowToHigh)
 			{
-				int length = this.Floors.Count;
+				int length = Floors.Count;
 				if (length < 2)
 					return;
 				
-				for(int e = 0; e < this.Floors.Count -1 ; e++)
+				for(int e = 0; e < Floors.Count -1 ; e++)
 				{
 					for(int f = 1; f < length; f++)
 					{
-						Floor floorA = this.Floors[f - 1];
-						Floor floorB = this.Floors[f];
+						Floor floorA = Floors[f - 1];
+						Floor floorB = Floors[f];
 
 						if((lowToHigh && floorA.Number > floorB.Number) || (!lowToHigh && floorA.Number < floorB.Number))
 						{
-							this.Floors[f - 1] = floorB;
-							this.Floors[f] = floorA;
+							Floors[f - 1] = floorB;
+							Floors[f] = floorA;
 						}
 					}
 
@@ -152,21 +153,21 @@ namespace IngameScript
 			// GO TO FLOOR //
 			public void GoToFloor(int floorNumber)
 			{
-				if (this.Floors.Count < 2)
+				if (Floors.Count < 2)
 					return;
 
-				if (floorNumber < this.CurrentFloor)
+				if (floorNumber < CurrentFloor)
 				{
-					this.GoingUp = false;
-					SetKey(this.Timer, INI_HEAD, "Going_Up", "false");
+					GoingUp = false;
+					SetKey(Timer, INI_HEAD, "Going_Up", "false");
 				}
 				else
 				{
-					this.GoingUp = true;
-					SetKey(this.Timer, INI_HEAD, "Going_Up", "true");
+					GoingUp = true;
+					SetKey(Timer, INI_HEAD, "Going_Up", "true");
 				}
 
-				foreach (Floor floor in this.Floors)
+				foreach (Floor floor in Floors)
 				{
 					if (floor.Number > floorNumber)
 					{
@@ -174,7 +175,7 @@ namespace IngameScript
 					}
 					else if (floor.Number == floorNumber)
 					{
-						this.Timer.TriggerDelay = AUX_DELAY;//floor.TravelTime;
+						Timer.TriggerDelay = AUX_DELAY;//floor.TravelTime;
 						floor.Activate();
 					}
 					else
@@ -183,29 +184,29 @@ namespace IngameScript
 					}
 				}
 
-				//this.Timer.TriggerDelay = this.TravelTime;
-				this.Phase = 2;
-				SetKey(this.Timer, INI_HEAD, "Phase", "2");
-				this.Timer.StartCountdown();
+				//Timer.TriggerDelay = TravelTime;
+				Phase = 2;
+				SetKey(Timer, INI_HEAD, "Phase", "2");
+				Timer.StartCountdown();
 			}
 
 			// SORT QUEUE //
 			public void SortQueue()
 			{
-				if (this.FloorQueue.Count < 2)
+				if (FloorQueue.Count < 2)
 					return;
 
 				List<Page> listA = new List<Page>();
 				List<Page> listB = new List<Page>();
 				List<Page> listC = new List<Page>();
 
-				if (this.GoingUp)
+				if (GoingUp)
 				{
-					foreach(Page page in this.FloorQueue)
+					foreach(Page page in FloorQueue)
 					{
-						if (page.Up && page.Floor >= this.CurrentFloor)
+						if (page.Up && page.Floor >= CurrentFloor)
 							listA.Add(page);
-						else if (page.Up && page.Floor < this.CurrentFloor)
+						else if (page.Up && page.Floor < CurrentFloor)
 							listC.Add(page);
 						else
 							listB.Add(page);
@@ -217,11 +218,11 @@ namespace IngameScript
 				}
 				else
 				{
-					foreach (Page page in this.FloorQueue)
+					foreach (Page page in FloorQueue)
 					{
-						if (!page.Up && page.Floor <= this.CurrentFloor)
+						if (!page.Up && page.Floor <= CurrentFloor)
 							listA.Add(page);
-						else if (!page.Up && page.Floor > this.CurrentFloor)
+						else if (!page.Up && page.Floor > CurrentFloor)
 							listC.Add(page);
 						else
 							listB.Add(page);
@@ -235,25 +236,25 @@ namespace IngameScript
 				// Reverse Elevator direction if first queue is empty
 				/*if(listA.Count == 0)
 				{
-					this.GoingUp = !this.GoingUp;
+					GoingUp = !GoingUp;
 				}*/
 
 				listA.AddList(listB);
 				listA.AddList(listC);
-				this.FloorQueue = listA;
+				FloorQueue = listA;
 			}
 
 			// UPDATE TRAVEL TIMES //
 			public void UpdateTravelTimes()
 			{
-				if (this.Floors.Count < 1)
+				if (Floors.Count < 1)
 					return;
 				
 				//float time = 0;
 				
-				foreach(Floor floor in this.Floors)
+				foreach(Floor floor in Floors)
 				{
-					floor.TravelTime = ParseFloat(GetKey(this.Timer, INI_HEAD, DELAY_LABEL + floor.Number, DEFAULT_TIME.ToString()), DEFAULT_TIME);
+					floor.TravelTime = ParseFloat(GetKey(Timer, INI_HEAD, DELAY_LABEL + floor.Number, DEFAULT_TIME.ToString()), DEFAULT_TIME);
 					/*
 					if (floor.Pistons.Count > 0)
 					{
@@ -269,16 +270,16 @@ namespace IngameScript
 					*/
 				}
 				/*
-				this.TravelTime = time;
-				this.Timer.TriggerDelay = time;
-				SetKey(this.Timer, INI_HEAD, "Travel_Time",time.ToString("n2"));
+				TravelTime = time;
+				Timer.TriggerDelay = time;
+				SetKey(Timer, INI_HEAD, "Travel_Time",time.ToString("n2"));
 				*/
 			}
 
 			// SET TRAVEL TIMES
 			public void SetTravelTimes(string arg)
 			{
-				if (this.NoFloors())
+				if (NoFloors())
 					return;
 
 				// May seem redundant, but this is here so that an empty arg doesn't trigger _statusMessage.
@@ -292,20 +293,20 @@ namespace IngameScript
 					number = DEFAULT_TIME;
 				}
 
-				foreach(Floor floor in this.Floors)
+				foreach(Floor floor in Floors)
 				{
-					this.TravelTime = number;
-					SetKey(this.Timer, INI_HEAD, DELAY_LABEL + floor.Number, number.ToString());
+					TravelTime = number;
+					SetKey(Timer, INI_HEAD, DELAY_LABEL + floor.Number, number.ToString());
 				}
 			}
 
 			// HAS ARRIVED //
 			public bool HasArrived()
 			{
-				if (this.Floors.Count < 2)
+				if (Floors.Count < 2)
 					return true;
 
-				foreach(Floor floor in this.Floors)
+				foreach(Floor floor in Floors)
 				{
 					if(!floor.AtTarget())
 					{
@@ -319,9 +320,9 @@ namespace IngameScript
 			// NO FLOORS //
 			public bool NoFloors()
 			{
-				if(this.Floors.Count < 1)
+				if(Floors.Count < 1)
 				{
-					_statusMessage = "Elevator " + this.Number + " has no floors!";
+					_statusMessage = "Elevator " + Number + " has no floors!";
 					return true;
 				}
 
@@ -331,9 +332,9 @@ namespace IngameScript
 			// GET FLOOR //
 			public Floor GetFloor(int number)
 			{
-				if(this.Floors.Count > 0)
+				if(Floors.Count > 0)
 				{
-					foreach(Floor floor in this.Floors)
+					foreach(Floor floor in Floors)
 					{
 						if (floor.Number == number)
 							return floor;
@@ -345,14 +346,14 @@ namespace IngameScript
 			// OPEN DOORS //
 			public void OpenDoors()
 			{
-				if (this.NoFloors() || !this.HasArrived())
+				if (NoFloors() || !HasArrived())
 					return;
 
-				this.Platform.OpenDoors();
+				Platform.OpenDoors();
 
-				foreach (Floor floor in this.Floors)
+				foreach (Floor floor in Floors)
 				{
-					if (floor.Number == this.CurrentFloor)
+					if (floor.Number == CurrentFloor)
 					{
 						floor.OpenDoors();
 					}
@@ -362,12 +363,12 @@ namespace IngameScript
 			// CLOSE DOORS //
 			public void CloseDoors()
 			{
-				if (this.NoFloors())
+				if (NoFloors())
 					return;
 
-				this.Platform.CloseDoors();
+				Platform.CloseDoors();
 
-				foreach (Floor floor in this.Floors)
+				foreach (Floor floor in Floors)
 				{
 					floor.CloseDoors();
 				}
@@ -376,11 +377,11 @@ namespace IngameScript
 			// LOCK DOORS //
 			public void LockDoors()
 			{
-				if (this.NoFloors())
+				if (NoFloors())
 					return;
 
-				this.Platform.LockDoors();
-				foreach(Floor floor in this.Floors)
+				Platform.LockDoors();
+				foreach(Floor floor in Floors)
 				{
 					floor.LockDoors();
 				}
@@ -389,29 +390,29 @@ namespace IngameScript
 			// SET TRAVEL //
 			public void SetTravel(bool travelling)
 			{
-				this.Travelling = travelling;
-				SetKey(this.Timer, INI_HEAD, "Travelling", travelling.ToString());
+				Travelling = travelling;
+				SetKey(Timer, INI_HEAD, "Travelling", travelling.ToString());
 			}
 
 			// SET PHASE //
 			public void SetPhase(ushort phase)
 			{
-				this.Phase = phase;
-				SetKey(this.Timer, INI_HEAD, "Phase", phase.ToString());
+				Phase = phase;
+				SetKey(Timer, INI_HEAD, "Phase", phase.ToString());
 			}
 
 			// START DELAY //
 			public void StartDelay(float delay)
 			{
-				this.Timer.TriggerDelay = delay;
-				this.Timer.StartCountdown();
+				Timer.TriggerDelay = delay;
+				Timer.StartCountdown();
 			}
 
 			// GO TO NEXT //
 			public void GoToNext()
 			{ 
 				// If Queue is empty or next floor is current floor STOP
-				if(FloorQueue.Count < 1)// || FloorQueue[0].Floor == this.CurrentFloor
+				if(FloorQueue.Count < 1)// || FloorQueue[0].Floor == CurrentFloor
 				{
 					SetPhase(0);
 					//StopMusic();
@@ -421,28 +422,28 @@ namespace IngameScript
 				}
 
 				PlayMusic();
-				this.GoToFloor(this.FloorQueue[0].Floor);
-				this.SetPhase(2);
+				GoToFloor(FloorQueue[0].Floor);
+				SetPhase(2);
 			}
 
 			// CHECK ARRIVAL //
 			public void CheckArrival()
 			{
-				if (this.HasArrived())
+				if (HasArrived())
 				{
-					this.OpenDoors();
-					if(this.FloorQueue.Count > 0)
+					OpenDoors();
+					if(FloorQueue.Count > 0)
 					{
-						this.FloorQueue.Remove(this.FloorQueue[0]);
+						FloorQueue.Remove(FloorQueue[0]);
 						if (FloorQueue.Count < 1)
 							StopMusic();
 					}
-					this.SetPhase(3);
-					this.StartDelay(DEFAULT_WAIT_TIME);
+					SetPhase(3);
+					StartDelay(DEFAULT_WAIT_TIME);
 				}
 				else
 				{
-					this.StartDelay(AUX_DELAY);
+					StartDelay(AUX_DELAY);
 				}
 			}
 
@@ -460,7 +461,7 @@ namespace IngameScript
 						goingUp = false;
 						break;
 					default:
-						if (destination < this.CurrentFloor)
+						if (destination < CurrentFloor)
 							goingUp = false;
 						else
 							goingUp = true;
@@ -473,10 +474,10 @@ namespace IngameScript
 			// DRAW DISPLAYS //
 			public void DrawDisplays()
 			{
-				if (this.Displays.Count < 1)
+				if (Displays.Count < 1)
 					return;
 
-				foreach (Display display in this.Displays)
+				foreach (Display display in Displays)
 				{
 					DrawDisplay(display, this);
 				}
@@ -521,25 +522,27 @@ namespace IngameScript
 			public List<IMyDoor> Doors;
 			public List<IMySensorBlock> Sensors;
 			public bool IsGround;
+			public bool IsTop;
 			public float TravelTime;
 			public Floor(int number, Elevator elevator)
 			{
-				this.Number = number;
-				this.Elevator = elevator;
-				this.Pistons = new List<ElevatorPiston>();
-				this.Doors = new List<IMyDoor>();
-				this.Sensors = new List<IMySensorBlock>();
-				this.IsGround = false;
-				this.TravelTime = ParseFloat(GetKey(elevator.Timer, INI_HEAD, DELAY_LABEL + number, DEFAULT_TIME.ToString()), DEFAULT_TIME);
+				Number = number;
+				Elevator = elevator;
+				Pistons = new List<ElevatorPiston>();
+				Doors = new List<IMyDoor>();
+				Sensors = new List<IMySensorBlock>();
+				IsGround = false;
+				IsTop = false;
+				TravelTime = ParseFloat(GetKey(elevator.Timer, INI_HEAD, DELAY_LABEL + number, DEFAULT_TIME.ToString()), DEFAULT_TIME);
 			}
 
 			// ACTIVATE // - Activate all pistons associated with this floor.
 			public void Activate()
 			{
-				if (this.Pistons.Count < 1)
+				if (Pistons.Count < 1)
 					return;
 
-				foreach(ElevatorPiston piston in this.Pistons)
+				foreach(ElevatorPiston piston in Pistons)
 				{
 					piston.Activate();
 				}
@@ -548,10 +551,10 @@ namespace IngameScript
 			// DEACTIVATE // - Deactivate all pistons associate with this floor.
 			public void Deactivate()
 			{
-				if (this.Pistons.Count < 1)
+				if (Pistons.Count < 1)
 					return;
 
-				foreach (ElevatorPiston piston in this.Pistons)
+				foreach (ElevatorPiston piston in Pistons)
 				{
 					piston.Deactivate();
 				}
@@ -560,9 +563,9 @@ namespace IngameScript
 			// AT TARGET //
 			public bool AtTarget()
 			{
-				if(this.Pistons.Count > 0)
+				if(Pistons.Count > 0)
 				{
-					foreach(ElevatorPiston piston in this.Pistons)
+					foreach(ElevatorPiston piston in Pistons)
 					{
 						float pos = piston.Piston.CurrentPosition;
 						float target;
@@ -583,10 +586,10 @@ namespace IngameScript
 			// OPEN DOORS //
 			public void OpenDoors()
 			{
-				if (this.Doors.Count < 1)
+				if (Doors.Count < 1)
 					return;
 
-				foreach(IMyDoor door in this.Doors)
+				foreach(IMyDoor door in Doors)
 				{
 					// Check if elevator doors are locked down by pressure chief program
 					bool lockDown;
@@ -610,10 +613,10 @@ namespace IngameScript
 			// CLOSE DOORS //
 			public void CloseDoors()
 			{
-				if (this.Doors.Count < 1)
+				if (Doors.Count < 1)
 					return;
 
-				foreach (IMyDoor door in this.Doors)
+				foreach (IMyDoor door in Doors)
 				{
 					//door.GetActionWithName("OnOff_On").Apply(door);
 					door.CloseDoor();
@@ -623,10 +626,10 @@ namespace IngameScript
 			// LOCK DOORS //
 			public void LockDoors()
 			{
-				if (this.Doors.Count < 1)
+				if (Doors.Count < 1)
 					return;
 
-				foreach (IMyDoor door in this.Doors)
+				foreach (IMyDoor door in Doors)
 				{
 					door.GetActionWithName("OnOff_Off").Apply(door);
 				}
@@ -646,25 +649,25 @@ namespace IngameScript
 
 			public ElevatorPiston(IMyPistonBase piston)
 			{
-				this.Piston = piston;
-				this.Inverted = ParseBool(GetKey(piston, INI_HEAD, "Inverted", "False"));
+				Piston = piston;
+				Inverted = ParseBool(GetKey(piston, INI_HEAD, "Inverted", "False"));
 
 				float velocity = piston.Velocity;
 				if (velocity < 0)
-					this.Retracting = true;
+					Retracting = true;
 				else
-					this.Retracting = false;
+					Retracting = false;
 
 				
 
-				this.Max = ParseFloat(GetKey(piston, INI_HEAD, "Max", piston.MaxLimit.ToString()), piston.MaxLimit);
-				piston.MaxLimit = this.Max;
-				this.Min = ParseFloat(GetKey(piston, INI_HEAD, "Min", piston.MinLimit.ToString()), piston.MinLimit);
-				piston.MinLimit = this.Min;
-				this.Speed = Math.Abs(ParseFloat(GetKey(piston, INI_HEAD, "Speed", piston.Velocity.ToString()), piston.Velocity));
+				Max = ParseFloat(GetKey(piston, INI_HEAD, "Max", piston.MaxLimit.ToString()), piston.MaxLimit);
+				piston.MaxLimit = Max;
+				Min = ParseFloat(GetKey(piston, INI_HEAD, "Min", piston.MinLimit.ToString()), piston.MinLimit);
+				piston.MinLimit = Min;
+				Speed = Math.Abs(ParseFloat(GetKey(piston, INI_HEAD, "Speed", piston.Velocity.ToString()), piston.Velocity));
 
-				velocity = this.Speed;
-				if (this.Retracting)
+				velocity = Speed;
+				if (Retracting)
 					velocity *= -1;
 
 				piston.Velocity = velocity;
@@ -673,30 +676,30 @@ namespace IngameScript
 			// ACTIVATE // - Set Piston to its Activated Position
 			public void Activate()
 			{
-				if(this.Inverted)
+				if(Inverted)
 				{
-					this.Piston.Retract();
-					this.Retracting = true;
+					Piston.Retract();
+					Retracting = true;
 				}
 				else
 				{
-					this.Piston.Extend();
-					this.Retracting = false;
+					Piston.Extend();
+					Retracting = false;
 				}
 			}
 
 			// DEACTIVATE // - Set Piston to its Deactivated Position
 			public void Deactivate()
 			{
-				if (this.Inverted)
+				if (Inverted)
 				{
-					this.Piston.Extend();
-					this.Retracting = false;
+					Piston.Extend();
+					Retracting = false;
 				}
 				else
 				{
-					this.Piston.Retract();
-					this.Retracting = true;
+					Piston.Retract();
+					Retracting = true;
 				}
 			}
 		}
@@ -709,16 +712,16 @@ namespace IngameScript
 
 			public Platform()
 			{
-				this.Doors = new List<IMyDoor>();
+				Doors = new List<IMyDoor>();
 			}
 
 			// OPEN DOORS //
 			public void OpenDoors()
 			{
-				if (this.Doors.Count < 1)
+				if (Doors.Count < 1)
 					return;
 
-				foreach(IMyDoor door in this.Doors)
+				foreach(IMyDoor door in Doors)
 				{
 					door.GetActionWithName("OnOff_On").Apply(door);
 					door.OpenDoor();
@@ -728,10 +731,10 @@ namespace IngameScript
 			// CLOSE DOORS //
 			public void CloseDoors()
 			{
-				if (this.Doors.Count < 1)
+				if (Doors.Count < 1)
 					return;
 
-				foreach (IMyDoor door in this.Doors)
+				foreach (IMyDoor door in Doors)
 				{
 					door.CloseDoor();
 				}
@@ -740,10 +743,10 @@ namespace IngameScript
 			// LOCK DOORS //
 			public void LockDoors()
 			{
-				if (this.Doors.Count < 1)
+				if (Doors.Count < 1)
 					return;
 
-				foreach (IMyDoor door in this.Doors)
+				foreach (IMyDoor door in Doors)
 				{
 					door.GetActionWithName("OnOff_Off").Apply(door);
 				}
@@ -759,8 +762,8 @@ namespace IngameScript
 
 			public Page(int floor, bool up)
 			{
-				this.Floor = floor;
-				this.Up = up;
+				Floor = floor;
+				Up = up;
 			}
 		}
 
@@ -783,40 +786,40 @@ namespace IngameScript
 
 				if(floorData.ToLower() == "all")
 				{
-					this.ShowAll = true;
+					ShowAll = true;
 				}
 				else
 				{
-					this.Floor = ParseInt(floorData, elevator.GroundFloor);
+					Floor = ParseInt(floorData, elevator.GroundFloor);
 				}
 
-				this.Surface = (block as IMyTextSurfaceProvider).GetSurface(index);
-				PrepareTextSurface(this.Surface, GetKey(block, INI_HEAD, "Background_Color", "0,0,0"));
+				Surface = (block as IMyTextSurfaceProvider).GetSurface(index);
+				PrepareTextSurface(Surface, GetKey(block, INI_HEAD, "Background_Color", "0,0,0"));
 
 
-				this.ShapeName = GetKey(block, INI_HEAD, "Shape", "Square");
-				switch(this.ShapeName.ToUpper())
+				ShapeName = GetKey(block, INI_HEAD, "Shape", "Square");
+				switch(ShapeName.ToUpper())
 				{
 					case "TRIANGLE":
 					case "TRIANGLEINVERTED":
 					case "DIRECTIONAL":
 					case "SCI-FI":
-						this.Shape = "Triangle";
+						Shape = "Triangle";
 						break;
 					case "CIRCLE":
-						this.Shape = "Circle";
+						Shape = "Circle";
 						break;
 					case "SQUARETAPERED":
-						this.Shape = "SquareTapered";
+						Shape = "SquareTapered";
 						break;
 					case "FULL":
 					default:
-						this.Shape = "SquareSimple";
+						Shape = "SquareSimple";
 						break;
 				}
 
-				this.OnColor = ColorFromString(GetKey(block, INI_HEAD, "On_Color", ON_RED + "," + ON_GREEN + "," + ON_BLUE));
-				this.OffColor = ColorFromString(GetKey(block, INI_HEAD, "Off_Color", OFF_RED + "," + OFF_GREEN + "," + OFF_BLUE));
+				OnColor = ColorFromString(GetKey(block, INI_HEAD, "On_Color", ON_RED + "," + ON_GREEN + "," + ON_BLUE));
+				OffColor = ColorFromString(GetKey(block, INI_HEAD, "Off_Color", OFF_RED + "," + OFF_GREEN + "," + OFF_BLUE));
 			}
 		}
 
@@ -858,7 +861,7 @@ namespace IngameScript
 					}
 
 					argData.Trim();
-					//Echo("Data: " + argData);
+					Echo("Data: " + argData);
 				}
 
 				switch (arg.ToUpper())
@@ -1085,7 +1088,7 @@ namespace IngameScript
 			Elevator elevator = ElevatorFromTag(elevatorTag);
 			if(elevator == null)
 			{
-				_statusMessage = "No Elevator " + elevatorTag + "found!";
+				_statusMessage = "No Elevator \"" + elevatorTag + " \"found!";
 				return;
 			}
 
@@ -1137,6 +1140,12 @@ namespace IngameScript
 			{
 				elevator.CurrentFloor = floor.Number;
 				SetKey(elevator.Timer, INI_HEAD, "Current_Floor", elevator.CurrentFloor.ToString());
+
+				if (floor.IsGround)
+					elevator.GoingUp = true;
+				else if (floor.IsTop)
+					elevator.GoingUp = false;
+
 			}
 
 			elevator.DrawDisplays();
@@ -1239,6 +1248,9 @@ namespace IngameScript
 				//elevator.UpdateTravelTimes();
 
 				elevator.SortFloors(true);
+
+				elevator.TopFloor = elevator.Floors.Count - 1;
+				elevator.Floors[elevator.TopFloor].IsTop = true;
 				int bottom = elevator.Floors[0].Number - 1;
 
 				if(!int.TryParse(GetKey(elevator.Timer, INI_HEAD, "Ground_Floor", bottom.ToString()), out elevator.GroundFloor))
@@ -1247,9 +1259,13 @@ namespace IngameScript
 				}
 
 				Floor floor = new Floor(elevator.GroundFloor, elevator);
+				floor.IsGround = true;
 				elevator.Floors.Insert(0,floor);
 
-
+				if (elevator.CurrentFloor == elevator.GroundFloor)
+					elevator.GoingUp = true;
+				else if (elevator.CurrentFloor == elevator.TopFloor)
+					elevator.GoingUp = false;
 			}
 
 			if (doors.Count > 0)
