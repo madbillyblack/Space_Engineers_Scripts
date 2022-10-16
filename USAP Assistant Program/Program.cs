@@ -31,6 +31,7 @@ namespace IngameScript
         const string ICE_SUPPLY = "[ORE]"; // Destination inventory tag for re-stocking ice.
         const string LOAD_TAG = "Load Counter"; // Tag for block that displays load count
         const string THRUST_DISPLAY = "Thrust Display"; // Tag for block that displays escape thruster override percentage.
+        const string DISPLAY_TAG = "USAP Display"; // Tag used to find blocks to use as LCD displays
         const int RUN_CAP = 10;
 
         // CONTROLLER CONSTANTS:
@@ -153,15 +154,17 @@ namespace IngameScript
         string _statusMessage;
         string _gridID;
 
-        int _loadCount;
+        static int _loadCount;
+        static string _currentPower;
+        static string _activeProfile;
         int _runningNumber;
         bool _unloaded;
         bool _unloadPossible;
         bool _hasComponentCargo;
-        bool _escapeThrustersOn;
-        IMyTerminalBlock _loadCounter;
-        IMyTextSurface _countSurface;
-        IMyTextSurface _thrustSurface;
+        static bool _escapeThrustersOn;
+        //IMyTerminalBlock _loadCounter;
+        //IMyTextSurface _countSurface;
+        //IMyTextSurface _thrustSurface;
 
         // Escape Thruster variables
         IMyShipController _cockpit;
@@ -174,12 +177,13 @@ namespace IngameScript
         //List<IMyTerminalBlock> _inventories;
         List<IMyTerminalBlock> _magazines;
         List<IMyTerminalBlock> _reactors;
-        List<IMyTerminalBlock> _miningCargos;
-        List<IMyTerminalBlock> _constructionCargos;
+        static List<IMyTerminalBlock> _miningCargos;
+        static List<IMyTerminalBlock> _constructionCargos;
         List<IMyTerminalBlock> _o2Generators;
+        static List<Display> _displays;
 
         string _escapeTag;
-        List<IMyThrust> _escapeThrusters;
+        static List<IMyThrust> _escapeThrusters;
         
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
@@ -331,6 +335,7 @@ namespace IngameScript
             }
 
             Echo("STATUS: " + _statusMessage);
+            Echo("Displays: " + _displays.Count);
 
             // If cargo successfully unloaded, increment load count.
             if (_unloaded)
@@ -338,7 +343,7 @@ namespace IngameScript
                 _loadCount++;
                 Echo("Load Count: " + _loadCount);
 			}
-            displayLoadCount();
+            //displayLoadCount();
 
             if (_escapeThrustersOn)// && ((updateSource & UpdateType.Update10) != -0))
             {
@@ -355,6 +360,8 @@ namespace IngameScript
                     CheckGravity();
                 }
             }
+
+            PrintDisplays();
         }
 
 
@@ -564,7 +571,7 @@ namespace IngameScript
             }
         }
 
-
+        /*
         // DISPLAY LOAD COUNT //
         void displayLoadCount()
         {
@@ -573,12 +580,9 @@ namespace IngameScript
  
             _countSurface.WriteText("Load Count: " + _loadCount.ToString());
         }
+        */
 
-
-        // DISPLAY THRUST //
-
-
-        // SET LOAD COUNT //
+         // SET LOAD COUNT //
         void SetLoadCount(string arg)
         {
             int value = ParseInt(arg, 0);
@@ -590,7 +594,7 @@ namespace IngameScript
             }
 
             _loadCount = value;
-            displayLoadCount();
+            //displayLoadCount();
         }
 
 
@@ -612,6 +616,7 @@ namespace IngameScript
             ThrottleThrusters(0);
             _escapeThrustersOn = false;
             _runningNumber = 0;
+            UpdateThrustDisplay(0);
             Runtime.UpdateFrequency = UpdateFrequency.None;
         }
 
@@ -656,7 +661,7 @@ namespace IngameScript
                 thruster.ThrustOverridePercentage = input;
             }
 
-            DisplayThrust(_escapeThrusters[0].ThrustOverridePercentage);
+            UpdateThrustDisplay(_escapeThrusters[0].ThrustOverridePercentage);
         }
 
 
@@ -781,6 +786,8 @@ namespace IngameScript
             _unloadPossible = false;
             _hasComponentCargo = false;
             _runningNumber = 0;
+            _currentPower = "OFF";
+            _activeProfile = GetKey(Me, INI_HEAD, "Profiles", "###").Split(',')[0];
 
             // Establish user defined reference block.  If none, set program block as reference.
             string refTag = GetKey(Me, INI_HEAD, "Reference", Me.CustomName);
@@ -806,6 +813,7 @@ namespace IngameScript
             _constructionCargos = new List<IMyTerminalBlock>();
             _miningCargos = new List<IMyTerminalBlock>();
             _o2Generators = new List<IMyTerminalBlock>();
+            _displays = new List<Display>();
 
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
@@ -816,8 +824,8 @@ namespace IngameScript
                     AddToInventories(block);
             }
 
-            if (_unloadPossible)
-                AssignLoadCounter();
+            //if (_unloadPossible)
+                //AssignLoadCounter();
 
             // Make sure that any construction cargos have a profile in custom data.
             if(_hasComponentCargo)
@@ -837,6 +845,9 @@ namespace IngameScript
                 Runtime.UpdateFrequency = UpdateFrequency.Update10;
             else
                 Runtime.UpdateFrequency = UpdateFrequency.None;
+
+            AssignDisplays();
+            PrintDisplays();
         }
 
 
@@ -970,6 +981,8 @@ namespace IngameScript
             {
                 if(profiles[i].Trim().ToLower() == profileName.ToLower())
                 {
+                    _activeProfile = profileName;
+
                     // Switch the old and new active profiles
                     profiles[i] = profiles[0];
                     profiles[0] = profileName;
@@ -1138,6 +1151,7 @@ namespace IngameScript
                         _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to 0\n";
                     }
 
+                    /*
                     if (index > -1 && index < surfaceCount)
                     {
                         _loadCounter = counter as IMyTerminalBlock;
@@ -1146,6 +1160,7 @@ namespace IngameScript
                         displayLoadCount();
                         return;
                     }
+                    */
                 }
             }
         }
@@ -1215,37 +1230,30 @@ namespace IngameScript
                         SetKey(block, INI_HEAD, "Thrust_Display_Index", "0");
                         _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to 0\n";
                     }
-
+                    /*
                     if (index > -1 && index < surfaceCount)
                     {
                         _thrustSurface = displayBlock.GetSurface(index);
                         _thrustSurface.ContentType = ContentType.TEXT_AND_IMAGE;
-                        DisplayThrust(0);
+                        UpdateThrustDisplay(0);
                         return;
                     }
+                    */
                 }
             }
         }
 
-        // DISPLAY THRUST //
-        void DisplayThrust(float power)
+        // UPDATE THRUST DISPLAY //
+        void UpdateThrustDisplay(float power)
         {
-
-
-            int value = (int) (power * 100);
-            string output = value + "%";
-
-            if (value == 0)
-                output = "OFF";
-
-            output = "Auto-Throttle: " + output;
-
-            Echo(output);
-
-            if (_thrustSurface == null)
+            if (!_escapeThrustersOn)
+            {
+                _currentPower = "OFF";
                 return;
+            }
 
-            _thrustSurface.WriteText(output);
+            int value = (int)(power * 100);
+            _currentPower = value + "%";
         }
 
 
