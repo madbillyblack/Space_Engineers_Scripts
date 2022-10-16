@@ -77,16 +77,37 @@ namespace IngameScript
                                         "SteelPlate:0\n" +
                                         "Superconductor:0\n" +
                                         "Thrust:0";
-        const string DEFAULT_BASIC =    "BulletproofGlass:50\n" +
-                                        "Computer:250\n" +
-                                        "Construction:1500\n" +
+        const string DEFAULT_ARMOR =    "BulletproofGlass:0\n" +
+                                        "Computer:0\n" +
+                                        "Construction:0\n" +
                                         "Detector:0\n" +
-                                        "Display:25\n" +
+                                        "Display:0\n" +
+                                        "Explosives:0\n" +
+                                        "Girder:0\n" +
+                                        "GravityGenerator:0\n" +
+                                        "InteriorPlate:0\n" +
+                                        "LargeTube:0\n" +
+                                        "Medical:0\n" +
+                                        "MetalGrid:651\n" +
+                                        "Motor:0\n" +
+                                        "PowerCell:0\n" +
+                                        "RadioCommunication:0\n" +
+                                        "Reactor:0\n" +
+                                        "SmallTube:0\n" +
+                                        "SolarCell:0\n" +
+                                        "SteelPlate:1953\n" +
+                                        "Superconductor:0\n" +
+                                        "Thrust:0";
+        const string DEFAULT_BASIC =    "BulletproofGlass:0\n" +
+                                        "Computer:0\n" +
+                                        "Construction:0\n" +
+                                        "Detector:0\n" +
+                                        "Display:0\n" +
                                         "Explosives:0\n" +
                                         "Girder:25\n" +
                                         "GravityGenerator:0\n" +
-                                        "InteriorPlate:250\n" +
-                                        "LargeTube:25\n" +
+                                        "InteriorPlate:0\n" +
+                                        "LargeTube:0\n" +
                                         "Medical:0\n" +
                                         "MetalGrid:150\n" +
                                         "Motor:100\n" +
@@ -870,7 +891,7 @@ namespace IngameScript
         // ENSURE PROFILES // Ensure that program block has construction profiles
         public void EnsureProfiles()
         {
-            string [] profiles = GetKey(Me, INI_HEAD, "Profiles", "Basic, Advanced").Split(',');
+            string [] profiles = GetKey(Me, INI_HEAD, "Profiles", "Basic,Advanced,Armor").Split(',');
 
             if (profiles.Length < 1)
                 return;
@@ -888,6 +909,9 @@ namespace IngameScript
                         break;
                     case "ADVANCED":
                         loadout = DEFAULT_ADVANCED;
+                        break;
+                    case "ARMOR":
+                        loadout = DEFAULT_ARMOR;
                         break;
                     default:
                         loadout = DEFAULT_PROFILE;
