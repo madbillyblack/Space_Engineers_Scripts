@@ -29,6 +29,7 @@ namespace IngameScript
         const string COMP_SUPPLY = "[CMP]"; // Source inventory tag for re-stocking components.
         const string GAS_TAG = "[H2O]"; // Destination inventory tag for re-stocking ice.
         const string ICE_SUPPLY = "[ORE]"; // Destination inventory tag for re-stocking ice.
+        const string GEAR_TAG = "[LG]"; // Tag used to identify components of landing gear assembly.
         const string LOAD_TAG = "Load Counter"; // Tag for block that displays load count
         const string THRUST_DISPLAY = "Thrust Display"; // Tag for block that displays escape thruster override percentage.
         const string DISPLAY_TAG = "USAP Display"; // Tag used to find blocks to use as LCD displays
@@ -181,6 +182,7 @@ namespace IngameScript
         static List<IMyTerminalBlock> _constructionCargos;
         List<IMyTerminalBlock> _o2Generators;
         static List<Display> _displays;
+        LandingGearAssembly _landingGear;
 
         string _escapeTag;
         static List<IMyThrust> _escapeThrusters;
