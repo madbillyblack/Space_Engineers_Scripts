@@ -35,15 +35,16 @@ namespace IngameScript
 
             public LandingGearAssembly(IMyTimerBlock timer)
             {
-                Timer = timer;
-                IsExtended = ParseBool(GetKey(timer, INI_HEAD, "Extended", "False"));
-                timer.TriggerDelay = ParseFloat(GetKey(timer, INI_HEAD, "Delay", timer.TriggerDelay.ToString()), timer.TriggerDelay);
-                
                 Pistons = new List<IMyPistonBase>();
                 Stators = new List<IMyMotorStator>();
                 LandingPlates = new List<IMyLandingGear>();
                 Connectors = new List<IMyShipConnector>();
                 Lights = new List<IMyLightingBlock>();
+
+                Timer = timer;
+                IsExtended = ParseBool(GetKey(timer, INI_HEAD, "Extended", "False"));
+                EnsureKey(timer, INI_HEAD, "Extension Delay", timer.TriggerDelay.ToString());
+                EnsureKey(timer, INI_HEAD, "Retraction Delay", timer.TriggerDelay.ToString());
             }
 
 
@@ -68,6 +69,8 @@ namespace IngameScript
             // ACTIVATE //
             public void Activate(bool extending)
             {
+                IsExtended = extending;
+
                 if (LandingPlates.Count > 0)
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         DisengageLandingPlate(landingPlate);
@@ -82,7 +85,16 @@ namespace IngameScript
 
                 if (Lights.Count > 0)
                     foreach (IMyLightingBlock light in Lights)
-                        ActivateLandingLight(light, extending);              
+                        ActivateLandingLight(light, extending);
+
+                float delay;
+                if (extending)
+                    delay = ParseFloat(GetKey(Timer, INI_HEAD, "Extension Delay", Timer.TriggerDelay.ToString()), Timer.TriggerDelay);
+                else
+                    delay = ParseFloat(GetKey(Timer, INI_HEAD, "Retraction Delay", Timer.TriggerDelay.ToString()), Timer.TriggerDelay);
+
+                Timer.TriggerDelay = delay;
+                Timer.StartCountdown();
             }
 
 
@@ -96,7 +108,20 @@ namespace IngameScript
 
             public void TimerCall()
             {
-                //TODO
+                // Deactivate pistons
+                if (Pistons.Count > 0)
+                    foreach (IMyPistonBase piston in Pistons)
+                        DisengagePiston(piston);
+                
+                // Deactivate rotors and hinges
+                if (Stators.Count > 0)
+                    foreach (IMyMotorStator stator in Stators)
+                        DisengageStator(stator);
+
+                // Set Mag Plates to AutoLock or Off
+                if (LandingPlates.Count > 0)
+                    foreach (IMyLandingGear landingPlate in LandingPlates)
+                        EngageLandingPlate(landingPlate);
             }
         }
 /*
