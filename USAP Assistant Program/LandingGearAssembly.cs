@@ -24,10 +24,12 @@ namespace IngameScript
     {
         public class LandingGearAssembly
         {
-            public List<LandingPiston> Pistons;
-            public List<LandingStator> Stators;
-            public List<LandingPlate> LandingPlates;
-            public List<LandingLight> Lights;
+            public List<IMyPistonBase> Pistons;
+            public List<IMyMotorStator> Stators;
+            public List<IMyLandingGear> LandingPlates;
+            public List<IMyShipConnector> Connectors;
+            public List<IMyLightingBlock> Lights;
+            
             public IMyTimerBlock Timer;
             public bool IsExtended;
 
@@ -37,12 +39,15 @@ namespace IngameScript
                 IsExtended = ParseBool(GetKey(timer, INI_HEAD, "Extended", "False"));
                 timer.TriggerDelay = ParseFloat(GetKey(timer, INI_HEAD, "Delay", timer.TriggerDelay.ToString()), timer.TriggerDelay);
                 
-                Pistons = new List<LandingPiston>();
-                Stators = new List<LandingStator>();
-                LandingPlates = new List<LandingPlate>();
-                Lights = new List<LandingLight>();
+                Pistons = new List<IMyPistonBase>();
+                Stators = new List<IMyMotorStator>();
+                LandingPlates = new List<IMyLandingGear>();
+                Connectors = new List<IMyShipConnector>();
+                Lights = new List<IMyLightingBlock>();
             }
 
+
+            // EXTEND //
             public void Extend()
             {
                 if (IsExtended)
@@ -60,19 +65,20 @@ namespace IngameScript
             }
 
 
+            // ACTIVATE //
             public void Activate(bool extending)
             {
                 if (LandingPlates.Count > 0)
                     foreach (IMyLandingGear landingPlate in LandingPlates)
-                        ActivateLandingPlate(landingPlate, extending);
+                        DisengageLandingPlate(landingPlate);
 
                 if (Pistons.Count > 0)
                     foreach (IMyPistonBase piston in Pistons)
-                        ActivateLandingPiston(piston, extending);
+                        EngagePiston(piston, extending);
 
                 if (Stators.Count > 0)
                     foreach (IMyMotorStator stator in Stators)
-                        ActivateLandingStator(stator, extending);
+                        EngageStator(stator, extending);
 
                 if (Lights.Count > 0)
                     foreach (IMyLightingBlock light in Lights)
@@ -93,7 +99,7 @@ namespace IngameScript
                 //TODO
             }
         }
-
+/*
         public class LandingStator
         {
             public IMyMotorStator Stator;
@@ -205,11 +211,41 @@ namespace IngameScript
         }
 
         public class LandingPlate
-        { }
+        {
+            public IMyLandingGear LandingGear;
+            public int RetractCase;
+
+            public LandingPlate(IMyLandingGear landingGear)
+            {
+                LandingGear = landingGear;
+                string onRetract = GetKey(landingGear, INI_HEAD, "On Retract", "AutoLock");
+
+                switch(onRetract.ToUpper())
+                {
+                    case "OFF":
+                    case "TURNOFF":
+                    case "TURN OFF":
+                        RetractCase = 2;
+                        break;
+                    case "AUTOLOCK":
+                    case "AUTO LOCK":
+                    case "AUTO_LOCK":
+                    case "AUTO-LOCK":
+                        RetractCase = 1;
+                        break;
+                    default:
+                        RetractCase = 0;
+                        break;
+                }
+            }
+        }
 
         public class LandingLight
         { }
+*/
+        // INIT FUNCTIONS ---------------------------------------------------------------------------------------------------------------------------------------
 
+        // ASSEMBLE LANDING GEAR //
         void AssembleLandingGear()
         {
             _landingGear = null;
@@ -236,18 +272,18 @@ namespace IngameScript
                             switch(block.DefinitionDisplayNameText)
                             {
                                 case "Piston":
-                                    _landingGear.Pistons.Add(new LandingPiston(block as IMyPistonBase, _landingGear.IsExtended));
+                                    AssignLandingPiston(block as IMyPistonBase);
                                     break;
                                 case "Rotor":
                                 case "Advanced Rotor":
                                 case "Hinge":
                                 case "Hinge 3x3":
-                                    _landingGear.Stators.Add(new LandingStator(block as IMyMotorStator, _landingGear.IsExtended));
+                                    AssignLandingStator(block as IMyMotorStator);
                                     break;
                                 case "Landing Gear":
                                 case "Magnetic Plate":
                                 case "Large Magnetic Plate":
-                                    //AssignLandingPlate(block as IMyLandingGear);
+                                    AssignLandingPlate(block as IMyLandingGear);
                                     break;
                                 case "Spotlight":
                                 case "Searchlight":
@@ -258,7 +294,7 @@ namespace IngameScript
                                 case "Corner Light - Double":
                                 case "Corner Light":
                                 case "Interior Light":
-                                    //AssignLandingLight(block as IMyLightingBlock);
+                                    AssignLandingLight(block as IMyLightingBlock);
                                     break;
                             }
                         }
@@ -269,14 +305,18 @@ namespace IngameScript
             }
         }
 
+
+        // ASSIGN LANDING PLATE //
         void AssignLandingPlate(IMyLandingGear landingPlate)
         {
             EnsureKey(landingPlate, INI_HEAD, "Off on Retract", "True");
             EnsureKey(landingPlate, INI_HEAD, "AutoLock on Retract", "False");
             EnsureKey(landingPlate, INI_HEAD, "AutoLock on Extend", "True");
-            //_landingGear.LandingPlates.Add(landingPlate);
+            _landingGear.LandingPlates.Add(landingPlate);
         }
 
+
+        // ASSIGN LANDING STATOR //
         void AssignLandingStator(IMyMotorStator stator)
         {
             string defaultBool;
@@ -305,10 +345,13 @@ namespace IngameScript
 
             EnsureKey(stator, INI_HEAD, "Extend Velocity", defaultExtend.ToString());
             EnsureKey(stator, INI_HEAD, "Retract Velocity", defaultRetract.ToString());
+            EnsureKey(stator, INI_HEAD, "Off When Stationary", "false");
 
-            //_landingGear.Stators.Add(stator);
+            _landingGear.Stators.Add(stator);
         }
 
+
+        // ASSIGN LANDING PISTON //
         void AssignLandingPiston(IMyPistonBase piston)
         {
             string defaultBool;
@@ -319,43 +362,159 @@ namespace IngameScript
             else
                 defaultBool = "False";
 
-            EnsureKey(piston, INI_HEAD, "Extend To Positive", defaultBool);
+            // Determine if extension corresponds to positive velocity
+            bool extendToPositive = ParseBool(GetKey(piston, INI_HEAD, "Extend To Positive", defaultBool));
 
-            //_landingGear.Pistons.Add(piston);
+            // Set default extension and retraction velocities based on current velocities
+            float defaultExtend, defaultRetract;
+            if ((extendToPositive && velocity > 0) || !extendToPositive && velocity < 0)
+            {
+                defaultExtend = velocity;
+                defaultRetract = -velocity;
+            }
+            else
+            {
+                defaultExtend = -velocity;
+                defaultRetract = velocity;
+            }
+
+            EnsureKey(piston, INI_HEAD, "Extend Velocity", defaultExtend.ToString());
+            EnsureKey(piston, INI_HEAD, "Retract Velocity", defaultRetract.ToString());
+            EnsureKey(piston, INI_HEAD, "Off When Stationary", "false");
+
+            _landingGear.Pistons.Add(piston);
         }
 
+
+        // ASSIGN LANDING LIGHT //
         void AssignLandingLight(IMyLightingBlock light)
         {
-            string defaultBool;
+            string defaultExtended, defaultRetracted;
+            string currentColor = light.Color.R + "," + light.Color.G + "," + light.Color.B;
 
             if ((_landingGear.IsExtended && light.IsWorking) || (!_landingGear.IsExtended && !light.IsWorking))
-                defaultBool = "True";
+            {
+                defaultExtended = currentColor;
+                defaultRetracted = "0,0,0";
+            }
             else
-                defaultBool = "False";
+            {
+                defaultExtended = "0,0,0";
+                defaultRetracted = currentColor;
+            }
 
-            EnsureKey(light, INI_HEAD, "On for Extension", defaultBool);
+            EnsureKey(light, INI_HEAD, "Color on Extend", defaultExtended);
+            EnsureKey(light, INI_HEAD, "Color on Retract", defaultRetracted);
 
-            //_landingGear.Lights.Add(light);
+            _landingGear.Lights.Add(light);
         }
 
-        static void ActivateLandingStator(IMyMotorStator stator, bool extending)
+
+        // ACTIVATION FUNCTIONS ---------------------------------------------------------------------------------------------------------------------------------
+
+        // ENGAGE STATOR // - For use when assembly is in motion
+        static void EngageStator(IMyMotorStator stator, bool extending)
         {
-            //TODO
+            stator.GetActionWithName("OnOff_On").Apply(stator);
+            stator.RotorLock = false;
+
+            if (_landingGear.IsExtended)
+                stator.TargetVelocityRPM = ParseFloat(GetKey(stator, INI_HEAD, "Extend Velocity", "0"), 0);
+            else
+                stator.TargetVelocityRPM = ParseFloat(GetKey(stator, INI_HEAD, "Retract Velocity", "0"), 0);
         }
 
-        static void ActivateLandingPiston(IMyPistonBase piston, bool extending)
+
+        // DISENGAGE STATOR // - For use when assembly is at rest
+        static void DisengageStator(IMyMotorStator stator)
         {
-            //TODO
+            stator.TargetVelocityRPM = 0;
+            
+            if (ParseBool(GetKey(stator, INI_HEAD, "Off When Stationary", "false")))
+                stator.GetActionWithName("OnOff_Off").Apply(stator);
+            else
+                stator.RotorLock = true;
         }
 
-        static void ActivateLandingPlate(IMyLandingGear landingPlate, bool extending)
+
+        // ENGAGE PISTON //
+        static void EngagePiston(IMyPistonBase piston, bool extending)
         {
-            //TODO
+            piston.GetActionWithName("OnOff_On").Apply(piston);
+
+            if (extending)
+                piston.Velocity = ParseFloat(GetKey(piston, INI_HEAD, "Extend Velocity", "0"), 0);
+            else
+                piston.Velocity = ParseFloat(GetKey(piston, INI_HEAD, "Retract Velocity", "0"), 0);
         }
 
+
+        // DISENGAGE PISTON //
+        static void DisengagePiston(IMyPistonBase piston)
+        {
+            piston.Velocity = 0;
+
+            if (ParseBool(GetKey(piston, INI_HEAD, "Off When Stationary", "false")))
+                piston.GetActionWithName("OnOff_Off").Apply(piston);
+        }
+
+
+        // ACTIVATE LANDING LIGHT //
         static void ActivateLandingLight(IMyLightingBlock light, bool extending)
         {
-            //TODO
+            if(extending)
+                light.Color = ParseColor(GetKey(light, INI_HEAD, "Color on Extend", "255,0,127"));
+            else
+                light.Color = ParseColor(GetKey(light, INI_HEAD, "Color on Retract", "0,0,0"));
+        }
+
+
+        // DISENGAGE LANDING PLATE // - For use when gear assembly is in motion (extending or retracting)
+        static void DisengageLandingPlate(IMyLandingGear landingGear)
+        {
+            landingGear.GetActionWithName("OnOff_On").Apply(landingGear);
+            landingGear.Unlock();
+            landingGear.AutoLock = false;
+        }
+
+
+        // ENGAGE LANDING PLATE // - For use when gear assembly is at rest (extended or retracted)
+        static void EngageLandingPlate(IMyLandingGear landingGear)
+        {
+            if (_landingGear.IsExtended)
+            {
+                string onExtend = GetKey(landingGear, INI_HEAD, "On Extend", "AutoLock").ToUpper();
+
+                // Check if string is any reasonable permutation of "AutoLock"
+                switch(onExtend)
+                {
+                    case "AUTOLOCK":
+                    case "AUTO LOCK":
+                    case "AUTO-LOCK":
+                    case "AUTO_LOCK":
+                        landingGear.AutoLock = true;
+                        break;
+                }
+            }
+            else  if(!_landingGear.IsExtended)
+            {
+                string onRetract = GetKey(landingGear, INI_HEAD, "On Retract", "AutoLock").ToUpper();
+
+                switch(onRetract)
+                {
+                    case "AUTOLOCK":
+                    case "AUTO LOCK":
+                    case "AUTO-LOCK":
+                    case "AUTO_LOCK":
+                        landingGear.AutoLock = true;
+                        break;
+                    case "OFF":
+                    case "TURNOFF":
+                    case "TURN OFF":
+                        landingGear.GetActionWithName("OnOff_Off").Apply(landingGear);
+                        break;
+                }
+            }
         }
     }
 }

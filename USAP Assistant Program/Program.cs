@@ -182,7 +182,7 @@ namespace IngameScript
         static List<IMyTerminalBlock> _constructionCargos;
         List<IMyTerminalBlock> _o2Generators;
         static List<Display> _displays;
-        LandingGearAssembly _landingGear;
+        static LandingGearAssembly _landingGear;
 
         string _escapeTag;
         static List<IMyThrust> _escapeThrusters;
@@ -1293,6 +1293,23 @@ namespace IngameScript
             }
 
             return false;
+        }
+
+        // PARSE COLOR //
+        static Color ParseColor(string colorString)
+        {
+            UInt16 red, green, blue;
+            red = green = blue = 0;
+
+            string[] values = colorString.Split(',');
+            if(values.Length > 2)
+            {
+                UInt16.TryParse(values[0], out red);
+                UInt16.TryParse(values[1], out green);
+                UInt16.TryParse(values[2], out blue);
+            }
+
+            return new Color(red, green, blue);
         }
 
 
