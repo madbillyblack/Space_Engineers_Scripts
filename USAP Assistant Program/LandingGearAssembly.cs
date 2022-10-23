@@ -123,6 +123,19 @@ namespace IngameScript
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         EngageLandingPlate(landingPlate);
             }
+
+            public void SwapDirections()
+            {
+                IsExtended = !IsExtended;
+
+                if(Pistons.Count > 0)
+                    foreach (IMyPistonBase piston in Pistons)
+                        SwapVelocities(piston);
+
+                if (Stators.Count > 0)
+                    foreach (IMyMotorStator stator in Stators)
+                        SwapVelocities(stator);                
+            }
         }
 /*
         public class LandingStator
@@ -283,7 +296,7 @@ namespace IngameScript
 
             foreach(IMyTimerBlock timer in timers)
             {
-                if(timer.CustomName.Contains(GEAR_TAG) && GetKey(timer, SHARED, "Grid_ID", timer.CubeGrid.EntityId.ToString()) == _gridID)
+                if(timer.CustomName.Contains(GEAR_TAG) && GetKey(timer, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString()) == _gridID)
                 {
                     _landingGear = new LandingGearAssembly(timer);
 
@@ -292,7 +305,7 @@ namespace IngameScript
 
                     foreach(IMyTerminalBlock block in blocks)
                     {
-                        if(GetKey(block, SHARED, "Grid_ID", block.CubeGrid.EntityId.ToString()) == _gridID)
+                        if(GetKey(block, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString()) == _gridID)
                         {
                             switch(block.DefinitionDisplayNameText)
                             {
@@ -334,9 +347,8 @@ namespace IngameScript
         // ASSIGN LANDING PLATE //
         void AssignLandingPlate(IMyLandingGear landingPlate)
         {
-            EnsureKey(landingPlate, INI_HEAD, "Off on Retract", "True");
-            EnsureKey(landingPlate, INI_HEAD, "AutoLock on Retract", "False");
-            EnsureKey(landingPlate, INI_HEAD, "AutoLock on Extend", "True");
+            EnsureKey(landingPlate, INI_HEAD, "On Retract", "AutoLock");
+            EnsureKey(landingPlate, INI_HEAD, "On Extend", "AutoLock");
             _landingGear.LandingPlates.Add(landingPlate);
         }
 
@@ -540,6 +552,31 @@ namespace IngameScript
                         break;
                 }
             }
+        }
+
+
+        // SET RETRACT BEHAVIOR //
+        void SetRetractBehavior(string behavior)
+        {
+            if (_landingGear == null || _landingGear.LandingPlates.Count < 1)
+                return;
+
+            foreach (IMyLandingGear landingPlate in _landingGear.LandingPlates)
+                SetKey(landingPlate, INI_HEAD, "On Retract", "");
+        }
+
+
+        // SWAP VELOCITIES //
+        static void SwapVelocities(IMyTerminalBlock block)
+        {
+            string extendVelocity = GetKey(block, INI_HEAD, "Extend Velocity", "");
+            string retractVelocity = GetKey(block, INI_HEAD, "Retract Velocity", "");
+
+            if (extendVelocity != "")
+                SetKey(block, INI_HEAD, "Retract Velocity", extendVelocity);
+
+            if (retractVelocity != "")
+                SetKey(block, INI_HEAD, "Extend Velocity", retractVelocity);
         }
     }
 }

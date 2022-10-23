@@ -342,6 +342,14 @@ namespace IngameScript
                         if (_landingGear != null)
                             _landingGear.TimerCall();
                         break;
+                    case "SWAP_LANDING_GEAR_DIRECTION":
+                    case "SWAP_LANDING_GEAR_DIRECTIONS":
+                        if (_landingGear != null)
+                            _landingGear.SwapDirections();
+                        break;
+                    case "ON_LANDING_GEAR_RETRACTION":
+                        SetRetractBehavior(cmdArg);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;
@@ -852,6 +860,7 @@ namespace IngameScript
             }
 
             AssignThrusters();
+            AssembleLandingGear();
 
             if (_escapeThrusters.Count > 0)
             {
