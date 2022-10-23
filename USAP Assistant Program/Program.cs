@@ -326,6 +326,22 @@ namespace IngameScript
                     case "RESET_LOAD_COUNT":
                         SetLoadCount("0");
                         break;
+                    case "LANDING_GEAR":
+                        if (_landingGear != null)
+                            _landingGear.Toggle();
+                        break;
+                    case "LANDING_GEAR_DOWN":
+                        if (_landingGear != null)
+                            _landingGear.Extend();
+                        break;
+                    case "LANDING_GEAR_UP":
+                        if (_landingGear != null)
+                            _landingGear.Retract();
+                        break;
+                    case "LANDING_GEAR_TIMER":
+                        if (_landingGear != null)
+                            _landingGear.TimerCall();
+                        break;
                     default:
                         TriggerCall(argument);
                         break;
