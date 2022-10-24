@@ -32,6 +32,7 @@ namespace IngameScript
 
             public IMyTimerBlock Timer;
             public bool IsExtended;
+            public string Status;
 
             public LandingGearAssembly(IMyTimerBlock timer)
             {
@@ -42,7 +43,13 @@ namespace IngameScript
                 Lights = new List<IMyLightingBlock>();
 
                 Timer = timer;
+
                 IsExtended = ParseBool(GetKey(timer, INI_HEAD, "Extended", "True"));
+                if (IsExtended)
+                    Status = "Extended";
+                else
+                    Status = "Retracted";
+
                 EnsureKey(timer, INI_HEAD, "Extension Delay", timer.TriggerDelay.ToString());
                 EnsureKey(timer, INI_HEAD, "Retraction Delay", timer.TriggerDelay.ToString());
             }
@@ -69,6 +76,10 @@ namespace IngameScript
             // ACTIVATE //
             public void Activate(bool extending)
             {
+                // Lock out further activation if currently extending or retracting.
+                if (Timer.IsCountingDown)
+                    return;
+
                 IsExtended = extending;
 
                 if (LandingPlates.Count > 0)
@@ -89,12 +100,20 @@ namespace IngameScript
 
                 float delay;
                 if (extending)
+                {
                     delay = ParseFloat(GetKey(Timer, INI_HEAD, "Extension Delay", Timer.TriggerDelay.ToString()), Timer.TriggerDelay);
+                    Status = "Extending...";
+                }
                 else
+                {
                     delay = ParseFloat(GetKey(Timer, INI_HEAD, "Retraction Delay", Timer.TriggerDelay.ToString()), Timer.TriggerDelay);
+                    Status = "Retracting...";
+                }
 
                 Timer.TriggerDelay = delay;
                 Timer.StartCountdown();
+
+                PrintDisplays();
             }
 
 
@@ -108,6 +127,11 @@ namespace IngameScript
 
             public void TimerCall()
             {
+                if (IsExtended)
+                    Status = "Extended";
+                else
+                    Status = "Retracted";
+
                 // Deactivate pistons
                 if (Pistons.Count > 0)
                     foreach (IMyPistonBase piston in Pistons)
@@ -122,6 +146,8 @@ namespace IngameScript
                 if (LandingPlates.Count > 0)
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         EngageLandingPlate(landingPlate);
+
+                PrintDisplays();
             }
 
             public void SwapDirections()

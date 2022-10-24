@@ -29,6 +29,7 @@ namespace IngameScript
             bool ShowLoadCount;
             bool ShowEscapeThrust;
             bool ShowActiveProfile;
+            bool ShowLandingGear;
 
             public Display(IMyTextSurfaceProvider surfaceProvider, int surfaceIndex, string iniHeader)
             {
@@ -40,11 +41,13 @@ namespace IngameScript
 
                 // Set boolean strings to true depending on populated lists.
                 if (_miningCargos.Count > 0)
-                    ShowLoadCount = ParseBool(GetKey(block, iniHeader, "Show_Load_Count", "true"));
+                    ShowLoadCount = ParseBool(GetKey(block, iniHeader, "Show Load Count", "true"));
                 if (_escapeThrusters.Count > 0)
-                    ShowEscapeThrust = ParseBool(GetKey(block, iniHeader, "Show_Auto_Throttle", "true"));
+                    ShowEscapeThrust = ParseBool(GetKey(block, iniHeader, "Show Auto Throttle", "true"));
                 if (_constructionCargos.Count > 0)
-                    ShowActiveProfile = ParseBool(GetKey(block, iniHeader, "Show_Active_Profile", "true"));
+                    ShowActiveProfile = ParseBool(GetKey(block, iniHeader, "Show Active Profile", "true"));
+                if (_landingGear != null)
+                    ShowLandingGear = ParseBool(GetKey(block, iniHeader, "Show Landing Gear", "true"));
             }
 
             public void Print()
@@ -57,8 +60,10 @@ namespace IngameScript
                     output += "Auto-Throttle: " + _currentPower + "\n";
                 if (ShowActiveProfile)
                     output += "Active Profile: " + _activeProfile + "\n";
+                if (ShowLandingGear && _landingGear != null)
+                    output += "Gear: " + _landingGear.Status + "\n";
 
-                if(ShowLoadCount || ShowEscapeThrust || ShowActiveProfile)
+                if(ShowLoadCount || ShowEscapeThrust || ShowActiveProfile || ShowLandingGear)
                     Surface.WriteText(output.Trim());
             }
 
@@ -105,11 +110,12 @@ namespace IngameScript
                 return;
 
             foreach (IMyTerminalBlock block in blocks)
-                DisplaysFromBlock(block);
+                if(GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
+                    DisplaysFromBlock(block);
         }
 
 
-        void PrintDisplays()
+        static void PrintDisplays()
         {
             if (_displays.Count < 1)
                 return;
