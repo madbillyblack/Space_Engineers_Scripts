@@ -29,7 +29,7 @@ namespace IngameScript
             public List<IMyLandingGear> LandingPlates;
             public List<IMyShipConnector> Connectors;
             public List<IMyLightingBlock> Lights;
-            
+
             public IMyTimerBlock Timer;
             public bool IsExtended;
 
@@ -112,7 +112,7 @@ namespace IngameScript
                 if (Pistons.Count > 0)
                     foreach (IMyPistonBase piston in Pistons)
                         DisengagePiston(piston);
-                
+
                 // Deactivate rotors and hinges
                 if (Stators.Count > 0)
                     foreach (IMyMotorStator stator in Stators)
@@ -128,159 +128,173 @@ namespace IngameScript
             {
                 IsExtended = !IsExtended;
 
-                if(Pistons.Count > 0)
+                if (Pistons.Count > 0)
                     foreach (IMyPistonBase piston in Pistons)
                         SwapVelocities(piston);
 
                 if (Stators.Count > 0)
                     foreach (IMyMotorStator stator in Stators)
-                        SwapVelocities(stator);                
+                        SwapVelocities(stator);
+            }
+
+            // CLEAR DATA // - Temp
+            public void ClearData()
+            {
+                Timer.CustomData = "";
+
+                if (Pistons.Count > 0)
+                    foreach (IMyPistonBase piston in Pistons)
+                        piston.CustomData = "";
+
+                if (Stators.Count > 0)
+                    foreach (IMyMotorStator stator in Stators)
+                        stator.CustomData = "";
             }
         }
-/*
-        public class LandingStator
-        {
-            public IMyMotorStator Stator;
-            public bool ExtendToPositive;
-            public float ExtendVelocity;
-            public float RetractVelocity;
-
-            public LandingStator(IMyMotorStator stator, bool currentlyExtended)
-            {
-                Stator = stator;
-
-                string defaultBool;
-                float velocity = stator.TargetVelocityRPM;
-
-                if ((currentlyExtended && velocity >= 0) || (!currentlyExtended && velocity < 0))
-                    defaultBool = "True";
-                else
-                    defaultBool = "False";
-
-                ExtendToPositive = ParseBool(GetKey(stator, INI_HEAD, "Extend To Positive", defaultBool));
-
-                // Set default extension and retraction velocities based on current velocities
-                float defaultExtend, defaultRetract;
-                if ((ExtendToPositive && velocity > 0) || !ExtendToPositive && velocity < 0)
+        /*
+                public class LandingStator
                 {
-                    defaultExtend = velocity;
-                    defaultRetract = -velocity;
-                }
-                else
-                {
-                    defaultExtend = -velocity;
-                    defaultRetract = velocity;
-                }
+                    public IMyMotorStator Stator;
+                    public bool ExtendToPositive;
+                    public float ExtendVelocity;
+                    public float RetractVelocity;
 
-                ExtendVelocity = ParseFloat(GetKey(stator, INI_HEAD, "Extend Velocity", defaultExtend.ToString()), defaultExtend);
-                RetractVelocity = ParseFloat(GetKey(stator, INI_HEAD, "Retract Velocity", defaultRetract.ToString()), defaultRetract);
-            }
+                    public LandingStator(IMyMotorStator stator, bool currentlyExtended)
+                    {
+                        Stator = stator;
 
-            public void Extend()
-            {
-                Stator.RotorLock = false;
-                Stator.TargetVelocityRPM = ExtendVelocity;
-            }
+                        string defaultBool;
+                        float velocity = stator.TargetVelocityRPM;
 
-            public void Retract()
-            {
-                Stator.RotorLock = false;
-                Stator.TargetVelocityRPM = RetractVelocity;
-            }
+                        if ((currentlyExtended && velocity >= 0) || (!currentlyExtended && velocity < 0))
+                            defaultBool = "True";
+                        else
+                            defaultBool = "False";
 
-            public void Stop()
-            {
-                Stator.TargetVelocityRPM = 0;
-                Stator.RotorLock = true;
-            }
-        }
+                        ExtendToPositive = ParseBool(GetKey(stator, INI_HEAD, "Extend To Positive", defaultBool));
 
-        public class LandingPiston
-        {
-            public IMyPistonBase Piston;
-            public bool ExtendToPositive;
-            public float ExtendVelocity;
-            public float RetractVelocity;
+                        // Set default extension and retraction velocities based on current velocities
+                        float defaultExtend, defaultRetract;
+                        if ((ExtendToPositive && velocity > 0) || !ExtendToPositive && velocity < 0)
+                        {
+                            defaultExtend = velocity;
+                            defaultRetract = -velocity;
+                        }
+                        else
+                        {
+                            defaultExtend = -velocity;
+                            defaultRetract = velocity;
+                        }
 
-            public LandingPiston(IMyPistonBase piston, bool currentlyExtended)
-            {
-                Piston = piston;
+                        ExtendVelocity = ParseFloat(GetKey(stator, INI_HEAD, "Extend Velocity", defaultExtend.ToString()), defaultExtend);
+                        RetractVelocity = ParseFloat(GetKey(stator, INI_HEAD, "Retract Velocity", defaultRetract.ToString()), defaultRetract);
+                    }
 
-                string defaultBool;
-                float velocity = piston.Velocity;
+                    public void Extend()
+                    {
+                        Stator.RotorLock = false;
+                        Stator.TargetVelocityRPM = ExtendVelocity;
+                    }
 
-                if ((currentlyExtended && velocity >= 0) || (!currentlyExtended && velocity < 0))
-                    defaultBool = "True";
-                else
-                    defaultBool = "False";
+                    public void Retract()
+                    {
+                        Stator.RotorLock = false;
+                        Stator.TargetVelocityRPM = RetractVelocity;
+                    }
 
-                ExtendToPositive = ParseBool(GetKey(piston, INI_HEAD, "Extend To Positive", defaultBool));
-
-                float defaultExtend, defaultRetract;
-                if ((ExtendToPositive && velocity > 0) || !ExtendToPositive && velocity < 0)
-                {
-                    defaultExtend = velocity;
-                    defaultRetract = -velocity;
-                }
-                else
-                {
-                    defaultExtend = -velocity;
-                    defaultRetract = velocity;
+                    public void Stop()
+                    {
+                        Stator.TargetVelocityRPM = 0;
+                        Stator.RotorLock = true;
+                    }
                 }
 
-                ExtendVelocity = ParseFloat(GetKey(piston, INI_HEAD, "Extend Velocity", defaultExtend.ToString()), defaultExtend);
-                RetractVelocity = ParseFloat(GetKey(piston, INI_HEAD, "Retract Velocity", defaultRetract.ToString()), defaultRetract);
-            }
-
-            public void Extend()
-            {
-                Piston.Velocity = ExtendVelocity;
-            }
-
-            public void Retract()
-            {
-                Piston.Velocity = RetractVelocity;
-            }
-
-            public void Stop()
-            {
-                Piston.Velocity = 0;
-            }
-        }
-
-        public class LandingPlate
-        {
-            public IMyLandingGear LandingGear;
-            public int RetractCase;
-
-            public LandingPlate(IMyLandingGear landingGear)
-            {
-                LandingGear = landingGear;
-                string onRetract = GetKey(landingGear, INI_HEAD, "On Retract", "AutoLock");
-
-                switch(onRetract.ToUpper())
+                public class LandingPiston
                 {
-                    case "OFF":
-                    case "TURNOFF":
-                    case "TURN OFF":
-                        RetractCase = 2;
-                        break;
-                    case "AUTOLOCK":
-                    case "AUTO LOCK":
-                    case "AUTO_LOCK":
-                    case "AUTO-LOCK":
-                        RetractCase = 1;
-                        break;
-                    default:
-                        RetractCase = 0;
-                        break;
-                }
-            }
-        }
+                    public IMyPistonBase Piston;
+                    public bool ExtendToPositive;
+                    public float ExtendVelocity;
+                    public float RetractVelocity;
 
-        public class LandingLight
-        { }
-*/
+                    public LandingPiston(IMyPistonBase piston, bool currentlyExtended)
+                    {
+                        Piston = piston;
+
+                        string defaultBool;
+                        float velocity = piston.Velocity;
+
+                        if ((currentlyExtended && velocity >= 0) || (!currentlyExtended && velocity < 0))
+                            defaultBool = "True";
+                        else
+                            defaultBool = "False";
+
+                        ExtendToPositive = ParseBool(GetKey(piston, INI_HEAD, "Extend To Positive", defaultBool));
+
+                        float defaultExtend, defaultRetract;
+                        if ((ExtendToPositive && velocity > 0) || !ExtendToPositive && velocity < 0)
+                        {
+                            defaultExtend = velocity;
+                            defaultRetract = -velocity;
+                        }
+                        else
+                        {
+                            defaultExtend = -velocity;
+                            defaultRetract = velocity;
+                        }
+
+                        ExtendVelocity = ParseFloat(GetKey(piston, INI_HEAD, "Extend Velocity", defaultExtend.ToString()), defaultExtend);
+                        RetractVelocity = ParseFloat(GetKey(piston, INI_HEAD, "Retract Velocity", defaultRetract.ToString()), defaultRetract);
+                    }
+
+                    public void Extend()
+                    {
+                        Piston.Velocity = ExtendVelocity;
+                    }
+
+                    public void Retract()
+                    {
+                        Piston.Velocity = RetractVelocity;
+                    }
+
+                    public void Stop()
+                    {
+                        Piston.Velocity = 0;
+                    }
+                }
+
+                public class LandingPlate
+                {
+                    public IMyLandingGear LandingGear;
+                    public int RetractCase;
+
+                    public LandingPlate(IMyLandingGear landingGear)
+                    {
+                        LandingGear = landingGear;
+                        string onRetract = GetKey(landingGear, INI_HEAD, "On Retract", "AutoLock");
+
+                        switch(onRetract.ToUpper())
+                        {
+                            case "OFF":
+                            case "TURNOFF":
+                            case "TURN OFF":
+                                RetractCase = 2;
+                                break;
+                            case "AUTOLOCK":
+                            case "AUTO LOCK":
+                            case "AUTO_LOCK":
+                            case "AUTO-LOCK":
+                                RetractCase = 1;
+                                break;
+                            default:
+                                RetractCase = 0;
+                                break;
+                        }
+                    }
+                }
+
+                public class LandingLight
+                { }
+        */
         // INIT FUNCTIONS ---------------------------------------------------------------------------------------------------------------------------------------
 
         // ASSEMBLE LANDING GEAR //
@@ -294,20 +308,20 @@ namespace IngameScript
             if (timers.Count < 1)
                 return;
 
-            foreach(IMyTimerBlock timer in timers)
+            foreach (IMyTimerBlock timer in timers)
             {
-                if(timer.CustomName.Contains(GEAR_TAG) && GetKey(timer, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString()) == _gridID)
+                if (timer.CustomName.Contains(GEAR_TAG) && GetKey(timer, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString()) == _gridID)
                 {
                     _landingGear = new LandingGearAssembly(timer);
 
                     List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
                     GridTerminalSystem.SearchBlocksOfName(GEAR_TAG, blocks);
 
-                    foreach(IMyTerminalBlock block in blocks)
+                    foreach (IMyTerminalBlock block in blocks)
                     {
-                        if(GetKey(block, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString()) == _gridID)
+                        if (GetKey(block, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString()) == _gridID)
                         {
-                            switch(block.DefinitionDisplayNameText)
+                            switch (block.DefinitionDisplayNameText)
                             {
                                 case "Piston":
                                     AssignLandingPiston(block as IMyPistonBase);
@@ -337,7 +351,7 @@ namespace IngameScript
                             }
                         }
                     }
-           
+
                     return;
                 }
             }
@@ -466,7 +480,7 @@ namespace IngameScript
         static void DisengageStator(IMyMotorStator stator)
         {
             stator.TargetVelocityRPM = 0;
-            
+
             if (ParseBool(GetKey(stator, INI_HEAD, "Off When Stationary", "false")))
                 stator.GetActionWithName("OnOff_Off").Apply(stator);
             else
@@ -499,7 +513,7 @@ namespace IngameScript
         // ACTIVATE LANDING LIGHT //
         static void ActivateLandingLight(IMyLightingBlock light, bool extending)
         {
-            if(extending)
+            if (extending)
                 light.Color = ParseColor(GetKey(light, INI_HEAD, "Color on Extend", "255,0,127"));
             else
                 light.Color = ParseColor(GetKey(light, INI_HEAD, "Color on Retract", "0,0,0"));
@@ -523,7 +537,7 @@ namespace IngameScript
                 string onExtend = GetKey(landingGear, INI_HEAD, "On Extend", "AutoLock").ToUpper();
 
                 // Check if string is any reasonable permutation of "AutoLock"
-                switch(onExtend)
+                switch (onExtend)
                 {
                     case "AUTOLOCK":
                     case "AUTO LOCK":
@@ -533,11 +547,11 @@ namespace IngameScript
                         break;
                 }
             }
-            else  if(!_landingGear.IsExtended)
+            else if (!_landingGear.IsExtended)
             {
                 string onRetract = GetKey(landingGear, INI_HEAD, "On Retract", "AutoLock").ToUpper();
 
-                switch(onRetract)
+                switch (onRetract)
                 {
                     case "AUTOLOCK":
                     case "AUTO LOCK":
@@ -562,13 +576,43 @@ namespace IngameScript
                 return;
 
             foreach (IMyLandingGear landingPlate in _landingGear.LandingPlates)
-                SetKey(landingPlate, INI_HEAD, "On Retract", "");
+                SetKey(landingPlate, INI_HEAD, "On Retract", behavior);
         }
 
+
+        // SET VELOCITY //
+        static void SetVelocity(IMyPistonBase piston)
+        {
+            if (_landingGear == null)
+                return;
+
+            float velocity = piston.Velocity;
+
+            if (_landingGear.IsExtended)
+                SetKey(piston, INI_HEAD, "Extend Velocity", velocity.ToString("0.00"));
+            else
+                SetKey(piston, INI_HEAD, "Retract Velocity", velocity.ToString("0.00"));
+        }
+            
+        static void SetVelocity(IMyMotorStator stator)
+        {
+            if (_landingGear == null)
+                return;
+
+            float velocity = stator.TargetVelocityRPM;
+
+            if (_landingGear.IsExtended)
+                SetKey(stator, INI_HEAD, "Extend Velocity", velocity.ToString("0.00"));
+            else
+                SetKey(stator, INI_HEAD, "Retract Velocity", velocity.ToString("0.00"));
+        }
 
         // SWAP VELOCITIES //
         static void SwapVelocities(IMyTerminalBlock block)
         {
+            bool extendToPositive = !(ParseBool(GetKey(block, INI_HEAD, "Extend To Positive", "")));
+            SetKey(block, INI_HEAD, "Extend To Positive", extendToPositive.ToString());
+
             string extendVelocity = GetKey(block, INI_HEAD, "Extend Velocity", "");
             string retractVelocity = GetKey(block, INI_HEAD, "Retract Velocity", "");
 
@@ -577,6 +621,27 @@ namespace IngameScript
 
             if (retractVelocity != "")
                 SetKey(block, INI_HEAD, "Extend Velocity", retractVelocity);
+        }
+
+
+        // SET CURRENT POSITION // - Sets velocities for all stators and pistons to their current configurations in the specified position (extended/retracted)
+        static void SetCurrentPosition(bool toExtend)
+        {
+            if (_landingGear == null)
+                return;
+
+            if (toExtend)
+                _landingGear.IsExtended = true;
+            else
+                _landingGear.IsExtended = false;
+
+            if (_landingGear.Pistons.Count > 0)
+                foreach (IMyPistonBase piston in _landingGear.Pistons)
+                    SetVelocity(piston);
+
+            if (_landingGear.Stators.Count > 0)
+                foreach (IMyMotorStator stator in _landingGear.Stators)
+                    SetVelocity(stator);
         }
     }
 }

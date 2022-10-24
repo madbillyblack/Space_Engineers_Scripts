@@ -347,8 +347,18 @@ namespace IngameScript
                         if (_landingGear != null)
                             _landingGear.SwapDirections();
                         break;
-                    case "ON_LANDING_GEAR_RETRACTION":
+                    case "ON_RETRACT":
                         SetRetractBehavior(cmdArg);
+                        break;
+                    case "SET_TO_EXTEND":
+                        SetCurrentPosition(true);
+                        break;
+                    case "SET_TO_RETRACT":
+                        SetCurrentPosition(false);
+                        break;
+                    case "CLEAR_GEAR_DATA":
+                        if (_landingGear != null)
+                            _landingGear.ClearData();
                         break;
                     default:
                         TriggerCall(argument);
