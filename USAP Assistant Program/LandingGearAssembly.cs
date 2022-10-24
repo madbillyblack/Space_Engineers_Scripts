@@ -42,7 +42,7 @@ namespace IngameScript
                 Lights = new List<IMyLightingBlock>();
 
                 Timer = timer;
-                IsExtended = ParseBool(GetKey(timer, INI_HEAD, "Extended", "False"));
+                IsExtended = ParseBool(GetKey(timer, INI_HEAD, "Extended", "True"));
                 EnsureKey(timer, INI_HEAD, "Extension Delay", timer.TriggerDelay.ToString());
                 EnsureKey(timer, INI_HEAD, "Retraction Delay", timer.TriggerDelay.ToString());
             }
@@ -394,8 +394,8 @@ namespace IngameScript
                 defaultRetract = velocity;
             }
 
-            EnsureKey(stator, INI_HEAD, "Extend Velocity", defaultExtend.ToString());
-            EnsureKey(stator, INI_HEAD, "Retract Velocity", defaultRetract.ToString());
+            EnsureKey(stator, INI_HEAD, "Extend Velocity", defaultExtend.ToString("0.00"));
+            EnsureKey(stator, INI_HEAD, "Retract Velocity", defaultRetract.ToString("0.00"));
             EnsureKey(stator, INI_HEAD, "Off When Stationary", "false");
 
             _landingGear.Stators.Add(stator);
@@ -429,8 +429,8 @@ namespace IngameScript
                 defaultRetract = velocity;
             }
 
-            EnsureKey(piston, INI_HEAD, "Extend Velocity", defaultExtend.ToString());
-            EnsureKey(piston, INI_HEAD, "Retract Velocity", defaultRetract.ToString());
+            EnsureKey(piston, INI_HEAD, "Extend Velocity", defaultExtend.ToString("0.00"));
+            EnsureKey(piston, INI_HEAD, "Retract Velocity", defaultRetract.ToString("0.00"));
             EnsureKey(piston, INI_HEAD, "Off When Stationary", "false");
 
             _landingGear.Pistons.Add(piston);
@@ -624,7 +624,7 @@ namespace IngameScript
         }
 
 
-        // SET CURRENT POSITION // - Sets velocities for all stators and pistons to their current configurations in the specified position (extended/retracted)
+       /* // SET CURRENT POSITION // - Sets velocities for all stators and pistons to their current configurations in the specified position (extended/retracted)
         static void SetCurrentPosition(bool toExtend)
         {
             if (_landingGear == null)
@@ -642,6 +642,6 @@ namespace IngameScript
             if (_landingGear.Stators.Count > 0)
                 foreach (IMyMotorStator stator in _landingGear.Stators)
                     SetVelocity(stator);
-        }
+        }*/
     }
 }

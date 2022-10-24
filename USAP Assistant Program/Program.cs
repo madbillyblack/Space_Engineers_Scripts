@@ -326,36 +326,36 @@ namespace IngameScript
                     case "RESET_LOAD_COUNT":
                         SetLoadCount("0");
                         break;
-                    case "LANDING_GEAR":
+                    case "TOGGLE_GEAR":
                         if (_landingGear != null)
                             _landingGear.Toggle();
                         break;
-                    case "LANDING_GEAR_DOWN":
+                    case "GEAR_DOWN":
                         if (_landingGear != null)
                             _landingGear.Extend();
                         break;
-                    case "LANDING_GEAR_UP":
+                    case "GEAR_UP":
                         if (_landingGear != null)
                             _landingGear.Retract();
                         break;
-                    case "LANDING_GEAR_TIMER":
+                    case "GEAR_TIMER":
                         if (_landingGear != null)
                             _landingGear.TimerCall();
                         break;
-                    case "SWAP_LANDING_GEAR_DIRECTION":
-                    case "SWAP_LANDING_GEAR_DIRECTIONS":
+                    case "SWAP_GEAR_DIRECTION":
+                    case "SWAP_GEAR_DIRECTIONS":
                         if (_landingGear != null)
                             _landingGear.SwapDirections();
                         break;
                     case "ON_RETRACT":
                         SetRetractBehavior(cmdArg);
                         break;
-                    case "SET_TO_EXTEND":
+ /*                   case "SET_TO_EXTEND":
                         SetCurrentPosition(true);
                         break;
                     case "SET_TO_RETRACT":
                         SetCurrentPosition(false);
-                        break;
+                        break;*/
                     case "CLEAR_GEAR_DATA":
                         if (_landingGear != null)
                             _landingGear.ClearData();
