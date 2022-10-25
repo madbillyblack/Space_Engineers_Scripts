@@ -66,6 +66,8 @@ namespace IngameScript
 
             public void Retract()
             {
+                Unlock();
+
                 if (!IsExtended)
                     return;
 
@@ -113,7 +115,7 @@ namespace IngameScript
                 Timer.TriggerDelay = delay;
                 Timer.StartCountdown();
 
-                PrintDisplays();
+                //PrintDisplays();
             }
 
 
@@ -147,7 +149,7 @@ namespace IngameScript
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         EngageLandingPlate(landingPlate);
 
-                PrintDisplays();
+                //PrintDisplays();
             }
 
             public void SwapDirections()
@@ -176,151 +178,59 @@ namespace IngameScript
                     foreach (IMyMotorStator stator in Stators)
                         stator.CustomData = "";
             }
+
+
+            public bool IsParked()
+            {
+                if (_landingGear.Connectors.Count > 0)
+                    foreach (IMyShipConnector connector in Connectors)
+                        if (connector.Status == MyShipConnectorStatus.Connected)
+                            return true;
+
+                if (_landingGear.LandingPlates.Count > 0)
+                    foreach (IMyLandingGear landingPlate in LandingPlates)
+                        if (landingPlate.IsLocked)
+                            return true;
+
+                return false;
+            }
+
+
+            public void Lock()
+            {
+                if (LandingPlates.Count > 0)
+                    foreach (IMyLandingGear landingPlate in LandingPlates)
+                        landingPlate.Lock();
+
+                if (Connectors.Count > 0)
+                    foreach (IMyShipConnector connector in Connectors)
+                        connector.Connect();
+
+            }
+
+
+            public void Unlock()
+            {
+                if (LandingPlates.Count > 0)
+                    foreach (IMyLandingGear landingPlate in LandingPlates)
+                        landingPlate.Unlock();
+
+                if (Connectors.Count > 0)
+                    foreach (IMyShipConnector connector in Connectors)
+                        connector.Disconnect();
+            }
+
+
+            public void SwitchLock()
+            {
+                if (IsParked())
+                    Unlock();
+                else
+                    Lock();
+            }
         }
-        /*
-                public class LandingStator
-                {
-                    public IMyMotorStator Stator;
-                    public bool ExtendToPositive;
-                    public float ExtendVelocity;
-                    public float RetractVelocity;
 
-                    public LandingStator(IMyMotorStator stator, bool currentlyExtended)
-                    {
-                        Stator = stator;
 
-                        string defaultBool;
-                        float velocity = stator.TargetVelocityRPM;
-
-                        if ((currentlyExtended && velocity >= 0) || (!currentlyExtended && velocity < 0))
-                            defaultBool = "True";
-                        else
-                            defaultBool = "False";
-
-                        ExtendToPositive = ParseBool(GetKey(stator, INI_HEAD, "Extend To Positive", defaultBool));
-
-                        // Set default extension and retraction velocities based on current velocities
-                        float defaultExtend, defaultRetract;
-                        if ((ExtendToPositive && velocity > 0) || !ExtendToPositive && velocity < 0)
-                        {
-                            defaultExtend = velocity;
-                            defaultRetract = -velocity;
-                        }
-                        else
-                        {
-                            defaultExtend = -velocity;
-                            defaultRetract = velocity;
-                        }
-
-                        ExtendVelocity = ParseFloat(GetKey(stator, INI_HEAD, "Extend Velocity", defaultExtend.ToString()), defaultExtend);
-                        RetractVelocity = ParseFloat(GetKey(stator, INI_HEAD, "Retract Velocity", defaultRetract.ToString()), defaultRetract);
-                    }
-
-                    public void Extend()
-                    {
-                        Stator.RotorLock = false;
-                        Stator.TargetVelocityRPM = ExtendVelocity;
-                    }
-
-                    public void Retract()
-                    {
-                        Stator.RotorLock = false;
-                        Stator.TargetVelocityRPM = RetractVelocity;
-                    }
-
-                    public void Stop()
-                    {
-                        Stator.TargetVelocityRPM = 0;
-                        Stator.RotorLock = true;
-                    }
-                }
-
-                public class LandingPiston
-                {
-                    public IMyPistonBase Piston;
-                    public bool ExtendToPositive;
-                    public float ExtendVelocity;
-                    public float RetractVelocity;
-
-                    public LandingPiston(IMyPistonBase piston, bool currentlyExtended)
-                    {
-                        Piston = piston;
-
-                        string defaultBool;
-                        float velocity = piston.Velocity;
-
-                        if ((currentlyExtended && velocity >= 0) || (!currentlyExtended && velocity < 0))
-                            defaultBool = "True";
-                        else
-                            defaultBool = "False";
-
-                        ExtendToPositive = ParseBool(GetKey(piston, INI_HEAD, "Extend To Positive", defaultBool));
-
-                        float defaultExtend, defaultRetract;
-                        if ((ExtendToPositive && velocity > 0) || !ExtendToPositive && velocity < 0)
-                        {
-                            defaultExtend = velocity;
-                            defaultRetract = -velocity;
-                        }
-                        else
-                        {
-                            defaultExtend = -velocity;
-                            defaultRetract = velocity;
-                        }
-
-                        ExtendVelocity = ParseFloat(GetKey(piston, INI_HEAD, "Extend Velocity", defaultExtend.ToString()), defaultExtend);
-                        RetractVelocity = ParseFloat(GetKey(piston, INI_HEAD, "Retract Velocity", defaultRetract.ToString()), defaultRetract);
-                    }
-
-                    public void Extend()
-                    {
-                        Piston.Velocity = ExtendVelocity;
-                    }
-
-                    public void Retract()
-                    {
-                        Piston.Velocity = RetractVelocity;
-                    }
-
-                    public void Stop()
-                    {
-                        Piston.Velocity = 0;
-                    }
-                }
-
-                public class LandingPlate
-                {
-                    public IMyLandingGear LandingGear;
-                    public int RetractCase;
-
-                    public LandingPlate(IMyLandingGear landingGear)
-                    {
-                        LandingGear = landingGear;
-                        string onRetract = GetKey(landingGear, INI_HEAD, "On Retract", "AutoLock");
-
-                        switch(onRetract.ToUpper())
-                        {
-                            case "OFF":
-                            case "TURNOFF":
-                            case "TURN OFF":
-                                RetractCase = 2;
-                                break;
-                            case "AUTOLOCK":
-                            case "AUTO LOCK":
-                            case "AUTO_LOCK":
-                            case "AUTO-LOCK":
-                                RetractCase = 1;
-                                break;
-                            default:
-                                RetractCase = 0;
-                                break;
-                        }
-                    }
-                }
-
-                public class LandingLight
-                { }
-        */
         // INIT FUNCTIONS ---------------------------------------------------------------------------------------------------------------------------------------
 
         // ASSEMBLE LANDING GEAR //
@@ -351,6 +261,9 @@ namespace IngameScript
                             {
                                 case "Piston":
                                     AssignLandingPiston(block as IMyPistonBase);
+                                    break;
+                                case "Connector":
+                                    _landingGear.Connectors.Add(block as IMyShipConnector);
                                     break;
                                 case "Rotor":
                                 case "Advanced Rotor":

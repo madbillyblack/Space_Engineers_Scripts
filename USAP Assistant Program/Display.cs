@@ -30,6 +30,7 @@ namespace IngameScript
             bool ShowEscapeThrust;
             bool ShowActiveProfile;
             bool ShowLandingGear;
+            bool ShowParked;
 
             public Display(IMyTextSurfaceProvider surfaceProvider, int surfaceIndex, string iniHeader)
             {
@@ -47,7 +48,12 @@ namespace IngameScript
                 if (_constructionCargos.Count > 0)
                     ShowActiveProfile = ParseBool(GetKey(block, iniHeader, "Show Active Profile", "true"));
                 if (_landingGear != null)
+                {
                     ShowLandingGear = ParseBool(GetKey(block, iniHeader, "Show Landing Gear", "true"));
+
+                    if (_landingGear.Connectors.Count > 0 || _landingGear.LandingPlates.Count > 0)
+                        ShowParked = ParseBool(GetKey(block, iniHeader, "Show Parking Status", "true"));
+                }
             }
 
             public void Print()
@@ -62,11 +68,17 @@ namespace IngameScript
                     output += "Active Profile: " + _activeProfile + "\n";
                 if (ShowLandingGear && _landingGear != null)
                     output += "Gear: " + _landingGear.Status + "\n";
+                if (ShowParked && _landingGear != null)
+                {
+                    if (_landingGear.IsParked())
+                        output += "Parking: Locked\n";
+                    else
+                        output += "Parking: Unlocked\n";
+                }
 
-                if(ShowLoadCount || ShowEscapeThrust || ShowActiveProfile || ShowLandingGear)
+                if(ShowLoadCount || ShowEscapeThrust || ShowActiveProfile || ShowLandingGear || ShowParked)
                     Surface.WriteText(output.Trim());
             }
-
         }
 
 

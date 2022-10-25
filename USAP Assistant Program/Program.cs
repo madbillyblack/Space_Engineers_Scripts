@@ -350,15 +350,21 @@ namespace IngameScript
                     case "ON_RETRACT":
                         SetRetractBehavior(cmdArg);
                         break;
- /*                   case "SET_TO_EXTEND":
-                        SetCurrentPosition(true);
-                        break;
-                    case "SET_TO_RETRACT":
-                        SetCurrentPosition(false);
-                        break;*/
                     case "CLEAR_GEAR_DATA":
                         if (_landingGear != null)
                             _landingGear.ClearData();
+                        break;
+                    case "LOCK":
+                        if (_landingGear != null)
+                            _landingGear.Lock();
+                        break;
+                    case "UNLOCK":
+                        if (_landingGear != null)
+                            _landingGear.Unlock();
+                        break;
+                    case "SWITCH_LOCK":
+                        if (_landingGear != null)
+                            _landingGear.SwitchLock();
                         break;
                     default:
                         TriggerCall(argument);
