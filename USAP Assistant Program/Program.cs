@@ -338,9 +338,13 @@ namespace IngameScript
                         if (_landingGear != null)
                             _landingGear.Retract();
                         break;
-                    case "GEAR_TIMER":
+                    case "GEAR_TIMER": // Lets timer cycle gear based on corrent state
                         if (_landingGear != null)
                             _landingGear.TimerCall();
+                        break;
+                    case "TIMER_LOCK": // Basic timer call that ends gear movement
+                        if (_landingGear != null)
+                            _landingGear.TimerLock();
                         break;
                     case "SWAP_GEAR_DIRECTION":
                     case "SWAP_GEAR_DIRECTIONS":

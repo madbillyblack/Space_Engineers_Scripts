@@ -127,7 +127,16 @@ namespace IngameScript
                     Extend();
             }
 
+
             public void TimerCall()
+            {
+                if (Status == "Extending..." || Status == "Retracting...")
+                    TimerLock();
+                else
+                    Toggle();
+            }
+
+            public void TimerLock()
             {
                 if (IsExtended)
                     Status = "Extended";
