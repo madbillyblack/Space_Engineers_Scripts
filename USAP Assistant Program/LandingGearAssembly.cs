@@ -28,6 +28,7 @@ namespace IngameScript
             public List<IMyMotorStator> Stators;
             public List<IMyLandingGear> LandingPlates;
             public List<IMyShipConnector> Connectors;
+            public List<IMyShipMergeBlock> MergeBlocks;
             public List<IMyLightingBlock> Lights;
 
             public IMyTimerBlock Timer;
@@ -40,6 +41,7 @@ namespace IngameScript
                 Stators = new List<IMyMotorStator>();
                 LandingPlates = new List<IMyLandingGear>();
                 Connectors = new List<IMyShipConnector>();
+                MergeBlocks = new List<IMyShipMergeBlock>();
                 Lights = new List<IMyLightingBlock>();
 
                 Timer = timer;
@@ -88,6 +90,10 @@ namespace IngameScript
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         DisengageLandingPlate(landingPlate);
 
+                if (MergeBlocks.Count > 0)
+                    foreach (IMyShipMergeBlock mergeBlock in MergeBlocks)
+                        DisengageMergeBlock(mergeBlock, extending);
+
                 if (Pistons.Count > 0)
                     foreach (IMyPistonBase piston in Pistons)
                         EngagePiston(piston, extending);
@@ -114,8 +120,6 @@ namespace IngameScript
 
                 Timer.TriggerDelay = delay;
                 Timer.StartCountdown();
-
-                //PrintDisplays();
             }
 
 
@@ -158,9 +162,14 @@ namespace IngameScript
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         EngageLandingPlate(landingPlate);
 
-                //PrintDisplays();
+                // Reengage Merge Blocks
+                if (MergeBlocks.Count > 0)
+                    foreach (IMyShipMergeBlock mergeBlock in MergeBlocks)
+                        EngageMergeBlock(mergeBlock);
             }
 
+
+            // SWAP DIRECTIONS //
             public void SwapDirections()
             {
                 IsExtended = !IsExtended;
@@ -207,6 +216,9 @@ namespace IngameScript
 
             public void Lock()
             {
+                if (Status != "Extended")
+                    return;
+
                 if (LandingPlates.Count > 0)
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         landingPlate.Lock();
@@ -220,6 +232,9 @@ namespace IngameScript
 
             public void Unlock()
             {
+                if (Status != "Extended")
+                    return;
+
                 if (LandingPlates.Count > 0)
                     foreach (IMyLandingGear landingPlate in LandingPlates)
                         landingPlate.Unlock();
@@ -232,6 +247,9 @@ namespace IngameScript
 
             public void SwitchLock()
             {
+                if (Status != "Extended")
+                    return;
+
                 if (IsParked())
                     Unlock();
                 else
@@ -295,6 +313,10 @@ namespace IngameScript
                                 case "Corner Light":
                                 case "Interior Light":
                                     AssignLandingLight(block as IMyLightingBlock);
+                                    break;
+                                case "Merge Block":
+                                case "Small Merge Block":
+                                    AssignMergeBlock(block as IMyShipMergeBlock);
                                     break;
                             }
                         }
@@ -409,6 +431,17 @@ namespace IngameScript
         }
 
 
+        // ASSIGN MERGE BLOCK //
+        void AssignMergeBlock(IMyShipMergeBlock mergeBlock)
+        {
+            EnsureKey(mergeBlock, INI_HEAD, "Disable on  Extend", "False");
+            EnsureKey(mergeBlock, INI_HEAD, "Disable on Retract", "True");
+            EnsureKey(mergeBlock, INI_HEAD, "Enable When Stopped", "True");
+
+            _landingGear.MergeBlocks.Add(mergeBlock);
+        }
+
+
         // ACTIVATION FUNCTIONS ---------------------------------------------------------------------------------------------------------------------------------
 
         // ENGAGE STATOR // - For use when assembly is in motion
@@ -517,6 +550,33 @@ namespace IngameScript
         }
 
 
+        // DISENGAGE MERGE BLOCK //
+        static void DisengageMergeBlock(IMyShipMergeBlock mergeBlock, bool extending)
+        {
+            bool disableBlock;
+
+            if (extending)
+                disableBlock = ParseBool(GetKey(mergeBlock, INI_HEAD, "Disable on  Extend", "False"));
+            else
+                disableBlock = ParseBool(GetKey(mergeBlock, INI_HEAD, "Disable on  Retract", "True"));
+
+            string action;
+            if (disableBlock)
+                action = "OnOff_Off";
+            else
+                action = "OnOff_On";
+
+            mergeBlock.GetActionWithName(action).Apply(mergeBlock);
+        }
+
+
+        // ENGAGE MERGE BLOCK //
+        static void EngageMergeBlock(IMyShipMergeBlock mergeBlock)
+        {
+            if (ParseBool(GetKey(mergeBlock, INI_HEAD, "Enable When Stopped", "True")))
+                mergeBlock.GetActionWithName("OnOff_On").Apply(mergeBlock);
+        }
+
         // SET RETRACT BEHAVIOR //
         void SetRetractBehavior(string behavior)
         {
@@ -527,33 +587,6 @@ namespace IngameScript
                 SetKey(landingPlate, INI_HEAD, "On Retract", behavior);
         }
 
-
-        // SET VELOCITY //
-        static void SetVelocity(IMyPistonBase piston)
-        {
-            if (_landingGear == null)
-                return;
-
-            float velocity = piston.Velocity;
-
-            if (_landingGear.IsExtended)
-                SetKey(piston, INI_HEAD, "Extend Velocity", velocity.ToString("0.00"));
-            else
-                SetKey(piston, INI_HEAD, "Retract Velocity", velocity.ToString("0.00"));
-        }
-            
-        static void SetVelocity(IMyMotorStator stator)
-        {
-            if (_landingGear == null)
-                return;
-
-            float velocity = stator.TargetVelocityRPM;
-
-            if (_landingGear.IsExtended)
-                SetKey(stator, INI_HEAD, "Extend Velocity", velocity.ToString("0.00"));
-            else
-                SetKey(stator, INI_HEAD, "Retract Velocity", velocity.ToString("0.00"));
-        }
 
         // SWAP VELOCITIES //
         static void SwapVelocities(IMyTerminalBlock block)
@@ -570,26 +603,5 @@ namespace IngameScript
             if (retractVelocity != "")
                 SetKey(block, INI_HEAD, "Extend Velocity", retractVelocity);
         }
-
-
-       /* // SET CURRENT POSITION // - Sets velocities for all stators and pistons to their current configurations in the specified position (extended/retracted)
-        static void SetCurrentPosition(bool toExtend)
-        {
-            if (_landingGear == null)
-                return;
-
-            if (toExtend)
-                _landingGear.IsExtended = true;
-            else
-                _landingGear.IsExtended = false;
-
-            if (_landingGear.Pistons.Count > 0)
-                foreach (IMyPistonBase piston in _landingGear.Pistons)
-                    SetVelocity(piston);
-
-            if (_landingGear.Stators.Count > 0)
-                foreach (IMyMotorStator stator in _landingGear.Stators)
-                    SetVelocity(stator);
-        }*/
     }
 }
