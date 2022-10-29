@@ -30,14 +30,12 @@ namespace IngameScript
         const string GAS_TAG = "[H2O]"; // Destination inventory tag for re-stocking ice.
         const string ICE_SUPPLY = "[ORE]"; // Destination inventory tag for re-stocking ice.
         const string GEAR_TAG = "[LG]"; // Tag used to identify components of landing gear assembly.
-        //const string LOAD_TAG = "Load Counter"; // Tag for block that displays load count
-        //const string THRUST_DISPLAY = "Thrust Display"; // Tag for block that displays escape thruster override percentage.
         const string DISPLAY_TAG = "USAP Display"; // Tag used to find blocks to use as LCD displays
         const int RUN_CAP = 10;
 
         // CONTROLLER CONSTANTS:
         const double TIME_STEP = 1.0 / 6.0;
-        const double KP = 1;
+        const double KP = 0.25; // Default KP value
         const double KI = 0;
         const double KD = 0;
 
@@ -150,7 +148,7 @@ namespace IngameScript
         const string MISL = "Missile200mm";
         const string FUEL = "Uranium";
         
-        const int SAFETY_HEIGHT = 1000;
+        //const int SAFETY_HEIGHT = 1000;
 
         string _statusMessage;
         string _gridID;
@@ -171,6 +169,9 @@ namespace IngameScript
         IMyShipController _cockpit;
         float _maxSpeed = 100;
         PID _pid;
+        double _Kp = KP;
+        bool _gravityDisengage; // If True, AutoThrottle will disengage when leaving gravity well
+        int _safetyElevation;
 
 
         public IMyTerminalBlock _refBlock;
@@ -619,16 +620,6 @@ namespace IngameScript
             }
         }
 
-        /*
-        // DISPLAY LOAD COUNT //
-        void displayLoadCount()
-        {
-            if (_countSurface == null || !_unloadPossible)
-                return;
- 
-            _countSurface.WriteText("Load Count: " + _loadCount.ToString());
-        }
-        */
 
          // SET LOAD COUNT //
         void SetLoadCount(string arg)
@@ -653,7 +644,7 @@ namespace IngameScript
                 return;
 
             _escapeThrustersOn = true;
-            _pid = new PID(KP, KI, KD, TIME_STEP);
+            _pid = new PID(_Kp, KI, KD, TIME_STEP);
             Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
@@ -716,7 +707,7 @@ namespace IngameScript
         // CHECK GRAVITY //
         void CheckGravity()
         {
-            if (_cockpit.GetNaturalGravity().Length() < 0.04)
+            if (_gravityDisengage && _cockpit.GetNaturalGravity().Length() < 0.04)
             {
                 EscapeThrustersOff();
                 _statusMessage += "GRAVITY WELL VACATED\nThrusters Disengaged\n";
@@ -730,7 +721,7 @@ namespace IngameScript
             double altitude;
             if(_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out altitude))
             {
-                if (altitude < SAFETY_HEIGHT)
+                if (altitude < _safetyElevation)
                 {
                     double speed = _cockpit.GetShipVelocities().LinearVelocity.Length();
                    
@@ -835,7 +826,6 @@ namespace IngameScript
             _hasComponentCargo = false;
             _runningNumber = 0;
             _currentPower = "OFF";
-            _activeProfile = GetKey(Me, INI_HEAD, "Profiles", "###").Split(',')[0];
 
             // Establish user defined reference block.  If none, set program block as reference.
             string refTag = GetKey(Me, INI_HEAD, "Reference", Me.CustomName);
@@ -871,13 +861,15 @@ namespace IngameScript
                 if (block.HasInventory && GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
                     AddToInventories(block);
             }
+                
 
             //if (_unloadPossible)
-                //AssignLoadCounter();
+            //AssignLoadCounter();
 
             // Make sure that any construction cargos have a profile in custom data.
-            if(_hasComponentCargo)
+            if (_hasComponentCargo)
             {
+                _activeProfile = GetKey(Me, INI_HEAD, "Profiles", "###").Split(',')[0];
                 EnsureProfiles();
             }
 
@@ -887,7 +879,14 @@ namespace IngameScript
             if (_escapeThrusters.Count > 0)
             {
                 AssignCockpit();
-                _maxSpeed = ParseFloat(GetKey(Me, INI_HEAD, "Max_Speed", "100"), 100);
+                _maxSpeed = ParseFloat(GetKey(Me, "USAP - Cruise Control", "Max Speed", "100"), 100);
+                _Kp = (double)ParseFloat(GetKey(Me, "USAP - Cruise Control", "P-Gain", KP.ToString()), (float) KP);
+
+                _safetyElevation = ParseInt(GetKey(Me, "USAP - Cruise Control", "Safety Height", "1000"), 1000);
+                if (_safetyElevation < 0)
+                    _safetyElevation *= -1;
+
+                _gravityDisengage = ParseBool(GetKey(Me, "USAP - Cruise Control", "Zero-G Disable", "True"));
             }
 
             if (_escapeThrustersOn)
@@ -1164,56 +1163,6 @@ namespace IngameScript
             EnsureKey(block, INI_HEAD, "SmallRailgunAmmo", amounts[6].ToString());
         }
 
-        /*
-        // ASSIGN LOAD COUNTER //
-        void AssignLoadCounter()
-        {
-            List<IMyTerminalBlock> counters = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(LOAD_TAG, counters);
-
-            if (counters.Count < 1)
-                return;
-
-            foreach (IMyTerminalBlock block in counters)
-            {
-                if (GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
-                {
-                    IMyTextSurfaceProvider counter = block as IMyTextSurfaceProvider;
-                    int surfaceCount = counter.SurfaceCount;
-                    int index = ParseInt(GetKey(block, INI_HEAD, "Counter_Index", "0"), 0);
-
-                    if (surfaceCount < 1)
-                    {
-                        _statusMessage += "DESIGNATED LOAD COUNTER is INVALID: Contains no Display Surfaces!\n";
-                        return;
-                    }
-                    else if (index >= surfaceCount)
-                    {
-                        index = surfaceCount - 1;
-                        SetKey(block, INI_HEAD, "Counter_Index", index.ToString());
-                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to " + index + "\n";
-                    }
-                    else if (index < 0)
-                    {
-                        index = 0;
-                        SetKey(block, INI_HEAD, "Counter_Index", "0");
-                        _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to 0\n";
-                    }
-
-              
-                    if (index > -1 && index < surfaceCount)
-                    {
-                        _loadCounter = counter as IMyTerminalBlock;
-                        _countSurface = counter.GetSurface(index);
-                        _countSurface.ContentType = ContentType.TEXT_AND_IMAGE;
-                        displayLoadCount();
-                        return;
-                    }
-                    
-                }
-            }
-        }
-        */
 
         // ASSIGN THRUSTERS //
         void AssignThrusters()
@@ -1244,53 +1193,6 @@ namespace IngameScript
             return Vector3D.Dot(_cockpit.WorldMatrix.Forward, _cockpit.GetShipVelocities().LinearVelocity);
         }
 
-        /*
-    // ASSIGN THRUST DISPLAY //
-    void AssignThrustDisplay()
-    {
-        List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-        GridTerminalSystem.SearchBlocksOfName(THRUST_DISPLAY, blocks);
-
-        if (blocks.Count < 1)
-            return;
-
-        foreach (IMyTerminalBlock block in blocks)
-        {
-            if (GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
-            {
-                IMyTextSurfaceProvider displayBlock = block as IMyTextSurfaceProvider;
-                int surfaceCount = displayBlock.SurfaceCount;
-                int index = ParseInt(GetKey(block, INI_HEAD, "Thrust_Display_Index", "0"), 0);
-
-                if (surfaceCount < 1)
-                {
-                    _statusMessage += "DESIGNATED LOAD COUNTER is INVALID: Contains no Display Surfaces!\n";
-                    return;
-                }
-                else if (index >= surfaceCount)
-                {
-                    index = surfaceCount - 1;
-                    SetKey(block, INI_HEAD, "Thrust_Display_Index", index.ToString());
-                    _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to " + index + "\n";
-                }
-                else if (index < 0)
-                {
-                    index = 0;
-                    SetKey(block, INI_HEAD, "Thrust_Display_Index", "0");
-                    _statusMessage += "INVALID SCREEN INDEX for block " + block.CustomName + "\n-->Index reset to 0\n";
-                }
-
-                if (index > -1 && index < surfaceCount)
-                {
-                    _thrustSurface = displayBlock.GetSurface(index);
-                    _thrustSurface.ContentType = ContentType.TEXT_AND_IMAGE;
-                    UpdateThrustDisplay(0);
-                    return;
-                }
-
-            }
-        }
-    }*/
 
         // UPDATE THRUST DISPLAY //
         void UpdateThrustDisplay(float power)
