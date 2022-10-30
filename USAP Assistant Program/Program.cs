@@ -32,12 +32,14 @@ namespace IngameScript
         const string GEAR_TAG = "[LG]"; // Tag used to identify components of landing gear assembly.
         const string DISPLAY_TAG = "USAP Display"; // Tag used to find blocks to use as LCD displays
         const int RUN_CAP = 10;
+        
 
         // CONTROLLER CONSTANTS:
         const double TIME_STEP = 1.0 / 6.0;
         const double KP = 0.25; // Default KP value
         const double KI = 0;
         const double KD = 0;
+        const double INVERSE_GAIN = 3; // Inverse factor used for Cruise control. Lower for faster repsonce. Higher for more stability.
 
         //DEFINITIONS:
 
@@ -169,7 +171,7 @@ namespace IngameScript
         IMyShipController _cockpit;
         float _maxSpeed = 100;
         PID _pid;
-        double _Kp = KP;
+        double _Kp;
         bool _gravityDisengage; // If True, AutoThrottle will disengage when leaving gravity well
         int _safetyElevation;
 
@@ -393,6 +395,13 @@ namespace IngameScript
                 Echo("Load Count: " + _loadCount);
 			}
             //displayLoadCount();
+
+            if(_escapeThrusters.Count > 0 && _cockpit != null)
+            {
+                Echo("Max Thrust:\n" + _totalThrust.ToString("0.0") + "N\n");
+                Echo("Thrust to Weight Ratio:\n" + _thrustWeightRatio + "\n");
+                Echo("P-Gain:\n" + _Kp + "\n");
+            }
 
             if (_escapeThrustersOn)// && ((updateSource & UpdateType.Update10) != -0))
             {
@@ -880,13 +889,21 @@ namespace IngameScript
             {
                 AssignCockpit();
                 _maxSpeed = ParseFloat(GetKey(Me, "USAP - Cruise Control", "Max Speed", "100"), 100);
-                _Kp = (double)ParseFloat(GetKey(Me, "USAP - Cruise Control", "P-Gain", KP.ToString()), (float) KP);
+
+                //_Kp = (double)ParseFloat(GetKey(Me, "USAP - Cruise Control", "P-Gain", KP.ToString()), (float) KP);
+                SetThrustWeightRatio();
+                SetGain();
 
                 _safetyElevation = ParseInt(GetKey(Me, "USAP - Cruise Control", "Safety Height", "1000"), 1000);
                 if (_safetyElevation < 0)
                     _safetyElevation *= -1;
 
                 _gravityDisengage = ParseBool(GetKey(Me, "USAP - Cruise Control", "Zero-G Disable", "True"));
+
+                
+                Echo("Max Thrust:\n" + _totalThrust.ToString("0.0") + "N\n" );
+                Echo("Thrust to Weight Ratio:\n" + _thrustWeightRatio + "\n");
+
             }
 
             if (_escapeThrustersOn)
