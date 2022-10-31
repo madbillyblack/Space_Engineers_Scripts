@@ -23,8 +23,11 @@ namespace IngameScript
     partial class Program
     {
         float _totalThrust;
+        float _targetThrottle;
         double _thrustWeightRatio;
 
+
+        // SET THRUST WEIGHT RATIO //
         void SetThrustWeightRatio()
         {
             _totalThrust = 0;
@@ -40,6 +43,7 @@ namespace IngameScript
         }
 
 
+        // SET GAIN //
         void SetGain()
         {
             if (_thrustWeightRatio <= 0)
@@ -48,6 +52,45 @@ namespace IngameScript
                 _Kp = (2.33 / INVERSE_GAIN) / _thrustWeightRatio;
 
             Echo("P-Gain:\n" + _Kp + "\n");
+        }
+
+
+        // THROTTLE UP //
+        void ThrottleUp(string arg)
+        {
+            float value = ParseFloat(arg, -1);
+
+            if (value > 0)
+            {
+                _targetThrottle += value;
+                
+                if (_targetThrottle > _maxSpeed)
+                    _targetThrottle = _maxSpeed;
+
+                if (!_escapeThrustersOn)
+                    EscapeThrustersOn();
+            }
+            else
+                _statusMessage += "INVALID THROTTLE ARGUMENT:\n\"" + arg + "\"\n";      
+        }
+
+        
+        // THROTTLE DOWN //
+        void ThrottleDown(string arg)
+        {
+            float value = ParseFloat(arg, -1);
+
+            if (value > 0)
+            {
+                _targetThrottle -= value;
+                if (_targetThrottle < 0)
+                {
+                    _targetThrottle = 0;
+                    EscapeThrustersOff();
+                }
+            }
+            else
+                _statusMessage += "INVALID THROTTLE ARGUMENT:\n\"" + arg + "\"\n";
         }
     }
 }

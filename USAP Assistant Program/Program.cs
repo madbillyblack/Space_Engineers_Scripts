@@ -150,7 +150,6 @@ namespace IngameScript
         const string MISL = "Missile200mm";
         const string FUEL = "Uranium";
         
-        //const int SAFETY_HEIGHT = 1000;
 
         string _statusMessage;
         string _gridID;
@@ -160,12 +159,8 @@ namespace IngameScript
         static string _activeProfile;
         int _runningNumber;
         bool _unloaded;
-        //bool _unloadPossible;
         bool _hasComponentCargo;
         static bool _escapeThrustersOn;
-        //IMyTerminalBlock _loadCounter;
-        //IMyTextSurface _countSurface;
-        //IMyTextSurface _thrustSurface;
 
         // Escape Thruster variables
         IMyShipController _cockpit;
@@ -178,7 +173,6 @@ namespace IngameScript
 
         public IMyTerminalBlock _refBlock;
 
-        //List<IMyTerminalBlock> _inventories;
         List<IMyTerminalBlock> _magazines;
         List<IMyTerminalBlock> _reactors;
         static List<IMyTerminalBlock> _miningCargos;
@@ -214,6 +208,16 @@ namespace IngameScript
                 {
                     _escapeThrustersOn = false;
                 }
+                try
+                {
+                    _targetThrottle = ParseFloat(storageData[2], 0);
+                    if (_targetThrottle < 0)
+                        _targetThrottle = 0;
+                }
+                catch
+                {
+                    _targetThrottle = 0;
+                }
             }
             else
             {
@@ -228,7 +232,8 @@ namespace IngameScript
         {
             string loadCount = _loadCount.ToString();
             string escapeActive = _escapeThrustersOn.ToString();
-            Storage = loadCount + ";" + escapeActive;
+            string targetThrottle = _targetThrottle.ToString();
+            Storage = loadCount + ";" + escapeActive + ";"+ targetThrottle;
         }
 
 
@@ -870,10 +875,6 @@ namespace IngameScript
                 if (block.HasInventory && GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
                     AddToInventories(block);
             }
-                
-
-            //if (_unloadPossible)
-            //AssignLoadCounter();
 
             // Make sure that any construction cargos have a profile in custom data.
             if (_hasComponentCargo)
