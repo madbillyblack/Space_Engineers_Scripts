@@ -27,6 +27,7 @@ namespace IngameScript
             IMyTextSurfaceProvider SurfaceProvider;
             IMyTextSurface Surface;
             bool ShowLoadCount;
+            bool ShowTargetSpeed;
             bool ShowEscapeThrust;
             bool ShowActiveProfile;
             bool ShowLandingGear;
@@ -42,26 +43,40 @@ namespace IngameScript
 
                 // Set boolean strings to true depending on populated lists.
                 if (_miningCargos.Count > 0)
+                {
                     ShowLoadCount = ParseBool(GetKey(block, iniHeader, "Show Load Count", "true"));
+                }
+                    
                 if (_escapeThrusters.Count > 0)
+                {
+                    ShowTargetSpeed = ParseBool(GetKey(block, iniHeader, "Show Target Speed", "True"));
                     ShowEscapeThrust = ParseBool(GetKey(block, iniHeader, "Show Auto Throttle", "true"));
+                }
+
                 if (_constructionCargos.Count > 0)
-                    ShowActiveProfile = ParseBool(GetKey(block, iniHeader, "Show Active Profile", "true"));
+                {
+                    ShowActiveProfile = ParseBool(GetKey(block, iniHeader, "Show Active Profile", "True"));
+                }
+                    
                 if (_landingGear != null)
                 {
-                    ShowLandingGear = ParseBool(GetKey(block, iniHeader, "Show Landing Gear", "true"));
+                    ShowLandingGear = ParseBool(GetKey(block, iniHeader, "Show Landing Gear", "True"));
 
                     if (_landingGear.Connectors.Count > 0 || _landingGear.LandingPlates.Count > 0)
                         ShowParked = ParseBool(GetKey(block, iniHeader, "Show Parking Status", "true"));
                 }
             }
 
+
+            // PRINT //
             public void Print()
             {
                 string output = "";
 
                 if (ShowLoadCount)
                     output += "Load Count: " + _loadCount.ToString() + "\n";
+                if (ShowTargetSpeed)
+                    output += "Target Speed: " + _targetThrottle.ToString("0.0") + " m/s\n";
                 if (ShowEscapeThrust)
                     output += "Auto-Throttle: " + _currentPower + "\n";
                 if (ShowActiveProfile)

@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program
     {
         float _totalThrust;
-        float _targetThrottle;
+        static float _targetThrottle;
         double _thrustWeightRatio;
 
 
@@ -91,6 +91,52 @@ namespace IngameScript
             }
             else
                 _statusMessage += "INVALID THROTTLE ARGUMENT:\n\"" + arg + "\"\n";
+        }
+
+
+        // ESCAPE THRUSTERS ON //
+        void EscapeThrustersOn()
+        {
+            if (_escapeThrusters.Count < 1)
+                return;
+
+            _escapeThrustersOn = true;
+
+            _pid = new PID(_Kp, KI, KD, TIME_STEP);
+            Runtime.UpdateFrequency = UpdateFrequency.Update10;
+        }
+
+
+        // ESCAPE THRUSTERS OFF //
+        void EscapeThrustersOff()
+        {
+            ThrottleThrusters(0);
+            _escapeThrustersOn = false;
+            _runningNumber = 0;
+            UpdateThrustDisplay(0);
+            Runtime.UpdateFrequency = UpdateFrequency.None;
+        }
+
+
+        // TOGGLE ESCAPE THRUSTERS //
+        void ToggleEscapeThrusters()
+        {
+            if (!_escapeThrustersOn)
+            {
+                if (_targetThrottle <= 0)
+                    _targetThrottle = _maxSpeed;
+
+                EscapeThrustersOn();
+            }
+            else
+                EscapeThrustersOff();
+        }
+
+
+        // GET FORWARD VELOCITY //
+        public double GetForwardVelocity()
+        {
+            return Vector3D.Dot(_cockpit.WorldMatrix.Forward, _cockpit.GetShipVelocities().LinearVelocity);
         }
     }
 }

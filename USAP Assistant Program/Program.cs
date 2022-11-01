@@ -223,6 +223,7 @@ namespace IngameScript
             {
                 _loadCount = 0;
                 _escapeThrustersOn = false;
+                _targetThrottle = 0;
             }
 
             Build();
@@ -292,10 +293,7 @@ namespace IngameScript
                         EscapeThrustersOff();
                         break;
                     case "TOGGLE_ESCAPE_THRUSTERS":
-                        if (_escapeThrustersOn)
-                            EscapeThrustersOff();
-                        else
-                            EscapeThrustersOn();
+                        ToggleEscapeThrusters();
                         break;
                     case "SELECT_PROFILE":
                         SelectProfile(cmdArg);
@@ -380,6 +378,12 @@ namespace IngameScript
                         if (_landingGear != null)
                             _landingGear.SwitchLock();
                         break;
+                    case "THROTTLE_UP":
+                        ThrottleUp(cmdArg);
+                        break;
+                    case "THROTTLE_DOWN":
+                        ThrottleDown(cmdArg);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;
@@ -410,18 +414,19 @@ namespace IngameScript
 
             if (_escapeThrustersOn)// && ((updateSource & UpdateType.Update10) != -0))
             {
+                Echo("A");
                 double velocity = GetForwardVelocity();
-                double error = _maxSpeed - velocity;
+                double error = _targetThrottle - velocity;
+                Echo("B");
                 double control = _pid.Control(error);
-
                 ThrottleThrusters((float)control);
-
                 if (_runningNumber > RUN_CAP)
                 {
                     _runningNumber = 0;
                     SafetyCheck();
                     CheckGravity();
                 }
+                
             }
 
             PrintDisplays();
@@ -648,29 +653,6 @@ namespace IngameScript
 
             _loadCount = value;
             //displayLoadCount();
-        }
-
-
-        // ESCAPE THRUSTERS ON //
-        void EscapeThrustersOn()
-        {
-            if (_escapeThrusters.Count < 1)
-                return;
-
-            _escapeThrustersOn = true;
-            _pid = new PID(_Kp, KI, KD, TIME_STEP);
-            Runtime.UpdateFrequency = UpdateFrequency.Update10;
-        }
-
-
-        // ESCAPE THRUSTERS OFF //
-        void EscapeThrustersOff()
-        {
-            ThrottleThrusters(0);
-            _escapeThrustersOn = false;
-            _runningNumber = 0;
-            UpdateThrustDisplay(0);
-            Runtime.UpdateFrequency = UpdateFrequency.None;
         }
 
 
@@ -908,9 +890,9 @@ namespace IngameScript
             }
 
             if (_escapeThrustersOn)
-                Runtime.UpdateFrequency = UpdateFrequency.Update10;
+                EscapeThrustersOn();
             else
-                Runtime.UpdateFrequency = UpdateFrequency.None;
+                EscapeThrustersOff();
 
             AssignDisplays();
             PrintDisplays();
@@ -1202,13 +1184,6 @@ namespace IngameScript
             escapeGroup.GetBlocksOfType<IMyThrust>(_escapeThrusters);
             _statusMessage += "ESCAPE THRUSTERS: " + _escapeTag + "\nThruster Count: " + _escapeThrusters.Count + "\n";
             //AssignThrustDisplay();
-        }
-
-
-        // GET FORWARD VELOCITY //
-        public double GetForwardVelocity()
-        {
-            return Vector3D.Dot(_cockpit.WorldMatrix.Forward, _cockpit.GetShipVelocities().LinearVelocity);
         }
 
 
