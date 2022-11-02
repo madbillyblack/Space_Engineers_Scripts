@@ -96,7 +96,7 @@ namespace IngameScript
 
                 Sector sector = GetSector(sectorName);
                 if (sector != null)
-                {
+				{
                     List<Sector> singleSector = new List<Sector>();
                     singleSector.Add(sector);
                     sector.Gauges.Add(new GaugeSurface(this, index, singleSector, false));
@@ -125,7 +125,9 @@ namespace IngameScript
                 string gaugeHead = GAUGE_HEAD + " " + Index;
                 IsDouble = doubleScreen;
 				SectorA = sectors[0];
-				SectorB = sectors[1];
+
+				if(doubleScreen)
+					SectorB = sectors[1];
 
                 // Determine which side of the bulkhead the LCD is on.
                 string blockName = owner.Block.CustomName;
@@ -133,7 +135,7 @@ namespace IngameScript
 
 				if (IsDouble || blockName.Contains("(" + sectors[0].Name + ")"))
 					defaultSide = "A";
-				else if (blockName.Contains("(" + sectors[1].Name + ")"))
+				else if (sectors.Count > 1 && blockName.Contains("(" + sectors[1].Name + ")"))
 					defaultSide = "B";
 				else
 					defaultSide = "Select A or B";

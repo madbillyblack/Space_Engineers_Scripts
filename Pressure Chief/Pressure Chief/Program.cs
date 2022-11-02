@@ -745,6 +745,7 @@ namespace IngameScript
 			{
 				if (lcdBlock.SurfaceCount > 0)
 				{
+					Echo((lcdBlock as IMyTerminalBlock).CustomName);
 					bool added = Util.ParseBool(IniKey.GetKey(lcdBlock as IMyTerminalBlock, GAUGE_HEAD, "Added", "True"));
 
 					if (!added)
