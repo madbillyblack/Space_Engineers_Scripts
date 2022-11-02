@@ -85,6 +85,7 @@ namespace IngameScript
                     return;
 
                 IsExtended = extending;
+                SetKey(Timer, INI_HEAD, "Extended", extending.ToString());
 
                 if (LandingPlates.Count > 0)
                     foreach (IMyLandingGear landingPlate in LandingPlates)
@@ -173,6 +174,7 @@ namespace IngameScript
             public void SwapDirections()
             {
                 IsExtended = !IsExtended;
+                SetKey(Timer, INI_HEAD, "Extended", IsExtended.ToString());
 
                 if (Pistons.Count > 0)
                     foreach (IMyPistonBase piston in Pistons)
