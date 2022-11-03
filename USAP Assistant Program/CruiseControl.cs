@@ -33,10 +33,10 @@ namespace IngameScript
             _totalThrust = 0;
             _thrustWeightRatio = 0;
 
-            if (_escapeThrusters.Count < 1 || _cockpit == null)
+            if (_cruiseThrusters.Count < 1 || _cockpit == null)
                 return;
 
-            foreach (IMyThrust thruster in _escapeThrusters)
+            foreach (IMyThrust thruster in _cruiseThrusters)
                 _totalThrust += thruster.MaxThrust;
 
             _thrustWeightRatio = _totalThrust / (_cockpit.CalculateShipMass().TotalMass * 9.81);
@@ -67,8 +67,8 @@ namespace IngameScript
                 if (_targetThrottle > _maxSpeed)
                     _targetThrottle = _maxSpeed;
 
-                if (!_escapeThrustersOn)
-                    EscapeThrustersOn();
+                if (!_cruiseThrustersOn)
+                    CruiseThrustersOn();
             }
             else
                 _statusMessage += "INVALID THROTTLE ARGUMENT:\n\"" + arg + "\"\n";      
@@ -86,7 +86,7 @@ namespace IngameScript
                 if (_targetThrottle < 0)
                 {
                     _targetThrottle = 0;
-                    EscapeThrustersOff();
+                    CruiseThrustersOff();
                 }
             }
             else
@@ -94,42 +94,42 @@ namespace IngameScript
         }
 
 
-        // ESCAPE THRUSTERS ON //
-        void EscapeThrustersOn()
+        // CRUISE THRUSTERS ON //
+        void CruiseThrustersOn()
         {
-            if (_escapeThrusters.Count < 1)
+            if (_cruiseThrusters.Count < 1)
                 return;
 
-            _escapeThrustersOn = true;
+            _cruiseThrustersOn = true;
 
             _pid = new PID(_Kp, KI, KD, TIME_STEP);
             Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
 
-        // ESCAPE THRUSTERS OFF //
-        void EscapeThrustersOff()
+        // CRUISE THRUSTERS OFF //
+        void CruiseThrustersOff()
         {
             ThrottleThrusters(0);
-            _escapeThrustersOn = false;
+            _cruiseThrustersOn = false;
             _runningNumber = 0;
             UpdateThrustDisplay(0);
             Runtime.UpdateFrequency = UpdateFrequency.None;
         }
 
 
-        // TOGGLE ESCAPE THRUSTERS //
-        void ToggleEscapeThrusters()
+        // TOGGLE CRUISE THRUSTERS //
+        void ToggleCruiseThrusters()
         {
-            if (!_escapeThrustersOn)
+            if (!_cruiseThrustersOn)
             {
                 if (_targetThrottle <= 0)
                     _targetThrottle = _maxSpeed;
 
-                EscapeThrustersOn();
+                CruiseThrustersOn();
             }
             else
-                EscapeThrustersOff();
+                CruiseThrustersOff();
         }
 
 

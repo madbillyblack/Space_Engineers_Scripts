@@ -160,9 +160,9 @@ namespace IngameScript
         int _runningNumber;
         bool _unloaded;
         bool _hasComponentCargo;
-        static bool _escapeThrustersOn;
+        static bool _cruiseThrustersOn;
 
-        // Escape Thruster variables
+        // Cruise Thruster variables
         IMyShipController _cockpit;
         float _maxSpeed = 100;
         PID _pid;
@@ -181,8 +181,8 @@ namespace IngameScript
         static List<Display> _displays;
         static LandingGearAssembly _landingGear;
 
-        string _escapeTag;
-        static List<IMyThrust> _escapeThrusters;
+        string _cruiseTag;
+        static List<IMyThrust> _cruiseThrusters;
         
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
@@ -202,11 +202,11 @@ namespace IngameScript
 
                 try
                 {
-                    _escapeThrustersOn = ParseBool(storageData[1]);
+                    _cruiseThrustersOn = ParseBool(storageData[1]);
                 }
                 catch
                 {
-                    _escapeThrustersOn = false;
+                    _cruiseThrustersOn = false;
                 }
                 try
                 {
@@ -222,7 +222,7 @@ namespace IngameScript
             else
             {
                 _loadCount = 0;
-                _escapeThrustersOn = false;
+                _cruiseThrustersOn = false;
                 _targetThrottle = 0;
             }
 
@@ -232,9 +232,9 @@ namespace IngameScript
         public void Save()
         {
             string loadCount = _loadCount.ToString();
-            string escapeActive = _escapeThrustersOn.ToString();
+            string cruiseActive = _cruiseThrustersOn.ToString();
             string targetThrottle = _targetThrottle.ToString();
-            Storage = loadCount + ";" + escapeActive + ";"+ targetThrottle;
+            Storage = loadCount + ";" + cruiseActive + ";"+ targetThrottle;
         }
 
 
@@ -286,14 +286,14 @@ namespace IngameScript
                         Unstock(_constructionCargos, COMP_SUPPLY, true);
                         Restock(_constructionCargos, COMP_SUPPLY);
                         break;
-                    case "ESCAPE_THRUSTERS_ON":
-                        EscapeThrustersOn();
+                    case "CRUISE_THRUSTERS_ON":
+                        CruiseThrustersOn();
                         break;
-                    case "ESCAPE_THRUSTERS_OFF":
-                        EscapeThrustersOff();
+                    case "CRUISE_THRUSTERS_OFF":
+                        CruiseThrustersOff();
                         break;
-                    case "TOGGLE_ESCAPE_THRUSTERS":
-                        ToggleEscapeThrusters();
+                    case "TOGGLE_CRUISE_THRUSTERS":
+                        ToggleCruiseThrusters();
                         break;
                     case "SELECT_PROFILE":
                         SelectProfile(cmdArg);
@@ -389,7 +389,7 @@ namespace IngameScript
                         break;
 				}
 			}
-            else if (!_escapeThrustersOn)
+            else if (!_cruiseThrustersOn)
             {
                 Echo("NO ARGUMENT");
             }
@@ -405,14 +405,14 @@ namespace IngameScript
 			}
             //displayLoadCount();
 
-            if(_escapeThrusters.Count > 0 && _cockpit != null)
+            if(_cruiseThrusters.Count > 0 && _cockpit != null)
             {
                 Echo("Max Thrust:\n" + _totalThrust.ToString("0.0") + "N\n");
                 Echo("Thrust to Weight Ratio:\n" + _thrustWeightRatio + "\n");
                 Echo("P-Gain:\n" + _Kp + "\n");
             }
 
-            if (_escapeThrustersOn)// && ((updateSource & UpdateType.Update10) != -0))
+            if (_cruiseThrustersOn)// && ((updateSource & UpdateType.Update10) != -0))
             {
                 Echo("A");
                 double velocity = GetForwardVelocity();
@@ -688,15 +688,15 @@ namespace IngameScript
         // THROTTLE THRUSTERS //
         void ThrottleThrusters(float input)
         {
-            if (_escapeThrusters.Count < 1)
+            if (_cruiseThrusters.Count < 1)
                 return;
 
-            foreach(IMyThrust thruster in _escapeThrusters)
+            foreach(IMyThrust thruster in _cruiseThrusters)
             {
                 thruster.ThrustOverridePercentage = input;
             }
 
-            UpdateThrustDisplay(_escapeThrusters[0].ThrustOverridePercentage);
+            UpdateThrustDisplay(_cruiseThrusters[0].ThrustOverridePercentage);
         }
 
 
@@ -705,7 +705,7 @@ namespace IngameScript
         {
             if (_gravityDisengage && _cockpit.GetNaturalGravity().Length() < 0.04)
             {
-                EscapeThrustersOff();
+                CruiseThrustersOff();
                 _statusMessage += "GRAVITY WELL VACATED\nThrusters Disengaged\n";
             }   
         }
@@ -728,9 +728,9 @@ namespace IngameScript
                         //Get cosine of angle between heading and gravity vector
                         double cos = Vector3D.Dot(_cockpit.WorldMatrix.Forward, gravity) / gravity.Length();
 
-                        if(cos > 0.707) // If angle is within 45 degrees of gravity vector, disengage escape thrusters
+                        if(cos > 0.707) // If angle is within 45 degrees of gravity vector, disengage cruise thrusters
                         {
-                            EscapeThrustersOff();
+                            CruiseThrustersOff();
                             _statusMessage += "SAFETY THRUSTER DISENGAGE!\n";
                         }
                     }
@@ -835,7 +835,7 @@ namespace IngameScript
                 _refBlock = Me;
             }
 
-            _escapeThrusters = new List<IMyThrust>();
+            _cruiseThrusters = new List<IMyThrust>();
 
 
             // Ensure Default Trigger Call Parameter
@@ -868,7 +868,7 @@ namespace IngameScript
             AssignThrusters();
             AssembleLandingGear();
 
-            if (_escapeThrusters.Count > 0)
+            if (_cruiseThrusters.Count > 0)
             {
                 AssignCockpit();
                 _maxSpeed = ParseFloat(GetKey(Me, "USAP - Cruise Control", "Max Speed", "100"), 100);
@@ -889,10 +889,10 @@ namespace IngameScript
 
             }
 
-            if (_escapeThrustersOn)
-                EscapeThrustersOn();
+            if (_cruiseThrustersOn)
+                CruiseThrustersOn();
             else
-                EscapeThrustersOff();
+                CruiseThrustersOff();
 
             AssignDisplays();
             PrintDisplays();
@@ -1167,22 +1167,22 @@ namespace IngameScript
         // ASSIGN THRUSTERS //
         void AssignThrusters()
         {
-            _escapeThrusters = new List<IMyThrust>();
-            _escapeTag = GetKey(Me, INI_HEAD, "Escape_Thrusters", "");
+            _cruiseThrusters = new List<IMyThrust>();
+            _cruiseTag = GetKey(Me, INI_HEAD, "Cruise Thrusters", "");
 
-            if (_escapeTag == "")
+            if (_cruiseTag == "")
                 return;
 
-            IMyBlockGroup escapeGroup = GridTerminalSystem.GetBlockGroupWithName(_escapeTag);
+            IMyBlockGroup cruiseGroup = GridTerminalSystem.GetBlockGroupWithName(_cruiseTag);
             
-            if(escapeGroup == null)
+            if(cruiseGroup == null)
             {
-                _statusMessage += "NO GROUP WITH NAME \"" + _escapeTag + "\" FOUND!\n";
+                _statusMessage += "NO GROUP WITH NAME \"" + _cruiseTag + "\" FOUND!\n";
                 return;
             }
 
-            escapeGroup.GetBlocksOfType<IMyThrust>(_escapeThrusters);
-            _statusMessage += "ESCAPE THRUSTERS: " + _escapeTag + "\nThruster Count: " + _escapeThrusters.Count + "\n";
+            cruiseGroup.GetBlocksOfType<IMyThrust>(_cruiseThrusters);
+            _statusMessage += "CRUISE THRUSTERS: " + _cruiseTag + "\nThruster Count: " + _cruiseThrusters.Count + "\n";
             //AssignThrustDisplay();
         }
 
@@ -1190,7 +1190,7 @@ namespace IngameScript
         // UPDATE THRUST DISPLAY //
         void UpdateThrustDisplay(float power)
         {
-            if (!_escapeThrustersOn)
+            if (!_cruiseThrustersOn)
             {
                 _currentPower = "OFF";
                 return;

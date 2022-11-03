@@ -28,7 +28,7 @@ namespace IngameScript
             IMyTextSurface Surface;
             bool ShowLoadCount;
             bool ShowTargetSpeed;
-            bool ShowEscapeThrust;
+            bool ShowCruiseThrust;
             bool ShowActiveProfile;
             bool ShowLandingGear;
             bool ShowParked;
@@ -47,10 +47,10 @@ namespace IngameScript
                     ShowLoadCount = ParseBool(GetKey(block, iniHeader, "Show Load Count", "true"));
                 }
                     
-                if (_escapeThrusters.Count > 0)
+                if (_cruiseThrusters.Count > 0)
                 {
                     ShowTargetSpeed = ParseBool(GetKey(block, iniHeader, "Show Target Speed", "True"));
-                    ShowEscapeThrust = ParseBool(GetKey(block, iniHeader, "Show Auto Throttle", "true"));
+                    ShowCruiseThrust = ParseBool(GetKey(block, iniHeader, "Show Auto Throttle", "true"));
                 }
 
                 if (_constructionCargos.Count > 0)
@@ -77,7 +77,7 @@ namespace IngameScript
                     output += "Load Count: " + _loadCount.ToString() + "\n";
                 if (ShowTargetSpeed)
                     output += "Target Speed: " + _targetThrottle.ToString("0.0") + " m/s\n";
-                if (ShowEscapeThrust)
+                if (ShowCruiseThrust)
                     output += "Auto-Throttle: " + _currentPower + "\n";
                 if (ShowActiveProfile)
                     output += "Active Profile: " + _activeProfile + "\n";
@@ -91,7 +91,7 @@ namespace IngameScript
                         output += "Parking: Unlocked\n";
                 }
 
-                if(ShowLoadCount || ShowEscapeThrust || ShowActiveProfile || ShowLandingGear || ShowParked)
+                if(ShowLoadCount || ShowCruiseThrust || ShowActiveProfile || ShowLandingGear || ShowParked)
                     Surface.WriteText(output.Trim());
             }
         }
