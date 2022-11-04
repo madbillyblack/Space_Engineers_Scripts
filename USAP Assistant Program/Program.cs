@@ -44,7 +44,6 @@ namespace IngameScript
         //DEFINITIONS:
 
         const string INI_HEAD = "USAP";
-        const string SHARED = "Shared Data";
         const string PAYLOAD = "[MIN]";
         const string MAG_TAG = "[MAG";
         const string REACTOR = "[PWR]";
@@ -152,7 +151,6 @@ namespace IngameScript
         
 
         string _statusMessage;
-        string _gridID;
 
         static int _loadCount;
         static string _currentPower;
@@ -739,78 +737,6 @@ namespace IngameScript
         }
 
 
-        // INI FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------
-
-        // ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
-        static void EnsureKey(IMyTerminalBlock block, string header, string key, string defaultVal)
-        {
-            //if (!block.CustomData.Contains(header) || !block.CustomData.Contains(key))
-            MyIni ini = GetIni(block);
-            if (!ini.ContainsKey(header, key))
-                SetKey(block, header, key, defaultVal);
-        }
-
-
-        // GET KEY // Gets ini value from block.  Returns default argument if doesn't exist.
-        static string GetKey(IMyTerminalBlock block, string header, string key, string defaultVal)
-        {
-            EnsureKey(block, header, key, defaultVal);
-            MyIni blockIni = GetIni(block);
-            return blockIni.Get(header, key).ToString();
-        }
-
-
-        // SET KEY // Update ini key for block, and write back to custom data.
-        static void SetKey(IMyTerminalBlock block, string header, string key, string arg)
-        {
-            MyIni blockIni = GetIni(block);
-            blockIni.Set(header, key, arg);
-            block.CustomData = blockIni.ToString();
-        }
-
-
-        // GET INI // Get entire INI object from specified block.
-        static MyIni GetIni(IMyTerminalBlock block)
-        {
-            MyIni iniOuti = new MyIni();
-
-            MyIniParseResult result;
-            if (!iniOuti.TryParse(block.CustomData, out result))
-            {
-                block.CustomData = "---\n" + block.CustomData;
-                if (!iniOuti.TryParse(block.CustomData, out result))
-                    throw new Exception(result.ToString());
-            }
-
-            return iniOuti;
-        }
-
-
-        // SET GRID ID // Updates Grid ID parameter for all designated blocks in Grid, then rebuilds the grid.
-        void SetGridID(string arg)
-        {
-            string gridID;
-            if (arg != "")
-                gridID = arg;
-            else
-                gridID = Me.CubeGrid.EntityId.ToString();
-
-            SetKey(Me, SHARED, "Grid_ID", gridID);
-            _gridID = gridID;
-
-            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
-
-            foreach (IMyTerminalBlock block in blocks)
-            {
-                if (block.CustomData.Contains(SHARED))
-                    SetKey(block, SHARED, "Grid_ID", gridID);
-            }
-
-            Build();
-        }
-
-
         // INIT FUNCTIONS // --------------------------------------------------------------------------------------------------------------------------
 
         // BUILD //
@@ -1198,60 +1124,6 @@ namespace IngameScript
 
             int value = (int)(power * 100);
             _currentPower = value + "%";
-        }
-
-
-        // TOOL FUNCTIONS // ---------------------------------------------------------------------------------------------------------------------------
-
-        // PARSE INT //
-        static int ParseInt(string arg, int defaultValue)
-        {
-            int number;
-            if (int.TryParse(arg, out number))
-                return number;
-            else
-                return defaultValue;
-        }
-
-
-        // PARSE FLOAT //
-        static float ParseFloat(string arg, float defaultValue)
-        {
-            float number;
-            if (float.TryParse(arg, out number))
-                return number;
-            else
-                return defaultValue;
-        }
-
-
-        // PARSE BOOL //
-        static bool ParseBool(string val)
-        {
-            string uVal = val.ToUpper();
-            if (uVal == "TRUE" || uVal == "T" || uVal == "1")
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        // PARSE COLOR //
-        static Color ParseColor(string colorString)
-        {
-            UInt16 red, green, blue;
-            red = green = blue = 0;
-
-            string[] values = colorString.Split(',');
-            if(values.Length > 2)
-            {
-                UInt16.TryParse(values[0], out red);
-                UInt16.TryParse(values[1], out green);
-                UInt16.TryParse(values[2], out blue);
-            }
-
-            return new Color(red, green, blue);
         }
 
 
