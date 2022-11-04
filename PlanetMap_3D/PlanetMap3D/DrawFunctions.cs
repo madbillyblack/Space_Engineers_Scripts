@@ -22,6 +22,90 @@ namespace IngameScript
 {
     partial class Program
     {
+		MySpriteDrawFrame _frame;
+
+
+		// DRAW TEXTURE //
+		public void DrawTexture(string shape, Vector2 position, Vector2 size, float rotation, Color color)
+		{
+			var sprite = new MySprite()
+			{
+				Type = SpriteType.TEXTURE,
+				Data = shape,
+				Position = position,
+				Size = size,
+				RotationOrScale = rotation,
+				Color = color
+			};
+			_frame.Add(sprite);
+		}
+
+
+		// DRAW TEXT //
+		void DrawText(string text, Vector2 position, float scale, TextAlignment alignment, Color color)
+		{
+			var sprite = new MySprite()
+			{
+				Type = SpriteType.TEXT,
+				Data = text,
+				Position = position,
+				RotationOrScale = scale,
+				Color = color,
+				Alignment = alignment,
+				FontId = "White"
+			};
+			_frame.Add(sprite);
+		}
+
+
+		// DRAW MAPS //
+		public void DrawMaps()
+        {
+			foreach (StarMap map in _mapList)
+			{
+				if (map.mode == "CHASE")
+				{
+					AlignShip(map);
+				}
+				else if (map.mode == "PLANET" && _planetList.Count > 0)
+				{
+					ShipToPlanet(map);
+				}
+				else if (map.mode == "ORBIT")
+				{
+					AlignOrbit(map);
+				}
+				else
+				{
+					map.azimuth = DegreeAdd(map.azimuth, map.dAz);
+
+					if (map.mode != "SHIP")
+					{
+						Vector3 deltaC = new Vector3(map.dX, map.dY, map.dZ);
+						map.center += rotateMovement(deltaC, map);
+					}
+					else
+					{
+						map.center = _myPos;
+					}
+
+					UpdateMap(map);
+				}
+
+				// Begin a new frame
+				_frame = map.drawingSurface.DrawFrame();
+
+				// All sprites must be added to the frame here
+				DrawSprites(map);
+
+				// We are done with the frame, send all the sprites to the text panel
+				_frame.Dispose();
+
+				//_statusMessage = Me.DefinitionDisplayName;
+			}
+		}
+
+
 		// DRAW SHIP //
 		public void DrawShip(StarMap map, List<Planet> displayPlanets)
 		{
@@ -351,38 +435,6 @@ namespace IngameScript
 			}
 
 			Echo(drawnPlanets.Trim(',') + "\n");
-		}
-
-
-		// DRAW TEXTURE //
-		public void DrawTexture(string shape, Vector2 position, Vector2 size, float rotation, Color color)
-		{
-			var sprite = new MySprite()
-			{
-				Type = SpriteType.TEXTURE,
-				Data = shape,
-				Position = position,
-				Size = size,
-				RotationOrScale = rotation,
-				Color = color
-			};
-			_frame.Add(sprite);
-		}
-
-		// DRAW TEXT //
-		void DrawText(string text, Vector2 position, float scale, TextAlignment alignment, Color color)
-		{
-			var sprite = new MySprite()
-			{
-				Type = SpriteType.TEXT,
-				Data = text,
-				Position = position,
-				RotationOrScale = scale,
-				Color = color,
-				Alignment = alignment,
-				FontId = "White"
-			};
-			_frame.Add(sprite);
 		}
 
 
@@ -744,5 +796,204 @@ namespace IngameScript
 
 			return color;
 		}
+
+
+		// PREPARE TEXT SURFACE FOR SPRITES //
+		public static void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
+		{
+			// Set the sprite display mode
+			textSurface.ContentType = ContentType.SCRIPT;
+			textSurface.ScriptBackgroundColor = new Color(0, 0, 0);
+			// Make sure no built-in script has been selected
+			textSurface.Script = "";
+		}
+
+
+		// DRAW SPRITES //
+		public void DrawSprites(StarMap map)
+		{
+			Echo("[MAP " + map.number + "]");
+			Vector3 mapCenter = map.center;
+
+			// Create background sprite
+			Color gridColor = new Color(0, 64, 0);
+			DrawTexture("Grid", new Vector2(0, map.viewport.Width / 2), map.viewport.Size, 0, gridColor);
+
+			//DRAW PLANETS
+			List<Planet> displayPlanets = new List<Planet>();
+
+			foreach (Planet planet in _planetList)
+			{
+				if (planet.transformedCoords.Count == _mapList.Count && planet.transformedCoords[map.number].Z > map.focalLength)
+				{
+					displayPlanets.Add(planet);
+				}
+			}
+
+			DrawPlanets(displayPlanets, map);
+			//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
+			if (map.gpsState > 0)
+			{
+				DrawWaypoints(map);
+				PlotUncharted(map);
+			}
+
+			// DRAW SHIP
+			if (map.showShip)
+			{
+				DrawShip(map, displayPlanets);
+			}
+
+			// MAP INFO
+			if (map.showInfo)
+			{
+				DrawMapInfo(map);
+			}
+		}
+
+
+		// DRAW MAP INFO //
+		public void DrawMapInfo(StarMap map)
+		{
+			//DEFAULT SIZING / STRINGS
+			float fontSize = 0.6f;
+			int barHeight = BAR_HEIGHT;
+			String angleReading = map.altitude * -1 + "° " + map.azimuth + "°";
+			String shipMode = "S";
+			String planetMode = "P";
+			String freeMode = "F";
+			String worldMode = "W";
+			String chaseMode = "C";
+			String orbitMode = "O";
+
+			if (map.viewport.Width > 500)
+			{
+				fontSize *= 1.5f;
+				barHeight *= 2;
+				angleReading = "Alt:" + map.altitude * -1 + "°  Az:" + map.azimuth + "°";
+				shipMode = "SHIP";
+				planetMode = "PLANET";
+				freeMode = "FREE";
+				worldMode = "WORLD";
+				chaseMode = "CHASE";
+				orbitMode = "ORBIT";
+			}
+
+			//TOP BAR
+			var position = map.viewport.Center;
+			position -= new Vector2(map.viewport.Width / 2, map.viewport.Height / 2 - barHeight / 2);
+			DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
+
+			//MODE	  
+			position += new Vector2(SIDE_MARGIN, -TOP_MARGIN);
+
+			string modeReading = "";
+			switch (map.mode)
+			{
+				case "SHIP":
+					modeReading = shipMode;
+					break;
+				case "PLANET":
+					modeReading = planetMode;
+					break;
+				case "WORLD":
+					modeReading = worldMode;
+					break;
+				case "CHASE":
+					modeReading = chaseMode;
+					break;
+				case "ORBIT":
+					modeReading = orbitMode;
+					break;
+				default:
+					modeReading = freeMode;
+					break;
+			}
+
+			DrawText(modeReading, position, fontSize, TextAlignment.LEFT, Color.White);
+
+			// CENTER READING
+			string xCenter = abbreviateValue(map.center.X);
+			string yCenter = abbreviateValue(map.center.Y);
+			string zCenter = abbreviateValue(map.center.Z);
+			string centerReading = "[" + xCenter + ", " + yCenter + ", " + zCenter + "]";
+
+			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
+
+			DrawText(centerReading, position, fontSize, TextAlignment.CENTER, Color.White);
+
+			// RUNNING INDICATOR
+			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, TOP_MARGIN);
+
+			Color lightColor = new Color(0, 8, 0);
+
+			if (_lightOn)
+			{
+				DrawTexture("Circle", position, new Vector2(7, 7), 0, lightColor);
+			}
+
+			// MAP ID
+			position -= new Vector2(5, 7);
+
+			string mapID = "[" + map.number + "]";
+
+			DrawText(mapID, position, fontSize, TextAlignment.RIGHT, Color.White);
+
+			// BOTTOM BAR
+			position = map.viewport.Center;
+			position -= new Vector2(map.viewport.Width / 2, barHeight / 2 - map.viewport.Height / 2);
+
+			if (map.viewport.Width == 1024)
+			{
+				position = new Vector2(0, map.viewport.Height - barHeight / 2);
+			}
+			DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
+
+			// FOCAL LENGTH READING
+			position += new Vector2(SIDE_MARGIN, -TOP_MARGIN);
+
+			string dofReading = "FL:" + abbreviateValue((float)map.focalLength);
+
+			DrawText(dofReading, position, fontSize, TextAlignment.LEFT, Color.White);
+
+			// ANGLE READING
+			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
+
+			DrawText(angleReading, position, fontSize, TextAlignment.CENTER, Color.White);
+
+			// RADIUS READING
+			string radius = "R:" + abbreviateValue((float)map.rotationalRadius);
+			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
+
+			DrawText(radius, position, fontSize, TextAlignment.RIGHT, Color.White);
+		}
+
+
+		// DRAW MENU //
+		public void DrawMenu(MapMenu menu)
+        {
+			float cellWidth = (menu.Viewport.Width / 7) - 4;
+
+			Vector2 position = menu.Viewport.Center - new Vector2(menu.Viewport.Width / 2, 0);
+
+			DrawTexture("SquareSimple", position, new Vector2(10, menu.Viewport.Height), 0, Color.Pink);
+        }
+
+
+		// DRAW MENUS //
+		public void DrawMenus()
+        {
+			if (_mapMenus.Count < 1)
+				return;
+
+			foreach(MapMenu menu in _mapMenus)
+            {
+				_frame = menu.Surface.DrawFrame();
+
+				DrawMenu(menu);
+
+				_frame.Dispose();
+            }
+        }
 	}
 }

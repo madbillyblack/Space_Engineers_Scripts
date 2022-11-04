@@ -137,7 +137,6 @@ namespace IngameScript
 		List<IMyTerminalBlock> _mapBlocks;
 		List<IMyTerminalBlock> _dataBlocks = new List<IMyTerminalBlock>();
 		Planet _nearestPlanet;
-		MySpriteDrawFrame _frame;
 
 		IMyTextSurface _dataSurface;
 		IMyTerminalBlock _refBlock;
@@ -497,48 +496,7 @@ namespace IngameScript
 					_nearestPlanet = _planetList[0];
 				}
 
-				foreach (StarMap map in _mapList)
-				{
-					if (map.mode == "CHASE")
-					{
-						AlignShip(map);
-					}
-					else if (map.mode == "PLANET" && hasPlanets)
-					{
-						ShipToPlanet(map);
-					}
-					else if (map.mode == "ORBIT")
-					{
-						AlignOrbit(map);
-					}
-					else
-					{
-						map.azimuth = DegreeAdd(map.azimuth, map.dAz);
-
-						if (map.mode != "SHIP")
-						{
-							Vector3 deltaC = new Vector3(map.dX, map.dY, map.dZ);
-							map.center += rotateMovement(deltaC, map);
-						}
-						else
-						{
-							map.center = _myPos;
-						}
-
-						UpdateMap(map);
-					}
-
-					// Begin a new frame
-					_frame = map.drawingSurface.DrawFrame();
-
-					// All sprites must be added to the frame here
-					DrawSprites(map);
-
-					// We are done with the frame, send all the sprites to the text panel
-					_frame.Dispose();
-
-					//_statusMessage = Me.DefinitionDisplayName;
-				}
+				DrawMaps();
 			}
 			else
 			{
@@ -1866,7 +1824,7 @@ namespace IngameScript
 		void SetGridID()
 		{
 			_gridID = Me.CubeGrid.EntityId.ToString();
-			SetKey(Me, "Map Settings", "Grid_ID", _gridID);
+			SetKey(Me, SHARED, "Grid_ID", _gridID);
 
 			if (_mapBlocks.Count < 1)
 				return;
@@ -1874,7 +1832,7 @@ namespace IngameScript
 			foreach (IMyTerminalBlock mapBlock in _mapBlocks)
 			{
 				if (mapBlock.IsSameConstructAs(Me))
-					SetKey(mapBlock, "mapDisplay", "Grid_ID", _gridID);
+					SetKey(mapBlock, SHARED, "Grid_ID", _gridID);
 			}
 
 			Build();
@@ -1887,7 +1845,7 @@ namespace IngameScript
 			if (!mapTerminal.IsSameConstructAs(Me))
 				return false;
 
-			string iniGrid = GetKey(mapTerminal, "mapDisplay", "Grid_ID", "Unassigned");
+			string iniGrid = GetKey(mapTerminal, SHARED, "Grid_ID", "Unassigned");
 
 			if (iniGrid == _gridID)
 				return true;
@@ -2527,12 +2485,12 @@ namespace IngameScript
 			_slowMode = ParseBool(GetKey(Me, "Map Settings", "Slow_Mode", "false"));
 
 			//Grid Tag
-			_gridID = GetKey(Me, "Map Settings", "Grid_ID", Me.CubeGrid.EntityId.ToString());
+			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 
 			if (_gridID == "")
 			{
 				_gridID = Me.CubeGrid.EntityId.ToString();
-				_mapLog.Set("Map Settings", "Grid_ID", _gridID);
+				_mapLog.Set(SHARED, "Grid_ID", _gridID);
 				Me.CustomData = _mapLog.ToString();
 			}
 
@@ -2638,216 +2596,10 @@ namespace IngameScript
 				}
 			}
 
+			AssignMenus();
+
 			// Start with indicator light on.
 			_lightOn = true;
-		}
-
-
-		// BORROWED FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-		// PREPARE TEXT SURFACE FOR SPRITES //
-		public void PrepareTextSurfaceForSprites(IMyTextSurface textSurface)
-		{
-			// Set the sprite display mode
-			textSurface.ContentType = ContentType.SCRIPT;
-			textSurface.ScriptBackgroundColor = new Color(0, 0, 0);
-			// Make sure no built-in script has been selected
-			textSurface.Script = "";
-		}
-
-
-		// DRAW SPRITES //
-		public void DrawSprites(StarMap map)
-		{
-			Echo("[MAP " + map.number + "]");
-			Vector3 mapCenter = map.center;
-
-			// Create background sprite
-			Color gridColor = new Color(0, 64, 0);
-			DrawTexture("Grid", new Vector2(0, map.viewport.Width / 2), map.viewport.Size, 0, gridColor);
-
-			//DRAW PLANETS
-			List<Planet> displayPlanets = new List<Planet>();
-
-			foreach (Planet planet in _planetList)
-			{
-				if (planet.transformedCoords.Count == _mapList.Count && planet.transformedCoords[map.number].Z > map.focalLength)
-				{
-					displayPlanets.Add(planet);
-				}
-			}
-
-			DrawPlanets(displayPlanets, map);
-			//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
-			if (map.gpsState > 0)
-			{
-				DrawWaypoints(map);
-				PlotUncharted(map);
-			}
-
-			// DRAW SHIP
-			if (map.showShip)
-			{
-				DrawShip(map, displayPlanets);
-			}
-
-			// MAP INFO
-			if (map.showInfo)
-			{
-				DrawMapInfo(map);
-			}
-		}
-
-
-		// DRAW MAP INFO //
-		public void DrawMapInfo(StarMap map)
-		{
-			//DEFAULT SIZING / STRINGS
-			float fontSize = 0.6f;
-			int barHeight = BAR_HEIGHT;
-			String angleReading = map.altitude * -1 + "° " + map.azimuth + "°";
-			String shipMode = "S";
-			String planetMode = "P";
-			String freeMode = "F";
-			String worldMode = "W";
-			String chaseMode = "C";
-			String orbitMode = "O";
-
-			if (map.viewport.Width > 500)
-			{
-				fontSize *= 1.5f;
-				barHeight *= 2;
-				angleReading = "Alt:" + map.altitude * -1 + "°  Az:" + map.azimuth + "°";
-				shipMode = "SHIP";
-				planetMode = "PLANET";
-				freeMode = "FREE";
-				worldMode = "WORLD";
-				chaseMode = "CHASE";
-				orbitMode = "ORBIT";
-			}
-
-			//TOP BAR
-			var position = map.viewport.Center;
-			position -= new Vector2(map.viewport.Width / 2, map.viewport.Height / 2 - barHeight / 2);
-			DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
-
-			//MODE	  
-			position += new Vector2(SIDE_MARGIN, -TOP_MARGIN);
-
-			string modeReading = "";
-			switch (map.mode)
-			{
-				case "SHIP":
-					modeReading = shipMode;
-					break;
-				case "PLANET":
-					modeReading = planetMode;
-					break;
-				case "WORLD":
-					modeReading = worldMode;
-					break;
-				case "CHASE":
-					modeReading = chaseMode;
-					break;
-				case "ORBIT":
-					modeReading = orbitMode;
-					break;
-				default:
-					modeReading = freeMode;
-					break;
-			}
-
-			DrawText(modeReading, position, fontSize, TextAlignment.LEFT, Color.White);
-
-			// CENTER READING
-			string xCenter = abbreviateValue(map.center.X);
-			string yCenter = abbreviateValue(map.center.Y);
-			string zCenter = abbreviateValue(map.center.Z);
-			string centerReading = "[" + xCenter + ", " + yCenter + ", " + zCenter + "]";
-
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
-
-			DrawText(centerReading, position, fontSize, TextAlignment.CENTER, Color.White);
-
-			// RUNNING INDICATOR
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, TOP_MARGIN);
-
-			Color lightColor = new Color(0, 8, 0);
-
-			if (_lightOn)
-			{
-				DrawTexture("Circle", position, new Vector2(7, 7), 0, lightColor);
-			}
-
-			// MAP ID
-			position -= new Vector2(5, 7);
-
-			string mapID = "[" + map.number + "]";
-
-			DrawText(mapID, position, fontSize, TextAlignment.RIGHT, Color.White);
-
-			// BOTTOM BAR
-			position = map.viewport.Center;
-			position -= new Vector2(map.viewport.Width / 2, barHeight / 2 - map.viewport.Height / 2);
-
-			if (map.viewport.Width == 1024)
-			{
-				position = new Vector2(0, map.viewport.Height - barHeight / 2);
-			}
-			DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
-
-			// FOCAL LENGTH READING
-			position += new Vector2(SIDE_MARGIN, -TOP_MARGIN);
-
-			string dofReading = "FL:" + abbreviateValue((float)map.focalLength);
-
-			DrawText(dofReading, position, fontSize, TextAlignment.LEFT, Color.White);
-
-			// ANGLE READING
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
-
-			DrawText(angleReading, position, fontSize, TextAlignment.CENTER, Color.White);
-
-			// RADIUS READING
-			string radius = "R:" + abbreviateValue((float)map.rotationalRadius);
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
-
-			DrawText(radius, position, fontSize, TextAlignment.RIGHT, Color.White);
-		}
-
-
-		// TO RADIANS //  Converts Degree Value to Radians
-		public double ToRadians(int angle)
-		{
-			double radianValue = (double)angle * Math.PI / 180;
-			return radianValue;
-		}
-
-
-		// TO DEGREES //
-		public float ToDegrees(float angle)
-		{
-			float degreeValue = angle * 180 / (float)Math.PI;
-			return degreeValue;
-		}
-
-
-		// DEGREE ADD //	Adds two degree angles.	 Sets Rollover at +/- 180°
-		public static int DegreeAdd(int angle_A, int angle_B)
-		{
-			int angleOut = angle_A + angle_B;
-
-			if (angleOut > 180)
-			{
-				angleOut -= 360;
-			}
-			else if (angleOut < -179)
-			{
-				angleOut += 360;
-			}
-
-			return angleOut;
 		}
 
 
@@ -2890,6 +2642,7 @@ namespace IngameScript
 				}
 			}
 		}
+
 
 		// ACTIVATE MAP // activates tagged map screen without having to recompile.
 		void activateMap(StarMap map)

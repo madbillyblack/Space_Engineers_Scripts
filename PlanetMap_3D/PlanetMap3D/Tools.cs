@@ -56,6 +56,7 @@ namespace IngameScript
             return false;
         }
 
+
         // PARSE COLOR //
         static Color ParseColor(string colorString)
         {
@@ -71,6 +72,40 @@ namespace IngameScript
             }
 
             return new Color(red, green, blue);
+        }
+
+
+        // TO RADIANS //  Converts Degree Value to Radians
+        public double ToRadians(int angle)
+        {
+            double radianValue = (double)angle * Math.PI / 180;
+            return radianValue;
+        }
+
+
+        // TO DEGREES //
+        public float ToDegrees(float angle)
+        {
+            float degreeValue = angle * 180 / (float)Math.PI;
+            return degreeValue;
+        }
+
+
+        // DEGREE ADD //	Adds two degree angles.	 Sets Rollover at +/- 180°
+        public static int DegreeAdd(int angle_A, int angle_B)
+        {
+            int angleOut = angle_A + angle_B;
+
+            if (angleOut > 180)
+            {
+                angleOut -= 360;
+            }
+            else if (angleOut < -179)
+            {
+                angleOut += 360;
+            }
+
+            return angleOut;
         }
     }
 }

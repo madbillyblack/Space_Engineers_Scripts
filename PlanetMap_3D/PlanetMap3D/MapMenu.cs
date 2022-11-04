@@ -23,25 +23,95 @@ namespace IngameScript
     partial class Program
     {
         const string MENU_HEAD = "Map Menu";
+        const string MENU_TAG = "[Map Menu]";
         List<MapMenu> _mapMenus;
 
+
+        // MAP MENU //
         public class MapMenu
         {
             public IMyShipController Controller;
             public IMyTextSurface Surface;
-            public StarMap ActiveMap;
-            public int CurrentMenu;
+            public int CurrentMapIndex;
+            public int CurrentPage;
+            public RectangleF Viewport;
             
             public MapMenu(IMyShipController controller)
             {
                 Controller = controller;
-
-                string blockName = GetKey(controller, MENU_HEAD, "LCD Block", controller.CustomName);
-                int index = ParseInt(GetKey(controller, MENU_HEAD, "LCD Index", "0"), 0);
-
-
             }
 
+            public void InitializeSurface()
+            {
+                PrepareTextSurfaceForSprites(Surface);
+                Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
+            }
+        }
+
+
+        // ASSIGN MENUS // - Get ship controllers tagged with MENU_TAG and add them to the map menu list.
+        void AssignMenus()
+        {
+            List<IMyShipController> controllers = new List<IMyShipController>();
+            GridTerminalSystem.GetBlocksOfType<IMyShipController>(controllers);
+
+            if(controllers.Count > 0)
+            {
+                foreach(IMyShipController controller in controllers)
+                {
+                    // Check that controller has MENU_TAG and same Grid ID
+                    if(controller.CustomName.Contains(MENU_TAG) && GetKey(controller, SHARED, "Grid_ID", "") == _gridID)
+                    {
+                        MapMenu menu = MenuFromController(controller);
+                        if (menu != null)
+                        {
+                            menu.InitializeSurface();
+                            DrawMenu(menu);
+                            _mapMenus.Add(menu);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // MENU FROM CONTROLLER // - Get Menu from provided block and populate menu parameters.
+        MapMenu MenuFromController(IMyShipController block)
+        {
+            // Create Empty Menu
+            MapMenu menu = new MapMenu(block);
+
+            // Get name of block and index of screen where menu interface should be displayed
+            string blockName = GetKey(block, MENU_HEAD, "LCD Block", block.CustomName);
+            int index = ParseInt(GetKey(block, MENU_HEAD, "LCD Index", "0"), 0);
+            menu.CurrentPage = ParseInt(GetKey(block, MENU_HEAD, "Current Page", "1"), 1);
+
+            int mapIndex;
+
+            if (_mapList.Count > 1)
+            {
+                mapIndex = ParseInt(GetKey(block, MENU_HEAD, "Current Map", "0"), 0);
+                if (mapIndex >= _mapList.Count)
+                    mapIndex = 0;
+            }
+            else
+                mapIndex = 0;
+
+            menu.CurrentMapIndex = mapIndex;
+
+            
+            try
+            {
+                IMyTerminalBlock lcdBlock = GridTerminalSystem.GetBlockWithName(blockName);
+                menu.Surface = (lcdBlock as IMyTextSurfaceProvider).GetSurface(index);
+
+                return menu;
+            }
+            catch
+            {
+                _statusMessage += "Menu Surface could not be retrieved from block " + blockName + "\n";
+                return null;
+            }
         }
     }
 }
