@@ -107,7 +107,7 @@ namespace IngameScript
 
             menu.CurrentMapIndex = mapIndex;
 
-            
+
             try
             {
                 IMyTerminalBlock lcdBlock = GridTerminalSystem.GetBlockWithName(blockName);
@@ -120,6 +120,52 @@ namespace IngameScript
                 _statusMessage += "Menu Surface could not be retrieved from block " + blockName + "\n";
                 return null;
             }
+        }
+
+
+        // GET MENU //
+        MapMenu GetMenu(string arg)
+        {
+            try
+            {
+                int index;
+
+                if (arg == "")
+                    index = 0;
+                else
+                    index = ParseInt(arg.Split(' ')[0], 0);
+
+                return _mapMenus[index];
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+
+        // NEXT MENU //
+        void NextMenu(string arg, bool next)
+        {
+            MapMenu menu = GetMenu(arg);
+
+            if(menu == null)
+            {
+                _statusMessage += "No Menu " + arg + " found!\n";
+                return;
+            }
+
+            if (next)
+                menu.CurrentPage++;
+            else
+                menu.CurrentPage--;
+
+            if (menu.CurrentPage > 6)
+                menu.CurrentPage = 1;
+            else if (menu.CurrentPage < 1)
+                menu.CurrentPage = 6;
+
+            DrawMenu(menu);
         }
     }
 }

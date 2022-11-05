@@ -1783,7 +1783,7 @@ namespace IngameScript
 		}
 
 
-		// NEXT LAST //
+		// NEXT LAST // - Multi level switch command
 		void nextLast(List<StarMap> maps, string arg, bool state)
 		{
 			switch (arg)
@@ -1799,6 +1799,9 @@ namespace IngameScript
 					break;
 				case "PAGE":
 					NextPage(state);
+					break;
+				case "MENU":
+					NextMenu(arg, state);
 					break;
 			}
 		}

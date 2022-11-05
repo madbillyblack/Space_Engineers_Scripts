@@ -1118,16 +1118,16 @@ namespace IngameScript
 				case ">>":
 					DrawDoubleTriangle(position, scale, color, "right");
 					break;
-				case "/\\":
+				case "^":
 					DrawTriangle(position, scale, color, "up");
 					break;
-				case "\\/":
+				case "v":
 					DrawTriangle(position, scale, color, "down");
 					break;
-				case "//\\\\":
+				case "^^":
 					DrawDoubleTriangle(position, scale, color, "up");
 					break;
-				case "\\\\//":
+				case "vv":
 					DrawDoubleTriangle(position, scale, color, "down");
 					break;
 				case "-/o":

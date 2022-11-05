@@ -74,7 +74,7 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _cmd1 = new Dictionary<int, string>()
         {
-           {1,"-"},
+           {1,"<"},
            {2,"-"},
            {3,"<"},
            {4,"<"},
@@ -84,7 +84,7 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _cmd2 = new Dictionary<int, string>()
         {
-           {1,"+"},
+           {1,">"},
            {2,"+"},
            {3,">"},
            {4,">"},
@@ -94,27 +94,27 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _cmd3 = new Dictionary<int, string>()
         {
-           {1,"--"},
+           {1,"<"},
            {2,"+"},
-           {3,"\\/"},
-           {4,"\\/"},
-           {5,"\\\\//"},
-           {6,"\\/"}
+           {3,"v"},
+           {4,"v"},
+           {5,"vv"},
+           {6,"v"}
         };
 
         readonly Dictionary<int, string> _cmd4 = new Dictionary<int, string>()
         {
-           {1,"++"},
+           {1,">"},
            {2,"-"},
-           {3,"/\\"},
-           {4,"/\\"},
-           {5,"//\\\\"},
-           {6,"/\\"}
+           {3,"^"},
+           {4,"^"},
+           {5,"^^"},
+           {6,"^"}
         };
 
         readonly Dictionary<int, string> _cmd5 = new Dictionary<int, string>()
         {
-           {1,"STOP"},
+           {1,"<"},
            {2,"<"},
            {3,"<<"},
            {4,"-"},
@@ -125,8 +125,8 @@ namespace IngameScript
         readonly Dictionary<int, string> _cmd6 = new Dictionary<int, string>()
         {
            {1,">"},
-           {2,""},
-           {3,""},
+           {2,">"},
+           {3,">>"},
            {4,"+"},
            {5,"++"},
            {6,""}
