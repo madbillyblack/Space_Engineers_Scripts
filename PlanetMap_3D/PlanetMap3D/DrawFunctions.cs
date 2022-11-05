@@ -1107,50 +1107,116 @@ namespace IngameScript
 			switch(arg)
             {
 				case "<":
-					DrawHorzTriangle(position, scale, color, true);
+					DrawTriangle(position, scale, color, "left");
 					break;
 				case ">":
-					DrawHorzTriangle(position, scale, color, false);
+					DrawTriangle(position, scale, color, "right");
 					break;
 				case "<<":
+					DrawDoubleTriangle(position, scale, color, "left");
 					break;
 				case ">>":
+					DrawDoubleTriangle(position, scale, color, "right");
 					break;
 				case "/\\":
+					DrawTriangle(position, scale, color, "up");
 					break;
 				case "\\/":
+					DrawTriangle(position, scale, color, "down");
 					break;
 				case "//\\\\":
+					DrawDoubleTriangle(position, scale, color, "up");
 					break;
 				case "\\\\//":
+					DrawDoubleTriangle(position, scale, color, "down");
 					break;
 				case "-/o":
 					DrawToggle(position, scale, color);
+					break;
+				case "cycle":
+					DrawCycle(position, scale, color);
+					break;
+				default:
+					DrawText(arg, position, 1.25f, TextAlignment.CENTER, color);
 					break;
             }
         }
 
 
 		// Draw Horz Triangle
-		void DrawHorzTriangle(Vector2 position, Vector2 scale, Color color, bool left)
+		void DrawTriangle(Vector2 position, Vector2 scale, Color color, string direction)
         {
-			Vector2 offset;
-
 			float rotation;
-			if (left)
+			Vector2 offset;
+			
+
+			switch(direction)
             {
-				rotation = 1.5f;
-				offset = new Vector2 (scale.Y * 0.67f, 0);
-			}	
-			else
-            {
-				rotation = 0.5f;
-				offset = new Vector2(scale.Y * 0.33f, 0);
-			}
-				
+				case "right":
+					rotation = 0.5f;
+					offset = new Vector2(scale.Y * 0.33f, 0);
+					break;
+				case "down":
+					rotation = 1;
+					offset = new Vector2(scale.X / 2, scale.Y * -0.1f);
+					break;
+				case "left":
+					rotation = 1.5f;
+					offset = new Vector2(scale.Y * 0.67f, 0);
+					break;
+				case "up":
+				default:
+					rotation = 0;
+					offset = new Vector2(scale.X / 2, scale.Y * 0.1f);
+					break;
+			}				
 
 			DrawTexture("Triangle", position - offset, scale, (float) Math.PI * rotation, color);
         }
+
+
+		// Draw Vert Triangle
+		void DrawDoubleTriangle(Vector2 position, Vector2 scale, Color color, string direction)
+        {
+			float rotation;
+			float length = scale.Y * 0.33f;
+			Vector2 offset1;
+			Vector2 offset2;
+
+			switch (direction)
+			{
+				case "right":
+					rotation = 0.5f;
+					offset1 = new Vector2(scale.Y * 0.33f, 0);
+					offset2 = new Vector2(length, 0);
+					break;
+				case "down":
+					rotation = 1;
+					offset1 = new Vector2(scale.X / 4, scale.Y * -0.25f);
+					offset2 = new Vector2(0, -length);
+					break;
+				case "left":
+					rotation = 1.5f;
+					offset1 = new Vector2(scale.Y * 0.167f, 0);
+					offset2 = new Vector2(-length, 0);
+					break;
+				case "up":
+				default:
+					rotation = 0;
+					offset1 = new Vector2(scale.X / 4, scale.Y * 0.125f);
+					offset2 = new Vector2(0, length);
+					break;
+			}
+
+			rotation *= (float)Math.PI;
+			position -= offset1;
+
+			DrawTexture("Triangle", position, scale * 0.5f, rotation, color);
+
+			position += offset2;
+
+			DrawTexture("Triangle", position, scale * 0.5f, rotation, color);
+		}
 
 
 		// DRAW TOGGLE //
@@ -1159,6 +1225,26 @@ namespace IngameScript
 			position -= new Vector2(scale.Y / 2, 0);
 			DrawTexture("SemiCircle", position, scale, (float) Math.PI * 1.5f, color);
 			DrawTexture("CircleHollow", position, scale, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale.X * 0.05f, 0), scale * 0.9f, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale.X * 0.075f, 0), scale * 0.85f, 0, color);
+		}
+
+
+		// DRAW CYCLE //
+		void DrawCycle(Vector2 position, Vector2 scale, Color color)
+        {
+			position -= new Vector2(scale.Y / 2, 0);
+			DrawTexture("CircleHollow", position, scale, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale.X * 0.05f, 0), scale * 0.9f, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale.X * 0.075f, 0), scale * 0.85f, 0, color);
+			DrawTexture("Triangle", position + new Vector2(scale.X * 0.67f, -scale.Y * 0.25f), scale * 0.5f, (float)Math.PI * 0.75f, color);
+		}
+
+		
+		// DRAW CHARACTERS //
+		void DrawCharacters(string characters, Vector2 position, Color color)
+        {
+			//TODO?
         }
 
 		// DRAW MENUS //
