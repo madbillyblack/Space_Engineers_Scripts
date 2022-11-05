@@ -259,6 +259,7 @@ namespace IngameScript
 			if (_mapList.Count > 0)
 			{
 				CycleExecute();
+				ButtonTimer();
 
 				if (argument != "")
 				{
@@ -471,6 +472,9 @@ namespace IngameScript
 						case "UPDATE":
 							if (cmdArg == "TAGS")
 								SetGridID();
+							break;
+						case "BUTTON":
+							ButtonPress(cmdArg, argData);
 							break;
 						default:
 							_statusMessage = "UNRECOGNIZED COMMAND!";

@@ -25,6 +25,9 @@ namespace IngameScript
         const string MENU_HEAD = "Map Menu";
         const string MENU_TAG = "[Map Menu]";
         List<MapMenu> _mapMenus;
+        
+        public static int _buttonCountDown;
+        const int BUTTON_TIME = 3;
 
 
         // MAP MENU //
@@ -35,13 +38,16 @@ namespace IngameScript
             public int CurrentMapIndex;
             public int CurrentPage;
             public int IDNumber;
+            public int ActiveButton;
             public RectangleF Viewport;
             public Color Color1;
             public Color Color2;
+
             
             public MapMenu(IMyShipController controller)
             {
                 Controller = controller;
+                ActiveButton = 0;
             }
 
             public void InitializeSurface()
@@ -49,12 +55,20 @@ namespace IngameScript
                 PrepareTextSurfaceForSprites(Surface);
                 Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
             }
+
+            public void PressButton(int button)
+            {
+                ActiveButton = button;
+                _buttonCountDown = BUTTON_TIME;
+            }
         }
 
 
         // ASSIGN MENUS // - Get ship controllers tagged with MENU_TAG and add them to the map menu list.
         void AssignMenus()
         {
+            _buttonCountDown = 0;
+
             List<IMyShipController> controllers = new List<IMyShipController>();
             GridTerminalSystem.GetBlocksOfType<IMyShipController>(controllers);
 
@@ -155,6 +169,9 @@ namespace IngameScript
                 return;
             }
 
+            // Deactivate any lit buttons
+            menu.ActiveButton = 0;
+
             if (next)
                 menu.CurrentPage++;
             else
@@ -166,6 +183,35 @@ namespace IngameScript
                 menu.CurrentPage = 6;
 
             DrawMenu(menu);
+        }
+
+
+        // BUTTON TIMER //
+        void ButtonTimer()
+        {
+            if (_buttonCountDown < 1)
+                return;
+            else if (_buttonCountDown == 1)
+                ClearButtons();
+
+            _buttonCountDown--;
+        }
+
+
+        // CLEAR BUTTONS //
+        void ClearButtons()
+        {
+            if (_mapMenus.Count < 1)
+                return;
+
+            foreach(MapMenu menu in _mapMenus)
+            {
+                if(menu.ActiveButton > 0)
+                {
+                    menu.ActiveButton = 0;
+                    DrawMenu(menu);
+                }
+            }
         }
     }
 }

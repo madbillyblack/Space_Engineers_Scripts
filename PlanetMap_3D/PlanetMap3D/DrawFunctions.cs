@@ -996,9 +996,17 @@ namespace IngameScript
 			position = center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
 			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
-			for (int i = 0; i < 7; i ++)
+			for (int i = 1; i < 8; i ++)
             {
-				DrawTexture("SquareSimple", position, buttonScale, 0, color2);
+				Color color;
+
+				// Brighten button if active, otherwise darken
+				if (i == menu.ActiveButton)
+					color = color2 * 2;
+				else
+					color = color2 * 0.5f;
+
+				DrawTexture("SquareSimple", position, buttonScale, 0, color);
 				position += new Vector2(cellWidth, 0);
 			}
 
