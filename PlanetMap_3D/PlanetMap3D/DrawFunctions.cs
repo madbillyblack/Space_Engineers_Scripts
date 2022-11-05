@@ -1067,7 +1067,7 @@ namespace IngameScript
 			fontSize *= 1.5f;
 
 			// Key 1
-			position = center +new Vector2(-3 * cellWidth, buttonHeight * 0.5f);
+			position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.45f);
 			DrawText("1", position, fontSize, TextAlignment.CENTER, color1);
 
 			// Key 2
@@ -1137,7 +1137,7 @@ namespace IngameScript
 					DrawCycle(position, scale, color);
 					break;
 				default:
-					DrawText(arg, position, 1.25f, TextAlignment.CENTER, color);
+					DrawCharacters(arg, position, scale, color);
 					break;
             }
         }
@@ -1242,10 +1242,26 @@ namespace IngameScript
 
 		
 		// DRAW CHARACTERS //
-		void DrawCharacters(string characters, Vector2 position, Color color)
+		void DrawCharacters(string characters, Vector2 position, Vector2 scale, Color color)
         {
-			//TODO?
-        }
+			Vector2 offset;
+			float fontSize;
+
+			if (characters.Length > 3)
+			{
+				offset = new Vector2(0, scale.Y * 0.67f);
+				fontSize = 0.75f;
+			}
+			else
+            {
+				offset = new Vector2(0, scale.Y * 1.25f);
+				fontSize = 1.25f;
+			}
+				
+
+
+			DrawText(characters, position - offset, fontSize, TextAlignment.CENTER, color);
+		}
 
 		// DRAW MENUS //
 		public void DrawMenus()
