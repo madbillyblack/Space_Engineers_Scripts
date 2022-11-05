@@ -975,30 +975,191 @@ namespace IngameScript
 			_frame = menu.Surface.DrawFrame();
 
 			// Set height and width variables
-			float cellWidth = (menu.Viewport.Width / 7);
-			float buttonHeight = (menu.Viewport.Height / 2) - 4;
+			Vector2 center = menu.Viewport.Center;
+			float height = menu.Viewport.Height;
+			float width = menu.Viewport.Width;
+			float fontSize = 0.7f;
+			Color color1 = menu.Color1;
+			Color color2 = menu.Color2;
+
+			int page = menu.CurrentPage;
+			float cellWidth = (width / 7);
+			float buttonHeight = (height / 2);
 			if (buttonHeight > cellWidth)
-				buttonHeight = cellWidth;
+				buttonHeight = cellWidth - 4;
 
+			// Background
+			Vector2 position = center - new Vector2(width / 2, 0);
+			DrawTexture("SquareSimple", position, new Vector2(width, height), 0, color1);
 
-
-			// Draw Button Backgrounds
-			Vector2 position = menu.Viewport.Center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
-			Vector2 buttonScale = new Vector2(buttonHeight - 4, buttonHeight - 4);
+			// Button Backgrounds
+			position = center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
+			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
 			for (int i = 0; i < 7; i ++)
             {
-				DrawTexture("SquareSimple", position, buttonScale, 0, menu.Color2);
+				DrawTexture("SquareSimple", position, buttonScale, 0, color2);
 				position += new Vector2(cellWidth, 0);
 			}
-			
+
+			// Menu Title
+			position = center - new Vector2(width/2 - 10, buttonHeight);
+			DrawText("MENU " + page + ": " + _menuTitle[page], position, fontSize, TextAlignment.LEFT, color2);
+
+			// Menu ID
+			position += new Vector2(width/2 - 10, 0);
+			if(_mapMenus.Count > 1)
+				DrawText("< " + menu.IDNumber + " >", position, fontSize, TextAlignment.CENTER, color2);
+
+			// Current Map
+			position += new Vector2(width / 2 - 10, 0);
+			if(_mapList.Count > 1)
+				DrawText("MAP: " + menu.CurrentMapIndex, position, fontSize, TextAlignment.RIGHT, color2);
+
+			// Label A
+			position = center - new Vector2(cellWidth * 2.5f, buttonHeight * 0.4f);
+			DrawText(_labelA[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
+
+			// Label B
+			position += new Vector2(cellWidth * 2, 0);
+			DrawText(_labelB[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
+
+			// Label C
+			position += new Vector2(cellWidth * 2, 0);
+			DrawText(_labelC[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
+
+			// Label D
+			position += new Vector2(cellWidth * 1.5f, 0);
+			DrawText(_labelD[page], position, fontSize * 0.75f, TextAlignment.CENTER, color2);
+
+
+			Vector2 iconScale = buttonScale * 0.33f;
+
+			// Cmd 1
+			position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.33f);
+			//DrawText(_cmd1[page], position, fontSize, TextAlignment.CENTER, color1);
+			StringToIcon(_cmd1[page], position, iconScale, color1);
+
+			// Cmd 2
+			position += new Vector2(cellWidth, 0);
+			StringToIcon(_cmd2[page], position, iconScale, color1);
+
+			// Cmd 3
+			position += new Vector2(cellWidth, 0);
+			StringToIcon(_cmd3[page], position, iconScale, color1);
+
+			// Cmd 4
+			position += new Vector2(cellWidth, 0);
+			StringToIcon(_cmd4[page], position, iconScale, color1);
+
+			// Cmd 5
+			position += new Vector2(cellWidth, 0);
+			StringToIcon(_cmd5[page], position, iconScale, color1);
+
+			// Cmd 6
+			position += new Vector2(cellWidth, 0);
+			StringToIcon(_cmd6[page], position, iconScale, color1);
+
+			// Cmd 7
+			position += new Vector2(cellWidth, 0);
+			StringToIcon(_cmd7[page], position, iconScale, color1);
+
+			fontSize *= 1.5f;
+
+			// Key 1
+			position = center +new Vector2(-3 * cellWidth, buttonHeight * 0.5f);
+			DrawText("1", position, fontSize, TextAlignment.CENTER, color1);
+
+			// Key 2
+			position += new Vector2(cellWidth, 0);
+			DrawText("2", position, fontSize, TextAlignment.CENTER, color1);
+
+			// Key 3
+			position += new Vector2(cellWidth, 0);
+			DrawText("3", position, fontSize, TextAlignment.CENTER, color1);
+
+			// Key 4
+			position += new Vector2(cellWidth, 0);
+			DrawText("4", position, fontSize, TextAlignment.CENTER, color1);
+
+			// Key 5
+			position += new Vector2(cellWidth, 0);
+			DrawText("5", position, fontSize, TextAlignment.CENTER, color1);
+
+			// Key 6
+			position += new Vector2(cellWidth, 0);
+			DrawText("6", position, fontSize, TextAlignment.CENTER, color1);
+
+			// Key 7
+			position += new Vector2(cellWidth, 0);
+			DrawText("7", position, fontSize, TextAlignment.CENTER, color1);
+
+
+			// Test Circle - Center
+			//DrawTexture("CircleHollow", center - new Vector2(buttonHeight/2, 0), buttonScale, 0, Color.Red);
 
 			_frame.Dispose();
 		}
 
 
+		void StringToIcon(string arg, Vector2 position, Vector2 scale, Color color)
+        {
+			switch(arg)
+            {
+				case "<":
+					DrawHorzTriangle(position, scale, color, true);
+					break;
+				case ">":
+					DrawHorzTriangle(position, scale, color, false);
+					break;
+				case "<<":
+					break;
+				case ">>":
+					break;
+				case "/\\":
+					break;
+				case "\\/":
+					break;
+				case "//\\\\":
+					break;
+				case "\\\\//":
+					break;
+				case "-/o":
+					DrawToggle(position, scale, color);
+					break;
+            }
+        }
 
 
+		// Draw Horz Triangle
+		void DrawHorzTriangle(Vector2 position, Vector2 scale, Color color, bool left)
+        {
+			Vector2 offset;
+
+			float rotation;
+			if (left)
+            {
+				rotation = 1.5f;
+				offset = new Vector2 (scale.Y * 0.67f, 0);
+			}	
+			else
+            {
+				rotation = 0.5f;
+				offset = new Vector2(scale.Y * 0.33f, 0);
+			}
+				
+
+			DrawTexture("Triangle", position - offset, scale, (float) Math.PI * rotation, color);
+        }
+
+
+		// DRAW TOGGLE //
+		void DrawToggle(Vector2 position, Vector2 scale, Color color)
+        {
+			position -= new Vector2(scale.Y / 2, 0);
+			DrawTexture("SemiCircle", position, scale, (float) Math.PI * 1.5f, color);
+			DrawTexture("CircleHollow", position, scale, 0, color);
+        }
 
 		// DRAW MENUS //
 		public void DrawMenus()

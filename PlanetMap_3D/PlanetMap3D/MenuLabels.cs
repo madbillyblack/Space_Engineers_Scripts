@@ -34,8 +34,8 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _labelA = new Dictionary<int, string>()
         {
-           {1,"Map"},
-           {2,"Zoom"},
+           {1,"MAP"},
+           {2,"ZOOM"},
            {3,""},
            {4,""},
            {5,""},
@@ -44,8 +44,8 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _labelB = new Dictionary<int, string>()
         {
-           {1,"Planet"},
-           {2,"Radius"},
+           {1,"PLANET"},
+           {2,"RADIUS"},
            {3,""},
            {4,""},
            {5,""},
@@ -54,8 +54,8 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _labelC = new Dictionary<int, string>()
         {
-           {1,"Waypoint"},
-           {2,"Map Mode"},
+           {1,"WAYPOINT"},
+           {2,"MAP MODE"},
            {3,""},
            {4,""},
            {5,""},
@@ -64,59 +64,59 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _labelD = new Dictionary<int, string>()
         {
-           {1,"Display"},
-           {2,"Info"},
-           {3,"Info"},
-           {4,"Info"},
+           {1,"DISPLAY"},
+           {2,"INFO"},
+           {3,"INFO"},
+           {4,"INFO"},
            {5,""},
            {6,""}
         };
 
         readonly Dictionary<int, string> _cmd1 = new Dictionary<int, string>()
         {
-           {1,"◀"},
+           {1,"<"},
            {2,"-"},
-           {3,"◀"},
-           {4,"◀"},
-           {5,"◀◀"},
-           {6,"◀"}
+           {3,"<"},
+           {4,"<"},
+           {5,"<<"},
+           {6,"<"}
         };
 
         readonly Dictionary<int, string> _cmd2 = new Dictionary<int, string>()
         {
-           {1,"▶"},
+           {1,">"},
            {2,"+"},
-           {3,"▶"},
-           {4,"▶"},
-           {5,"▶▶"},
-           {6,"▶"}
+           {3,">"},
+           {4,">"},
+           {5,">>"},
+           {6,">"}
         };
 
         readonly Dictionary<int, string> _cmd3 = new Dictionary<int, string>()
         {
-           {1,"◀"},
+           {1,"<"},
            {2,"+"},
-           {3,"▼"},
-           {4,"▼"},
-           {5,"\\▼/"},
-           {6,"▼"}
+           {3,"\\/"},
+           {4,"\\/"},
+           {5,"\\\\//"},
+           {6,"\\/"}
         };
 
         readonly Dictionary<int, string> _cmd4 = new Dictionary<int, string>()
         {
-           {1,"▶"},
+           {1,">"},
            {2,"-"},
-           {3,"▲"},
-           {4,"▲"},
-           {5,"/▲\\"},
-           {6,"▲"}
+           {3,"/\\"},
+           {4,"/\\"},
+           {5,"//\\\\"},
+           {6,"/\\"}
         };
 
         readonly Dictionary<int, string> _cmd5 = new Dictionary<int, string>()
         {
-           {1,""},
-           {2,"◀"},
-           {3,"◀◀"},
+           {1,"<"},
+           {2,"<"},
+           {3,"<<"},
            {4,"-"},
            {5,"--"},
            {6,""}
@@ -124,7 +124,7 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _cmd6 = new Dictionary<int, string>()
         {
-           {1,""},
+           {1,">"},
            {2,""},
            {3,""},
            {4,"+"},
