@@ -34,7 +34,10 @@ namespace IngameScript
             public IMyTextSurface Surface;
             public int CurrentMapIndex;
             public int CurrentPage;
+            public int IDNumber;
             public RectangleF Viewport;
+            public Color Color1;
+            public Color Color2;
             
             public MapMenu(IMyShipController controller)
             {
@@ -65,6 +68,7 @@ namespace IngameScript
                         MapMenu menu = MenuFromController(controller);
                         if (menu != null)
                         {
+                            menu.IDNumber = _mapMenus.Count;
                             menu.InitializeSurface();
                             DrawMenu(menu);
                             _mapMenus.Add(menu);
@@ -84,7 +88,11 @@ namespace IngameScript
             // Get name of block and index of screen where menu interface should be displayed
             string blockName = GetKey(block, MENU_HEAD, "LCD Block", block.CustomName);
             int index = ParseInt(GetKey(block, MENU_HEAD, "LCD Index", "0"), 0);
+
+            // Set currently available menu parameters
             menu.CurrentPage = ParseInt(GetKey(block, MENU_HEAD, "Current Page", "1"), 1);
+            menu.Color1 = ParseColor(GetKey(block, MENU_HEAD, "Color 1", "0,0,0"));
+            menu.Color2 = ParseColor(GetKey(block, MENU_HEAD, "Color 2", "0,127,0"));
 
             int mapIndex;
 

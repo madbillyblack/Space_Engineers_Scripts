@@ -973,27 +973,31 @@ namespace IngameScript
 		public void DrawMenu(MapMenu menu)
         {
 			_frame = menu.Surface.DrawFrame();
-			float cellWidth = (menu.Viewport.Width / 7);
 
+			// Set height and width variables
+			float cellWidth = (menu.Viewport.Width / 7);
 			float buttonHeight = (menu.Viewport.Height / 2) - 4;
 			if (buttonHeight > cellWidth)
 				buttonHeight = cellWidth;
 
-			Vector2 buttonScale = new Vector2(buttonHeight - 4, buttonHeight -4);
 
-
-			Vector2 position = menu.Viewport.Center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
 
 			// Draw Button Backgrounds
-			for(int i = 0; i < 7; i ++)
+			Vector2 position = menu.Viewport.Center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
+			Vector2 buttonScale = new Vector2(buttonHeight - 4, buttonHeight - 4);
+
+			for (int i = 0; i < 7; i ++)
             {
-				DrawTexture("SquareSimple", position, buttonScale, 0, Color.Blue);
+				DrawTexture("SquareSimple", position, buttonScale, 0, menu.Color2);
 				position += new Vector2(cellWidth, 0);
 			}
 			
 
 			_frame.Dispose();
 		}
+
+
+
 
 
 		// DRAW MENUS //
