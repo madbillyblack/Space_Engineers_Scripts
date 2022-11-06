@@ -83,6 +83,7 @@ namespace IngameScript
                     CyclePlanets(map, false);
                     break;
                 case 2:
+                    Zoom(map, false);
                     break;
                 case 3:
                     break;
@@ -109,6 +110,7 @@ namespace IngameScript
                     CyclePlanets(map, true);
                     break;
                 case 2:
+                    Zoom(map, true);
                     break;
                 case 3:
                     break;
@@ -136,6 +138,7 @@ namespace IngameScript
                     CycleWaypoints(map, false);
                     break;
                 case 2:
+                    AdjustRadius(map, true);
                     break;
                 case 3:
                     break;
@@ -162,6 +165,7 @@ namespace IngameScript
                     CycleWaypoints(map, true);
                     break;
                 case 2:
+                    AdjustRadius(map, false);
                     break;
                 case 3:
                     break;
@@ -188,6 +192,7 @@ namespace IngameScript
                     menu.PreviousMap();
                     break;
                 case 2:
+                    CycleMode(map, false);
                     break;
                 case 3:
                     break;
@@ -214,6 +219,7 @@ namespace IngameScript
                     menu.NextMap();
                     break;
                 case 2:
+                    CycleMode(map, true);
                     break;
                 case 3:
                     break;
@@ -240,12 +246,16 @@ namespace IngameScript
                     cycleGPS(map);
                     break;
                 case 2:
+                    map.showInfo = setState(map.showInfo, 3); // Toggle Info Bars
                     break;
                 case 3:
+                    map.showInfo = setState(map.showInfo, 3); // Toggle Info Bars
                     break;
                 case 4:
+                    map.showInfo = setState(map.showInfo, 3); // Toggle Info Bars
                     break;
                 case 5:
+                    map.Stop();
                     break;
                 case 6:
                     break;

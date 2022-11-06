@@ -62,7 +62,7 @@ namespace IngameScript
 			switch (command)
 			{
 				case "ZOOM":
-					Zoom(maps, cmdArg);
+					ZoomMaps(maps, cmdArg);
 					break;
 				case "MOVE":
 					MoveCenter(maps, cmdArg);
@@ -150,10 +150,10 @@ namespace IngameScript
 					ChangeMode("ORBIT", maps);
 					break;
 				case "DECREASE_RADIUS":
-					AdjustRadius(maps, false);
+					AdjustRadiusForList(maps, false);
 					break;
 				case "INCREASE_RADIUS":
-					AdjustRadius(maps, true);
+					AdjustRadiusForList(maps, true);
 					break;
 				case "CENTER_SHIP":
 					MapsToShip(maps);
@@ -266,7 +266,7 @@ namespace IngameScript
 					CycleWaypointsForList(maps, state);
 					break;
 				case "MODE":
-					CycleMode(maps, state);
+					CycleModeForList(maps, state);
 					break;
 				case "PAGE":
 					NextPage(state);

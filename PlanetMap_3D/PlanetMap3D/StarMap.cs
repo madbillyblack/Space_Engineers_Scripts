@@ -95,6 +95,14 @@ namespace IngameScript
 				}
 			}
 
+			public void Stop()
+            {
+				dX = 0;
+				dY = 0;
+				dZ = 0;
+				dAz = 0;
+			}
+
 			public string gpsStateToMode()
 			{
 				switch (this.gpsState)
