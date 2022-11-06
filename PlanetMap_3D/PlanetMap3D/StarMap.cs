@@ -22,6 +22,7 @@ namespace IngameScript
 {
     partial class Program
     {
+		const string MAP_HEADER = "mapDisplay";
 		static List<StarMap> _mapList;
 
 		public class StarMap
@@ -114,6 +115,138 @@ namespace IngameScript
 
 				return this.gpsMode;
 			}
+		}
+
+
+		// PARAMETERS TO MAPS //
+		public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
+		{
+			List<StarMap> mapsOut = new List<StarMap>();
+			/*
+			MyIni lcdIni = DataToIni(mapBlock);
+
+			if (!mapBlock.CustomData.Contains("[mapDisplay]"))
+			{
+				string oldData = mapBlock.CustomData.Trim();
+				string newData = _defaultDisplay;
+
+				if (oldData.StartsWith("["))
+				{
+					newData += "\n\n" + oldData;
+				}
+				else if (oldData != "")
+				{
+					newData += "\n---\n" + oldData;
+				}
+
+				mapBlock.CustomData = newData;
+			}
+
+			string indexString;
+
+			if (!mapBlock.CustomData.Contains("Indexes"))
+			{
+				indexString = "";
+			}
+			else
+			{
+				indexString = lcdIni.Get("mapDisplay", "Indexes").ToString();
+			}
+			*/
+
+			string indexString = GetKey(mapBlock, MAP_HEADER, "Indexes", "0");
+			string[] indexStrings = indexString.Split(',');
+			int iLength = indexStrings.Length;
+
+			//Split Ini parameters into string lists. Insure all lists are the same length.
+
+			List<string> centers = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Center", "(0,0,0)"), ';', iLength, "(0,0,0)");
+			//List<string> centers = StringToEntries(lcdIni.Get("mapDisplay", "Center").ToString(), ';', iLength, "(0,0,0)");
+
+			List<string> fLengths = StringToEntries(GetKey(mapBlock, MAP_HEADER, "FocalLength", DV_FOCAL.ToString()), ',', iLength, DV_FOCAL.ToString());
+			//List<string> fLengths = StringToEntries(lcdIni.Get("mapDisplay", "FocalLength").ToString(), ',', iLength, DV_FOCAL.ToString());
+
+			List<string> radii = StringToEntries(GetKey(mapBlock, MAP_HEADER, "RotationalRadius", DV_RADIUS.ToString()), ',', iLength, DV_RADIUS.ToString());
+			//List<string> radii = StringToEntries(lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', iLength, DV_RADIUS.ToString());
+			
+			List<string> azimuths = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Azimuth", DV_ALTITUDE.ToString()), ',', iLength, "0");
+			//List<string> azimuths = StringToEntries(lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', iLength, "0");
+
+			List<string> altitudes = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Altitude", DV_ALTITUDE.ToString()), ',', iLength, DV_ALTITUDE.ToString());
+			//List<string> altitudes = StringToEntries(lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', iLength, DV_ALTITUDE.ToString());
+
+			List<string> modes = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Mode", "FREE"), ',', iLength, "FREE");
+			//List<string> modes = StringToEntries(lcdIni.Get("mapDisplay", "Mode").ToString(), ',', iLength, "FREE");
+
+			List<string> gpsModes = StringToEntries(GetKey(mapBlock, MAP_HEADER, "GPS", "true"), ',', iLength, "true");
+			//List<string> gpsModes = StringToEntries(lcdIni.Get("mapDisplay", "GPS").ToString(), ',', iLength, "true");
+
+			List<string> nameBools = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Names", "true"), ',', iLength, "true");
+			//List<string> nameBools = StringToEntries(lcdIni.Get("mapDisplay", "Names").ToString(), ',', iLength, "true");
+
+			List<string> shipBools = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Ship", "true"), ',', iLength, "true");
+			//List<string> shipBools = StringToEntries(lcdIni.Get("mapDisplay", "Ship").ToString(), ',', iLength, "true");
+
+			List<string> infoBools = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Info", "true"), ',', iLength, "true");
+			//List<string> infoBools = StringToEntries(lcdIni.Get("mapDisplay", "Info").ToString(), ',', iLength, "true");
+
+			List<string> planets = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Planet", "[null]").ToString(), ',', iLength, "[null]");
+			//List<string> planets = StringToEntries(lcdIni.Get("mapDisplay", "Planet").ToString(), ',', iLength, "[null]");
+
+			List<string> waypoints = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Waypoint", "[null]").ToString(), ',', iLength, "[null]");
+			//List<string> waypoints = StringToEntries(lcdIni.Get("mapDisplay", "Waypoint").ToString(), ',', iLength, "[null]");
+
+			//assemble maps by position in string lists.
+			for (int i = 0; i < iLength; i++)
+			{
+				StarMap map = new StarMap();
+				if (indexString == "")
+				{
+					map.index =  _mapIndex;
+				}
+				else
+				{
+					map.index = ParseInt(indexStrings[i], -1);
+				}
+
+				map.block = mapBlock;
+				map.center = StringToVector3(centers[i]);
+				map.focalLength = ParseInt(fLengths[i], DV_FOCAL);
+				map.rotationalRadius = ParseInt(radii[i], DV_RADIUS);
+				map.azimuth = ParseInt(azimuths[i], 0);
+				map.altitude = ParseInt(altitudes[i], DV_ALTITUDE);
+				map.mode = modes[i];
+
+				map.gpsMode = gpsModes[i];
+				switch (map.gpsMode.ToUpper())
+				{
+					case "OFF":
+					case "FALSE":
+						map.gpsState = 0;
+						break;
+					case "SHOW_ACTIVE":
+						map.gpsState = 2;
+						break;
+					default:
+						map.gpsState = 1;
+						break;
+				}
+
+				map.showNames = ParseBool(nameBools[i]);
+				map.showShip = ParseBool(shipBools[i]);
+				map.showInfo = ParseBool(infoBools[i]);
+				map.activePlanetName = planets[i];
+				map.activePlanet = GetPlanet(map.activePlanetName);
+				map.activeWaypointName = waypoints[i];
+				map.activeWaypoint = GetWaypoint(map.activeWaypointName);
+
+				if (map.index > -1)
+					mapsOut.Add(map);
+				else
+					_statusMessage += "Invalid map index in block \"" + mapBlock.CustomName + "\"\nIndex:" + indexString; 
+			}
+
+			return mapsOut;
 		}
 	}
 }

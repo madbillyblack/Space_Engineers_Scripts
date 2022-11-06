@@ -95,9 +95,14 @@ namespace IngameScript
 		const string SLASHES = " //////////////////////////////////////////////////////////////";
 		const string GPS_INPUT = "// GPS INPUT ";
 		const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_ID=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
-		string _defaultDisplay = "[mapDisplay]\nGrid_ID=\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
+		const string PROGRAM_HEAD = "Map Settings";
+		
+		/*
+		 string _defaultDisplay = "[mapDisplay]\nGrid_ID=\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
 									+ DV_FOCAL + "\nRotationalRadius=" + DV_RADIUS + "\nAzimuth=0\nAltitude="
 									+ DV_ALTITUDE + "\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True\nPlanet=";
+		*/
+
 
 		string[] _cycleSpinner = { "--", " / ", " | ", " \\ " };
 
@@ -234,9 +239,7 @@ namespace IngameScript
 				Echo("Data Screen: Active");
 			}
 
-			bool hasPlanets = _planetList.Count > 0;
-
-			if (hasPlanets)
+			if (_planets)
 			{
 				Echo("Planet Count: " + _planetList.Count);
 				Planet planet = _planetList[_planetList.Count - 1];
@@ -263,236 +266,10 @@ namespace IngameScript
 
 				if (argument != "")
 				{
-					string[] args = argument.Split(' ');
-					string[] cmds = args[0].ToUpper().Split('_');
-					string command = cmds[0];
-					string cmdArg = "";
-					if (cmds.Length > 1)
-						cmdArg = cmds[1];
-
-					// Account for single instance commands with underscores
-					if (cmdArg == "RADIUS" || cmdArg == "SHIP" || cmdArg == "JUMP")
-						command = args[0];
-
-					string argData = "";
-					_statusMessage = "";
-					_activeWaypoint = "";
-					_previousCommand = "Command: " + argument;
-
-					// If there are multiple words in the argument. Combine the latter words into the entity name.
-					if (args.Length == 1)
-					{
-						argData = "0";
-					}
-					else if (args.Length > 1)
-					{
-						argData = args[1];
-						if (args.Length > 2)
-						{
-							for (int q = 2; q < args.Length; q++)
-							{
-								argData += " " + args[q];
-							}
-						}
-					}
-
-					List<StarMap> maps = ArgToMaps(argData);
-
-					switch (command)
-					{
-						case "ZOOM":
-							Zoom(maps, cmdArg);
-							break;
-						case "MOVE":
-							MoveCenter(maps, cmdArg);
-							break;
-						case "DEFAULT":
-							MapsToDefault(maps);
-							break;
-						case "ROTATE":
-							RotateMaps(maps, cmdArg);
-							break;
-						case "SPIN":
-							SpinMaps(maps, cmdArg, ANGLE_STEP / 2);
-							break;
-						case "TRACK":
-							TrackCenter(maps, cmdArg);
-							break;
-						case "STOP":
-							StopMaps(maps);
-							break;
-						case "GPS":
-							if (cmdArg == "ON")
-							{
-								Show(maps, "GPS", 1);
-							}
-							else
-							{
-								Show(maps, "GPS", 0);
-							}
-							break;
-						case "HIDE":
-							if (cmdArg == "WAYPOINT")
-							{
-								SetWaypointState(argData, 0);
-							}
-							else
-							{
-								Show(maps, cmdArg, 0);
-							}
-							break;
-						case "SHOW":
-							if (cmdArg == "WAYPOINT")
-							{
-								SetWaypointState(argData, 1);
-							}
-							else
-							{
-								Show(maps, cmdArg, 1);
-							}
-							break;
-						case "TOGGLE":
-							if (cmdArg == "WAYPOINT")
-							{
-								SetWaypointState(argData, 2);
-							}
-							else
-							{
-								Show(maps, cmdArg, 3);
-							}
-							break;
-						case "CYCLE"://GPS
-							cycleGPS(maps);
-							break;
-						case "NEXT":
-							nextLast(maps, cmdArg, true);
-							break;
-						case "PREVIOUS":
-							nextLast(maps, cmdArg, false);
-							break;
-						case "WORLD"://MODE
-							ChangeMode("WORLD", maps);
-							break;
-						case "SHIP"://MODE
-							ChangeMode("SHIP", maps);
-							break;
-						case "CHASE"://MODE
-							ChangeMode("CHASE", maps);
-							break;
-						case "PLANET"://MODE
-							ChangeMode("PLANET", maps);
-							break;
-						case "FREE"://MODE
-							ChangeMode("FREE", maps);
-							break;
-						case "ORBIT"://MODE
-							ChangeMode("ORBIT", maps);
-							break;
-						case "DECREASE_RADIUS":
-							AdjustRadius(maps, false);
-							break;
-						case "INCREASE_RADIUS":
-							AdjustRadius(maps, true);
-							break;
-						case "CENTER_SHIP":
-							MapsToShip(maps);
-							break;
-						case "WAYPOINT":
-							waypointCommand(cmdArg, argData);
-							break;
-						case "PASTE":
-							ClipboardToLog(cmdArg, argData);
-							break;
-						case "EXPORT"://WAYPOINT
-							_clipboard = LogToClipboard(argData);
-							break;
-						case "PROJECT":
-							ProjectPoint(cmdArg, argData);
-							break;
-						case "NEW"://PLANET
-							NewPlanet(argData);
-							break;
-						case "LOG":
-							if (cmdArg == "NEXT")
-							{
-								LogNext(argData);
-							}
-							else if (cmdArg == "BATCH")
-							{
-								LogBatch();
-							}
-							else
-							{
-								LogWaypoint(argData, _myPos, cmdArg, "WHITE");
-							}
-							break;
-						case "COLOR":
-							if (cmdArg == "PLANET")
-							{
-								SetPlanetColor(argData);
-							}
-							else
-							{
-								SetWaypointColor(argData);
-							}
-							break;
-						case "MAKE":
-							SetWaypointType(cmdArg, argData);
-							break;
-						case "PLOT_JUMP":
-							PlotJumpPoint(argData);
-							break;
-						case "SCROLL":
-							pageScroll(cmdArg);
-							break;
-						case "BRIGHTEN":
-							if (_brightnessMod < BRIGHTNESS_LIMIT)
-								_brightnessMod += 0.25f;
-							break;
-						case "DARKEN":
-							if (_brightnessMod > 1)
-								_brightnessMod -= 0.25f;
-							break;
-						case "DELETE":
-							if (cmdArg == "PLANET")
-							{
-								DeletePlanet(argData);
-							}
-							else
-							{
-								SetWaypointState(argData, 3);
-							}
-							break;
-						case "SYNC":
-							sync(cmdArg, argData);
-							break;
-						case "REFRESH":
-							Build();
-							break;
-						case "UPDATE": // TAGS / GRID_ID
-						case "SET": // GRID_ID
-							if (cmdArg.Contains("GRID")|| cmdArg.Contains("TAGS"))
-								SetGridID();
-							break;
-						case "BUTTON":
-							ButtonPress(cmdArg, argData);
-							break;
-						default:
-							_statusMessage = "UNRECOGNIZED COMMAND!";
-							break;
-					}
-
-					if (maps.Count > 0)
-					{
-						foreach (StarMap cmdMap in maps)
-						{
-							UpdateMap(cmdMap);
-							MapToParameters(cmdMap);
-						}
-					}
+					MainSwitch(argument);
 				}
 
-				if (hasPlanets)
+				if (_planets)
 				{
 					if (_cycleStep == _cycleLength || _previousCommand == "NEWLY LOADED")
 					{
@@ -572,108 +349,7 @@ namespace IngameScript
 		}
 
 
-		// PARAMETERS TO MAPS //
-		public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
-		{
-			List<StarMap> mapsOut = new List<StarMap>();
 
-			MyIni lcdIni = DataToIni(mapBlock);
-
-			if (!mapBlock.CustomData.Contains("[mapDisplay]"))
-			{
-				string oldData = mapBlock.CustomData.Trim();
-				string newData = _defaultDisplay;
-
-				if (oldData.StartsWith("["))
-				{
-					newData += "\n\n" + oldData;
-				}
-				else if (oldData != "")
-				{
-					newData += "\n---\n" + oldData;
-				}
-
-				mapBlock.CustomData = newData;
-			}
-
-			string indexString;
-
-			if (!mapBlock.CustomData.Contains("Indexes"))
-			{
-				indexString = "";
-			}
-			else
-			{
-				indexString = lcdIni.Get("mapDisplay", "Indexes").ToString();
-			}
-
-			string[] indexStrings = indexString.Split(',');
-			int iLength = indexStrings.Length;
-
-			//Split Ini parameters into string lists. Insure all lists are the same length.
-			List<string> centers = StringToEntries(lcdIni.Get("mapDisplay", "Center").ToString(), ';', iLength, "(0,0,0)");
-			List<string> fLengths = StringToEntries(lcdIni.Get("mapDisplay", "FocalLength").ToString(), ',', iLength, DV_FOCAL.ToString());
-			List<string> radii = StringToEntries(lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', iLength, DV_RADIUS.ToString());
-			List<string> azimuths = StringToEntries(lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', iLength, "0");
-			List<string> altitudes = StringToEntries(lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', iLength, DV_ALTITUDE.ToString());
-			List<string> modes = StringToEntries(lcdIni.Get("mapDisplay", "Mode").ToString(), ',', iLength, "FREE");
-			List<string> gpsModes = StringToEntries(lcdIni.Get("mapDisplay", "GPS").ToString(), ',', iLength, "true");
-			List<string> nameBools = StringToEntries(lcdIni.Get("mapDisplay", "Names").ToString(), ',', iLength, "true");
-			List<string> shipBools = StringToEntries(lcdIni.Get("mapDisplay", "Ship").ToString(), ',', iLength, "true");
-			List<string> infoBools = StringToEntries(lcdIni.Get("mapDisplay", "Info").ToString(), ',', iLength, "true");
-			List<string> planets = StringToEntries(lcdIni.Get("mapDisplay", "Planet").ToString(), ',', iLength, "[null]");
-			List<string> waypoints = StringToEntries(lcdIni.Get("mapDisplay", "Waypoint").ToString(), ',', iLength, "[null]");
-
-			//assemble maps by position in string lists.
-			for (int i = 0; i < iLength; i++)
-			{
-				StarMap map = new StarMap();
-				if (indexString == "")
-				{
-					map.index = _mapIndex;
-				}
-				else
-				{
-					_statusMessage += "Error in parsing map index for " + mapBlock.CustomName + "!\n- Try refreshing script!\n";
-					map.index = ParseInt(indexStrings[i], _mapIndex);
-				}
-
-				map.block = mapBlock;
-				map.center = StringToVector3(centers[i]);
-				map.focalLength = ParseInt(fLengths[i], DV_FOCAL);
-				map.rotationalRadius = ParseInt(radii[i], DV_RADIUS);
-				map.azimuth = ParseInt(azimuths[i], 0);
-				map.altitude = ParseInt(altitudes[i], DV_ALTITUDE);
-				map.mode = modes[i];
-
-				map.gpsMode = gpsModes[i];
-				switch (map.gpsMode.ToUpper())
-				{
-					case "OFF":
-					case "FALSE":
-						map.gpsState = 0;
-						break;
-					case "SHOW_ACTIVE":
-						map.gpsState = 2;
-						break;
-					default:
-						map.gpsState = 1;
-						break;
-				}
-
-				map.showNames = ParseBool(nameBools[i]);
-				map.showShip = ParseBool(shipBools[i]);
-				map.showInfo = ParseBool(infoBools[i]);
-				map.activePlanetName = planets[i];
-				map.activePlanet = GetPlanet(map.activePlanetName);
-				map.activeWaypointName = waypoints[i];
-				map.activeWaypoint = GetWaypoint(map.activeWaypointName);
-
-				mapsOut.Add(map);
-			}
-
-			return mapsOut;
-		}
 
 
 		// DATA TO LOG //
@@ -688,7 +364,7 @@ namespace IngameScript
 				{
 					waypointData += WaypointToString(waypoint) + "\n";
 				}
-				mapIni.Set("Map Settings", "Waypoint_List", waypointData);
+				mapIni.Set(PROGRAM_HEAD, "Waypoint_List", waypointData);
 			}
 
 			String planetData = "";
@@ -710,7 +386,7 @@ namespace IngameScript
 
 			if (planetData != "")
 			{
-				mapIni.Set("Map Settings", "Planet_List", planetData);
+				mapIni.Set(PROGRAM_HEAD, "Planet_List", planetData);
 			}
 
 			Me.CustomData = mapIni.ToString();
@@ -989,7 +665,10 @@ namespace IngameScript
 			_unchartedList.Remove(alderaan);
 			_planetList.Remove(alderaan);
 			DataToLog();
-			_statusMessage = "PLANET DELETED: " + planetName + "\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.\n";
+            _statusMessage = "PLANET DELETED: " + planetName + "\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.\n";
+
+
+            _planets = _planetList.Count > 0;
 
 			if (_planets)
 				_nearestPlanet = _planetList[0];
@@ -1029,6 +708,7 @@ namespace IngameScript
 				{
 					_planetList.Add(planet);
 					_unchartedList.Remove(planet);
+					_planets = true;
 				}
 
 				planet.CalculatePlanet();
@@ -2487,22 +2167,22 @@ namespace IngameScript
 			_mapLog = DataToIni(Me);
 
 			//Name of screen to print map to.
-			_mapTag = _mapLog.Get("Map Settings", "MAP_Tag").ToString();
+			_mapTag = _mapLog.Get(PROGRAM_HEAD, "MAP_Tag").ToString();
 
 			//Index of screen to print map to.
-			_mapIndex = _mapLog.Get("Map Settings", "MAP_Index").ToUInt16();
+			_mapIndex = _mapLog.Get(PROGRAM_HEAD, "MAP_Index").ToUInt16();
 
 			//Index of screen to print map data to.
-			_dataIndex = _mapLog.Get("Map Settings", "Data_Index").ToUInt16();
+			_dataIndex = _mapLog.Get(PROGRAM_HEAD, "Data_Index").ToUInt16();
 
 			//Name of reference block
-			_refName = _mapLog.Get("Map Settings", "Reference_Name").ToString();
+			_refName = _mapLog.Get(PROGRAM_HEAD, "Reference_Name").ToString();
 
 			//Name of Data Display Block
-			_dataName = _mapLog.Get("Map Settings", "Data_Tag").ToString();
+			_dataName = _mapLog.Get(PROGRAM_HEAD, "Data_Tag").ToString();
 
 			//Slow Mode
-			_slowMode = ParseBool(GetKey(Me, "Map Settings", "Slow_Mode", "false"));
+			_slowMode = ParseBool(GetKey(Me, PROGRAM_HEAD, "Slow_Mode", "false"));
 
 			//Grid Tag
 			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
@@ -2517,7 +2197,7 @@ namespace IngameScript
 			//Cycle Step Length
 			try
 			{
-				_cycleLength = Int16.Parse(GetKey(Me, "Map Settings", "Cycle_Step", "5"));
+				_cycleLength = Int16.Parse(GetKey(Me, PROGRAM_HEAD, "Cycle_Step", "5"));
 			}
 			catch
 			{
@@ -2584,7 +2264,7 @@ namespace IngameScript
 
 
 
-			string planetData = _mapLog.Get("Map Settings", "Planet_List").ToString();
+			string planetData = _mapLog.Get(PROGRAM_HEAD, "Planet_List").ToString();
 
 			string[] mapEntries = planetData.Split('\n');
 			foreach (string planetString in mapEntries)
@@ -2604,7 +2284,7 @@ namespace IngameScript
 			}
 			_planets = _planetList.Count > 0;
 
-			string waypointData = _mapLog.Get("Map Settings", "Waypoint_List").ToString();
+			string waypointData = _mapLog.Get(PROGRAM_HEAD, "Waypoint_List").ToString();
 			string[] gpsEntries = waypointData.Split('\n');
 
 			foreach (string waypointString in gpsEntries)
