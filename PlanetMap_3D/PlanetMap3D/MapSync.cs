@@ -234,7 +234,7 @@ namespace IngameScript
 			try
 			{
 				sender = GridTerminalSystem.GetBlockWithName(name);
-				senderData = GetKey(sender, "Map Settings", "Grid_ID", sender.CubeGrid.EntityId.ToString());
+				senderData = GetKey(sender, SHARED, "Grid_ID", sender.CubeGrid.EntityId.ToString());
 			}
 			catch
 			{

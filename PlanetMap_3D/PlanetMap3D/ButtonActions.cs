@@ -66,11 +66,11 @@ namespace IngameScript
         void Action1(MapMenu menu)
         {
             menu.PressButton(1);
-            DrawMenu(menu);
 
             switch (menu.CurrentPage)
             {
                 case 1:
+                    menu.PreviousMap();
                     break;
                 case 2:
                     break;
@@ -83,6 +83,8 @@ namespace IngameScript
                 case 6:
                     break;
             }
+
+            DrawMenu(menu);
         }
 
 
@@ -90,11 +92,11 @@ namespace IngameScript
         void Action2(MapMenu menu)
         {
             menu.PressButton(2);
-            DrawMenu(menu);
 
             switch (menu.CurrentPage)
             {
                 case 1:
+                    menu.NextMap();
                     break;
                 case 2:
                     break;
@@ -107,6 +109,9 @@ namespace IngameScript
                 case 6:
                     break;
             }
+
+
+            DrawMenu(menu);
         }
 
 
@@ -114,7 +119,6 @@ namespace IngameScript
         void Action3(MapMenu menu)
         {
             menu.PressButton(3);
-            DrawMenu(menu);
 
             switch (menu.CurrentPage)
             {
@@ -131,6 +135,8 @@ namespace IngameScript
                 case 6:
                     break;
             }
+
+            DrawMenu(menu);
         }
 
 
@@ -138,7 +144,6 @@ namespace IngameScript
         void Action4(MapMenu menu)
         {
             menu.PressButton(4);
-            DrawMenu(menu);
 
             switch (menu.CurrentPage)
             {
@@ -155,6 +160,8 @@ namespace IngameScript
                 case 6:
                     break;
             }
+
+            DrawMenu(menu);
         }
 
 
@@ -162,7 +169,6 @@ namespace IngameScript
         void Action5(MapMenu menu)
         {
             menu.PressButton(5);
-            DrawMenu(menu);
 
             switch (menu.CurrentPage)
             {
@@ -179,6 +185,8 @@ namespace IngameScript
                 case 6:
                     break;
             }
+
+            DrawMenu(menu);
         }
 
 
@@ -186,7 +194,6 @@ namespace IngameScript
         void Action6(MapMenu menu)
         {
             menu.PressButton(6);
-            DrawMenu(menu);
 
             switch (menu.CurrentPage)
             {
@@ -203,6 +210,8 @@ namespace IngameScript
                 case 6:
                     break;
             }
+
+            DrawMenu(menu);
         }
 
 
@@ -210,7 +219,6 @@ namespace IngameScript
         void Action7(MapMenu menu)
         {
             menu.PressButton(7);
-            DrawMenu(menu);
 
             switch (menu.CurrentPage)
             {
@@ -227,6 +235,8 @@ namespace IngameScript
                 case 6:
                     break;
             }
+
+            DrawMenu(menu);
         }
     }
 }

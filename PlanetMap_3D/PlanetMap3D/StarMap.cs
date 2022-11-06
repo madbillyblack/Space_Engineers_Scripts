@@ -22,7 +22,7 @@ namespace IngameScript
 {
     partial class Program
     {
-		List<StarMap> _mapList;
+		static List<StarMap> _mapList;
 
 		public class StarMap
 		{

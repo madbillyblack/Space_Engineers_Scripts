@@ -469,8 +469,9 @@ namespace IngameScript
 						case "REFRESH":
 							Build();
 							break;
-						case "UPDATE":
-							if (cmdArg == "TAGS")
+						case "UPDATE": // TAGS / GRID_ID
+						case "SET": // GRID_ID
+							if (cmdArg.Contains("GRID")|| cmdArg.Contains("TAGS"))
 								SetGridID();
 							break;
 						case "BUTTON":
@@ -633,15 +634,16 @@ namespace IngameScript
 				}
 				else
 				{
-					map.index = int.Parse(indexStrings[i]);
+					_statusMessage += "Error in parsing map index for " + mapBlock.CustomName + "!\n- Try refreshing script!\n";
+					map.index = ParseInt(indexStrings[i], _mapIndex);
 				}
 
 				map.block = mapBlock;
 				map.center = StringToVector3(centers[i]);
-				map.focalLength = int.Parse(fLengths[i]);
-				map.rotationalRadius = int.Parse(radii[i]);
-				map.azimuth = int.Parse(azimuths[i]);
-				map.altitude = int.Parse(altitudes[i]);
+				map.focalLength = ParseInt(fLengths[i], DV_FOCAL);
+				map.rotationalRadius = ParseInt(radii[i], DV_RADIUS);
+				map.azimuth = ParseInt(azimuths[i], 0);
+				map.altitude = ParseInt(altitudes[i], DV_ALTITUDE);
 				map.mode = modes[i];
 
 				map.gpsMode = gpsModes[i];
@@ -1833,13 +1835,15 @@ namespace IngameScript
 			_gridID = Me.CubeGrid.EntityId.ToString();
 			SetKey(Me, SHARED, "Grid_ID", _gridID);
 
-			if (_mapBlocks.Count < 1)
-				return;
+			_statusMessage += "Grid ID set to:\n" + _gridID + "\n";
 
-			foreach (IMyTerminalBlock mapBlock in _mapBlocks)
+			List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+			GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
+
+			foreach (IMyTerminalBlock block in blocks)
 			{
-				if (mapBlock.IsSameConstructAs(Me))
-					SetKey(mapBlock, SHARED, "Grid_ID", _gridID);
+				if (block.IsSameConstructAs(Me) && block.CustomData.Contains(SHARED))
+					SetKey(block, SHARED, "Grid_ID", _gridID);
 			}
 
 			Build();
@@ -1852,7 +1856,7 @@ namespace IngameScript
 			if (!mapTerminal.IsSameConstructAs(Me))
 				return false;
 
-			string iniGrid = GetKey(mapTerminal, SHARED, "Grid_ID", "Unassigned");
+			string iniGrid = GetKey(mapTerminal, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 
 			if (iniGrid == _gridID)
 				return true;
@@ -2127,22 +2131,31 @@ namespace IngameScript
 		// STRING TO VECTOR3 //
 		public static Vector3 StringToVector3(string sVector)
 		{
-			// Remove the parentheses
-			if (sVector.StartsWith("(") && sVector.EndsWith(")"))
-			{
-				sVector = sVector.Substring(1, sVector.Length - 2);
+            try
+            {
+				// Remove the parentheses
+				if (sVector.StartsWith("(") && sVector.EndsWith(")"))
+				{
+					sVector = sVector.Substring(1, sVector.Length - 2);
+				}
+
+				// split the items
+				string[] sArray = sVector.Split(',');
+
+				// store as a Vector3
+				Vector3 result = new Vector3(
+					ParseFloat(sArray[0], 0),
+					ParseFloat(sArray[1], 0),
+					ParseFloat(sArray[2], 0));
+
+				return result;
 			}
+			catch
+            {
+				return Vector3.Zero;
+            }
 
-			// split the items
-			string[] sArray = sVector.Split(',');
-
-			// store as a Vector3
-			Vector3 result = new Vector3(
-				float.Parse(sArray[0]),
-				float.Parse(sArray[1]),
-				float.Parse(sArray[2]));
-
-			return result;
+			
 		}
 
 

@@ -61,6 +61,29 @@ namespace IngameScript
                 ActiveButton = button;
                 _buttonCountDown = BUTTON_TIME;
             }
+
+            public void NextMap()
+            {
+                if (_mapList.Count < 2)
+                    return;
+
+                CurrentMapIndex++;
+
+                if (CurrentMapIndex >= _mapList.Count)
+                    CurrentMapIndex = 0;
+            }
+
+
+            public void PreviousMap()
+            {
+                if (_mapList.Count < 2)
+                    return;
+
+                CurrentMapIndex--;
+
+                if (CurrentMapIndex < 0)
+                    CurrentMapIndex = _mapList.Count - 1;
+            }
         }
 
 
