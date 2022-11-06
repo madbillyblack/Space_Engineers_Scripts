@@ -266,5 +266,186 @@ namespace IngameScript
 				this.SetMajorAxes();
 			}
 		}
+
+
+		// CYCLE PLANETS //
+		void CyclePlanetsForList(List<StarMap> maps, bool next)
+		{
+			if (NoMaps(maps))
+				return;
+
+			foreach (StarMap map in maps)
+			{
+				CyclePlanets(map, next);
+			}
+		}
+
+		void CyclePlanets(StarMap map, bool next)
+        {
+			if (!_planets)
+			{
+				_statusMessage = "No Planets Logged!";
+				return;
+			}
+
+			DefaultView(map);
+
+			if (next)
+			{
+				map.planetIndex++;
+			}
+			else
+			{
+				map.planetIndex--;
+			}
+
+			if (map.planetIndex < 0)
+			{
+				map.planetIndex = _planetList.Count - 1;
+			}
+			else if (map.planetIndex >= _planetList.Count)
+			{
+				map.planetIndex = 0;
+			}
+
+			SelectPlanet(_planetList[map.planetIndex], map);
+        }
+
+
+
+		// GET PLANET //
+		Planet GetPlanet(string planetName)
+		{
+			if (planetName == "" || planetName == "[null]")
+				return null;
+
+			if (_unchartedList.Count > 0)
+			{
+				foreach (Planet uncharted in _unchartedList)
+				{
+					if (uncharted.name.ToUpper() == planetName.ToUpper())
+					{
+						return uncharted;
+					}
+				}
+			}
+
+			if (_planets)
+			{
+				foreach (Planet planet in _planetList)
+				{
+					if (planet.name.ToUpper() == planetName.ToUpper())
+					{
+						return planet;
+					}
+				}
+			}
+
+			return null;
+		}
+
+
+		// GET WAYPOINT //
+		Waypoint GetWaypoint(string waypointName)
+		{
+			if (_waypointList.Count > 0)
+			{
+				foreach (Waypoint waypoint in _waypointList)
+				{
+					if (waypoint.name.ToUpper() == waypointName.ToUpper())
+					{
+						return waypoint;
+					}
+				}
+			}
+
+			return null;
+		}
+
+
+		// CYCLE WAYPOINTS //
+		void CycleWaypoints(StarMap map, bool next)
+        {
+			int gpsCount = _waypointList.Count;
+
+			if (gpsCount < 1)
+			{
+				_statusMessage = "No Waypoints Logged!";
+				return;
+			}
+
+			DefaultView(map);
+
+			if (next)
+			{
+				map.waypointIndex++;
+			}
+			else
+			{
+				map.waypointIndex--;
+			}
+
+
+			if (map.waypointIndex == -1)
+			{
+				map.activeWaypoint = null;
+				map.activeWaypointName = "";
+				MapToParameters(map);
+				return;
+			}
+			else if (map.waypointIndex < -1)
+			{
+				map.waypointIndex = gpsCount - 1;
+			}
+			else if (map.waypointIndex >= gpsCount)
+			{
+				map.waypointIndex = -1;
+				map.activeWaypoint = null;
+				map.activeWaypointName = "";
+				MapToParameters(map);
+				return;
+			}
+
+			Waypoint waypoint = _waypointList[map.waypointIndex];
+			map.center = waypoint.position;
+			map.activeWaypoint = waypoint;
+			map.activeWaypointName = waypoint.name;
+			MapToParameters(map);
+		}
+
+		void CycleWaypointsForList(List<StarMap> maps, bool next)
+		{
+			if (NoMaps(maps))
+				return;
+
+			foreach (StarMap map in maps)
+			{
+				CycleWaypoints(map, next);
+			}
+		}
+
+
+
+
+		// SELECT PLANET //
+		void SelectPlanet(Planet planet, StarMap map)
+		{
+			map.center = planet.position;
+			map.activePlanetName = planet.name;
+
+			if (planet.name != "" && planet.name != "[null]")
+				map.activePlanet = GetPlanet(planet.name);
+
+
+			if (planet.radius < 27000)
+			{
+				map.focalLength *= 4;
+			}
+			else if (planet.radius < 40000)
+			{
+				map.focalLength *= 3;
+				map.focalLength /= 2;
+			}
+		}
 	}
 }

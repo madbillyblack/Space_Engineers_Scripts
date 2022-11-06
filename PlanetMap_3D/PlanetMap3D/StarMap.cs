@@ -248,5 +248,61 @@ namespace IngameScript
 
 			return mapsOut;
 		}
+
+
+		// ARG TO MAPS //
+		public List<StarMap> ArgToMaps(string arg)
+		{
+			if (arg.ToUpper() == "ALL")
+			{
+				return _mapList;
+			}
+
+			List<StarMap> mapsToEdit = new List<StarMap>();
+
+			string[] args = arg.Split(',');
+
+			foreach (string argValue in args)
+			{
+				int number;
+
+				bool success = Int32.TryParse(argValue, out number);
+				if (success)
+				{
+					if (number < _mapList.Count)
+					{
+						mapsToEdit.Add(_mapList[number]);
+					}
+					else
+					{
+						_statusMessage = "screenID " + argValue + " outside range of Map List!";
+					}
+				}
+			}
+
+			return mapsToEdit;
+		}
+
+
+		public bool NoMaps(List<StarMap> maps)
+		{
+			if (maps.Count < 1)
+			{
+				_statusMessage = "No relevant maps found! Check arguments!";
+				return true;
+			}
+
+			return false;
+		}
+
+
+		// GET MAP //
+		StarMap GetMap(int mapNumber)
+        {
+			if (mapNumber > -1 && mapNumber < _mapList.Count)
+				return _mapList[mapNumber];
+			else
+				return null;
+        }
 	}
 }

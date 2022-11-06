@@ -123,7 +123,7 @@ namespace IngameScript
 					}
 					break;
 				case "CYCLE"://GPS
-					cycleGPS(maps);
+					cycleGPSForList(maps);
 					break;
 				case "NEXT":
 					nextLast(maps, cmdArg, true);
@@ -252,5 +252,42 @@ namespace IngameScript
 				}
 			}
 		}
-    }
+
+
+		// NEXT LAST // - Multi level switch command
+		void nextLast(List<StarMap> maps, string arg, bool state)
+		{
+			switch (arg)
+			{
+				case "PLANET":
+					CyclePlanetsForList(maps, state);
+					break;
+				case "WAYPOINT":
+					CycleWaypointsForList(maps, state);
+					break;
+				case "MODE":
+					CycleMode(maps, state);
+					break;
+				case "PAGE":
+					NextPage(state);
+					break;
+				case "MENU":
+					NextMenu(arg, state);
+					break;
+			}
+		}
+
+
+		// BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////
+
+		// WAYPOINT COMMAND // Bridge function to eliminate old switch cases.
+		void waypointCommand(string arg, string waypointName)
+		{
+			int state = 0;
+			if (arg == "ON")
+				state = 1;
+
+			SetWaypointState(waypointName, state);
+		}
+	}
 }

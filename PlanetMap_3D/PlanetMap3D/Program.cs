@@ -308,7 +308,7 @@ namespace IngameScript
 					case "GPS":
 						if (state == 3)
 						{
-							cycleGPS(maps);
+							cycleGPSForList(maps);
 						}
 						else
 						{
@@ -335,18 +335,25 @@ namespace IngameScript
 
 
 		// CYCLE GPS //
-		void cycleGPS(List<StarMap> maps)
+		void cycleGPS(StarMap map)
+		{
+			map.gpsState++;
+			if (map.gpsState > 2)
+				map.gpsState = 0;
+		}
+
+		void cycleGPSForList(List<StarMap> maps)
 		{
 			if (NoMaps(maps))
 				return;
 
 			foreach (StarMap map in maps)
 			{
-				map.gpsState++;
-				if (map.gpsState > 2)
-					map.gpsState = 0;
+				cycleGPS(map);
 			}
 		}
+
+
 
 
 
@@ -1299,213 +1306,6 @@ namespace IngameScript
 		}
 
 
-		// CYCLE PLANETS //
-		void CyclePlanets(List<StarMap> maps, bool next)
-		{
-			int planetCount = _planetList.Count;
-
-			if (planetCount < 1)
-			{
-				_statusMessage = "No Planets Logged!";
-				return;
-			}
-
-			if (NoMaps(maps))
-				return;
-
-			foreach (StarMap map in maps)
-			{
-				DefaultView(map);
-
-				if (next)
-				{
-					map.planetIndex++;
-				}
-				else
-				{
-					map.planetIndex--;
-				}
-
-				if (map.planetIndex < 0)
-				{
-					map.planetIndex = planetCount - 1;
-				}
-				else if (map.planetIndex >= planetCount)
-				{
-					map.planetIndex = 0;
-				}
-
-				SelectPlanet(_planetList[map.planetIndex], map);
-			}
-		}
-
-
-		// GET PLANET //
-		Planet GetPlanet(string planetName)
-		{
-			if (planetName == "" || planetName == "[null]")
-				return null;
-
-			if (_unchartedList.Count > 0)
-			{
-				foreach (Planet uncharted in _unchartedList)
-				{
-					if (uncharted.name.ToUpper() == planetName.ToUpper())
-					{
-						return uncharted;
-					}
-				}
-			}
-
-			if (_planets)
-			{
-				foreach (Planet planet in _planetList)
-				{
-					if (planet.name.ToUpper() == planetName.ToUpper())
-					{
-						return planet;
-					}
-				}
-			}
-
-			return null;
-		}
-
-
-		// GET WAYPOINT //
-		Waypoint GetWaypoint(string waypointName)
-		{
-			if (_waypointList.Count > 0)
-			{
-				foreach (Waypoint waypoint in _waypointList)
-				{
-					if (waypoint.name.ToUpper() == waypointName.ToUpper())
-					{
-						return waypoint;
-					}
-				}
-			}
-
-			return null;
-		}
-
-
-		// CYCLE WAYPOINTS //
-		void CycleWaypoints(List<StarMap> maps, bool next)
-		{
-			int gpsCount = _waypointList.Count;
-
-			if (gpsCount < 1)
-			{
-				_statusMessage = "No Waypoints Logged!";
-				return;
-			}
-
-			if (NoMaps(maps))
-				return;
-
-			foreach (StarMap map in maps)
-			{
-				DefaultView(map);
-
-				if (next)
-				{
-					map.waypointIndex++;
-				}
-				else
-				{
-					map.waypointIndex--;
-				}
-
-
-				if (map.waypointIndex == -1)
-				{
-					map.activeWaypoint = null;
-					map.activeWaypointName = "";
-					MapToParameters(map);
-					return;
-				}
-				else if (map.waypointIndex < -1)
-				{
-					map.waypointIndex = gpsCount - 1;
-				}
-				else if (map.waypointIndex >= gpsCount)
-				{
-					map.waypointIndex = -1;
-					map.activeWaypoint = null;
-					map.activeWaypointName = "";
-					MapToParameters(map);
-					return;
-				}
-
-				Waypoint waypoint = _waypointList[map.waypointIndex];
-				map.center = waypoint.position;
-				map.activeWaypoint = waypoint;
-				map.activeWaypointName = waypoint.name;
-				MapToParameters(map);
-			}
-		}
-
-
-		// SELECT PLANET //
-		void SelectPlanet(Planet planet, StarMap map)
-		{
-			map.center = planet.position;
-			map.activePlanetName = planet.name;
-
-			if (planet.name != "" && planet.name != "[null]")
-				map.activePlanet = GetPlanet(planet.name);
-
-
-			if (planet.radius < 27000)
-			{
-				map.focalLength *= 4;
-			}
-			else if (planet.radius < 40000)
-			{
-				map.focalLength *= 3;
-				map.focalLength /= 2;
-			}
-		}
-
-
-		// NEXT LAST // - Multi level switch command
-		void nextLast(List<StarMap> maps, string arg, bool state)
-		{
-			switch (arg)
-			{
-				case "PLANET":
-					CyclePlanets(maps, state);
-					break;
-				case "WAYPOINT":
-					CycleWaypoints(maps, state);
-					break;
-				case "MODE":
-					CycleMode(maps, state);
-					break;
-				case "PAGE":
-					NextPage(state);
-					break;
-				case "MENU":
-					NextMenu(arg, state);
-					break;
-			}
-		}
-
-
-		// BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////
-
-		// WAYPOINT COMMAND // Bridge function to eliminate old switch cases.
-		void waypointCommand(string arg, string waypointName)
-		{
-			int state = 0;
-			if (arg == "ON")
-				state = 1;
-
-			SetWaypointState(waypointName, state);
-		}
-
-
 		// TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1663,52 +1463,6 @@ namespace IngameScript
 			}
 
 			return attribute;
-		}
-
-
-		// ARG TO MAPS //
-		public List<StarMap> ArgToMaps(string arg)
-		{
-			if (arg.ToUpper() == "ALL")
-			{
-				return _mapList;
-			}
-
-			List<StarMap> mapsToEdit = new List<StarMap>();
-
-			string[] args = arg.Split(',');
-
-			foreach (string argValue in args)
-			{
-				int number;
-
-				bool success = Int32.TryParse(argValue, out number);
-				if (success)
-				{
-					if (number < _mapList.Count)
-					{
-						mapsToEdit.Add(_mapList[number]);
-					}
-					else
-					{
-						_statusMessage = "screenID " + argValue + " outside range of Map List!";
-					}
-				}
-			}
-
-			return mapsToEdit;
-		}
-
-
-		public bool NoMaps(List<StarMap> maps)
-		{
-			if (maps.Count < 1)
-			{
-				_statusMessage = "No relevant maps found! Check arguments!";
-				return true;
-			}
-
-			return false;
 		}
 
 

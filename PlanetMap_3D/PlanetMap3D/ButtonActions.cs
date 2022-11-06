@@ -32,28 +32,38 @@ namespace IngameScript
                 return;
             }
 
+            StarMap map = GetMap(menu.CurrentMapIndex);
+            
+            
+            if(map == null)
+            {
+                _statusMessage += "Invalid Index for Menu " + menu.IDNumber + "!\n- Index:" + menu.CurrentMapIndex;
+                return;
+            }
+
+
             switch(buttonIndex)
             {
                 case "1":
-                    Action1(menu);
+                    Action1(menu, map);
                     break;
                 case "2":
-                    Action2(menu);
+                    Action2(menu, map);
                     break;
                 case "3":
-                    Action3(menu);
+                    Action3(menu, map);
                     break;
                 case "4":
-                    Action4(menu);
+                    Action4(menu, map);
                     break;
                 case "5":
-                    Action5(menu);
+                    Action5(menu, map);
                     break;
                 case "6":
-                    Action6(menu);
+                    Action6(menu, map);
                     break;
                 case "7":
-                    Action7(menu);
+                    Action7(menu, map);
                     break;
                 default:
                     _statusMessage += "No Such Button \"" + buttonIndex + "\"!\n";
@@ -63,7 +73,7 @@ namespace IngameScript
 
 
         // ACTION 1 //
-        void Action1(MapMenu menu)
+        void Action1(MapMenu menu, StarMap map)
         {
             menu.PressButton(1);
 
@@ -89,7 +99,7 @@ namespace IngameScript
 
 
         // ACTION 2 //
-        void Action2(MapMenu menu)
+        void Action2(MapMenu menu, StarMap map)
         {
             menu.PressButton(2);
 
@@ -116,13 +126,14 @@ namespace IngameScript
 
 
         // ACTION 3 //
-        void Action3(MapMenu menu)
+        void Action3(MapMenu menu, StarMap map)
         {
             menu.PressButton(3);
 
             switch (menu.CurrentPage)
             {
                 case 1:
+                    CyclePlanets(map, false);
                     break;
                 case 2:
                     break;
@@ -141,13 +152,14 @@ namespace IngameScript
 
 
         // ACTION 4 //
-        void Action4(MapMenu menu)
+        void Action4(MapMenu menu, StarMap map)
         {
             menu.PressButton(4);
 
             switch (menu.CurrentPage)
             {
                 case 1:
+                    CyclePlanets(map, true);
                     break;
                 case 2:
                     break;
@@ -166,13 +178,14 @@ namespace IngameScript
 
 
         // ACTION 5 //
-        void Action5(MapMenu menu)
+        void Action5(MapMenu menu, StarMap map)
         {
             menu.PressButton(5);
 
             switch (menu.CurrentPage)
             {
                 case 1:
+                    CycleWaypoints(map, false);
                     break;
                 case 2:
                     break;
@@ -191,13 +204,14 @@ namespace IngameScript
 
 
         // ACTION 6 //
-        void Action6(MapMenu menu)
+        void Action6(MapMenu menu, StarMap map)
         {
             menu.PressButton(6);
 
             switch (menu.CurrentPage)
             {
                 case 1:
+                    CycleWaypoints(map, true);
                     break;
                 case 2:
                     break;
@@ -216,13 +230,14 @@ namespace IngameScript
 
 
         // ACTION 7 //
-        void Action7(MapMenu menu)
+        void Action7(MapMenu menu, StarMap map)
         {
             menu.PressButton(7);
 
             switch (menu.CurrentPage)
             {
                 case 1:
+                    cycleGPS(map);
                     break;
                 case 2:
                     break;
