@@ -1006,7 +1006,9 @@ namespace IngameScript
 				else
 					color = color2 * 0.5f;
 
-				DrawTexture("SquareSimple", position, buttonScale, 0, color);
+				if(ShouldBeVisible(menu, i))
+					DrawTexture("SquareSimple", position, buttonScale, 0, color);
+
 				position += new Vector2(cellWidth, 0);
 			}
 
@@ -1034,7 +1036,8 @@ namespace IngameScript
 
 			// Label C
 			position += new Vector2(cellWidth * 2, 0);
-			DrawText(_labelC[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
+			if((menu.CurrentPage != 1 || _mapList.Count > 1))
+				DrawText(_labelC[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
 
 			// Label D
 			position += new Vector2(cellWidth * 1.5f, 0);
@@ -1110,6 +1113,7 @@ namespace IngameScript
 		}
 
 
+		// STRING TO ICON //
 		void StringToIcon(string arg, Vector2 position, Vector2 scale, Color color)
         {
 			switch(arg)
@@ -1285,6 +1289,26 @@ namespace IngameScript
 
 
             }
+        }
+
+
+		// SHOULD BE VISIBLE //
+		public bool ShouldBeVisible(MapMenu menu, int buttonNumber)
+        {
+			switch(buttonNumber)
+            {
+				case 5:
+				case 6:
+					if ((menu.CurrentPage == 1 && _mapList.Count < 2) || menu.CurrentPage == 6)
+						return false;
+					break;
+				case 7:
+					if (menu.CurrentPage == 6)
+						return false;
+					break;
+            }
+
+			return true;
         }
 	}
 }

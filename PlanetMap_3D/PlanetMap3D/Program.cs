@@ -43,10 +43,6 @@ namespace IngameScript
 		//
 		// to learn more about ingame scripts.
 
-
-
-		// START HERE //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 		//////////////////////
 		// PLANET MAP 3D //
 		///////////////////// 1.3.0
@@ -96,13 +92,6 @@ namespace IngameScript
 		const string GPS_INPUT = "// GPS INPUT ";
 		const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_ID=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
 		const string PROGRAM_HEAD = "Map Settings";
-		
-		/*
-		 string _defaultDisplay = "[mapDisplay]\nGrid_ID=\nCenter=(0,0,0)\nMode=FREE\nFocalLength="
-									+ DV_FOCAL + "\nRotationalRadius=" + DV_RADIUS + "\nAzimuth=0\nAltitude="
-									+ DV_ALTITUDE + "\nIndexes=\ndX=0\ndY=0\ndZ=0\ndAz=0\nGPS=True\nNames=True\nShip=True\nInfo=True\nPlanet=";
-		*/
-
 
 		string[] _cycleSpinner = { "--", " / ", " | ", " \\ " };
 

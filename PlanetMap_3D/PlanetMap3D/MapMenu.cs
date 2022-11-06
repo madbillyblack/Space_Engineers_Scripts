@@ -71,6 +71,8 @@ namespace IngameScript
 
                 if (CurrentMapIndex >= _mapList.Count)
                     CurrentMapIndex = 0;
+
+                SetKey(Controller, MENU_HEAD, "Current Map", CurrentMapIndex.ToString());
             }
 
 
@@ -83,6 +85,8 @@ namespace IngameScript
 
                 if (CurrentMapIndex < 0)
                     CurrentMapIndex = _mapList.Count - 1;
+
+                SetKey(Controller, MENU_HEAD, "Current Map", CurrentMapIndex.ToString());
             }
         }
 
@@ -204,6 +208,8 @@ namespace IngameScript
                 menu.CurrentPage = 1;
             else if (menu.CurrentPage < 1)
                 menu.CurrentPage = 6;
+
+            SetKey(menu.Controller, MENU_HEAD, "Current Page", menu.CurrentPage.ToString());
 
             DrawMenu(menu);
         }

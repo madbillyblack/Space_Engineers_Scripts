@@ -34,7 +34,7 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _labelA = new Dictionary<int, string>()
         {
-           {1,"MAP"},
+           {1,"PLANET"},
            {2,"ZOOM"},
            {3,""},
            {4,""},
@@ -44,7 +44,7 @@ namespace IngameScript
 
         readonly Dictionary<int, string> _labelB = new Dictionary<int, string>()
         {
-           {1,"PLANET"},
+           {1,"WAYPOINT"},
            {2,"RADIUS"},
            {3,""},
            {4,""},
@@ -52,9 +52,9 @@ namespace IngameScript
            {6,""}
         };
 
-        readonly Dictionary<int, string> _labelC = new Dictionary<int, string>()
+        Dictionary<int, string> _labelC = new Dictionary<int, string>()
         {
-           {1,"WAYPOINT"},
+           {1,"MAP"},
            {2,"MAP MODE"},
            {3,""},
            {4,""},

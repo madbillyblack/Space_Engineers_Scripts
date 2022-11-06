@@ -80,7 +80,7 @@ namespace IngameScript
             switch (menu.CurrentPage)
             {
                 case 1:
-                    menu.PreviousMap();
+                    CyclePlanets(map, false);
                     break;
                 case 2:
                     break;
@@ -106,7 +106,7 @@ namespace IngameScript
             switch (menu.CurrentPage)
             {
                 case 1:
-                    menu.NextMap();
+                    CyclePlanets(map, true);
                     break;
                 case 2:
                     break;
@@ -133,7 +133,7 @@ namespace IngameScript
             switch (menu.CurrentPage)
             {
                 case 1:
-                    CyclePlanets(map, false);
+                    CycleWaypoints(map, false);
                     break;
                 case 2:
                     break;
@@ -159,7 +159,7 @@ namespace IngameScript
             switch (menu.CurrentPage)
             {
                 case 1:
-                    CyclePlanets(map, true);
+                    CycleWaypoints(map, true);
                     break;
                 case 2:
                     break;
@@ -185,7 +185,7 @@ namespace IngameScript
             switch (menu.CurrentPage)
             {
                 case 1:
-                    CycleWaypoints(map, false);
+                    menu.PreviousMap();
                     break;
                 case 2:
                     break;
@@ -211,7 +211,7 @@ namespace IngameScript
             switch (menu.CurrentPage)
             {
                 case 1:
-                    CycleWaypoints(map, true);
+                    menu.NextMap();
                     break;
                 case 2:
                     break;
