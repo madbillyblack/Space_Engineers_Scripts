@@ -212,7 +212,7 @@ namespace IngameScript
 
 					if (planetColor != "NONE")
 					{
-						bodyColor = ColorSwitch(planetColor, false) * 2 * _brightnessMod;
+						bodyColor = ColorSwitch(planetColor, false) * 2 * map.BrightnessMod;
 						aftColor = bodyColor * 0.75f;
 						plumeColor = aftColor;
 						canopyColor = aftColor;
@@ -362,7 +362,7 @@ namespace IngameScript
 				Vector2 planetPosition = PlotObject(planet.transformedCoords[map.number], map);
 				planet.mapPos = planetPosition;
 
-				Color surfaceColor = ColorSwitch(planet.color, false) * _brightnessMod;
+				Color surfaceColor = ColorSwitch(planet.color, false) * map.BrightnessMod;
 				Color lineColor = surfaceColor * 2;
 
 				Vector2 startPosition = map.viewport.Center + planetPosition;
@@ -430,7 +430,7 @@ namespace IngameScript
 
 					// Name
 					position += new Vector2(-2, 2);
-					DrawText(planet.name, position, fontMod * 0.8f, TextAlignment.CENTER, Color.Yellow * _brightnessMod);
+					DrawText(planet.name, position, fontMod * 0.8f, TextAlignment.CENTER, Color.Yellow * map.BrightnessMod);
 				}
 			}
 
@@ -628,7 +628,7 @@ namespace IngameScript
 
 						Vector2 position = startPosition - new Vector2(iconSize / 2, 0);
 
-						markerColor *= _brightnessMod;
+						markerColor *= map.BrightnessMod;
 
 						// PRINT MARKER
 
@@ -655,14 +655,14 @@ namespace IngameScript
 								break;
 							case "BASE":
 								position += new Vector2(iconSize / 6, -iconSize / 12);
-								DrawTexture("SemiCircle", position, new Vector2(iconSize * 1.15f, iconSize * 1.15f), rotationMod, new Color(0, 64, 64) * _brightnessMod);
+								DrawTexture("SemiCircle", position, new Vector2(iconSize * 1.15f, iconSize * 1.15f), rotationMod, new Color(0, 64, 64) * map.BrightnessMod);
 								startPosition -= new Vector2(0, iconSize * 0.4f);
 								break;
 							case "ASTEROID":
 								position += new Vector2(iconSize / 2 - iconSize / 20, 0);
-								DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32, 32, 32) * _brightnessMod);
+								DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32, 32, 32) * map.BrightnessMod);
 								position -= new Vector2(iconSize - iconSize / 10, 0);
-								DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32, 32, 32) * _brightnessMod);
+								DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32, 32, 32) * map.BrightnessMod);
 								break;
 							default:
 								break;
@@ -678,7 +678,7 @@ namespace IngameScript
 						if (map.showNames)
 						{
 							position = startPosition + new Vector2(1.33f * iconSize, -0.75f * iconSize);
-							DrawText(waypoint.name, position, fontSize * gpsScale, TextAlignment.LEFT, markerColor * _brightnessMod);
+							DrawText(waypoint.name, position, fontSize * gpsScale, TextAlignment.LEFT, markerColor * map.BrightnessMod);
 						}
 					}
 				}

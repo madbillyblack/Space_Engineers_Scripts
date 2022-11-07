@@ -41,6 +41,7 @@ namespace IngameScript
 			public int dZ;
 			public int dAz;
 			public int gpsState;
+			public float BrightnessMod;
 			public IMyTextSurface drawingSurface;
 			public RectangleF viewport;
 			public IMyTerminalBlock block;
@@ -204,6 +205,8 @@ namespace IngameScript
 			List<string> waypoints = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Waypoint", "[null]").ToString(), ',', iLength, "[null]");
 			//List<string> waypoints = StringToEntries(lcdIni.Get("mapDisplay", "Waypoint").ToString(), ',', iLength, "[null]");
 
+			List<string> brightnessMods = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Brightness", "1").ToString(), ',', iLength, "1");
+
 			//assemble maps by position in string lists.
 			for (int i = 0; i < iLength; i++)
 			{
@@ -224,6 +227,7 @@ namespace IngameScript
 				map.azimuth = ParseInt(azimuths[i], 0);
 				map.altitude = ParseInt(altitudes[i], DV_ALTITUDE);
 				map.mode = modes[i];
+				map.BrightnessMod = ParseFloat(brightnessMods[i], 1);
 
 				map.gpsMode = gpsModes[i];
 				switch (map.gpsMode.ToUpper())

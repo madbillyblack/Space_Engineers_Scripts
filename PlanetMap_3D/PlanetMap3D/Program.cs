@@ -100,12 +100,12 @@ namespace IngameScript
 		int _dataIndex;
 		int _pageIndex;
 		int _scrollIndex = 0;
-		int _azSpeed;
-		int _planetIndex;
-		bool _gpsActive;
-		bool _showMapParameters;
-		bool _showShip;
-		bool _showNames;
+		//int _azSpeed;
+		//int _planetIndex;
+		//bool _gpsActive;
+		//bool _showMapParameters;
+		//bool _showShip;
+		//bool _showNames;
 		bool _lightOn;
 		bool _planets;
 		bool _planetToLog;
@@ -113,12 +113,12 @@ namespace IngameScript
 		int _cycleLength;
 		int _cycleStep;
 		int _sortCounter = 0;
-		float _brightnessMod;
+		//float _brightnessMod;
 		static string _statusMessage;
 		string _activePlanet = "";
 		string _activeWaypoint = "";
 		string _clipboard = "";
-		Vector3 _trackSpeed;
+		//Vector3 _trackSpeed;
 		Vector3 _origin = new Vector3(0, 0, 0);
 		Vector3 _myPos;
 		List<IMyTerminalBlock> _mapBlocks;
@@ -132,6 +132,7 @@ namespace IngameScript
 		// PROGRAM ///////////////////////////////////////////////////////////////////////////////////////////////
 		public Program()
 		{
+			/*
 			//Load Saved Variables
 			String[] loadData = Storage.Split('\n');
 			if (loadData.Length > 8)
@@ -160,6 +161,8 @@ namespace IngameScript
 				_brightnessMod = 1;
 				_showShip = true;
 			}
+			*/
+			_pageIndex = 0;
 
 			string oldData = Me.CustomData;
 			string newData = DEFAULT_SETTINGS;
@@ -193,11 +196,11 @@ namespace IngameScript
 
 		public void Save()
 		{
-			String saveData = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString();
-			saveData += "\n" + Vector3ToString(_trackSpeed) + "\n" + _showMapParameters.ToString() + "\n" + _showNames.ToString();
-			saveData += "\n" + _pageIndex.ToString() + "\n" + _brightnessMod.ToString() + "\n" + _showShip.ToString();
+			//String saveData = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString();
+			//saveData += "\n" + Vector3ToString(_trackSpeed) + "\n" + _showMapParameters.ToString() + "\n" + _showNames.ToString();
+			//saveData += "\n" + _pageIndex.ToString() + "\n" + _brightnessMod.ToString() + "\n" + _showShip.ToString();
 
-			Storage = saveData;
+			//Storage = saveData;
 		}
 
 
@@ -423,6 +426,7 @@ namespace IngameScript
 			string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), ',', i, entries, "True");
 			string newPlanets = InsertEntry(map.activePlanetName, lcdIni.Get("mapDisplay", "Planet").ToString(), ',', i, entries, "[null]");
 			string newWaypoints = InsertEntry(map.activeWaypointName, lcdIni.Get("mapDisplay", "Waypoint").ToString(), ',', i, entries, "[null]");
+			string brightnesses = InsertEntry(map.BrightnessMod.ToString(), lcdIni.Get("mapDisplay", "Brightness").ToString(), ',', i, entries, "1");
 
 			// Update the Ini Data.
 			lcdIni.Set("mapDisplay", "Center", newCenters);
@@ -954,53 +958,6 @@ namespace IngameScript
 			}
 
 			return attribute;
-		}
-
-
-		// INSERT ENTRY //
-		public string InsertEntry(string entry, string oldString, char separator, int index, int length, string placeHolder)
-		{
-			string newString;
-
-			List<string> entries = StringToEntries(oldString, separator, length, placeHolder);
-
-			// If there's only one entry in the string return entry.
-			if (entries.Count == 1 && length == 0)
-			{
-				return entry;
-			}
-
-			//Insert entry into the old string.
-			entries[index] = entry;
-
-			newString = entries[0];
-			for (int n = 1; n < entries.Count; n++)
-			{
-				newString += separator + entries[n];
-			}
-
-			return newString;
-		}
-
-
-		// STRING TO ENTRIES //		Splits string into a list of variable length, by a separator character.  If the list is shorter than 
-		//		the desired length,the remainder is filled with copies of the place holder.
-		public List<string> StringToEntries(string arg, char separator, int length, string placeHolder)
-		{
-			List<string> entries = new List<string>();
-			string[] args = arg.Split(separator);
-
-			foreach (string argument in args)
-			{
-				entries.Add(argument);
-			}
-
-			while (entries.Count < length)
-			{
-				entries.Add(placeHolder);
-			}
-
-			return entries;
 		}
 
 

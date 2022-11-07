@@ -28,6 +28,7 @@ namespace IngameScript
 		const int MOVE_STEP = 5000; // Step size for translation (move) commands.
 		const float ZOOM_STEP = 1.5f; // Factor By which map is zoomed in and out (multiplied).
 		const int ZOOM_MAX = 1000000000; // Max value for Focal Length
+		const float BRIGHTNESS_STEP = 0.25f;
 
 		// ZOOM // Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
 		void Zoom(StarMap map, bool zoomIn)
@@ -557,5 +558,36 @@ namespace IngameScript
 				DefaultView(map);
 			}
 		}
+
+
+		// BRIGHTEN MAP //
+		void BrightenMap(StarMap map, bool brighten)
+        {
+			if(brighten)
+            {
+				map.BrightnessMod += BRIGHTNESS_STEP;
+				if (map.BrightnessMod > BRIGHTNESS_LIMIT)
+					map.BrightnessMod = BRIGHTNESS_LIMIT;
+            }
+			else
+            {
+				map.BrightnessMod -= BRIGHTNESS_STEP;
+
+				// Don't let brightness fall below level of single step.
+				if (map.BrightnessMod < BRIGHTNESS_STEP)
+					map.BrightnessMod = BRIGHTNESS_STEP;
+            }
+
+			SetListKey(map.block, MAP_HEADER, "Brightness", map.BrightnessMod.ToString(), "1", map.index, ',');
+        }
+
+		void BrightenMaps(List<StarMap> maps, bool brighten)
+        {
+			if (NoMaps(maps))
+				return;
+
+			foreach (StarMap map in maps)
+				BrightenMap(map, brighten);
+        }
 	}
 }

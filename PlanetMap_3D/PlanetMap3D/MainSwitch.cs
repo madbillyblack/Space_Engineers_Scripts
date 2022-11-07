@@ -207,12 +207,10 @@ namespace IngameScript
 					pageScroll(cmdArg);
 					break;
 				case "BRIGHTEN":
-					if (_brightnessMod < BRIGHTNESS_LIMIT)
-						_brightnessMod += 0.25f;
+					BrightenMaps(maps, true);
 					break;
 				case "DARKEN":
-					if (_brightnessMod > 1)
-						_brightnessMod -= 0.25f;
+					BrightenMaps(maps, false);
 					break;
 				case "DELETE":
 					if (cmdArg == "PLANET")
