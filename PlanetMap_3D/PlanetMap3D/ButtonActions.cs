@@ -22,6 +22,7 @@ namespace IngameScript
 {
     partial class Program
     {
+        // BUTTON PRESS //
         void ButtonPress(string buttonIndex, string menuIndex)
         {
             MapMenu menu = GetMenu(menuIndex);
@@ -86,10 +87,13 @@ namespace IngameScript
                     Zoom(map, false);
                     break;
                 case 3:
+                    RotateMap(map, "LEFT");
                     break;
                 case 4:
+                    MoveMap(map, "LEFT");
                     break;
                 case 5:
+                    TrackMap(map, "LEFT");
                     break;
                 case 6:
                     break;
@@ -113,10 +117,13 @@ namespace IngameScript
                     Zoom(map, true);
                     break;
                 case 3:
+                    RotateMap(map, "RIGHT");
                     break;
                 case 4:
+                    MoveMap(map, "RIGHT");
                     break;
                 case 5:
+                    TrackMap(map, "RIGHT");
                     break;
                 case 6:
                     break;
@@ -141,10 +148,13 @@ namespace IngameScript
                     AdjustRadius(map, true);
                     break;
                 case 3:
+                    RotateMap(map, "DOWN");
                     break;
                 case 4:
+                    MoveMap(map, "DOWN");
                     break;
                 case 5:
+                    TrackMap(map, "DOWN");
                     break;
                 case 6:
                     break;
@@ -168,10 +178,13 @@ namespace IngameScript
                     AdjustRadius(map, false);
                     break;
                 case 3:
+                    RotateMap(map, "UP");
                     break;
                 case 4:
+                    MoveMap(map, "UP");
                     break;
                 case 5:
+                    TrackMap(map, "UP");
                     break;
                 case 6:
                     break;
@@ -195,10 +208,13 @@ namespace IngameScript
                     CycleMode(map, false);
                     break;
                 case 3:
+                    SpinMap(map, "LEFT", ANGLE_STEP / 2);
                     break;
                 case 4:
+                    MoveMap(map, "BACKWARD");
                     break;
                 case 5:
+                    TrackMap(map, "BACKWARD");
                     break;
                 case 6:
                     break;
@@ -222,10 +238,13 @@ namespace IngameScript
                     CycleMode(map, true);
                     break;
                 case 3:
+                    SpinMap(map, "RIGHT", ANGLE_STEP / 2);
                     break;
                 case 4:
+                    MoveMap(map, "FORWARD");
                     break;
                 case 5:
+                    TrackMap(map, "FORWARD");
                     break;
                 case 6:
                     break;

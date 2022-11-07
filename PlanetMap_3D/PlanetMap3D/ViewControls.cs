@@ -22,6 +22,13 @@ namespace IngameScript
 {
     partial class Program
     {
+		// View Control Constants
+		const int ANGLE_STEP = 5; // Basic angle in degrees of step rotations.
+		const int MAX_PITCH = 90; // Maximum (+/-) value of map pitch. [Not recommended above 90]
+		const int MOVE_STEP = 5000; // Step size for translation (move) commands.
+		const float ZOOM_STEP = 1.5f; // Factor By which map is zoomed in and out (multiplied).
+		const int ZOOM_MAX = 1000000000; // Max value for Focal Length
+
 		// ZOOM // Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
 		void Zoom(StarMap map, bool zoomIn)
         {
@@ -106,18 +113,15 @@ namespace IngameScript
 		}
 
 
-		// MOVE CENTER //
-		void MoveCenter(List<StarMap> maps, string movement)
-		{
-			if (NoMaps(maps))
-				return;
-
+		// MOVE MAP //
+		void MoveMap(StarMap map, string direction)
+        {
 			float step = (float)MOVE_STEP;
 			float x = 0;
 			float y = 0;
 			float z = 0;
 
-			switch (movement)
+			switch (direction)
 			{
 				case "LEFT":
 					x = step;
@@ -140,57 +144,90 @@ namespace IngameScript
 			}
 			Vector3 moveVector = new Vector3(x, y, z);
 
+			if (map.mode == "FREE" || map.mode == "WORLD")
+			{
+				map.center += rotateMovement(moveVector, map);
+			}
+			else
+			{
+				_statusMessage = "Translation controls only available in FREE & WORLD modes.";
+			}
+		}
+
+		void MoveMaps(List<StarMap> maps, string direction)
+		{
+			if (NoMaps(maps))
+				return;
+
+
+
 			foreach (StarMap map in maps)
 			{
-				if (map.mode == "FREE" || map.mode == "WORLD")
-				{
-					map.center += rotateMovement(moveVector, map);
-				}
-				else
-				{
-					_statusMessage = "Translation controls only available in FREE & WORLD modes.";
-				}
+				MoveMap(map, direction);
 			}
 		}
 
 
 		// TRACK CENTER //		Adjust translational speed of map.
-		void TrackCenter(List<StarMap> maps, string direction)
+		void TrackMap(StarMap map, string direction)
+        {
+			switch (direction)
+			{
+				case "LEFT":
+					map.dX += MOVE_STEP;
+					break;
+				case "RIGHT":
+					map.dX -= MOVE_STEP;
+					break;
+				case "UP":
+					map.dY += MOVE_STEP;
+					break;
+				case "DOWN":
+					map.dY -= MOVE_STEP;
+					break;
+				case "FORWARD":
+					map.dZ += MOVE_STEP;
+					break;
+				case "BACKWARD":
+					map.dZ -= MOVE_STEP;
+					break;
+				default:
+					_statusMessage = "Error with Track Command";
+					break;
+			}
+		}
+		void TrackMaps(List<StarMap> maps, string direction)
 		{
 			if (NoMaps(maps))
 				return;
 
 			foreach (StarMap map in maps)
 			{
-				switch (direction)
-				{
-					case "LEFT":
-						map.dX += MOVE_STEP;
-						break;
-					case "RIGHT":
-						map.dX -= MOVE_STEP;
-						break;
-					case "UP":
-						map.dY += MOVE_STEP;
-						break;
-					case "DOWN":
-						map.dY -= MOVE_STEP;
-						break;
-					case "FORWARD":
-						map.dZ += MOVE_STEP;
-						break;
-					case "BACKWARD":
-						map.dZ -= MOVE_STEP;
-						break;
-					default:
-						_statusMessage = "Error with Track Command";
-						break;
-				}
+				TrackMap(map, direction);
 			}
 		}
 
 
 		// ROTATE MAPS //
+		void RotateMap(StarMap map, string direction)
+        {
+			switch (direction)
+			{
+				case "LEFT":
+					map.yaw(ANGLE_STEP);
+					break;
+				case "RIGHT":
+					map.yaw(-ANGLE_STEP);
+					break;
+				case "UP":
+					map.pitch(-ANGLE_STEP);
+					break;
+				case "DOWN":
+					map.pitch(ANGLE_STEP);
+					break;
+			}
+		}
+
 		void RotateMaps(List<StarMap> maps, string direction)
 		{
 			if (NoMaps(maps))
@@ -198,26 +235,20 @@ namespace IngameScript
 
 			foreach (StarMap map in maps)
 			{
-				switch (direction)
-				{
-					case "LEFT":
-						map.yaw(ANGLE_STEP);
-						break;
-					case "RIGHT":
-						map.yaw(-ANGLE_STEP);
-						break;
-					case "UP":
-						map.pitch(-ANGLE_STEP);
-						break;
-					case "DOWN":
-						map.pitch(ANGLE_STEP);
-						break;
-				}
+				RotateMap(map, direction);
 			}
 		}
 
 
 		// SPIN MAPS //		Adjust azimuth speed of maps.
+		void SpinMap(StarMap map, string direction, int deltaAz)
+        {
+			if (direction == "RIGHT")
+				deltaAz *= -1;
+
+			map.dAz += deltaAz;
+		}
+
 		void SpinMaps(List<StarMap> maps, string direction, int deltaAz)
 		{
 			if (NoMaps(maps))
@@ -228,7 +259,7 @@ namespace IngameScript
 
 			foreach (StarMap map in maps)
 			{
-				map.dAz += deltaAz;
+				SpinMap(map, direction, deltaAz);
 			}
 		}
 

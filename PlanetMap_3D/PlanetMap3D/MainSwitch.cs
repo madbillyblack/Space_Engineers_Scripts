@@ -65,7 +65,7 @@ namespace IngameScript
 					ZoomMaps(maps, cmdArg);
 					break;
 				case "MOVE":
-					MoveCenter(maps, cmdArg);
+					MoveMaps(maps, cmdArg);
 					break;
 				case "DEFAULT":
 					MapsToDefault(maps);
@@ -77,7 +77,7 @@ namespace IngameScript
 					SpinMaps(maps, cmdArg, ANGLE_STEP / 2);
 					break;
 				case "TRACK":
-					TrackCenter(maps, cmdArg);
+					TrackMaps(maps, cmdArg);
 					break;
 				case "STOP":
 					StopMaps(maps);

@@ -64,13 +64,6 @@ namespace IngameScript
 		const int MARKER_WIDTH = 8; // Width of GPS Markers
 		const int FOCAL_MOD = 250; // Mod for waypoint scale
 
-		// View Controls
-		const int ANGLE_STEP = 5; // Basic angle in degrees of step rotations.
-		const int MAX_PITCH = 90; // Maximum (+/-) value of map pitch. [Not recommended above 90]
-		const int MOVE_STEP = 5000; // Step size for translation (move) commands.
-		const float ZOOM_STEP = 1.5f; // Factor By which map is zoomed in and out (multiplied).
-		const int ZOOM_MAX = 1000000000; // Max value for Focal Length
-
 		// View Defaults
 		const int DV_RADIUS = 262144; //Default View Radius
 		const int DV_FOCAL = 256; //Default Focal Length
