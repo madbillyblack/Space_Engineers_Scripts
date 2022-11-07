@@ -167,6 +167,7 @@ namespace IngameScript
         // GET MENU //
         MapMenu GetMenu(string arg)
         {
+            _statusMessage += "Getting Menu \"" + arg + "\".";
             try
             {
                 int index;

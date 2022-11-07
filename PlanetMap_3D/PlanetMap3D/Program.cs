@@ -224,6 +224,8 @@ namespace IngameScript
 				Echo("Data Screen: Active");
 			}
 
+			Echo("Active Menus " + _mapMenus.Count);
+
 			if (_planets)
 			{
 				Echo("Planet Count: " + _planetList.Count);
@@ -267,7 +269,7 @@ namespace IngameScript
 			}
 			else
 			{
-				SetGridID();
+				SetGridID("");
 
 				if (_mapList.Count < 1)
 					_statusMessage = "NO MAP DISPLAY FOUND!\nPlease add tag " + _mapTag + " to desired block.\n";
@@ -409,24 +411,24 @@ namespace IngameScript
 			}
 
 			// Read the old Ini Data and split into string arrays. Insert the new data into the arrays.
-			string newIndexes = InsertEntry(map.index.ToString(), blockIndex, ',', i, entries, "0");
-			string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), ';', i, entries, "(0,0,0)");
-			string newModes = InsertEntry(map.mode, lcdIni.Get("mapDisplay", "Mode").ToString(), ',', i, entries, "FREE");
-			string newFocal = InsertEntry(map.focalLength.ToString(), lcdIni.Get("mapDisplay", "FocalLength").ToString(), ',', i, entries, DV_FOCAL.ToString());
-			string newRadius = InsertEntry(map.rotationalRadius.ToString(), lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', i, entries, DV_RADIUS.ToString());
-			string newAzimuth = InsertEntry(map.azimuth.ToString(), lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', i, entries, "0");
-			string newAltitude = InsertEntry(map.altitude.ToString(), lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', i, entries, DV_ALTITUDE.ToString());
-			string newDX = InsertEntry(map.dX.ToString(), lcdIni.Get("mapDisplay", "dX").ToString(), ',', i, entries, "0");
-			string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), ',', i, entries, "0");
-			string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), ',', i, entries, "0");
-			string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), ',', i, entries, "0");
-			string newGPS = InsertEntry(map.gpsStateToMode(), lcdIni.Get("mapDisplay", "GPS").ToString(), ',', i, entries, "True");
-			string newNames = InsertEntry(map.showNames.ToString(), lcdIni.Get("mapDisplay", "Names").ToString(), ',', i, entries, "True");
-			string newShip = InsertEntry(map.showShip.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), ',', i, entries, "True");
-			string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), ',', i, entries, "True");
-			string newPlanets = InsertEntry(map.activePlanetName, lcdIni.Get("mapDisplay", "Planet").ToString(), ',', i, entries, "[null]");
-			string newWaypoints = InsertEntry(map.activeWaypointName, lcdIni.Get("mapDisplay", "Waypoint").ToString(), ',', i, entries, "[null]");
-			string brightnesses = InsertEntry(map.BrightnessMod.ToString(), lcdIni.Get("mapDisplay", "Brightness").ToString(), ',', i, entries, "1");
+			string newIndexes = InsertEntry(map.index.ToString(), blockIndex, i, entries, "0");
+			string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), i, entries, "(0,0,0)");
+			string newModes = InsertEntry(map.mode, lcdIni.Get("mapDisplay", "Mode").ToString(), i, entries, "FREE");
+			string newFocal = InsertEntry(map.focalLength.ToString(), lcdIni.Get("mapDisplay", "FocalLength").ToString(), i, entries, DV_FOCAL.ToString());
+			string newRadius = InsertEntry(map.rotationalRadius.ToString(), lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), i, entries, DV_RADIUS.ToString());
+			string newAzimuth = InsertEntry(map.azimuth.ToString(), lcdIni.Get("mapDisplay", "Azimuth").ToString(), i, entries, "0");
+			string newAltitude = InsertEntry(map.altitude.ToString(), lcdIni.Get("mapDisplay", "Altitude").ToString(), i, entries, DV_ALTITUDE.ToString());
+			string newDX = InsertEntry(map.dX.ToString(), lcdIni.Get("mapDisplay", "dX").ToString(), i, entries, "0");
+			string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), i, entries, "0");
+			string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), i, entries, "0");
+			string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), i, entries, "0");
+			string newGPS = InsertEntry(map.gpsStateToMode(), lcdIni.Get("mapDisplay", "GPS").ToString(), i, entries, "True");
+			string newNames = InsertEntry(map.showNames.ToString(), lcdIni.Get("mapDisplay", "Names").ToString(), i, entries, "True");
+			string newShip = InsertEntry(map.showShip.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), i, entries, "True");
+			string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(),  i, entries, "True");
+			string newPlanets = InsertEntry(map.activePlanetName, lcdIni.Get("mapDisplay", "Planet").ToString(), i, entries, "[null]");
+			string newWaypoints = InsertEntry(map.activeWaypointName, lcdIni.Get("mapDisplay", "Waypoint").ToString(), i, entries, "[null]");
+			string brightnesses = InsertEntry(map.BrightnessMod.ToString(), lcdIni.Get("mapDisplay", "Brightness").ToString(), i, entries, "1");
 
 			// Update the Ini Data.
 			lcdIni.Set("mapDisplay", "Center", newCenters);
@@ -802,27 +804,6 @@ namespace IngameScript
 
 
 		// TOOL FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-		// SET GRID ID // Add Grid Tag to all map displays on grid
-		void SetGridID()
-		{
-			_gridID = Me.CubeGrid.EntityId.ToString();
-			SetKey(Me, SHARED, "Grid_ID", _gridID);
-
-			_statusMessage += "Grid ID set to:\n" + _gridID + "\n";
-
-			List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-			GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
-
-			foreach (IMyTerminalBlock block in blocks)
-			{
-				if (block.IsSameConstructAs(Me) && block.CustomData.Contains(SHARED))
-					SetKey(block, SHARED, "Grid_ID", _gridID);
-			}
-
-			Build();
-		}
 
 
 		// ON GRID // Checks if map blocks are part of current ship, even if merged

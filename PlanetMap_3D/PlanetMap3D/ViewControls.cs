@@ -578,7 +578,7 @@ namespace IngameScript
 					map.BrightnessMod = BRIGHTNESS_STEP;
             }
 
-			SetListKey(map.block, MAP_HEADER, "Brightness", map.BrightnessMod.ToString(), "1", map.index, ',');
+			SetListKey(map.block, MAP_HEADER, "Brightness", map.BrightnessMod.ToString(), "1", map.index);
         }
 
 		void BrightenMaps(List<StarMap> maps, bool brighten)

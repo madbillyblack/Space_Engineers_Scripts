@@ -126,10 +126,10 @@ namespace IngameScript
 					cycleGPSForList(maps);
 					break;
 				case "NEXT":
-					nextLast(maps, cmdArg, true);
+					nextLast(maps, cmdArg, argData,true);
 					break;
 				case "PREVIOUS":
-					nextLast(maps, cmdArg, false);
+					nextLast(maps, cmdArg, argData, false);
 					break;
 				case "WORLD"://MODE
 					ChangeMode("WORLD", maps);
@@ -231,7 +231,7 @@ namespace IngameScript
 				case "UPDATE": // TAGS / GRID_ID
 				case "SET": // GRID_ID
 					if (cmdArg.Contains("GRID") || cmdArg.Contains("TAGS"))
-						SetGridID();
+						SetGridID(argData);
 					break;
 				case "BUTTON":
 					ButtonPress(cmdArg, argData);
@@ -253,7 +253,7 @@ namespace IngameScript
 
 
 		// NEXT LAST // - Multi level switch command
-		void nextLast(List<StarMap> maps, string arg, bool state)
+		void nextLast(List<StarMap> maps, string arg, string data, bool state)
 		{
 			switch (arg)
 			{
@@ -270,7 +270,7 @@ namespace IngameScript
 					NextPage(state);
 					break;
 				case "MENU":
-					NextMenu(arg, state);
+					NextMenu(data, state);
 					break;
 			}
 		}

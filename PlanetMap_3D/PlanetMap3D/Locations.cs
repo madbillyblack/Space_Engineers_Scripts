@@ -390,7 +390,9 @@ namespace IngameScript
 			{
 				map.activeWaypoint = null;
 				map.activeWaypointName = "";
-				MapToParameters(map);
+				//MapToParameters(map);
+				SetListKey(map.block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
+				SetListKey(map.block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
 				return;
 			}
 			else if (map.waypointIndex < -1)
@@ -402,7 +404,9 @@ namespace IngameScript
 				map.waypointIndex = -1;
 				map.activeWaypoint = null;
 				map.activeWaypointName = "";
-				MapToParameters(map);
+				//MapToParameters(map);
+				SetListKey(map.block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
+				SetListKey(map.block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
 				return;
 			}
 
@@ -410,7 +414,9 @@ namespace IngameScript
 			map.center = waypoint.position;
 			map.activeWaypoint = waypoint;
 			map.activeWaypointName = waypoint.name;
-			MapToParameters(map);
+			//MapToParameters(map);
+			SetListKey(map.block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
+			SetListKey(map.block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
 		}
 
 		void CycleWaypointsForList(List<StarMap> maps, bool next)

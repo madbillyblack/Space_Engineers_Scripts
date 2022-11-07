@@ -23,6 +23,7 @@ namespace IngameScript
     partial class Program
     {
         const string SHARED = "Shared Data";
+        const char SEPARATOR = ';';
         string _gridID;
 
         // ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
@@ -87,7 +88,7 @@ namespace IngameScript
 
             foreach (IMyTerminalBlock block in blocks)
             {
-                if (block.CustomData.Contains(SHARED))
+                if (block.IsSameConstructAs(Me) && block.CustomData.Contains(SHARED))
                     SetKey(block, SHARED, "Grid_ID", gridID);
             }
 
@@ -96,10 +97,10 @@ namespace IngameScript
 
 
         // SET LIST KEY //
-        void SetListKey(IMyTerminalBlock block, string header, string key, string entry, string defaultValue, int index, char separator)
+        void SetListKey(IMyTerminalBlock block, string header, string key, string entry, string defaultValue, int index)
         {
             string oldString = GetKey(block, header, key, "");
-            string newString = InsertEntry(entry, oldString, separator, index, defaultValue);
+            string newString = InsertEntry(entry, oldString, SEPARATOR, index, defaultValue);
 
             SetKey(block, header, key, newString);
         }
@@ -142,11 +143,11 @@ namespace IngameScript
             return newString;
         }
 
-        public string InsertEntry(string entry, string oldString, char separator, int index, int length, string placeHolder)
+        public string InsertEntry(string entry, string oldString, int index, int length, string placeHolder)
         {
             string newString;
 
-            List<string> entries = StringToEntries(oldString, separator, length, placeHolder);
+            List<string> entries = StringToEntries(oldString, length, placeHolder);
 
             // If there's only one entry in the string return entry.
             if (entries.Count == 1 && length == 0)
@@ -160,7 +161,7 @@ namespace IngameScript
             newString = entries[0];
             for (int n = 1; n < entries.Count; n++)
             {
-                newString += separator + entries[n];
+                newString += SEPARATOR + entries[n];
             }
 
             return newString;
@@ -169,10 +170,10 @@ namespace IngameScript
 
         // STRING TO ENTRIES //		Splits string into a list of variable length, by a separator character.  If the list is shorter than 
         //		the desired length,the remainder is filled with copies of the place holder.
-        public List<string> StringToEntries(string arg, char separator, int length, string placeHolder)
+        public List<string> StringToEntries(string arg, int length, string placeHolder)
         {
             List<string> entries = new List<string>();
-            string[] args = arg.Split(separator);
+            string[] args = arg.Split(SEPARATOR);
 
             foreach (string argument in args)
             {
