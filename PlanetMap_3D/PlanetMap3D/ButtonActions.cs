@@ -84,16 +84,16 @@ namespace IngameScript
                     CyclePlanets(map, false);
                     break;
                 case 2:
-                    Zoom(map, false);
+                    map.Zoom(false);
                     break;
                 case 3:
-                    RotateMap(map, "LEFT");
+                    map.Rotate("LEFT");
                     break;
                 case 4:
-                    MoveMap(map, "LEFT");
+                    map.Move("LEFT");
                     break;
                 case 5:
-                    TrackMap(map, "LEFT");
+                    map.Track("LEFT");
                     break;
                 case 6:
                     break;
@@ -114,16 +114,16 @@ namespace IngameScript
                     CyclePlanets(map, true);
                     break;
                 case 2:
-                    Zoom(map, true);
+                    map.Zoom(true);
                     break;
                 case 3:
-                    RotateMap(map, "RIGHT");
+                    map.Rotate("RIGHT");
                     break;
                 case 4:
-                    MoveMap(map, "RIGHT");
+                    map.Move("RIGHT");
                     break;
                 case 5:
-                    TrackMap(map, "RIGHT");
+                    map.Track("RIGHT");
                     break;
                 case 6:
                     break;
@@ -145,16 +145,16 @@ namespace IngameScript
                     CycleWaypoints(map, false);
                     break;
                 case 2:
-                    AdjustRadius(map, true);
+                    map.AdjustRadius(true);
                     break;
                 case 3:
-                    RotateMap(map, "DOWN");
+                    map.Rotate("DOWN");
                     break;
                 case 4:
-                    MoveMap(map, "DOWN");
+                    map.Move("DOWN");
                     break;
                 case 5:
-                    TrackMap(map, "DOWN");
+                    map.Track("DOWN");
                     break;
                 case 6:
                     break;
@@ -175,16 +175,16 @@ namespace IngameScript
                     CycleWaypoints(map, true);
                     break;
                 case 2:
-                    AdjustRadius(map, false);
+                    map.AdjustRadius(false);
                     break;
                 case 3:
-                    RotateMap(map, "UP");
+                    map.Rotate("UP");
                     break;
                 case 4:
-                    MoveMap(map, "UP");
+                    map.Move("UP");
                     break;
                 case 5:
-                    TrackMap(map, "UP");
+                    map.Track("UP");
                     break;
                 case 6:
                     break;
@@ -208,13 +208,13 @@ namespace IngameScript
                     CycleMode(map, false);
                     break;
                 case 3:
-                    SpinMap(map, "LEFT", ANGLE_STEP / 2);
+                    map.Spin("LEFT");
                     break;
                 case 4:
-                    MoveMap(map, "BACKWARD");
+                    map.Move("BACKWARD");
                     break;
                 case 5:
-                    TrackMap(map, "BACKWARD");
+                    map.Track("BACKWARD");
                     break;
                 case 6:
                     break;
@@ -238,13 +238,13 @@ namespace IngameScript
                     CycleMode(map, true);
                     break;
                 case 3:
-                    SpinMap(map, "RIGHT", ANGLE_STEP / 2);
+                    map.Spin("RIGHT");
                     break;
                 case 4:
-                    MoveMap(map, "FORWARD");
+                    map.Move("FORWARD");
                     break;
                 case 5:
-                    TrackMap(map, "FORWARD");
+                    map.Track("FORWARD");
                     break;
                 case 6:
                     break;

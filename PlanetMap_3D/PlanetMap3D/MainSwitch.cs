@@ -74,7 +74,7 @@ namespace IngameScript
 					RotateMaps(maps, cmdArg);
 					break;
 				case "SPIN":
-					SpinMaps(maps, cmdArg, ANGLE_STEP / 2);
+					SpinMaps(maps, cmdArg);
 					break;
 				case "TRACK":
 					TrackMaps(maps, cmdArg);
@@ -150,10 +150,10 @@ namespace IngameScript
 					ChangeMode("ORBIT", maps);
 					break;
 				case "DECREASE_RADIUS":
-					AdjustRadiusForList(maps, false);
+					AdjustRadii(maps, false);
 					break;
 				case "INCREASE_RADIUS":
-					AdjustRadiusForList(maps, true);
+					AdjustRadii(maps, true);
 					break;
 				case "CENTER_SHIP":
 					MapsToShip(maps);

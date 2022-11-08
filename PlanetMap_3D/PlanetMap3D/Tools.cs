@@ -76,7 +76,7 @@ namespace IngameScript
 
 
         // TO RADIANS //  Converts Degree Value to Radians
-        public double ToRadians(int angle)
+        public static double ToRadians(int angle)
         {
             double radianValue = (double)angle * Math.PI / 180;
             return radianValue;

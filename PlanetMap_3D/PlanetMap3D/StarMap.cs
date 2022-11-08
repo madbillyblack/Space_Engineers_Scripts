@@ -31,7 +31,7 @@ namespace IngameScript
 		const string ALT_KEY = "Altitude";
 		const string ZOOM_KEY = "Focal Length";
 		const string RADIUS_KEY = "Rotational Radius";
-		const string MOVEMENT_KEY = "Movement Vector";
+		const string MOTION_KEY = "Motion Vector";
 		const string GPS_KEY = "GPS Mode";
 		const string SHIP_KEY = "Show Ship";
 		const string PLANET_KEY = "Selected Planet";
@@ -42,18 +42,22 @@ namespace IngameScript
 		const string INFO_KEY = "Show Info";
 
 		const string ORIGIN = "(0,0,0)";
-		const string VECTOR_4 = "0,0,0,0";
+		const string DV_MOTION = "0,0,0,0"; // Default string for Motion Vector: dX,dY,dZ,dAz
 		static List<StarMap> _mapList;
 
 		public class StarMap
 		{
+			public IMyTerminalBlock Block;
+			public string Header;
+			public IMyTextSurface DrawingSurface;
+			public RectangleF Viewport;
+
 			public Vector3 Center;
 			public string Mode;
 			public int Altitude;
 			public int Azimuth;
 			public int RotationalRadius;
 			public int FocalLength;
-			//public int azSpeed; // Rotational velocity of Azimuth
 			public int Number;
 			public int Index;
 			public int dX;
@@ -62,9 +66,7 @@ namespace IngameScript
 			public int dAz;
 			public int GpsState;
 			public float BrightnessMod;
-			public IMyTextSurface DrawingSurface;
-			public RectangleF Viewport;
-			public IMyTerminalBlock Block;
+
 			public bool ShowNames;
 			public bool ShowShip;
 			public bool ShowInfo;
@@ -80,23 +82,23 @@ namespace IngameScript
 			public StarMap(IMyTerminalBlock block, int screenIndex, string header)
 			{
 				Block = block;
-				//azSpeed = 0;
+				Header = header;
 				PlanetIndex = 0;
 				WaypointIndex = -1;
 
 				Index = screenIndex;
 
-				Mode = GetKey(block, header, MODE_KEY, "FREE");
+				Mode = GetKey(block, Header, MODE_KEY, "FREE");
 
-				Center = StringToVector3(GetKey(block, header, CENTER_KEY, ORIGIN));
-				Azimuth = ParseInt(GetKey(block, header, AZ_KEY, "0"), 0);	
-				Altitude = ParseInt(GetKey(block, header, ALT_KEY, DV_ALTITUDE.ToString()), DV_ALTITUDE);
+				Center = StringToVector3(GetKey(block, Header, CENTER_KEY, ORIGIN));
+				Azimuth = ParseInt(GetKey(block, Header, AZ_KEY, "0"), 0);	
+				Altitude = ParseInt(GetKey(block, Header, ALT_KEY, DV_ALTITUDE.ToString()), DV_ALTITUDE);
 
-				FocalLength = ParseInt(GetKey(block, header, ZOOM_KEY, DV_FOCAL.ToString()), DV_FOCAL);
-				RotationalRadius = ParseInt(GetKey(block, header, RADIUS_KEY, DV_RADIUS.ToString()), DV_RADIUS);
+				FocalLength = ParseInt(GetKey(block, Header, ZOOM_KEY, DV_FOCAL.ToString()), DV_FOCAL);
+				RotationalRadius = ParseInt(GetKey(block, Header, RADIUS_KEY, DV_RADIUS.ToString()), DV_RADIUS);
 
 				// Get movement velocities
-				string[] movements = GetKey(block, header, MOVEMENT_KEY, VECTOR_4).Split(',');
+				string[] movements = GetKey(block, Header, MOTION_KEY, DV_MOTION).Split(',');
 				if (movements.Length < 4)
 					movements = new string [] { "0", "0", "0", "0" };
 
@@ -105,24 +107,25 @@ namespace IngameScript
 				dZ = ParseInt(movements[2], 0);
 				dAz = ParseInt(movements[3], 0);
 
-				ShowInfo = ParseBool(GetKey(block, header, INFO_KEY, "True"));
-				GpsMode = GetKey(block, header, GPS_KEY, "NORMAL").ToUpper();
+				ShowInfo = ParseBool(GetKey(block, Header, INFO_KEY, "True"));
+				GpsMode = GetKey(block, Header, GPS_KEY, "NORMAL").ToUpper();
 				GpsModeToState();
-				ShowShip = ParseBool(GetKey(block, header, SHIP_KEY, "True"));
+				ShowShip = ParseBool(GetKey(block, Header, SHIP_KEY, "True"));
 
 				//lcdIni.Set("mapDisplay", "Names", newNames);			GetKey(block, header,
 				ShowNames = true;
 
-				ActivePlanetName = GetKey(block, header, PLANET_KEY, "");
+				ActivePlanetName = GetKey(block, Header, PLANET_KEY, "");
 				ActivePlanet = GetPlanet(ActivePlanetName);
 
-				ActiveWaypointName = GetKey(block, header, WAYPOINT_KEY, "");
+				ActiveWaypointName = GetKey(block, Header, WAYPOINT_KEY, "");
 				ActiveWaypoint = GetWaypoint(ActiveWaypointName);
 
-				BrightnessMod = ParseFloat(GetKey(block, header, BRIGHTNESS_KEY, "1"), 1);
+				BrightnessMod = ParseFloat(GetKey(block, Header, BRIGHTNESS_KEY, "1"), 1);
 			}
 
-			public void yaw(int angle)
+			// Yaw //
+			void Yaw(int angle)
 			{
 				if (Mode.ToUpper() == "PLANET" || Mode.ToUpper() == "CHASE" || Mode.ToUpper() == "ORBIT")
 				{
@@ -131,10 +134,11 @@ namespace IngameScript
 				}
 				Azimuth = DegreeAdd(Azimuth, angle);
 
-				SetKey(Block, MAP_HEADER, AZ_KEY, Azimuth.ToString());
+				SetKey(Block, Header, AZ_KEY, Azimuth.ToString());
 			}
 
-			public void pitch(int angle)
+			// Pitch //
+			void Pitch(int angle)
 			{
 				if (Mode.ToUpper() != "PLANET" || Mode.ToUpper() == "ORBIT")
 				{
@@ -155,8 +159,178 @@ namespace IngameScript
 				{
 					_statusMessage = "Pitch controls locked in PLANET & ORBIT modes.";
 				}
+
+				SetKey(Block, Header, ALT_KEY, Altitude.ToString());
 			}
 
+			// Rotate //
+			public void Rotate(string direction)
+			{
+				switch (direction)
+				{
+					case "LEFT":
+						Yaw(ANGLE_STEP);
+						break;
+					case "RIGHT":
+						Yaw(-ANGLE_STEP);
+						break;
+					case "UP":
+						Pitch(-ANGLE_STEP);
+						break;
+					case "DOWN":
+						Pitch(ANGLE_STEP);
+						break;
+				}
+			}
+
+			// MOVE  //
+			public void Move(string direction)
+			{
+				float step = (float)MOVE_STEP;
+				float x = 0;
+				float y = 0;
+				float z = 0;
+
+				switch (direction)
+				{
+					case "LEFT":
+						x = step;
+						break;
+					case "RIGHT":
+						x = -step;
+						break;
+					case "UP":
+						y = step;
+						break;
+					case "DOWN":
+						y = -step;
+						break;
+					case "FORWARD":
+						z = step;
+						break;
+					case "BACKWARD":
+						z = -step;
+						break;
+				}
+				Vector3 moveVector = new Vector3(x, y, z);
+
+				if (Mode == "FREE" || Mode == "WORLD")
+				{
+					Center += rotateMovement(moveVector, this);
+				}
+				else
+				{
+					_statusMessage = "Translation controls only available in FREE & WORLD modes.";
+				}
+
+				SetKey(Block, Header, CENTER_KEY, Center.ToString());
+			}
+
+
+			// TRACK //		Adjust translational speed of map.
+			public void Track(string direction)
+			{
+				switch (direction)
+				{
+					case "LEFT":
+						dX += MOVE_STEP;
+						break;
+					case "RIGHT":
+						dX -= MOVE_STEP;
+						break;
+					case "UP":
+						dY += MOVE_STEP;
+						break;
+					case "DOWN":
+						dY -= MOVE_STEP;
+						break;
+					case "FORWARD":
+						dZ += MOVE_STEP;
+						break;
+					case "BACKWARD":
+						dZ -= MOVE_STEP;
+						break;
+					default:
+						_statusMessage = "Error with Track Command";
+						break;
+				}
+
+				UpdateMotionParameters();
+			}
+
+			// SPIN //
+			public void Spin(string direction)
+			{
+				int deltaAz = ANGLE_STEP / 2;
+
+				if (direction == "RIGHT")
+					deltaAz *= -1;
+
+				dAz += deltaAz;
+			}
+
+			// Zoom // - Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
+			public void Zoom(bool zoomIn)
+			{
+				int doF = FocalLength;
+				float newScale;
+
+				if (zoomIn)
+				{
+					newScale = doF * ZOOM_STEP;
+				}
+				else
+				{
+					newScale = doF / ZOOM_STEP;
+				}
+
+
+				if (newScale > ZOOM_MAX)
+				{
+					doF = ZOOM_MAX;
+				}
+				else if (newScale < 1)
+				{
+					doF = 1;
+				}
+				else
+				{
+					doF = (int)newScale;
+				}
+
+				FocalLength = doF;
+
+				SetKey(Block, Header, ZOOM_KEY, FocalLength.ToString());
+			}
+
+			// ADJUST RADIUS //
+			public void AdjustRadius(bool increase)
+			{
+				int radius = RotationalRadius;
+
+				if (increase)
+				{
+					radius *= 2;
+				}
+				else
+				{
+					radius /= 2;
+				}
+
+				if (radius < FocalLength)
+				{
+					radius = FocalLength;
+				}
+				else if (radius > MAX_VALUE)
+				{
+					radius = MAX_VALUE;
+				}
+
+				RotationalRadius = radius;
+				SetKey(Block, Header, RADIUS_KEY, RotationalRadius.ToString());
+			}
+
+			// Stop //
 			public void Stop()
             {
 				dX = 0;
@@ -164,9 +338,10 @@ namespace IngameScript
 				dZ = 0;
 				dAz = 0;
 
-				SetKey(Block, MAP_HEADER, MOVEMENT_KEY, VECTOR_4);
+				UpdateMotionParameters();
 			}
 
+			// GPS State To Mode //
 			public string GpsStateToMode()
 			{
 				switch (GpsState)
@@ -188,7 +363,7 @@ namespace IngameScript
 				return GpsMode;
 			}
 
-
+			// GPS Mode To State //
 			public void GpsModeToState()
             {
 				switch (GpsMode)
@@ -205,10 +380,60 @@ namespace IngameScript
 						break;
 				}
 			}
+
+			// DEFAULT VIEW //
+			public void DefaultView()
+			{
+				Mode = "FREE";
+
+				Center = new Vector3(0, 0, 0);
+				FocalLength = DV_FOCAL;
+
+				if (Viewport.Width > 500)
+				{
+					FocalLength *= 3;
+				}
+
+				RotationalRadius = DV_RADIUS;
+				Azimuth = 0;
+				Altitude = DV_ALTITUDE;
+			}
+
+			// Brighten //
+			public void Brighten(bool brighten)
+			{
+				if (brighten)
+				{
+					BrightnessMod += BRIGHTNESS_STEP;
+					if (BrightnessMod > BRIGHTNESS_LIMIT)
+						BrightnessMod = BRIGHTNESS_LIMIT;
+				}
+				else
+				{
+					BrightnessMod -= BRIGHTNESS_STEP;
+
+					// Don't let brightness fall below level of single step.
+					if (BrightnessMod < BRIGHTNESS_STEP)
+						BrightnessMod = BRIGHTNESS_STEP;
+				}
+
+				SetKey(Block, Header, BRIGHTNESS_KEY, BrightnessMod.ToString());
+			}
+
+			// Update Motion Parameters //
+			void UpdateMotionParameters()
+            {
+				string motionVector = dX.ToString() + ',' + dY.ToString() + ',' + dZ.ToString() + ',' + dAz.ToString();
+				SetKey(Block, Header, MOTION_KEY, motionVector);
+
+				// Update Center and Azimuth for when map is stopped.
+				SetKey(Block, Header, CENTER_KEY, Center.ToString());
+				SetKey(Block, Header, AZ_KEY, Azimuth.ToString());
+            }
 		}
 
 
-		// PARAMETERS TO MAPS //
+		// PARAMETERS TO MAPS // Build all maps associated with specified block
 		public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 		{
 			List<StarMap> mapsOut = new List<StarMap>();
@@ -223,6 +448,7 @@ namespace IngameScript
             }
 			else if (surfaceCount == 1)
             {
+				// Add a basic header and screen index 0 for single screen block
 				headers.Add(MAP_HEADER);
 				indexes.Add(0);
             }
@@ -234,6 +460,7 @@ namespace IngameScript
                 {
 					if(ParseBool(GetKey(mapBlock, "MAP DISPLAYS", "Show On Screen " + i, defaultBool)))
                     {
+						// Add numbered header as well as index of screen
 						headers.Add(MAP_HEADER + " " + i);
 						indexes.Add(i);
 					}
@@ -247,92 +474,11 @@ namespace IngameScript
 				mapsOut.Add(new StarMap(mapBlock, indexes[j], headers[j]));
             }
 
-            #region
-            /*
-			string indexString = GetKey(mapBlock, MAP_HEADER, "Indexes", "0");
-			string[] indexStrings = indexString.Split(SEPARATOR);
-			int iLength = indexStrings.Length;
-
-			//Split Ini parameters into string lists. Insure all lists are the same length.
-
-			List<string> centers = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Center", "(0,0,0)"), iLength, "(0,0,0)");
-			//List<string> centers = StringToEntries(lcdIni.Get("mapDisplay", "Center").ToString(), ';', iLength, "(0,0,0)");
-
-			List<string> fLengths = StringToEntries(GetKey(mapBlock, MAP_HEADER, "FocalLength", DV_FOCAL.ToString()), iLength, DV_FOCAL.ToString());
-			//List<string> fLengths = StringToEntries(lcdIni.Get("mapDisplay", "FocalLength").ToString(), ',', iLength, DV_FOCAL.ToString());
-
-			List<string> radii = StringToEntries(GetKey(mapBlock, MAP_HEADER, "RotationalRadius", DV_RADIUS.ToString()), iLength, DV_RADIUS.ToString());
-			//List<string> radii = StringToEntries(lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', iLength, DV_RADIUS.ToString());
-
-			List<string> azimuths = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Azimuth", DV_ALTITUDE.ToString()), iLength, "0");
-			//List<string> azimuths = StringToEntries(lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', iLength, "0");
-
-			List<string> altitudes = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Altitude", DV_ALTITUDE.ToString()), iLength, DV_ALTITUDE.ToString());
-			//List<string> altitudes = StringToEntries(lcdIni.Get("mapDisplay", "Altitude").ToString(), ',', iLength, DV_ALTITUDE.ToString());
-
-			List<string> modes = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Mode", "FREE"), iLength, "FREE");
-			//List<string> modes = StringToEntries(lcdIni.Get("mapDisplay", "Mode").ToString(), ',', iLength, "FREE");
-
-			List<string> gpsModes = StringToEntries(GetKey(mapBlock, MAP_HEADER, "GPS", "true"), iLength, "true");
-			//List<string> gpsModes = StringToEntries(lcdIni.Get("mapDisplay", "GPS").ToString(), ',', iLength, "true");
-
-			List<string> nameBools = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Names", "true"), iLength, "true");
-			//List<string> nameBools = StringToEntries(lcdIni.Get("mapDisplay", "Names").ToString(), ',', iLength, "true");
-
-			List<string> shipBools = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Ship", "true"), iLength, "true");
-			//List<string> shipBools = StringToEntries(lcdIni.Get("mapDisplay", "Ship").ToString(), ',', iLength, "true");
-
-			List<string> infoBools = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Info", "true"), iLength, "true");
-			//List<string> infoBools = StringToEntries(lcdIni.Get("mapDisplay", "Info").ToString(), ',', iLength, "true");
-
-			List<string> planets = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Planet", "[null]").ToString(), iLength, "[null]");
-			//List<string> planets = StringToEntries(lcdIni.Get("mapDisplay", "Planet").ToString(), ',', iLength, "[null]");
-
-			List<string> waypoints = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Waypoint", "[null]").ToString(), iLength, "[null]");
-			//List<string> waypoints = StringToEntries(lcdIni.Get("mapDisplay", "Waypoint").ToString(), ',', iLength, "[null]");
-
-			List<string> brightnessMods = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Brightness", "1").ToString(), iLength, "1");
-
-			//assemble maps by position in string lists.
-			for (int i = 0; i < iLength; i++)
-			{
-				StarMap map = new StarMap();
-
-				map.index = ParseInt(indexStrings[i], -1);
-
-				map.block = mapBlock;
-				map.center = StringToVector3(centers[i]);
-				map.focalLength = ParseInt(fLengths[i], DV_FOCAL);
-				map.rotationalRadius = ParseInt(radii[i], DV_RADIUS);
-				map.azimuth = ParseInt(azimuths[i], 0);
-				map.altitude = ParseInt(altitudes[i], DV_ALTITUDE);
-				map.mode = modes[i];
-				map.BrightnessMod = ParseFloat(brightnessMods[i], 1);
-
-				map.gpsMode = gpsModes[i];
-
-
-				map.showNames = ParseBool(nameBools[i]);
-				map.showShip = ParseBool(shipBools[i]);
-				map.showInfo = ParseBool(infoBools[i]);
-				map.activePlanetName = planets[i];
-				map.activePlanet = GetPlanet(map.activePlanetName);
-				map.activeWaypointName = waypoints[i];
-				map.activeWaypoint = GetWaypoint(map.activeWaypointName);
-
-				if (map.index > -1)
-					mapsOut.Add(map);
-				else
-					_statusMessage += "Invalid map index in block \"" + mapBlock.CustomName + "\"\nIndex:" + indexString; 
-			}
-			*/
-            #endregion
-
             return mapsOut;
 		}
 
 
-		// ARG TO MAPS //
+		// ARG TO MAPS // Get map or maps from string argument
 		public List<StarMap> ArgToMaps(string arg)
 		{
 			if (arg.ToUpper() == "ALL")
@@ -366,6 +512,7 @@ namespace IngameScript
 		}
 
 
+		// NO MAPS //
 		public bool NoMaps(List<StarMap> maps)
 		{
 			if (maps.Count < 1)

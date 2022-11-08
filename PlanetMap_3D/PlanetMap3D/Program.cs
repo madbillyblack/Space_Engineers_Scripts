@@ -1183,7 +1183,7 @@ namespace IngameScript
 
 
 		// ROTATE MOVEMENT //	 Rotates Movement Vector for purpose of translation.
-		public Vector3 rotateMovement(Vector3 vecIn, StarMap map)
+		public static Vector3 rotateMovement(Vector3 vecIn, StarMap map)
 		{
 			float x = vecIn.X;
 			float y = vecIn.Y;

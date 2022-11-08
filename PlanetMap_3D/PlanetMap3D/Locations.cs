@@ -288,7 +288,7 @@ namespace IngameScript
 				return;
 			}
 
-			DefaultView(map);
+			map.DefaultView();
 
 			if (next)
 			{
@@ -374,7 +374,7 @@ namespace IngameScript
 				return;
 			}
 
-			DefaultView(map);
+			map.DefaultView();
 
 			if (next)
 			{

@@ -30,38 +30,8 @@ namespace IngameScript
 		const int ZOOM_MAX = 1000000000; // Max value for Focal Length
 		const float BRIGHTNESS_STEP = 0.25f;
 
-		// ZOOM // Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
-		void Zoom(StarMap map, bool zoomIn)
-        {
-			int doF = map.FocalLength;
-			float newScale;
 
-			if (zoomIn)
-			{
-				newScale = doF * ZOOM_STEP;
-			}
-			else
-			{
-				newScale = doF / ZOOM_STEP;
-			}
-
-
-			if (newScale > ZOOM_MAX)
-			{
-				doF = ZOOM_MAX;
-			}
-			else if (newScale < 1)
-			{
-				doF = 1;
-			}
-			else
-			{
-				doF = (int)newScale;
-			}
-
-			map.FocalLength = doF;
-		}
-
+		// ZOOM MAPS //
 		void ZoomMaps(List<StarMap> maps, string arg)
 		{
 			if (NoMaps(maps))
@@ -70,91 +40,25 @@ namespace IngameScript
 			bool zoomIn = arg == "IN";
 
 			foreach (StarMap map in maps)
-				Zoom(map, zoomIn);
+				map.Zoom(zoomIn);
 
 		}
 
 
-		// ADJUST RADIUS //
-		void AdjustRadius(StarMap map, bool increase)
-        {
-			int radius = map.RotationalRadius;
-
-			if (increase)
-			{
-				radius *= 2;
-			}
-			else
-			{
-				radius /= 2;
-			}
-
-			if (radius < map.FocalLength)
-			{
-				radius = map.FocalLength;
-			}
-			else if (radius > MAX_VALUE)
-			{
-				radius = MAX_VALUE;
-			}
-
-			map.RotationalRadius = radius;
-		}
-
-		void AdjustRadiusForList(List<StarMap> maps, bool increase)
+		// ADJUST RADII //
+		void AdjustRadii(List<StarMap> maps, bool increase)
 		{
 			if (NoMaps(maps))
 				return;
 
 			foreach (StarMap map in maps)
 			{
-				AdjustRadius(map, increase);
-
+				map.AdjustRadius(increase);
 			}
 		}
 
 
-		// MOVE MAP //
-		void MoveMap(StarMap map, string direction)
-        {
-			float step = (float)MOVE_STEP;
-			float x = 0;
-			float y = 0;
-			float z = 0;
-
-			switch (direction)
-			{
-				case "LEFT":
-					x = step;
-					break;
-				case "RIGHT":
-					x = -step;
-					break;
-				case "UP":
-					y = step;
-					break;
-				case "DOWN":
-					y = -step;
-					break;
-				case "FORWARD":
-					z = step;
-					break;
-				case "BACKWARD":
-					z = -step;
-					break;
-			}
-			Vector3 moveVector = new Vector3(x, y, z);
-
-			if (map.Mode == "FREE" || map.Mode == "WORLD")
-			{
-				map.Center += rotateMovement(moveVector, map);
-			}
-			else
-			{
-				_statusMessage = "Translation controls only available in FREE & WORLD modes.";
-			}
-		}
-
+		// MOVE MAPS //
 		void MoveMaps(List<StarMap> maps, string direction)
 		{
 			if (NoMaps(maps))
@@ -164,39 +68,12 @@ namespace IngameScript
 
 			foreach (StarMap map in maps)
 			{
-				MoveMap(map, direction);
+				map.Move(direction);
 			}
 		}
 
 
-		// TRACK CENTER //		Adjust translational speed of map.
-		void TrackMap(StarMap map, string direction)
-        {
-			switch (direction)
-			{
-				case "LEFT":
-					map.dX += MOVE_STEP;
-					break;
-				case "RIGHT":
-					map.dX -= MOVE_STEP;
-					break;
-				case "UP":
-					map.dY += MOVE_STEP;
-					break;
-				case "DOWN":
-					map.dY -= MOVE_STEP;
-					break;
-				case "FORWARD":
-					map.dZ += MOVE_STEP;
-					break;
-				case "BACKWARD":
-					map.dZ -= MOVE_STEP;
-					break;
-				default:
-					_statusMessage = "Error with Track Command";
-					break;
-			}
-		}
+		// TRACK MAPS //
 		void TrackMaps(List<StarMap> maps, string direction)
 		{
 			if (NoMaps(maps))
@@ -204,31 +81,12 @@ namespace IngameScript
 
 			foreach (StarMap map in maps)
 			{
-				TrackMap(map, direction);
+				map.Track(direction);
 			}
 		}
 
 
 		// ROTATE MAPS //
-		void RotateMap(StarMap map, string direction)
-        {
-			switch (direction)
-			{
-				case "LEFT":
-					map.yaw(ANGLE_STEP);
-					break;
-				case "RIGHT":
-					map.yaw(-ANGLE_STEP);
-					break;
-				case "UP":
-					map.pitch(-ANGLE_STEP);
-					break;
-				case "DOWN":
-					map.pitch(ANGLE_STEP);
-					break;
-			}
-		}
-
 		void RotateMaps(List<StarMap> maps, string direction)
 		{
 			if (NoMaps(maps))
@@ -236,31 +94,20 @@ namespace IngameScript
 
 			foreach (StarMap map in maps)
 			{
-				RotateMap(map, direction);
+				map.Rotate(direction);
 			}
 		}
 
 
 		// SPIN MAPS //		Adjust azimuth speed of maps.
-		void SpinMap(StarMap map, string direction, int deltaAz)
-        {
-			if (direction == "RIGHT")
-				deltaAz *= -1;
-
-			map.dAz += deltaAz;
-		}
-
-		void SpinMaps(List<StarMap> maps, string direction, int deltaAz)
+		void SpinMaps(List<StarMap> maps, string direction)
 		{
 			if (NoMaps(maps))
 				return;
 
-			if (direction == "RIGHT")
-				deltaAz *= -1;
-
 			foreach (StarMap map in maps)
 			{
-				SpinMap(map, direction, deltaAz);
+				map.Spin(direction);
 			}
 		}
 
@@ -317,7 +164,7 @@ namespace IngameScript
 		// CENTER SHIP //
 		void CenterShip(StarMap map)
 		{
-			DefaultView(map);
+			map.DefaultView();
 			map.Center = _myPos;
 		}
 
@@ -387,11 +234,9 @@ namespace IngameScript
 		// PLANET MODE //
 		void PlanetMode(StarMap map)
 		{
+			map.Mode = "PLANET";
+			map.RotationalRadius = DV_RADIUS;
 			map.FocalLength = DV_FOCAL;
-			map.dAz = 0;
-			map.dX = 0;
-			map.dY = 0;
-			map.dZ = 0;
 
 			if (map.Viewport.Width > 500)
 			{
@@ -410,8 +255,11 @@ namespace IngameScript
 				}
 			}
 
-			map.RotationalRadius = DV_RADIUS;
-			map.Mode = "PLANET";
+			map.Stop();
+
+			SetKey(map.Block, map.Header, ZOOM_KEY, map.FocalLength.ToString());
+			SetKey(map.Block, map.Header, RADIUS_KEY, map.RotationalRadius.ToString());
+			SetKey(map.Block, map.Header, PLANET_KEY, map.ActivePlanetName);
 		}
 
 
@@ -528,25 +376,6 @@ namespace IngameScript
 		}
 
 
-		// DEFAULT VIEW //
-		void DefaultView(StarMap map)
-		{
-			map.Mode = "FREE";
-
-			map.Center = new Vector3(0, 0, 0);
-			map.FocalLength = DV_FOCAL;
-
-			if (map.Viewport.Width > 500)
-			{
-				map.FocalLength *= 3;
-			}
-
-			map.RotationalRadius = DV_RADIUS;
-			map.Azimuth = 0;
-			map.Altitude = DV_ALTITUDE;
-		}
-
-
 		// MAPS TO DEFAULT //
 		void MapsToDefault(List<StarMap> maps)
 		{
@@ -555,39 +384,19 @@ namespace IngameScript
 
 			foreach (StarMap map in maps)
 			{
-				DefaultView(map);
+				map.DefaultView();
 			}
 		}
 
 
-		// BRIGHTEN MAP //
-		void BrightenMap(StarMap map, bool brighten)
-        {
-			if(brighten)
-            {
-				map.BrightnessMod += BRIGHTNESS_STEP;
-				if (map.BrightnessMod > BRIGHTNESS_LIMIT)
-					map.BrightnessMod = BRIGHTNESS_LIMIT;
-            }
-			else
-            {
-				map.BrightnessMod -= BRIGHTNESS_STEP;
-
-				// Don't let brightness fall below level of single step.
-				if (map.BrightnessMod < BRIGHTNESS_STEP)
-					map.BrightnessMod = BRIGHTNESS_STEP;
-            }
-
-			SetListKey(map.Block, MAP_HEADER, "Brightness", map.BrightnessMod.ToString(), "1", map.Index);
-        }
-
-		void BrightenMaps(List<StarMap> maps, bool brighten)
+		// BRIGHTEN MAPS //
+		void BrightenMaps(List<StarMap> maps, bool increaseBrightness)
         {
 			if (NoMaps(maps))
 				return;
 
 			foreach (StarMap map in maps)
-				BrightenMap(map, brighten);
+				map.Brighten(increaseBrightness);
         }
 	}
 }
