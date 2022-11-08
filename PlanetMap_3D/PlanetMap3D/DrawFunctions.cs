@@ -96,7 +96,7 @@ namespace IngameScript
 				_frame = map.drawingSurface.DrawFrame();
 
 				// All sprites must be added to the frame here
-				DrawSprites(map);
+				DrawMap(map);
 
 				// We are done with the frame, send all the sprites to the text panel
 				_frame.Dispose();
@@ -810,7 +810,7 @@ namespace IngameScript
 
 
 		// DRAW SPRITES //
-		public void DrawSprites(StarMap map)
+		public void DrawMap(StarMap map)
 		{
 			Echo("[MAP " + map.number + "]");
 			Vector3 mapCenter = map.center;

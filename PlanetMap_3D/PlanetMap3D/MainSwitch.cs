@@ -246,7 +246,7 @@ namespace IngameScript
 				foreach (StarMap cmdMap in maps)
 				{
 					UpdateMap(cmdMap);
-					MapToParameters(cmdMap);
+					//MapToParameters(cmdMap);
 				}
 			}
 		}

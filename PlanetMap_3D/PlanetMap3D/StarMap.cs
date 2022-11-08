@@ -22,7 +22,9 @@ namespace IngameScript
 {
     partial class Program
     {
-		const string MAP_HEADER = "mapDisplay";
+		const string MAP_HEADER = "MAP DISPLAY";
+		
+		const string ORIGIN = "(0,0,0)";
 		static List<StarMap> _mapList;
 
 		public class StarMap
@@ -33,7 +35,7 @@ namespace IngameScript
 			public int azimuth;
 			public int rotationalRadius;
 			public int focalLength;
-			public int azSpeed; // Rotational velocity of Azimuth
+			//public int azSpeed; // Rotational velocity of Azimuth
 			public int number;
 			public int index;
 			public int dX;
@@ -44,7 +46,7 @@ namespace IngameScript
 			public float BrightnessMod;
 			public IMyTextSurface drawingSurface;
 			public RectangleF viewport;
-			public IMyTerminalBlock block;
+			public IMyTerminalBlock Block;
 			public bool showNames;
 			public bool showShip;
 			public bool showInfo;
@@ -56,28 +58,67 @@ namespace IngameScript
 			public Planet activePlanet;
 			public Waypoint activeWaypoint;
 
-			public StarMap()
+			// Constructor
+			public StarMap(IMyTerminalBlock block, int screenIndex, string header)
 			{
-				this.azSpeed = 0;
-				this.planetIndex = 0;
-				this.waypointIndex = -1;
+				Block = block;
+				//azSpeed = 0;
+				planetIndex = 0;
+				waypointIndex = -1;
+
+				index = screenIndex;
+
+				mode = GetKey(block, header, "Mode", "FREE");
+
+				center = StringToVector3(GetKey(block, header, "Center", ORIGIN));
+				azimuth = ParseInt(GetKey(block, header, "Azimuth", "0"), 0);	
+				altitude = ParseInt(GetKey(block, header, "Altitude", DV_ALTITUDE.ToString()), DV_ALTITUDE);
+
+				focalLength = ParseInt(GetKey(block, header, "Focal Length", DV_FOCAL.ToString()), DV_FOCAL);
+				rotationalRadius = ParseInt(GetKey(block, header, "Rotational Radius", DV_RADIUS.ToString()), DV_RADIUS);
+
+				// Get movement velocities
+				string[] movements = GetKey(block, header, "Movement Vector", "0,0,0,0").Split(',');
+				if (movements.Length < 4)
+					movements = new string [] { "0", "0", "0", "0" };
+
+				dX = ParseInt(movements[0], 0);
+				dY = ParseInt(movements[1], 0);
+				dZ = ParseInt(movements[2], 0);
+				dAz = ParseInt(movements[3], 0);
+
+				showInfo = ParseBool(GetKey(block, header, "Show Info", "True"));
+				gpsMode = GetKey(block, header, "GPS Mode", "NORMAL").ToUpper();
+				GpsModeToState();
+				showShip = ParseBool(GetKey(block, header, "Show Ship", "True"));
+
+				//lcdIni.Set("mapDisplay", "Names", newNames);			GetKey(block, header,
+				showNames = true;
+
+				activePlanetName = GetKey(block, header, "Selected Planet", "");
+				activePlanet = GetPlanet(activePlanetName);
+
+				activeWaypointName = GetKey(block, header, "Selected Waypoint", "");
+				activeWaypoint = GetWaypoint(activeWaypointName);
+
+				BrightnessMod = ParseFloat(GetKey(block, header, "Brightness", "1"), 1);
 			}
 
 			public void yaw(int angle)
 			{
-				if (this.mode.ToUpper() == "PLANET" || this.mode.ToUpper() == "CHASE" || this.mode.ToUpper() == "ORBIT")
+				if (mode.ToUpper() == "PLANET" || mode.ToUpper() == "CHASE" || mode.ToUpper() == "ORBIT")
 				{
 					_statusMessage = "Yaw controls locked in PLANET, CHASE & ORBIT modes.";
 					return;
 				}
-				this.azimuth = DegreeAdd(this.azimuth, angle);
+				azimuth = DegreeAdd(azimuth, angle);
 			}
 
 			public void pitch(int angle)
 			{
-				if (this.mode.ToUpper() != "PLANET" || this.mode.ToUpper() == "ORBIT")
+				if (mode.ToUpper() != "PLANET" || mode.ToUpper() == "ORBIT")
 				{
-					int newAngle = DegreeAdd(this.altitude, angle);
+					int newAngle = DegreeAdd(altitude, angle);
 
 					if (newAngle > MAX_PITCH)
 					{
@@ -88,7 +129,7 @@ namespace IngameScript
 						newAngle = -MAX_PITCH;
 					}
 
-					this.altitude = newAngle;
+					altitude = newAngle;
 				}
 				else
 				{
@@ -104,25 +145,43 @@ namespace IngameScript
 				dAz = 0;
 			}
 
-			public string gpsStateToMode()
+			public string GpsStateToMode()
 			{
-				switch (this.gpsState)
+				switch (gpsState)
 				{
 					case 0:
-						this.gpsMode = "OFF";
+						gpsMode = "OFF";
 						break;
 					case 1:
-						this.gpsMode = "NORMAL";
+						gpsMode = "NORMAL";
 						break;
 					case 2:
-						this.gpsMode = "SHOW_ACTIVE";
+						gpsMode = "SHOW_ACTIVE";
 						break;
 					default:
-						this.gpsMode = "ERROR";
+						gpsMode = "ERROR";
 						break;
 				}
 
-				return this.gpsMode;
+				return gpsMode;
+			}
+
+
+			public void GpsModeToState()
+            {
+				switch (gpsMode)
+				{
+					case "OFF":
+					case "FALSE":
+						gpsState = 0;
+						break;
+					case "SHOW_ACTIVE":
+						gpsState = 2;
+						break;
+					default:
+						gpsState = 1;
+						break;
+				}
 			}
 		}
 
@@ -131,38 +190,43 @@ namespace IngameScript
 		public List<StarMap> ParametersToMaps(IMyTerminalBlock mapBlock)
 		{
 			List<StarMap> mapsOut = new List<StarMap>();
-			/*
-			MyIni lcdIni = DataToIni(mapBlock);
+			List<string> headers = new List<string>();
+			List<int> indexes = new List<int>();
+			int surfaceCount = (mapBlock as IMyTextSurfaceProvider).SurfaceCount;
 
-			if (!mapBlock.CustomData.Contains("[mapDisplay]"))
-			{
-				string oldData = mapBlock.CustomData.Trim();
-				string newData = _defaultDisplay;
-
-				if (oldData.StartsWith("["))
-				{
-					newData += "\n\n" + oldData;
-				}
-				else if (oldData != "")
-				{
-					newData += "\n---\n" + oldData;
-				}
-
-				mapBlock.CustomData = newData;
-			}
-
-			string indexString;
-
-			if (!mapBlock.CustomData.Contains("Indexes"))
-			{
-				indexString = "";
-			}
+			if (surfaceCount < 1)
+            {
+				_statusMessage += "Block \"" + mapBlock.CustomName + "\" has no screens!\n";
+				return mapsOut;
+            }
+			else if (surfaceCount == 1)
+            {
+				headers.Add(MAP_HEADER);
+				indexes.Add(0);
+            }
 			else
-			{
-				indexString = lcdIni.Get("mapDisplay", "Indexes").ToString();
-			}
-			*/
+            {
+				string defaultBool = "True";
 
+				for(int i = 0; i < surfaceCount; i++)
+                {
+					if(ParseBool(GetKey(mapBlock, "MAP DISPLAYS", "Show On Screen " + i, defaultBool)))
+                    {
+						headers.Add(MAP_HEADER + " " + i);
+						indexes.Add(i);
+					}
+
+					defaultBool = "False";
+                }
+            }
+
+			for(int j = 0; j < headers.Count; j++)
+            {
+				mapsOut.Add(new StarMap(mapBlock, indexes[j], headers[j]));
+            }
+
+            #region
+            /*
 			string indexString = GetKey(mapBlock, MAP_HEADER, "Indexes", "0");
 			string[] indexStrings = indexString.Split(SEPARATOR);
 			int iLength = indexStrings.Length;
@@ -177,7 +241,7 @@ namespace IngameScript
 
 			List<string> radii = StringToEntries(GetKey(mapBlock, MAP_HEADER, "RotationalRadius", DV_RADIUS.ToString()), iLength, DV_RADIUS.ToString());
 			//List<string> radii = StringToEntries(lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), ',', iLength, DV_RADIUS.ToString());
-			
+
 			List<string> azimuths = StringToEntries(GetKey(mapBlock, MAP_HEADER, "Azimuth", DV_ALTITUDE.ToString()), iLength, "0");
 			//List<string> azimuths = StringToEntries(lcdIni.Get("mapDisplay", "Azimuth").ToString(), ',', iLength, "0");
 
@@ -211,14 +275,8 @@ namespace IngameScript
 			for (int i = 0; i < iLength; i++)
 			{
 				StarMap map = new StarMap();
-				if (indexString == "")
-				{
-					map.index =  _mapIndex;
-				}
-				else
-				{
-					map.index = ParseInt(indexStrings[i], -1);
-				}
+
+				map.index = ParseInt(indexStrings[i], -1);
 
 				map.block = mapBlock;
 				map.center = StringToVector3(centers[i]);
@@ -230,19 +288,7 @@ namespace IngameScript
 				map.BrightnessMod = ParseFloat(brightnessMods[i], 1);
 
 				map.gpsMode = gpsModes[i];
-				switch (map.gpsMode.ToUpper())
-				{
-					case "OFF":
-					case "FALSE":
-						map.gpsState = 0;
-						break;
-					case "SHOW_ACTIVE":
-						map.gpsState = 2;
-						break;
-					default:
-						map.gpsState = 1;
-						break;
-				}
+
 
 				map.showNames = ParseBool(nameBools[i]);
 				map.showShip = ParseBool(shipBools[i]);
@@ -257,8 +303,10 @@ namespace IngameScript
 				else
 					_statusMessage += "Invalid map index in block \"" + mapBlock.CustomName + "\"\nIndex:" + indexString; 
 			}
+			*/
+            #endregion
 
-			return mapsOut;
+            return mapsOut;
 		}
 
 
@@ -316,5 +364,80 @@ namespace IngameScript
 			else
 				return null;
         }
+
+		/*
+		// MAP TO PARAMETERS // Writes map object to CustomData of Display Block
+		public void MapToParameters(StarMap map)
+		{
+
+			MyIni lcdIni = DataToIni(map.block);
+
+			int i = 0;
+
+			string blockIndex = lcdIni.Get("mapDisplay", "Indexes").ToString();
+			string[] indexes = blockIndex.Split(',');
+
+			int entries = indexes.Length;
+
+			if (entries > 0)
+			{
+				for (int j = 0; j < entries; j++)
+				{
+					if (map.index.ToString() == indexes[j])
+					{
+						i = j;  //This is the array position of the screen index for this map.
+					}
+				}
+			}
+
+			// Read the old Ini Data and split into string arrays. Insert the new data into the arrays.
+			string newIndexes = InsertEntry(map.index.ToString(), blockIndex, i, entries, "0");
+			string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), i, entries, "(0,0,0)");
+			string newModes = InsertEntry(map.mode, lcdIni.Get("mapDisplay", "Mode").ToString(), i, entries, "FREE");
+			string newFocal = InsertEntry(map.focalLength.ToString(), lcdIni.Get("mapDisplay", "FocalLength").ToString(), i, entries, DV_FOCAL.ToString());
+			string newRadius = InsertEntry(map.rotationalRadius.ToString(), lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), i, entries, DV_RADIUS.ToString());
+			string newAzimuth = InsertEntry(map.azimuth.ToString(), lcdIni.Get("mapDisplay", "Azimuth").ToString(), i, entries, "0");
+			string newAltitude = InsertEntry(map.altitude.ToString(), lcdIni.Get("mapDisplay", "Altitude").ToString(), i, entries, DV_ALTITUDE.ToString());
+			string newDX = InsertEntry(map.dX.ToString(), lcdIni.Get("mapDisplay", "dX").ToString(), i, entries, "0");
+			string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), i, entries, "0");
+			string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), i, entries, "0");
+			string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), i, entries, "0");
+			string newGPS = InsertEntry(map.gpsStateToMode(), lcdIni.Get("mapDisplay", "GPS").ToString(), i, entries, "True");
+			string newNames = InsertEntry(map.showNames.ToString(), lcdIni.Get("mapDisplay", "Names").ToString(), i, entries, "True");
+			string newShip = InsertEntry(map.showShip.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), i, entries, "True");
+			string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(), i, entries, "True");
+			string newPlanets = InsertEntry(map.activePlanetName, lcdIni.Get("mapDisplay", "Planet").ToString(), i, entries, "[null]");
+			string newWaypoints = InsertEntry(map.activeWaypointName, lcdIni.Get("mapDisplay", "Waypoint").ToString(), i, entries, "[null]");
+			string brightnesses = InsertEntry(map.BrightnessMod.ToString(), lcdIni.Get("mapDisplay", "Brightness").ToString(), i, entries, "1");
+			
+			// Update the Ini Data.
+			//lcdIni.Set("mapDisplay", "Center", newCenters);
+			//lcdIni.Set("mapDisplay", "Mode", newModes);
+			//lcdIni.Set("mapDisplay", "FocalLength", newFocal);
+			//lcdIni.Set("mapDisplay", "RotationalRadius", newRadius);
+			//lcdIni.Set("mapDisplay", "Azimuth", newAzimuth);
+			//lcdIni.Set("mapDisplay", "Altitude", newAltitude);
+			//lcdIni.Set("mapDisplay", "Indexes", newIndexes);
+			//lcdIni.Set("mapDisplay", "dX", newDX);
+			//lcdIni.Set("mapDisplay", "dY", newDY);
+			//lcdIni.Set("mapDisplay", "dZ", newDZ);
+			//lcdIni.Set("mapDisplay", "dAz", newDAz);
+			//lcdIni.Set("mapDisplay", "GPS", newGPS);
+			//lcdIni.Set("mapDisplay", "Names", newNames);
+			//lcdIni.Set("mapDisplay", "Ship", newShip);
+			//lcdIni.Set("mapDisplay", "Info", newInfo);
+			//lcdIni.Set("mapDisplay", "Planet", newPlanets);
+			//lcdIni.Set("mapDisplay", "Waypoint", newWaypoints);
+
+			map.block.CustomData = lcdIni.ToString();
+			
+
+			IMyTerminalBlock block = map.block;
+			int index = map.index;
+
+			SetListKey(block, MAP_HEADER, "Center", map.center.ToString(), ORIGIN, index);
+			SetListKey(block, MAP_HEADER, "Mode", map.mode, "FREE", index);
+		}
+		*/
 	}
 }

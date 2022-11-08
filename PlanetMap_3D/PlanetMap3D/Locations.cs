@@ -22,9 +22,9 @@ namespace IngameScript
 {
     partial class Program
     {
-		List<Planet> _planetList;
-		List<Planet> _unchartedList;
-		List<Waypoint> _waypointList;
+		static List<Planet> _planetList;
+		static List<Planet> _unchartedList;
+		static List<Waypoint> _waypointList;
 
 
 		// LOCATION //
@@ -314,7 +314,7 @@ namespace IngameScript
 
 
 		// GET PLANET //
-		Planet GetPlanet(string planetName)
+		static Planet GetPlanet(string planetName)
 		{
 			if (planetName == "" || planetName == "[null]")
 				return null;
@@ -346,7 +346,7 @@ namespace IngameScript
 
 
 		// GET WAYPOINT //
-		Waypoint GetWaypoint(string waypointName)
+		static Waypoint GetWaypoint(string waypointName)
 		{
 			if (_waypointList.Count > 0)
 			{
@@ -391,8 +391,8 @@ namespace IngameScript
 				map.activeWaypoint = null;
 				map.activeWaypointName = "";
 				//MapToParameters(map);
-				SetListKey(map.block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
-				SetListKey(map.block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
+				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
+				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
 				return;
 			}
 			else if (map.waypointIndex < -1)
@@ -405,8 +405,8 @@ namespace IngameScript
 				map.activeWaypoint = null;
 				map.activeWaypointName = "";
 				//MapToParameters(map);
-				SetListKey(map.block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
-				SetListKey(map.block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
+				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
+				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
 				return;
 			}
 
@@ -415,8 +415,8 @@ namespace IngameScript
 			map.activeWaypoint = waypoint;
 			map.activeWaypointName = waypoint.name;
 			//MapToParameters(map);
-			SetListKey(map.block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
-			SetListKey(map.block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
+			SetListKey(map.Block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
+			SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
 		}
 
 		void CycleWaypointsForList(List<StarMap> maps, bool next)

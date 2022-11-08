@@ -167,7 +167,7 @@ namespace IngameScript
 				foreach (StarMap map in _mapList)
 				{
 					mapData.Add("MAP " + map.number + " --- " + map.viewport.Width.ToString("N0") + " x " + map.viewport.Height.ToString("N0") + " --- " + map.mode + " Mode");
-					mapData.Add("   On: " + map.block.CustomName + "   Screen: " + map.index);
+					mapData.Add("   On: " + map.Block.CustomName + "   Screen: " + map.index);
 
 					if (map.activePlanetName != "")
 						mapData.Add("   Selected Planet: " + map.activePlanetName);

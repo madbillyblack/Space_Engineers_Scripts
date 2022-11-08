@@ -107,7 +107,7 @@ namespace IngameScript
 		//bool _showShip;
 		//bool _showNames;
 		bool _lightOn;
-		bool _planets;
+		static bool _planets;
 		bool _planetToLog;
 		bool _slowMode = false;
 		int _cycleLength;
@@ -316,7 +316,7 @@ namespace IngameScript
 						break;
 				}
 
-				MapToParameters(map);
+				//MapToParameters(map);
 			}
 		}
 
@@ -384,72 +384,6 @@ namespace IngameScript
 			}
 
 			Me.CustomData = mapIni.ToString();
-		}
-
-
-		// MAP TO PARAMETERS // Writes map object to CustomData of Display Block
-		public void MapToParameters(StarMap map)
-		{
-			MyIni lcdIni = DataToIni(map.block);
-
-			int i = 0;
-
-			string blockIndex = lcdIni.Get("mapDisplay", "Indexes").ToString();
-			string[] indexes = blockIndex.Split(',');
-
-			int entries = indexes.Length;
-
-			if (entries > 0)
-			{
-				for (int j = 0; j < entries; j++)
-				{
-					if (map.index.ToString() == indexes[j])
-					{
-						i = j;  //This is the array position of the screen index for this map.
-					}
-				}
-			}
-
-			// Read the old Ini Data and split into string arrays. Insert the new data into the arrays.
-			string newIndexes = InsertEntry(map.index.ToString(), blockIndex, i, entries, "0");
-			string newCenters = InsertEntry(Vector3ToString(map.center), lcdIni.Get("mapDisplay", "Center").ToString(), i, entries, "(0,0,0)");
-			string newModes = InsertEntry(map.mode, lcdIni.Get("mapDisplay", "Mode").ToString(), i, entries, "FREE");
-			string newFocal = InsertEntry(map.focalLength.ToString(), lcdIni.Get("mapDisplay", "FocalLength").ToString(), i, entries, DV_FOCAL.ToString());
-			string newRadius = InsertEntry(map.rotationalRadius.ToString(), lcdIni.Get("mapDisplay", "RotationalRadius").ToString(), i, entries, DV_RADIUS.ToString());
-			string newAzimuth = InsertEntry(map.azimuth.ToString(), lcdIni.Get("mapDisplay", "Azimuth").ToString(), i, entries, "0");
-			string newAltitude = InsertEntry(map.altitude.ToString(), lcdIni.Get("mapDisplay", "Altitude").ToString(), i, entries, DV_ALTITUDE.ToString());
-			string newDX = InsertEntry(map.dX.ToString(), lcdIni.Get("mapDisplay", "dX").ToString(), i, entries, "0");
-			string newDY = InsertEntry(map.dY.ToString(), lcdIni.Get("mapDisplay", "dY").ToString(), i, entries, "0");
-			string newDZ = InsertEntry(map.dZ.ToString(), lcdIni.Get("mapDisplay", "dZ").ToString(), i, entries, "0");
-			string newDAz = InsertEntry(map.dAz.ToString(), lcdIni.Get("mapDisplay", "dAz").ToString(), i, entries, "0");
-			string newGPS = InsertEntry(map.gpsStateToMode(), lcdIni.Get("mapDisplay", "GPS").ToString(), i, entries, "True");
-			string newNames = InsertEntry(map.showNames.ToString(), lcdIni.Get("mapDisplay", "Names").ToString(), i, entries, "True");
-			string newShip = InsertEntry(map.showShip.ToString(), lcdIni.Get("mapDisplay", "Ship").ToString(), i, entries, "True");
-			string newInfo = InsertEntry(map.showInfo.ToString(), lcdIni.Get("mapDisplay", "Info").ToString(),  i, entries, "True");
-			string newPlanets = InsertEntry(map.activePlanetName, lcdIni.Get("mapDisplay", "Planet").ToString(), i, entries, "[null]");
-			string newWaypoints = InsertEntry(map.activeWaypointName, lcdIni.Get("mapDisplay", "Waypoint").ToString(), i, entries, "[null]");
-			string brightnesses = InsertEntry(map.BrightnessMod.ToString(), lcdIni.Get("mapDisplay", "Brightness").ToString(), i, entries, "1");
-
-			// Update the Ini Data.
-			lcdIni.Set("mapDisplay", "Center", newCenters);
-			lcdIni.Set("mapDisplay", "Mode", newModes);
-			lcdIni.Set("mapDisplay", "FocalLength", newFocal);
-			lcdIni.Set("mapDisplay", "RotationalRadius", newRadius);
-			lcdIni.Set("mapDisplay", "Azimuth", newAzimuth);
-			lcdIni.Set("mapDisplay", "Altitude", newAltitude);
-			lcdIni.Set("mapDisplay", "Indexes", newIndexes);
-			lcdIni.Set("mapDisplay", "dX", newDX);
-			lcdIni.Set("mapDisplay", "dY", newDY);
-			lcdIni.Set("mapDisplay", "dZ", newDZ);
-			lcdIni.Set("mapDisplay", "dAz", newDAz);
-			lcdIni.Set("mapDisplay", "GPS", newGPS);
-			lcdIni.Set("mapDisplay", "Names", newNames);
-			lcdIni.Set("mapDisplay", "Ship", newShip);
-			lcdIni.Set("mapDisplay", "Info", newInfo);
-			lcdIni.Set("mapDisplay", "Planet", newPlanets);
-			lcdIni.Set("mapDisplay", "Waypoint", newWaypoints);
-
-			map.block.CustomData = lcdIni.ToString();
 		}
 
 
@@ -1406,7 +1340,7 @@ namespace IngameScript
 							foreach (StarMap map in maps)
 							{
 								activateMap(map);
-								MapToParameters(map);
+								//MapToParameters(map);
 							}
 						}
 					}
@@ -1530,7 +1464,7 @@ namespace IngameScript
 		// ACTIVATE MAP // activates tagged map screen without having to recompile.
 		void activateMap(StarMap map)
 		{
-			IMyTextSurfaceProvider mapBlock = map.block as IMyTextSurfaceProvider;
+			IMyTextSurfaceProvider mapBlock = map.Block as IMyTextSurfaceProvider;
 			map.drawingSurface = mapBlock.GetSurface(map.index);
 			PrepareTextSurfaceForSprites(map.drawingSurface);
 
