@@ -299,17 +299,17 @@ namespace IngameScript
 						}
 						else
 						{
-							map.gpsState = state;
+							map.GpsState = state;
 						}
 						break;
 					case "NAMES":
-						map.showNames = setState(map.showNames, state);
+						map.ShowNames = setState(map.ShowNames, state);
 						break;
 					case "SHIP":
-						map.showShip = setState(map.showShip, state);
+						map.ShowShip = setState(map.ShowShip, state);
 						break;
 					case "INFO":
-						map.showInfo = setState(map.showInfo, state);
+						map.ShowInfo = setState(map.ShowInfo, state);
 						break;
 					default:
 						_statusMessage = "INVALID DISPLAY COMMAND";
@@ -324,9 +324,9 @@ namespace IngameScript
 		// CYCLE GPS //
 		void cycleGPS(StarMap map)
 		{
-			map.gpsState++;
-			if (map.gpsState > 2)
-				map.gpsState = 0;
+			map.GpsState++;
+			if (map.GpsState > 2)
+				map.GpsState = 0;
 		}
 
 		void cycleGPSForList(List<StarMap> maps)
@@ -1055,7 +1055,7 @@ namespace IngameScript
 					Planet planetA = planets[p - 1];
 					Planet planetB = planets[p];
 
-					if (planetA.transformedCoords[map.number].Z < planetB.transformedCoords[map.number].Z)
+					if (planetA.transformedCoords[map.Number].Z < planetB.transformedCoords[map.Number].Z)
 					{
 						planets[p - 1] = planetB;
 						planets[p] = planetA;
@@ -1138,17 +1138,17 @@ namespace IngameScript
 		// TRANSFORM VECTOR //	   Transforms vector location of planet or waypoint for StarMap view.
 		public Vector3 transformVector(Vector3 vectorIn, StarMap map)
 		{
-			double xS = vectorIn.X - map.center.X; //Vector X - Map X
-			double yS = vectorIn.Y - map.center.Y; //Vector Y - Map Y
-			double zS = vectorIn.Z - map.center.Z; //Vector Z - Map Z 
+			double xS = vectorIn.X - map.Center.X; //Vector X - Map X
+			double yS = vectorIn.Y - map.Center.Y; //Vector Y - Map Y
+			double zS = vectorIn.Z - map.Center.Z; //Vector Z - Map Z 
 
-			double r = map.rotationalRadius;
+			double r = map.RotationalRadius;
 
-			double cosAz = Math.Cos(ToRadians(map.azimuth));
-			double sinAz = Math.Sin(ToRadians(map.azimuth));
+			double cosAz = Math.Cos(ToRadians(map.Azimuth));
+			double sinAz = Math.Sin(ToRadians(map.Azimuth));
 
-			double cosAlt = Math.Cos(ToRadians(map.altitude));
-			double sinAlt = Math.Sin(ToRadians(map.altitude));
+			double cosAlt = Math.Cos(ToRadians(map.Altitude));
+			double sinAlt = Math.Sin(ToRadians(map.Altitude));
 
 			// Transformation Formulas from Matrix Calculations
 			double xT = cosAz * xS + sinAz * zS;
@@ -1167,11 +1167,11 @@ namespace IngameScript
 			float y = vecIn.Y;
 			float z = vecIn.Z;
 
-			float cosAz = (float)Math.Cos(ToRadians(map.azimuth));
-			float sinAz = (float)Math.Sin(ToRadians(map.azimuth));
+			float cosAz = (float)Math.Cos(ToRadians(map.Azimuth));
+			float sinAz = (float)Math.Sin(ToRadians(map.Azimuth));
 
-			float cosAlt = (float)Math.Cos(ToRadians(map.altitude));
-			float sinAlt = (float)Math.Sin(ToRadians(map.altitude));
+			float cosAlt = (float)Math.Cos(ToRadians(map.Altitude));
+			float sinAlt = (float)Math.Sin(ToRadians(map.Altitude));
 
 			float xT = cosAz * x + sinAz * z;
 			float yT = sinAz * sinAlt * x + cosAlt * y - sinAlt * cosAz * z;
@@ -1189,11 +1189,11 @@ namespace IngameScript
 			float y = vecIn.Y;
 			float z = vecIn.Z;
 
-			float cosAz = (float)Math.Cos(ToRadians(-map.azimuth));
-			float sinAz = (float)Math.Sin(ToRadians(-map.azimuth));
+			float cosAz = (float)Math.Cos(ToRadians(-map.Azimuth));
+			float sinAz = (float)Math.Sin(ToRadians(-map.Azimuth));
 
-			float cosAlt = (float)Math.Cos(ToRadians(-map.altitude));
-			float sinAlt = (float)Math.Sin(ToRadians(-map.altitude));
+			float cosAlt = (float)Math.Cos(ToRadians(-map.Altitude));
+			float sinAlt = (float)Math.Sin(ToRadians(-map.Altitude));
 
 			float xT = cosAz * x + sinAz * sinAlt * y + sinAz * cosAlt * z;
 			float yT = cosAlt * y - sinAlt * z;
@@ -1238,7 +1238,7 @@ namespace IngameScript
 
 					foreach (StarMap map in _mapList)
 					{
-						if (map.mode == "PLANET" || map.mode == "CHASE" || map.mode == "ORBIT")
+						if (map.Mode == "PLANET" || map.Mode == "CHASE" || map.Mode == "ORBIT")
 						{
 							UpdateMap(map);
 						}
@@ -1438,7 +1438,7 @@ namespace IngameScript
 					}
 					else
 					{
-						planet.transformedCoords[map.number] = newCenter;
+						planet.transformedCoords[map.Number] = newCenter;
 					}
 				}
 			}
@@ -1454,7 +1454,7 @@ namespace IngameScript
 					}
 					else
 					{
-						waypoint.transformedCoords[map.number] = newPos;
+						waypoint.transformedCoords[map.Number] = newPos;
 					}
 				}
 			}
@@ -1465,15 +1465,15 @@ namespace IngameScript
 		void activateMap(StarMap map)
 		{
 			IMyTextSurfaceProvider mapBlock = map.Block as IMyTextSurfaceProvider;
-			map.drawingSurface = mapBlock.GetSurface(map.index);
-			PrepareTextSurfaceForSprites(map.drawingSurface);
+			map.DrawingSurface = mapBlock.GetSurface(map.Index);
+			PrepareTextSurfaceForSprites(map.DrawingSurface);
 
 			// Calculate the viewport offset by centering the surface size onto the texture size
-			map.viewport = new RectangleF(
-			(map.drawingSurface.TextureSize - map.drawingSurface.SurfaceSize) / 2f,
-				map.drawingSurface.SurfaceSize
+			map.Viewport = new RectangleF(
+			(map.DrawingSurface.TextureSize - map.DrawingSurface.SurfaceSize) / 2f,
+				map.DrawingSurface.SurfaceSize
 			);
-			map.number = _mapList.Count;
+			map.Number = _mapList.Count;
 			_mapList.Add(map);
 			UpdateMap(map);
 		}

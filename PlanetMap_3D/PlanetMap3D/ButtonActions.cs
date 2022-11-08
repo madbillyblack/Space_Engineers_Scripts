@@ -265,13 +265,13 @@ namespace IngameScript
                     cycleGPS(map);
                     break;
                 case 2:
-                    map.showInfo = setState(map.showInfo, 3); // Toggle Info Bars
+                    map.ShowInfo = setState(map.ShowInfo, 3); // Toggle Info Bars
                     break;
                 case 3:
-                    map.showInfo = setState(map.showInfo, 3); // Toggle Info Bars
+                    map.ShowInfo = setState(map.ShowInfo, 3); // Toggle Info Bars
                     break;
                 case 4:
-                    map.showInfo = setState(map.showInfo, 3); // Toggle Info Bars
+                    map.ShowInfo = setState(map.ShowInfo, 3); // Toggle Info Bars
                     break;
                 case 5:
                     map.Stop();

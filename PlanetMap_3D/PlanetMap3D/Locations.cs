@@ -292,23 +292,23 @@ namespace IngameScript
 
 			if (next)
 			{
-				map.planetIndex++;
+				map.PlanetIndex++;
 			}
 			else
 			{
-				map.planetIndex--;
+				map.PlanetIndex--;
 			}
 
-			if (map.planetIndex < 0)
+			if (map.PlanetIndex < 0)
 			{
-				map.planetIndex = _planetList.Count - 1;
+				map.PlanetIndex = _planetList.Count - 1;
 			}
-			else if (map.planetIndex >= _planetList.Count)
+			else if (map.PlanetIndex >= _planetList.Count)
 			{
-				map.planetIndex = 0;
+				map.PlanetIndex = 0;
 			}
 
-			SelectPlanet(_planetList[map.planetIndex], map);
+			SelectPlanet(_planetList[map.PlanetIndex], map);
         }
 
 
@@ -378,45 +378,45 @@ namespace IngameScript
 
 			if (next)
 			{
-				map.waypointIndex++;
+				map.WaypointIndex++;
 			}
 			else
 			{
-				map.waypointIndex--;
+				map.WaypointIndex--;
 			}
 
 
-			if (map.waypointIndex == -1)
+			if (map.WaypointIndex == -1)
 			{
-				map.activeWaypoint = null;
-				map.activeWaypointName = "";
+				map.ActiveWaypoint = null;
+				map.ActiveWaypointName = "";
 				//MapToParameters(map);
-				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
-				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
+				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.ActiveWaypointName, "", map.Index);
+				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.Center), "(0,0,0)", map.Index);
 				return;
 			}
-			else if (map.waypointIndex < -1)
+			else if (map.WaypointIndex < -1)
 			{
-				map.waypointIndex = gpsCount - 1;
+				map.WaypointIndex = gpsCount - 1;
 			}
-			else if (map.waypointIndex >= gpsCount)
+			else if (map.WaypointIndex >= gpsCount)
 			{
-				map.waypointIndex = -1;
-				map.activeWaypoint = null;
-				map.activeWaypointName = "";
+				map.WaypointIndex = -1;
+				map.ActiveWaypoint = null;
+				map.ActiveWaypointName = "";
 				//MapToParameters(map);
-				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
-				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
+				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.ActiveWaypointName, "", map.Index);
+				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.Center), "(0,0,0)", map.Index);
 				return;
 			}
 
-			Waypoint waypoint = _waypointList[map.waypointIndex];
-			map.center = waypoint.position;
-			map.activeWaypoint = waypoint;
-			map.activeWaypointName = waypoint.name;
+			Waypoint waypoint = _waypointList[map.WaypointIndex];
+			map.Center = waypoint.position;
+			map.ActiveWaypoint = waypoint;
+			map.ActiveWaypointName = waypoint.name;
 			//MapToParameters(map);
-			SetListKey(map.Block, MAP_HEADER, "Waypoint", map.activeWaypointName, "", map.index);
-			SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.center), "(0,0,0)", map.index);
+			SetListKey(map.Block, MAP_HEADER, "Waypoint", map.ActiveWaypointName, "", map.Index);
+			SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.Center), "(0,0,0)", map.Index);
 		}
 
 		void CycleWaypointsForList(List<StarMap> maps, bool next)
@@ -436,21 +436,21 @@ namespace IngameScript
 		// SELECT PLANET //
 		void SelectPlanet(Planet planet, StarMap map)
 		{
-			map.center = planet.position;
-			map.activePlanetName = planet.name;
+			map.Center = planet.position;
+			map.ActivePlanetName = planet.name;
 
 			if (planet.name != "" && planet.name != "[null]")
-				map.activePlanet = GetPlanet(planet.name);
+				map.ActivePlanet = GetPlanet(planet.name);
 
 
 			if (planet.radius < 27000)
 			{
-				map.focalLength *= 4;
+				map.FocalLength *= 4;
 			}
 			else if (planet.radius < 40000)
 			{
-				map.focalLength *= 3;
-				map.focalLength /= 2;
+				map.FocalLength *= 3;
+				map.FocalLength /= 2;
 			}
 		}
 	}

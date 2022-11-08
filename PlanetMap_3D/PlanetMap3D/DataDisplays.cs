@@ -166,31 +166,31 @@ namespace IngameScript
 				List<string> mapData = new List<string>();
 				foreach (StarMap map in _mapList)
 				{
-					mapData.Add("MAP " + map.number + " --- " + map.viewport.Width.ToString("N0") + " x " + map.viewport.Height.ToString("N0") + " --- " + map.mode + " Mode");
-					mapData.Add("   On: " + map.Block.CustomName + "   Screen: " + map.index);
+					mapData.Add("MAP " + map.Number + " --- " + map.Viewport.Width.ToString("N0") + " x " + map.Viewport.Height.ToString("N0") + " --- " + map.Mode + " Mode");
+					mapData.Add("   On: " + map.Block.CustomName + "   Screen: " + map.Index);
 
-					if (map.activePlanetName != "")
-						mapData.Add("   Selected Planet: " + map.activePlanetName);
+					if (map.ActivePlanetName != "")
+						mapData.Add("   Selected Planet: " + map.ActivePlanetName);
 
 					string hidden = "   Hidden:";
-					if (!map.showInfo)
+					if (!map.ShowInfo)
 						hidden += " Stat-Bars ";
 
-					if (map.gpsState == 0)
+					if (map.GpsState == 0)
 						hidden += " GPS ";
 
-					if (!map.showNames)
+					if (!map.ShowNames)
 						hidden += " Names ";
 
-					if (!map.showShip)
+					if (!map.ShowShip)
 						hidden += " Ship";
 
-					if (map.gpsState == 0 || !map.showInfo || !map.showShip && !map.showNames)
+					if (map.GpsState == 0 || !map.ShowInfo || !map.ShowShip && !map.ShowNames)
 						mapData.Add(hidden);
 
-					mapData.Add("   Center: " + Vector3ToString(map.center));
-					mapData.Add("   Azimuth: " + map.azimuth + "°   Altitude: " + map.altitude * -1 + "°");
-					mapData.Add("   Focal Length: " + abbreviateValue(map.focalLength) + "   Radius: " + abbreviateValue(map.rotationalRadius) + "\n");
+					mapData.Add("   Center: " + Vector3ToString(map.Center));
+					mapData.Add("   Azimuth: " + map.Azimuth + "°   Altitude: " + map.Altitude * -1 + "°");
+					mapData.Add("   Focal Length: " + abbreviateValue(map.FocalLength) + "   Radius: " + abbreviateValue(map.RotationalRadius) + "\n");
 				}
 
 				output += ScrollToString(mapData);

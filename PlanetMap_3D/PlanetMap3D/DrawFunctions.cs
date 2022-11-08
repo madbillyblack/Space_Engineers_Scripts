@@ -63,37 +63,37 @@ namespace IngameScript
         {
 			foreach (StarMap map in _mapList)
 			{
-				if (map.mode == "CHASE")
+				if (map.Mode == "CHASE")
 				{
 					AlignShip(map);
 				}
-				else if (map.mode == "PLANET" && _planetList.Count > 0)
+				else if (map.Mode == "PLANET" && _planetList.Count > 0)
 				{
 					ShipToPlanet(map);
 				}
-				else if (map.mode == "ORBIT")
+				else if (map.Mode == "ORBIT")
 				{
 					AlignOrbit(map);
 				}
 				else
 				{
-					map.azimuth = DegreeAdd(map.azimuth, map.dAz);
+					map.Azimuth = DegreeAdd(map.Azimuth, map.dAz);
 
-					if (map.mode != "SHIP")
+					if (map.Mode != "SHIP")
 					{
 						Vector3 deltaC = new Vector3(map.dX, map.dY, map.dZ);
-						map.center += rotateMovement(deltaC, map);
+						map.Center += rotateMovement(deltaC, map);
 					}
 					else
 					{
-						map.center = _myPos;
+						map.Center = _myPos;
 					}
 
 					UpdateMap(map);
 				}
 
 				// Begin a new frame
-				_frame = map.drawingSurface.DrawFrame();
+				_frame = map.DrawingSurface.DrawFrame();
 
 				// All sprites must be added to the frame here
 				DrawMap(map);
@@ -121,21 +121,21 @@ namespace IngameScript
 			float shipY = shipPos.Y;
 
 			int vertMod = 0;
-			if (map.showInfo)
+			if (map.ShowInfo)
 			{
 				vertMod = BAR_HEIGHT;
 
-				if (map.viewport.Width > 500)
+				if (map.Viewport.Width > 500)
 				{
 					vertMod *= 2;
 				}
 			}
 
-			bool offZ = transformedShip.Z < map.focalLength;
-			bool leftX = shipX < -map.viewport.Width / 2 || (offZ && shipX < 0);
-			bool rightX = shipX > map.viewport.Width / 2 || (offZ && shipX >= 0);
-			bool aboveY = shipY < -map.viewport.Height / 2 + vertMod || (offZ && shipY < 0);
-			bool belowY = shipY > map.viewport.Height / 2 - vertMod || (offZ && shipX >= 0);
+			bool offZ = transformedShip.Z < map.FocalLength;
+			bool leftX = shipX < -map.Viewport.Width / 2 || (offZ && shipX < 0);
+			bool rightX = shipX > map.Viewport.Width / 2 || (offZ && shipX >= 0);
+			bool aboveY = shipY < -map.Viewport.Height / 2 + vertMod || (offZ && shipY < 0);
+			bool belowY = shipY > map.Viewport.Height / 2 - vertMod || (offZ && shipX >= 0);
 			bool offX = leftX || rightX;
 			bool offY = aboveY || belowY;
 
@@ -165,27 +165,27 @@ namespace IngameScript
 				}
 				else if (rightX)
 				{
-					posX = map.viewport.Width - pointerScale;
+					posX = map.Viewport.Width - pointerScale;
 					rotation = (float)Math.PI / 2;
 				}
 				else
 				{
-					posX = map.viewport.Width / 2 + shipX - pointerScale / 2;
+					posX = map.Viewport.Width / 2 + shipX - pointerScale / 2;
 				}
 
 				if (aboveY)
 				{
-					posY = vertMod + TOP_MARGIN + map.viewport.Center.Y - map.viewport.Height / 2;
+					posY = vertMod + TOP_MARGIN + map.Viewport.Center.Y - map.Viewport.Height / 2;
 					rotation = 0;
 				}
 				else if (belowY)
 				{
-					posY = map.viewport.Center.Y + map.viewport.Height / 2 - vertMod - TOP_MARGIN;
+					posY = map.Viewport.Center.Y + map.Viewport.Height / 2 - vertMod - TOP_MARGIN;
 					rotation = (float)Math.PI;
 				}
 				else
 				{
-					posY = map.viewport.Height / 2 + shipY + (map.viewport.Width - map.viewport.Height) / 2;
+					posY = map.Viewport.Height / 2 + shipY + (map.Viewport.Width - map.Viewport.Height) / 2;
 				}
 
 				if (offX && offY)
@@ -230,7 +230,7 @@ namespace IngameScript
 
 				float shipAngle = (float)Math.Atan2(headingX, headingY) * -1;
 
-				position += map.viewport.Center;
+				position += map.Viewport.Center;
 
 				Vector2 offset = new Vector2((float)Math.Sin(shipAngle), (float)Math.Cos(shipAngle) * -1);
 				position += offset * shipLength / 4;
@@ -339,7 +339,7 @@ namespace IngameScript
 		// PLOT OBJECT //
 		public Vector2 PlotObject(Vector3 pos, StarMap map)
 		{
-			float zFactor = map.focalLength / pos.Z;
+			float zFactor = map.FocalLength / pos.Z;
 
 			float plotX = pos.X * zFactor;
 			float plotY = pos.Y * zFactor;
@@ -359,13 +359,13 @@ namespace IngameScript
 			{
 				drawnPlanets += " " + planet.name + ",";
 
-				Vector2 planetPosition = PlotObject(planet.transformedCoords[map.number], map);
+				Vector2 planetPosition = PlotObject(planet.transformedCoords[map.Number], map);
 				planet.mapPos = planetPosition;
 
 				Color surfaceColor = ColorSwitch(planet.color, false) * map.BrightnessMod;
 				Color lineColor = surfaceColor * 2;
 
-				Vector2 startPosition = map.viewport.Center + planetPosition;
+				Vector2 startPosition = map.Viewport.Center + planetPosition;
 
 				float diameter = ProjectDiameter(planet, map);
 
@@ -373,7 +373,7 @@ namespace IngameScript
 				Vector2 size;
 
 				// Draw Gravity Well
-				if (map.mode == "ORBIT" && planet == map.activePlanet)
+				if (map.Mode == "ORBIT" && planet == map.ActivePlanet)
 				{
 					float radMod = 0.83f;
 					size = new Vector2(diameter * radMod * 2, diameter * radMod * 2);
@@ -392,13 +392,13 @@ namespace IngameScript
 				DrawTexture("Circle", position, new Vector2(diameter, diameter), 0, surfaceColor);
 
 				// Equator
-				double radAngle = (float)map.altitude * Math.PI / 180;
+				double radAngle = (float)map.Altitude * Math.PI / 180;
 				float pitchMod = (float)Math.Sin(radAngle) * diameter;
 				DrawTexture("CircleHollow", position, new Vector2(diameter, pitchMod), 0, lineColor);
 
 				// Mask
 				int scaleMod = -1;
-				if (map.altitude < 0)
+				if (map.Altitude < 0)
 				{
 					scaleMod *= -1;
 				}
@@ -409,12 +409,12 @@ namespace IngameScript
 
 
 				// HashMarks
-				if (diameter > HASH_LIMIT && map.mode != "CHASE")// && Vector3.Distance(planet.position, map.center) < 2*planet.radius
+				if (diameter > HASH_LIMIT && map.Mode != "CHASE")// && Vector3.Distance(planet.position, map.center) < 2*planet.radius
 				{
 					DrawHashMarks(planet, diameter, lineColor, map);
 				}
 
-				if (map.showNames)
+				if (map.ShowNames)
 				{
 					// PLANET NAME
 					float fontMod = 1;
@@ -443,7 +443,7 @@ namespace IngameScript
 		{
 			List<Waypoint> hashMarks = new List<Waypoint>();
 
-			float planetDepth = planet.transformedCoords[map.number].Z;
+			float planetDepth = planet.transformedCoords[map.Number].Z;
 
 			//North Pole
 			Waypoint north = new Waypoint();
@@ -501,7 +501,7 @@ namespace IngameScript
 
 			foreach (Waypoint hash in hashMarks)
 			{
-				Vector2 position = map.viewport.Center + PlotObject(hash.transformedCoords[0], map);
+				Vector2 position = map.Viewport.Center + PlotObject(hash.transformedCoords[0], map);
 
 				// Print more detail for closer planets
 				if (diameter > 2 * HASH_LIMIT)
@@ -510,7 +510,7 @@ namespace IngameScript
 					String[] hashLabels = hash.name.Split(' ');
 					float textMod = 1;
 					int pitchMod = 1;
-					if (map.altitude > 0)
+					if (map.Altitude > 0)
 					{
 						pitchMod = -1;
 					}
@@ -546,9 +546,9 @@ namespace IngameScript
 			float markerSize = MARKER_WIDTH;
 
 			// focal radius for modifying waypoint scale
-			int focalRadius = map.rotationalRadius - map.focalLength;
+			int focalRadius = map.RotationalRadius - map.FocalLength;
 
-			if (map.viewport.Width > 500)
+			if (map.Viewport.Width > 500)
 			{
 				fontSize *= 1.5f;
 				markerSize *= 2;
@@ -568,18 +568,18 @@ namespace IngameScript
 
 					try
 					{
-						coordZ = waypoint.transformedCoords[map.number].Z;
+						coordZ = waypoint.transformedCoords[map.Number].Z;
 					}
 					catch
 					{
 						return;
 					}
 
-					bool activePoint = (map.activeWaypointName != "") && (waypoint.name == map.activeWaypointName);
+					bool activePoint = (map.ActiveWaypointName != "") && (waypoint.name == map.ActiveWaypointName);
 
 
-					if (map.gpsState == 1 && !activePoint)
-						gpsScale = FOCAL_MOD * map.focalLength / coordZ;//coordZ / (-2 * focalRadius) + 1.5f;
+					if (map.GpsState == 1 && !activePoint)
+						gpsScale = FOCAL_MOD * map.FocalLength / coordZ;//coordZ / (-2 * focalRadius) + 1.5f;
 
 
 
@@ -587,8 +587,8 @@ namespace IngameScript
 
 					Vector2 markerScale = new Vector2(iconSize, iconSize);
 
-					Vector2 waypointPosition = PlotObject(waypoint.transformedCoords[map.number], map);
-					Vector2 startPosition = map.viewport.Center + waypointPosition;
+					Vector2 waypointPosition = PlotObject(waypoint.transformedCoords[map.Number], map);
+					Vector2 startPosition = map.Viewport.Center + waypointPosition;
 
 					String markerShape = "";
 					switch (waypoint.marker.ToUpper())
@@ -623,7 +623,7 @@ namespace IngameScript
 
 
 
-					if (coordZ > map.focalLength)
+					if (coordZ > map.FocalLength)
 					{
 
 						Vector2 position = startPosition - new Vector2(iconSize / 2, 0);
@@ -675,7 +675,7 @@ namespace IngameScript
 						}
 
 						// PRINT NAME
-						if (map.showNames)
+						if (map.ShowNames)
 						{
 							position = startPosition + new Vector2(1.33f * iconSize, -0.75f * iconSize);
 							DrawText(waypoint.name, position, fontSize * gpsScale, TextAlignment.LEFT, markerColor * map.BrightnessMod);
@@ -707,18 +707,18 @@ namespace IngameScript
 			}
 
 			Vector3 pointTransformed = transformVector(surfacePoint, map);
-			if (pointTransformed.Z > map.focalLength)
+			if (pointTransformed.Z > map.FocalLength)
 			{
 				float markerScale = MARKER_WIDTH * 2;
 				float textSize = 0.6f;
 
-				if (map.viewport.Width > 500)
+				if (map.Viewport.Width > 500)
 				{
 					markerScale *= 1.5f;
 					textSize *= 1.5f;
 				}
 
-				Vector2 startPosition = map.viewport.Center + PlotObject(pointTransformed, map);
+				Vector2 startPosition = map.Viewport.Center + PlotObject(pointTransformed, map);
 				Vector2 position = startPosition + new Vector2(-markerScale / 2, 0);
 
 				Vector2 markerSize = new Vector2(markerScale, markerScale);
@@ -759,9 +759,9 @@ namespace IngameScript
 		// PROJECT DIAMETER //
 		float ProjectDiameter(Planet planet, StarMap map)
 		{
-			float viewAngle = (float)Math.Asin(planet.radius / planet.transformedCoords[map.number].Z);
+			float viewAngle = (float)Math.Asin(planet.radius / planet.transformedCoords[map.Number].Z);
 
-			float diameter = (float)Math.Tan(Math.Abs(viewAngle)) * 2 * map.focalLength;
+			float diameter = (float)Math.Tan(Math.Abs(viewAngle)) * 2 * map.FocalLength;
 
 			if (diameter < DIAMETER_MIN)
 			{
@@ -787,9 +787,9 @@ namespace IngameScript
 
 			String color = "NONE";
 			float distance = Vector2.Distance(shipPos, closest.mapPos);
-			float radius = 0.95f * closest.radius * map.focalLength / closest.transformedCoords[map.number].Z;
+			float radius = 0.95f * closest.radius * map.FocalLength / closest.transformedCoords[map.Number].Z;
 
-			if (distance < radius && closest.transformedCoords[map.number].Z < transformVector(_myPos, map).Z)
+			if (distance < radius && closest.transformedCoords[map.Number].Z < transformVector(_myPos, map).Z)
 			{
 				color = closest.color;
 			}
@@ -812,19 +812,19 @@ namespace IngameScript
 		// DRAW SPRITES //
 		public void DrawMap(StarMap map)
 		{
-			Echo("[MAP " + map.number + "]");
-			Vector3 mapCenter = map.center;
+			Echo("[MAP " + map.Number + "]");
+			Vector3 mapCenter = map.Center;
 
 			// Create background sprite
 			Color gridColor = new Color(0, 64, 0);
-			DrawTexture("Grid", new Vector2(0, map.viewport.Width / 2), map.viewport.Size, 0, gridColor);
+			DrawTexture("Grid", new Vector2(0, map.Viewport.Width / 2), map.Viewport.Size, 0, gridColor);
 
 			//DRAW PLANETS
 			List<Planet> displayPlanets = new List<Planet>();
 
 			foreach (Planet planet in _planetList)
 			{
-				if (planet.transformedCoords.Count == _mapList.Count && planet.transformedCoords[map.number].Z > map.focalLength)
+				if (planet.transformedCoords.Count == _mapList.Count && planet.transformedCoords[map.Number].Z > map.FocalLength)
 				{
 					displayPlanets.Add(planet);
 				}
@@ -832,20 +832,20 @@ namespace IngameScript
 
 			DrawPlanets(displayPlanets, map);
 			//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
-			if (map.gpsState > 0)
+			if (map.GpsState > 0)
 			{
 				DrawWaypoints(map);
 				PlotUncharted(map);
 			}
 
 			// DRAW SHIP
-			if (map.showShip)
+			if (map.ShowShip)
 			{
 				DrawShip(map, displayPlanets);
 			}
 
 			// MAP INFO
-			if (map.showInfo)
+			if (map.ShowInfo)
 			{
 				DrawMapInfo(map);
 			}
@@ -858,7 +858,7 @@ namespace IngameScript
 			//DEFAULT SIZING / STRINGS
 			float fontSize = 0.6f;
 			int barHeight = BAR_HEIGHT;
-			String angleReading = map.altitude * -1 + "° " + map.azimuth + "°";
+			String angleReading = map.Altitude * -1 + "° " + map.Azimuth + "°";
 			String shipMode = "S";
 			String planetMode = "P";
 			String freeMode = "F";
@@ -866,11 +866,11 @@ namespace IngameScript
 			String chaseMode = "C";
 			String orbitMode = "O";
 
-			if (map.viewport.Width > 500)
+			if (map.Viewport.Width > 500)
 			{
 				fontSize *= 1.5f;
 				barHeight *= 2;
-				angleReading = "Alt:" + map.altitude * -1 + "°  Az:" + map.azimuth + "°";
+				angleReading = "Alt:" + map.Altitude * -1 + "°  Az:" + map.Azimuth + "°";
 				shipMode = "SHIP";
 				planetMode = "PLANET";
 				freeMode = "FREE";
@@ -880,15 +880,15 @@ namespace IngameScript
 			}
 
 			//TOP BAR
-			var position = map.viewport.Center;
-			position -= new Vector2(map.viewport.Width / 2, map.viewport.Height / 2 - barHeight / 2);
-			DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
+			var position = map.Viewport.Center;
+			position -= new Vector2(map.Viewport.Width / 2, map.Viewport.Height / 2 - barHeight / 2);
+			DrawTexture("SquareSimple", position, new Vector2(map.Viewport.Width, barHeight), 0, Color.Black);
 
 			//MODE	  
 			position += new Vector2(SIDE_MARGIN, -TOP_MARGIN);
 
 			string modeReading = "";
-			switch (map.mode)
+			switch (map.Mode)
 			{
 				case "SHIP":
 					modeReading = shipMode;
@@ -913,17 +913,17 @@ namespace IngameScript
 			DrawText(modeReading, position, fontSize, TextAlignment.LEFT, Color.White);
 
 			// CENTER READING
-			string xCenter = abbreviateValue(map.center.X);
-			string yCenter = abbreviateValue(map.center.Y);
-			string zCenter = abbreviateValue(map.center.Z);
+			string xCenter = abbreviateValue(map.Center.X);
+			string yCenter = abbreviateValue(map.Center.Y);
+			string zCenter = abbreviateValue(map.Center.Z);
 			string centerReading = "[" + xCenter + ", " + yCenter + ", " + zCenter + "]";
 
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
+			position += new Vector2(map.Viewport.Width / 2 - SIDE_MARGIN, 0);
 
 			DrawText(centerReading, position, fontSize, TextAlignment.CENTER, Color.White);
 
 			// RUNNING INDICATOR
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, TOP_MARGIN);
+			position += new Vector2(map.Viewport.Width / 2 - SIDE_MARGIN, TOP_MARGIN);
 
 			Color lightColor = new Color(0, 8, 0);
 
@@ -935,35 +935,35 @@ namespace IngameScript
 			// MAP ID
 			position -= new Vector2(5, 7);
 
-			string mapID = "[" + map.number + "]";
+			string mapID = "[" + map.Number + "]";
 
 			DrawText(mapID, position, fontSize, TextAlignment.RIGHT, Color.White);
 
 			// BOTTOM BAR
-			position = map.viewport.Center;
-			position -= new Vector2(map.viewport.Width / 2, barHeight / 2 - map.viewport.Height / 2);
+			position = map.Viewport.Center;
+			position -= new Vector2(map.Viewport.Width / 2, barHeight / 2 - map.Viewport.Height / 2);
 
-			if (map.viewport.Width == 1024)
+			if (map.Viewport.Width == 1024)
 			{
-				position = new Vector2(0, map.viewport.Height - barHeight / 2);
+				position = new Vector2(0, map.Viewport.Height - barHeight / 2);
 			}
-			DrawTexture("SquareSimple", position, new Vector2(map.viewport.Width, barHeight), 0, Color.Black);
+			DrawTexture("SquareSimple", position, new Vector2(map.Viewport.Width, barHeight), 0, Color.Black);
 
 			// FOCAL LENGTH READING
 			position += new Vector2(SIDE_MARGIN, -TOP_MARGIN);
 
-			string dofReading = "FL:" + abbreviateValue((float)map.focalLength);
+			string dofReading = "FL:" + abbreviateValue((float)map.FocalLength);
 
 			DrawText(dofReading, position, fontSize, TextAlignment.LEFT, Color.White);
 
 			// ANGLE READING
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
+			position += new Vector2(map.Viewport.Width / 2 - SIDE_MARGIN, 0);
 
 			DrawText(angleReading, position, fontSize, TextAlignment.CENTER, Color.White);
 
 			// RADIUS READING
-			string radius = "R:" + abbreviateValue((float)map.rotationalRadius);
-			position += new Vector2(map.viewport.Width / 2 - SIDE_MARGIN, 0);
+			string radius = "R:" + abbreviateValue((float)map.RotationalRadius);
+			position += new Vector2(map.Viewport.Width / 2 - SIDE_MARGIN, 0);
 
 			DrawText(radius, position, fontSize, TextAlignment.RIGHT, Color.White);
 		}

@@ -24,6 +24,8 @@ namespace IngameScript
     {
         const string MENU_HEAD = "Map Menu";
         const string MENU_TAG = "[Map Menu]";
+        const string MAP_KEY = "Current Map";
+        const string PAGE_KEY = "Current Page";
         List<MapMenu> _mapMenus;
         
         public static int _buttonCountDown;
@@ -72,7 +74,7 @@ namespace IngameScript
                 if (CurrentMapIndex >= _mapList.Count)
                     CurrentMapIndex = 0;
 
-                SetKey(Controller, MENU_HEAD, "Current Map", CurrentMapIndex.ToString());
+                SetKey(Controller, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
             }
 
 
@@ -86,7 +88,7 @@ namespace IngameScript
                 if (CurrentMapIndex < 0)
                     CurrentMapIndex = _mapList.Count - 1;
 
-                SetKey(Controller, MENU_HEAD, "Current Map", CurrentMapIndex.ToString());
+                SetKey(Controller, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
             }
         }
 
@@ -131,7 +133,7 @@ namespace IngameScript
             int index = ParseInt(GetKey(block, MENU_HEAD, "LCD Index", "0"), 0);
 
             // Set currently available menu parameters
-            menu.CurrentPage = ParseInt(GetKey(block, MENU_HEAD, "Current Page", "1"), 1);
+            menu.CurrentPage = ParseInt(GetKey(block, MENU_HEAD, PAGE_KEY, "1"), 1);
             menu.Color1 = ParseColor(GetKey(block, MENU_HEAD, "Color 1", "0,0,0"));
             menu.Color2 = ParseColor(GetKey(block, MENU_HEAD, "Color 2", "0,127,0"));
 
@@ -139,7 +141,7 @@ namespace IngameScript
 
             if (_mapList.Count > 1)
             {
-                mapIndex = ParseInt(GetKey(block, MENU_HEAD, "Current Map", "0"), 0);
+                mapIndex = ParseInt(GetKey(block, MENU_HEAD, MAP_KEY, "0"), 0);
                 if (mapIndex >= _mapList.Count)
                     mapIndex = 0;
             }
@@ -210,7 +212,7 @@ namespace IngameScript
             else if (menu.CurrentPage < 1)
                 menu.CurrentPage = 6;
 
-            SetKey(menu.Controller, MENU_HEAD, "Current Page", menu.CurrentPage.ToString());
+            SetKey(menu.Controller, MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
 
             DrawMenu(menu);
         }

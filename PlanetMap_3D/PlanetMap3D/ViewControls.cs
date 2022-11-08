@@ -33,7 +33,7 @@ namespace IngameScript
 		// ZOOM // Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
 		void Zoom(StarMap map, bool zoomIn)
         {
-			int doF = map.focalLength;
+			int doF = map.FocalLength;
 			float newScale;
 
 			if (zoomIn)
@@ -59,7 +59,7 @@ namespace IngameScript
 				doF = (int)newScale;
 			}
 
-			map.focalLength = doF;
+			map.FocalLength = doF;
 		}
 
 		void ZoomMaps(List<StarMap> maps, string arg)
@@ -78,7 +78,7 @@ namespace IngameScript
 		// ADJUST RADIUS //
 		void AdjustRadius(StarMap map, bool increase)
         {
-			int radius = map.rotationalRadius;
+			int radius = map.RotationalRadius;
 
 			if (increase)
 			{
@@ -89,16 +89,16 @@ namespace IngameScript
 				radius /= 2;
 			}
 
-			if (radius < map.focalLength)
+			if (radius < map.FocalLength)
 			{
-				radius = map.focalLength;
+				radius = map.FocalLength;
 			}
 			else if (radius > MAX_VALUE)
 			{
 				radius = MAX_VALUE;
 			}
 
-			map.rotationalRadius = radius;
+			map.RotationalRadius = radius;
 		}
 
 		void AdjustRadiusForList(List<StarMap> maps, bool increase)
@@ -145,9 +145,9 @@ namespace IngameScript
 			}
 			Vector3 moveVector = new Vector3(x, y, z);
 
-			if (map.mode == "FREE" || map.mode == "WORLD")
+			if (map.Mode == "FREE" || map.Mode == "WORLD")
 			{
-				map.center += rotateMovement(moveVector, map);
+				map.Center += rotateMovement(moveVector, map);
 			}
 			else
 			{
@@ -286,7 +286,7 @@ namespace IngameScript
 
 			foreach (StarMap map in maps)
 			{
-				map.center = _myPos;
+				map.Center = _myPos;
 			}
 		}
 
@@ -294,10 +294,10 @@ namespace IngameScript
 		// CENTER WORLD //	   Updates Map Center to the Average of all charted Planets
 		void CenterWorld(StarMap map)
 		{
-			map.altitude = -15;
-			map.azimuth = 45;
-			map.focalLength = 256;
-			map.rotationalRadius = 4194304;
+			map.Altitude = -15;
+			map.Azimuth = 45;
+			map.FocalLength = 256;
+			map.RotationalRadius = 4194304;
 			Vector3 worldCenter = new Vector3(0, 0, 0);
 
 			if (_planets)
@@ -310,7 +310,7 @@ namespace IngameScript
 				worldCenter /= _planetList.Count;
 			}
 
-			map.center = worldCenter;
+			map.Center = worldCenter;
 		}
 
 
@@ -318,7 +318,7 @@ namespace IngameScript
 		void CenterShip(StarMap map)
 		{
 			DefaultView(map);
-			map.center = _myPos;
+			map.Center = _myPos;
 		}
 
 
@@ -335,9 +335,9 @@ namespace IngameScript
 				newAz = DegreeAdd(newAz, 180);
 			}
 
-			map.altitude = newAlt;
-			map.azimuth = newAz;
-			map.center = _myPos;
+			map.Altitude = newAlt;
+			map.Azimuth = newAz;
+			map.Center = _myPos;
 		}
 
 
@@ -349,7 +349,7 @@ namespace IngameScript
 				return;
 			}
 
-			if (map.activePlanet == null)
+			if (map.ActivePlanet == null)
 			{
 				if (_nearestPlanet == null)
 				{
@@ -360,58 +360,58 @@ namespace IngameScript
 				SelectPlanet(_nearestPlanet, map);
 			}
 
-			Vector3 planetPos = map.activePlanet.position;
+			Vector3 planetPos = map.ActivePlanet.position;
 
-			map.center = (_myPos + planetPos) / 2;
-			map.altitude = 0;
+			map.Center = (_myPos + planetPos) / 2;
+			map.Altitude = 0;
 			Vector3 orbit = _myPos - planetPos;
-			map.azimuth = (int)ToDegrees((float)Math.Abs(Math.Atan2(orbit.Z, orbit.X) + (float)Math.PI * 0.75f)); //  )
+			map.Azimuth = (int)ToDegrees((float)Math.Abs(Math.Atan2(orbit.Z, orbit.X) + (float)Math.PI * 0.75f)); //  )
 
 			//Get largest component distance between ship and planet.
 			//double span = Math.Sqrt(orbit.LengthSquared() - Math.Pow(orbit.Y,2));
 			float span = orbit.Length();
 
-			double newRadius = 1.25f * map.focalLength * span / map.viewport.Height;
+			double newRadius = 1.25f * map.FocalLength * span / map.Viewport.Height;
 
 			if (newRadius > MAX_VALUE || newRadius < 0)
 			{
 				newRadius = MAX_VALUE;
-				double newZoom = 0.8f * map.viewport.Height * (MAX_VALUE / span);
-				map.focalLength = (int)newZoom;
+				double newZoom = 0.8f * map.Viewport.Height * (MAX_VALUE / span);
+				map.FocalLength = (int)newZoom;
 			}
 
-			map.rotationalRadius = (int)newRadius;
+			map.RotationalRadius = (int)newRadius;
 		}
 
 
 		// PLANET MODE //
 		void PlanetMode(StarMap map)
 		{
-			map.focalLength = DV_FOCAL;
+			map.FocalLength = DV_FOCAL;
 			map.dAz = 0;
 			map.dX = 0;
 			map.dY = 0;
 			map.dZ = 0;
 
-			if (map.viewport.Width > 500)
+			if (map.Viewport.Width > 500)
 			{
-				map.focalLength *= 4;
+				map.FocalLength *= 4;
 			}
 
 			if (_planets)
 			{
 				SortByNearest(_planetList);
-				map.activePlanet = _planetList[0];
+				map.ActivePlanet = _planetList[0];
 				ShipToPlanet(map);
 
-				if (map.activePlanet.radius < 30000)
+				if (map.ActivePlanet.radius < 30000)
 				{
-					map.focalLength *= 4;
+					map.FocalLength *= 4;
 				}
 			}
 
-			map.rotationalRadius = DV_RADIUS;
-			map.mode = "PLANET";
+			map.RotationalRadius = DV_RADIUS;
+			map.Mode = "PLANET";
 		}
 
 
@@ -440,7 +440,7 @@ namespace IngameScript
 				AlignShip(map);
 			}
 
-			map.mode = mapMode;
+			map.Mode = mapMode;
 		}
 
 
@@ -468,7 +468,7 @@ namespace IngameScript
 			for (int i = 0; i < length; i++)
 			{
 				// Find Current Map Mode
-				if (map.mode.ToUpper() == modes[i])
+				if (map.Mode.ToUpper() == modes[i])
 				{
 					modeIndex = i;
 				}
@@ -521,9 +521,9 @@ namespace IngameScript
 				float azAngle = (float)Math.Atan2(shipVector.Z, shipVector.X);
 				float altAngle = (float)Math.Asin(shipVector.Y / magnitude);
 
-				map.center = planet.position;
-				map.azimuth = DegreeAdd((int)ToDegrees(azAngle), 90);
-				map.altitude = (int)ToDegrees(-altAngle);
+				map.Center = planet.position;
+				map.Azimuth = DegreeAdd((int)ToDegrees(azAngle), 90);
+				map.Altitude = (int)ToDegrees(-altAngle);
 			}
 		}
 
@@ -531,19 +531,19 @@ namespace IngameScript
 		// DEFAULT VIEW //
 		void DefaultView(StarMap map)
 		{
-			map.mode = "FREE";
+			map.Mode = "FREE";
 
-			map.center = new Vector3(0, 0, 0);
-			map.focalLength = DV_FOCAL;
+			map.Center = new Vector3(0, 0, 0);
+			map.FocalLength = DV_FOCAL;
 
-			if (map.viewport.Width > 500)
+			if (map.Viewport.Width > 500)
 			{
-				map.focalLength *= 3;
+				map.FocalLength *= 3;
 			}
 
-			map.rotationalRadius = DV_RADIUS;
-			map.azimuth = 0;
-			map.altitude = DV_ALTITUDE;
+			map.RotationalRadius = DV_RADIUS;
+			map.Azimuth = 0;
+			map.Altitude = DV_ALTITUDE;
 		}
 
 
@@ -578,7 +578,7 @@ namespace IngameScript
 					map.BrightnessMod = BRIGHTNESS_STEP;
             }
 
-			SetListKey(map.Block, MAP_HEADER, "Brightness", map.BrightnessMod.ToString(), "1", map.index);
+			SetListKey(map.Block, MAP_HEADER, "Brightness", map.BrightnessMod.ToString(), "1", map.Index);
         }
 
 		void BrightenMaps(List<StarMap> maps, bool brighten)

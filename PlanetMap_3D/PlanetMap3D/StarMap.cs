@@ -23,62 +23,80 @@ namespace IngameScript
     partial class Program
     {
 		const string MAP_HEADER = "MAP DISPLAY";
-		
+
+		// Key Constants
+		const string MODE_KEY = "Mode";
+		const string CENTER_KEY = "Center";
+		const string AZ_KEY = "Azimuth";
+		const string ALT_KEY = "Altitude";
+		const string ZOOM_KEY = "Focal Length";
+		const string RADIUS_KEY = "Rotational Radius";
+		const string MOVEMENT_KEY = "Movement Vector";
+		const string GPS_KEY = "GPS Mode";
+		const string SHIP_KEY = "Show Ship";
+		const string PLANET_KEY = "Selected Planet";
+		const string WAYPOINT_KEY = "Selected Waypoint";
+		const string BRIGHTNESS_KEY = "Brightness";
+
+
+		const string INFO_KEY = "Show Info";
+
 		const string ORIGIN = "(0,0,0)";
+		const string VECTOR_4 = "0,0,0,0";
 		static List<StarMap> _mapList;
 
 		public class StarMap
 		{
-			public Vector3 center;
-			public string mode;
-			public int altitude;
-			public int azimuth;
-			public int rotationalRadius;
-			public int focalLength;
+			public Vector3 Center;
+			public string Mode;
+			public int Altitude;
+			public int Azimuth;
+			public int RotationalRadius;
+			public int FocalLength;
 			//public int azSpeed; // Rotational velocity of Azimuth
-			public int number;
-			public int index;
+			public int Number;
+			public int Index;
 			public int dX;
 			public int dY;
 			public int dZ;
 			public int dAz;
-			public int gpsState;
+			public int GpsState;
 			public float BrightnessMod;
-			public IMyTextSurface drawingSurface;
-			public RectangleF viewport;
+			public IMyTextSurface DrawingSurface;
+			public RectangleF Viewport;
 			public IMyTerminalBlock Block;
-			public bool showNames;
-			public bool showShip;
-			public bool showInfo;
-			public int planetIndex;
-			public int waypointIndex;
-			public string activePlanetName;
-			public string activeWaypointName;
-			public string gpsMode;
-			public Planet activePlanet;
-			public Waypoint activeWaypoint;
+			public bool ShowNames;
+			public bool ShowShip;
+			public bool ShowInfo;
+			public int PlanetIndex;
+			public int WaypointIndex;
+			public string ActivePlanetName;
+			public string ActiveWaypointName;
+			public string GpsMode;
+			public Planet ActivePlanet;
+			public Waypoint ActiveWaypoint;
 
 			// Constructor
 			public StarMap(IMyTerminalBlock block, int screenIndex, string header)
 			{
 				Block = block;
 				//azSpeed = 0;
-				planetIndex = 0;
-				waypointIndex = -1;
+				PlanetIndex = 0;
+				WaypointIndex = -1;
 
-				index = screenIndex;
+				Index = screenIndex;
 
-				mode = GetKey(block, header, "Mode", "FREE");
+				Mode = GetKey(block, header, MODE_KEY, "FREE");
 
-				center = StringToVector3(GetKey(block, header, "Center", ORIGIN));
-				azimuth = ParseInt(GetKey(block, header, "Azimuth", "0"), 0);	
-				altitude = ParseInt(GetKey(block, header, "Altitude", DV_ALTITUDE.ToString()), DV_ALTITUDE);
+				Center = StringToVector3(GetKey(block, header, CENTER_KEY, ORIGIN));
+				Azimuth = ParseInt(GetKey(block, header, AZ_KEY, "0"), 0);	
+				Altitude = ParseInt(GetKey(block, header, ALT_KEY, DV_ALTITUDE.ToString()), DV_ALTITUDE);
 
-				focalLength = ParseInt(GetKey(block, header, "Focal Length", DV_FOCAL.ToString()), DV_FOCAL);
-				rotationalRadius = ParseInt(GetKey(block, header, "Rotational Radius", DV_RADIUS.ToString()), DV_RADIUS);
+				FocalLength = ParseInt(GetKey(block, header, ZOOM_KEY, DV_FOCAL.ToString()), DV_FOCAL);
+				RotationalRadius = ParseInt(GetKey(block, header, RADIUS_KEY, DV_RADIUS.ToString()), DV_RADIUS);
 
 				// Get movement velocities
-				string[] movements = GetKey(block, header, "Movement Vector", "0,0,0,0").Split(',');
+				string[] movements = GetKey(block, header, MOVEMENT_KEY, VECTOR_4).Split(',');
 				if (movements.Length < 4)
 					movements = new string [] { "0", "0", "0", "0" };
 
@@ -87,38 +105,40 @@ namespace IngameScript
 				dZ = ParseInt(movements[2], 0);
 				dAz = ParseInt(movements[3], 0);
 
-				showInfo = ParseBool(GetKey(block, header, "Show Info", "True"));
-				gpsMode = GetKey(block, header, "GPS Mode", "NORMAL").ToUpper();
+				ShowInfo = ParseBool(GetKey(block, header, INFO_KEY, "True"));
+				GpsMode = GetKey(block, header, GPS_KEY, "NORMAL").ToUpper();
 				GpsModeToState();
-				showShip = ParseBool(GetKey(block, header, "Show Ship", "True"));
+				ShowShip = ParseBool(GetKey(block, header, SHIP_KEY, "True"));
 
 				//lcdIni.Set("mapDisplay", "Names", newNames);			GetKey(block, header,
-				showNames = true;
+				ShowNames = true;
 
-				activePlanetName = GetKey(block, header, "Selected Planet", "");
-				activePlanet = GetPlanet(activePlanetName);
+				ActivePlanetName = GetKey(block, header, PLANET_KEY, "");
+				ActivePlanet = GetPlanet(ActivePlanetName);
 
-				activeWaypointName = GetKey(block, header, "Selected Waypoint", "");
-				activeWaypoint = GetWaypoint(activeWaypointName);
+				ActiveWaypointName = GetKey(block, header, WAYPOINT_KEY, "");
+				ActiveWaypoint = GetWaypoint(ActiveWaypointName);
 
-				BrightnessMod = ParseFloat(GetKey(block, header, "Brightness", "1"), 1);
+				BrightnessMod = ParseFloat(GetKey(block, header, BRIGHTNESS_KEY, "1"), 1);
 			}
 
 			public void yaw(int angle)
 			{
-				if (mode.ToUpper() == "PLANET" || mode.ToUpper() == "CHASE" || mode.ToUpper() == "ORBIT")
+				if (Mode.ToUpper() == "PLANET" || Mode.ToUpper() == "CHASE" || Mode.ToUpper() == "ORBIT")
 				{
 					_statusMessage = "Yaw controls locked in PLANET, CHASE & ORBIT modes.";
 					return;
 				}
-				azimuth = DegreeAdd(azimuth, angle);
+				Azimuth = DegreeAdd(Azimuth, angle);
+
+				SetKey(Block, MAP_HEADER, AZ_KEY, Azimuth.ToString());
 			}
 
 			public void pitch(int angle)
 			{
-				if (mode.ToUpper() != "PLANET" || mode.ToUpper() == "ORBIT")
+				if (Mode.ToUpper() != "PLANET" || Mode.ToUpper() == "ORBIT")
 				{
-					int newAngle = DegreeAdd(altitude, angle);
+					int newAngle = DegreeAdd(Altitude, angle);
 
 					if (newAngle > MAX_PITCH)
 					{
@@ -129,7 +149,7 @@ namespace IngameScript
 						newAngle = -MAX_PITCH;
 					}
 
-					altitude = newAngle;
+					Altitude = newAngle;
 				}
 				else
 				{
@@ -143,43 +163,45 @@ namespace IngameScript
 				dY = 0;
 				dZ = 0;
 				dAz = 0;
+
+				SetKey(Block, MAP_HEADER, MOVEMENT_KEY, VECTOR_4);
 			}
 
 			public string GpsStateToMode()
 			{
-				switch (gpsState)
+				switch (GpsState)
 				{
 					case 0:
-						gpsMode = "OFF";
+						GpsMode = "OFF";
 						break;
 					case 1:
-						gpsMode = "NORMAL";
+						GpsMode = "NORMAL";
 						break;
 					case 2:
-						gpsMode = "SHOW_ACTIVE";
+						GpsMode = "SHOW_ACTIVE";
 						break;
 					default:
-						gpsMode = "ERROR";
+						GpsMode = "ERROR";
 						break;
 				}
 
-				return gpsMode;
+				return GpsMode;
 			}
 
 
 			public void GpsModeToState()
             {
-				switch (gpsMode)
+				switch (GpsMode)
 				{
 					case "OFF":
 					case "FALSE":
-						gpsState = 0;
+						GpsState = 0;
 						break;
 					case "SHOW_ACTIVE":
-						gpsState = 2;
+						GpsState = 2;
 						break;
 					default:
-						gpsState = 1;
+						GpsState = 1;
 						break;
 				}
 			}
