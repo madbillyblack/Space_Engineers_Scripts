@@ -166,6 +166,8 @@ namespace IngameScript
 		{
 			map.DefaultView();
 			map.Center = _myPos;
+
+			map.SetMapKey(CENTER_KEY, map.Center.ToString());
 		}
 
 

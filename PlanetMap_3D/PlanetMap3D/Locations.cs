@@ -391,8 +391,6 @@ namespace IngameScript
 				map.ActiveWaypoint = null;
 				map.ActiveWaypointName = "";
 				//MapToParameters(map);
-				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.ActiveWaypointName, "", map.Index);
-				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.Center), "(0,0,0)", map.Index);
 				return;
 			}
 			else if (map.WaypointIndex < -1)
@@ -405,8 +403,6 @@ namespace IngameScript
 				map.ActiveWaypoint = null;
 				map.ActiveWaypointName = "";
 				//MapToParameters(map);
-				SetListKey(map.Block, MAP_HEADER, "Waypoint", map.ActiveWaypointName, "", map.Index);
-				SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.Center), "(0,0,0)", map.Index);
 				return;
 			}
 
@@ -414,9 +410,8 @@ namespace IngameScript
 			map.Center = waypoint.position;
 			map.ActiveWaypoint = waypoint;
 			map.ActiveWaypointName = waypoint.name;
+			map.UpdateBasicParameters();
 			//MapToParameters(map);
-			SetListKey(map.Block, MAP_HEADER, "Waypoint", map.ActiveWaypointName, "", map.Index);
-			SetListKey(map.Block, MAP_HEADER, "Center", Vector3ToString(map.Center), "(0,0,0)", map.Index);
 		}
 
 		void CycleWaypointsForList(List<StarMap> maps, bool next)
@@ -453,7 +448,7 @@ namespace IngameScript
 				map.FocalLength /= 2;
 			}
 
-			
+			map.UpdateBasicParameters();
 		}
 	}
 }

@@ -32,6 +32,7 @@ namespace IngameScript
 		const string ZOOM_KEY = "Focal Length";
 		const string RADIUS_KEY = "Rotational Radius";
 		const string MOTION_KEY = "Motion Vector";
+		const string INFO_KEY = "Show Info";
 		const string GPS_KEY = "GPS Mode";
 		const string SHIP_KEY = "Show Ship";
 		const string PLANET_KEY = "Selected Planet";
@@ -39,7 +40,7 @@ namespace IngameScript
 		const string BRIGHTNESS_KEY = "Brightness";
 
 
-		const string INFO_KEY = "Show Info";
+		
 
 		const string ORIGIN = "(0,0,0)";
 		const string DV_MOTION = "0,0,0,0"; // Default string for Motion Vector: dX,dY,dZ,dAz
@@ -397,6 +398,8 @@ namespace IngameScript
 				RotationalRadius = DV_RADIUS;
 				Azimuth = 0;
 				Altitude = DV_ALTITUDE;
+
+				UpdateBasicParameters();
 			}
 
 			// Brighten //
@@ -431,12 +434,26 @@ namespace IngameScript
 				SetMapKey(AZ_KEY, Azimuth.ToString());
             }
 
-			// Update Basic Parameters
+			// Update Basic Parameters //
 			public void UpdateBasicParameters()
             {
-				
-            }
+				MyIni ini = GetIni(Block);
 
+				ini.Set(Header, MODE_KEY, Mode);
+				ini.Set(Header, CENTER_KEY, Center.ToString());
+				ini.Set(Header, AZ_KEY, Azimuth.ToString());
+				ini.Set(Header, ALT_KEY, Altitude.ToString());
+				ini.Set(Header, ZOOM_KEY, FocalLength.ToString());
+				ini.Set(Header, RADIUS_KEY, RotationalRadius.ToString());
+				ini.Set(Header, INFO_KEY, ShowInfo.ToString());
+				ini.Set(Header, GPS_KEY, GpsMode);
+				ini.Set(Header, SHIP_KEY, ShowShip.ToString());
+				ini.Set(Header, PLANET_KEY, ActivePlanetName);
+				ini.Set(Header, WAYPOINT_KEY, ActiveWaypointName);
+				ini.Set(Header, BRIGHTNESS_KEY, BrightnessMod.ToString());
+
+				Block.CustomData = ini.ToString();
+			}
 
 			public void SetMapKey(string key, string value)
             {

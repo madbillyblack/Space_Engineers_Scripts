@@ -96,16 +96,6 @@ namespace IngameScript
         }
 
 
-        // SET LIST KEY //
-        void SetListKey(IMyTerminalBlock block, string header, string key, string entry, string defaultValue, int index)
-        {
-            string oldString = GetKey(block, header, key, "");
-            string newString = InsertEntry(entry, oldString, SEPARATOR, index, defaultValue);
-
-            SetKey(block, header, key, newString);
-        }
-
-
         // INSERT ENTRY //
         public string InsertEntry(string entry, string oldString, char separator, int index, string placeHolder)
         {
