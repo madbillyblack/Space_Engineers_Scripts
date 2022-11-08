@@ -88,17 +88,17 @@ namespace IngameScript
 
 				Index = screenIndex;
 
-				Mode = GetKey(block, Header, MODE_KEY, "FREE");
+				Mode = GetMapKey(MODE_KEY, "FREE");
 
-				Center = StringToVector3(GetKey(block, Header, CENTER_KEY, ORIGIN));
-				Azimuth = ParseInt(GetKey(block, Header, AZ_KEY, "0"), 0);	
-				Altitude = ParseInt(GetKey(block, Header, ALT_KEY, DV_ALTITUDE.ToString()), DV_ALTITUDE);
+				Center = StringToVector3(GetMapKey(CENTER_KEY, ORIGIN));
+				Azimuth = ParseInt(GetMapKey(AZ_KEY, "0"), 0);	
+				Altitude = ParseInt(GetMapKey(ALT_KEY, DV_ALTITUDE.ToString()), DV_ALTITUDE);
 
-				FocalLength = ParseInt(GetKey(block, Header, ZOOM_KEY, DV_FOCAL.ToString()), DV_FOCAL);
-				RotationalRadius = ParseInt(GetKey(block, Header, RADIUS_KEY, DV_RADIUS.ToString()), DV_RADIUS);
+				FocalLength = ParseInt(GetMapKey(ZOOM_KEY, DV_FOCAL.ToString()), DV_FOCAL);
+				RotationalRadius = ParseInt(GetMapKey(RADIUS_KEY, DV_RADIUS.ToString()), DV_RADIUS);
 
 				// Get movement velocities
-				string[] movements = GetKey(block, Header, MOTION_KEY, DV_MOTION).Split(',');
+				string[] movements = GetMapKey(MOTION_KEY, DV_MOTION).Split(',');
 				if (movements.Length < 4)
 					movements = new string [] { "0", "0", "0", "0" };
 
@@ -107,21 +107,21 @@ namespace IngameScript
 				dZ = ParseInt(movements[2], 0);
 				dAz = ParseInt(movements[3], 0);
 
-				ShowInfo = ParseBool(GetKey(block, Header, INFO_KEY, "True"));
-				GpsMode = GetKey(block, Header, GPS_KEY, "NORMAL").ToUpper();
+				ShowInfo = ParseBool(GetMapKey(INFO_KEY, "True"));
+				GpsMode = GetMapKey(GPS_KEY, "NORMAL").ToUpper();
 				GpsModeToState();
-				ShowShip = ParseBool(GetKey(block, Header, SHIP_KEY, "True"));
+				ShowShip = ParseBool(GetMapKey(SHIP_KEY, "True"));
 
 				//lcdIni.Set("mapDisplay", "Names", newNames);			GetKey(block, header,
 				ShowNames = true;
 
-				ActivePlanetName = GetKey(block, Header, PLANET_KEY, "");
+				ActivePlanetName = GetMapKey(PLANET_KEY, "");
 				ActivePlanet = GetPlanet(ActivePlanetName);
 
-				ActiveWaypointName = GetKey(block, Header, WAYPOINT_KEY, "");
+				ActiveWaypointName = GetMapKey(WAYPOINT_KEY, "");
 				ActiveWaypoint = GetWaypoint(ActiveWaypointName);
 
-				BrightnessMod = ParseFloat(GetKey(block, Header, BRIGHTNESS_KEY, "1"), 1);
+				BrightnessMod = ParseFloat(GetMapKey(BRIGHTNESS_KEY, "1"), 1);
 			}
 
 			// Yaw //
@@ -134,7 +134,7 @@ namespace IngameScript
 				}
 				Azimuth = DegreeAdd(Azimuth, angle);
 
-				SetKey(Block, Header, AZ_KEY, Azimuth.ToString());
+				SetMapKey( AZ_KEY, Azimuth.ToString());
 			}
 
 			// Pitch //
@@ -160,7 +160,7 @@ namespace IngameScript
 					_statusMessage = "Pitch controls locked in PLANET & ORBIT modes.";
 				}
 
-				SetKey(Block, Header, ALT_KEY, Altitude.ToString());
+				SetMapKey( ALT_KEY, Altitude.ToString());
 			}
 
 			// Rotate //
@@ -223,7 +223,7 @@ namespace IngameScript
 					_statusMessage = "Translation controls only available in FREE & WORLD modes.";
 				}
 
-				SetKey(Block, Header, CENTER_KEY, Center.ToString());
+				SetMapKey( CENTER_KEY, Center.ToString());
 			}
 
 
@@ -300,7 +300,7 @@ namespace IngameScript
 
 				FocalLength = doF;
 
-				SetKey(Block, Header, ZOOM_KEY, FocalLength.ToString());
+				SetMapKey(ZOOM_KEY, FocalLength.ToString());
 			}
 
 			// ADJUST RADIUS //
@@ -327,7 +327,7 @@ namespace IngameScript
 				}
 
 				RotationalRadius = radius;
-				SetKey(Block, Header, RADIUS_KEY, RotationalRadius.ToString());
+				SetMapKey(RADIUS_KEY, RotationalRadius.ToString());
 			}
 
 			// Stop //
@@ -417,18 +417,35 @@ namespace IngameScript
 						BrightnessMod = BRIGHTNESS_STEP;
 				}
 
-				SetKey(Block, Header, BRIGHTNESS_KEY, BrightnessMod.ToString());
+				SetMapKey(BRIGHTNESS_KEY, BrightnessMod.ToString());
 			}
 
 			// Update Motion Parameters //
 			void UpdateMotionParameters()
             {
 				string motionVector = dX.ToString() + ',' + dY.ToString() + ',' + dZ.ToString() + ',' + dAz.ToString();
-				SetKey(Block, Header, MOTION_KEY, motionVector);
+				SetMapKey(MOTION_KEY, motionVector);
 
 				// Update Center and Azimuth for when map is stopped.
-				SetKey(Block, Header, CENTER_KEY, Center.ToString());
-				SetKey(Block, Header, AZ_KEY, Azimuth.ToString());
+				SetMapKey(CENTER_KEY, Center.ToString());
+				SetMapKey(AZ_KEY, Azimuth.ToString());
+            }
+
+			// Update Basic Parameters
+			public void UpdateBasicParameters()
+            {
+				
+            }
+
+
+			public void SetMapKey(string key, string value)
+            {
+				SetKey(Block, Header, key, value);
+            }
+
+			public string GetMapKey(string key, string value)
+            {
+				return GetKey(Block, Header, key, value);
             }
 		}
 

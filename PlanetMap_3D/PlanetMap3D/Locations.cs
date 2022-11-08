@@ -452,6 +452,8 @@ namespace IngameScript
 				map.FocalLength *= 3;
 				map.FocalLength /= 2;
 			}
+
+			
 		}
 	}
 }
