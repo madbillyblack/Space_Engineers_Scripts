@@ -26,6 +26,7 @@ namespace IngameScript
         const string MENU_TAG = "[Map Menu]";
         const string MAP_KEY = "Current Map";
         const string PAGE_KEY = "Current Page";
+        const string ALIGNMENT_KEY = "Alignment";
         List<MapMenu> _mapMenus;
         
         public static int _buttonCountDown;
@@ -44,26 +45,32 @@ namespace IngameScript
             public RectangleF Viewport;
             public Color Color1;
             public Color Color2;
-
+            public string Alignment;
             
+            // Constructor //
             public MapMenu(IMyShipController controller)
             {
                 Controller = controller;
                 ActiveButton = 0;
+
+                Alignment = GetMenuKey(ALIGNMENT_KEY, "TOP");
             }
 
+            // Initialize Surface //
             public void InitializeSurface()
             {
                 PrepareTextSurfaceForSprites(Surface);
                 Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
             }
 
+            // Press Button //
             public void PressButton(int button)
             {
                 ActiveButton = button;
                 _buttonCountDown = BUTTON_TIME;
             }
 
+            // Next Map //
             public void NextMap()
             {
                 if (_mapList.Count < 2)
@@ -77,7 +84,7 @@ namespace IngameScript
                 SetKey(Controller, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
             }
 
-
+            // Previous Map //
             public void PreviousMap()
             {
                 if (_mapList.Count < 2)
@@ -89,6 +96,12 @@ namespace IngameScript
                     CurrentMapIndex = _mapList.Count - 1;
 
                 SetKey(Controller, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
+            }
+
+            // Get Menu Key //
+            string GetMenuKey(string key, string defaultValue)
+            {
+                return GetKey(Controller, MENU_HEAD, key, defaultValue);
             }
         }
 
@@ -113,12 +126,13 @@ namespace IngameScript
                         {
                             menu.IDNumber = _mapMenus.Count;
                             menu.InitializeSurface();
-                            DrawMenu(menu);
                             _mapMenus.Add(menu);
                         }
                     }
                 }
             }
+
+            DrawMenus();
         }
 
 

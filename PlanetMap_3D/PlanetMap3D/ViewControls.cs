@@ -167,7 +167,7 @@ namespace IngameScript
 			map.DefaultView();
 			map.Center = _myPos;
 
-			map.SetMapKey(CENTER_KEY, map.Center.ToString());
+			map.SetMapKey(CENTER_KEY, Vector3ToString(map.Center));
 		}
 
 

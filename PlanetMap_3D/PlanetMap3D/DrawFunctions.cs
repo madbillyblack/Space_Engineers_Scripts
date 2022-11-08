@@ -975,10 +975,18 @@ namespace IngameScript
 			_frame = menu.Surface.DrawFrame();
 
 			// Set height and width variables
+			
 			Vector2 center = menu.Viewport.Center;
 			float height = menu.Viewport.Height;
 			float width = menu.Viewport.Width;
-			float fontSize = 0.7f;
+			
+			float fontSize = 0.5f;
+
+			bool bigScreen = menu.Viewport.Width > 500;
+
+			if (bigScreen)
+				fontSize *= 1.5f;
+			
 			Color color1 = menu.Color1;
 			Color color2 = menu.Color2;
 
@@ -992,8 +1000,25 @@ namespace IngameScript
 			Vector2 position = center - new Vector2(width / 2, 0);
 			DrawTexture("SquareSimple", position, new Vector2(width, height), 0, color1);
 
+			// Set Starting Top Edge
+			Vector2 topLeft;
+			switch(menu.Alignment.ToUpper())
+            {
+				case "TOP":
+					topLeft = center - new Vector2(width / 2, height/2);
+					break;
+				case "BOTTOM":
+					topLeft = center - new Vector2(width / 2,   height / -2 + buttonHeight * 2);
+					break;
+				case "CENTER":
+				default:
+					topLeft = center - new Vector2(width / 2, buttonHeight);
+					break;
+            }
+
 			// Button Backgrounds
-			position = center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
+			//position = center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
+			position = topLeft + new Vector2((cellWidth - buttonHeight)/2, buttonHeight * 1.5f);
 			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
 			for (int i = 1; i < 8; i ++)
@@ -1013,7 +1038,8 @@ namespace IngameScript
 			}
 
 			// Menu Title
-			position = center - new Vector2(width/2 - 10, buttonHeight);
+			//position = center - new Vector2(width/2 - 10, buttonHeight);
+			position = topLeft + new Vector2(10,0);
 			DrawText("MENU " + page + ": " + _menuTitle[page], position, fontSize, TextAlignment.LEFT, color2);
 
 			// Menu ID
@@ -1027,7 +1053,8 @@ namespace IngameScript
 				DrawText("MAP: " + menu.CurrentMapIndex, position, fontSize, TextAlignment.RIGHT, color2);
 
 			// Label A
-			position = center - new Vector2(cellWidth * 2.5f, buttonHeight * 0.4f);
+			//position = center - new Vector2(cellWidth * 2.5f, buttonHeight * 0.4f);
+			position = topLeft + new Vector2(cellWidth, buttonHeight * 0.6f);
 			DrawText(_labelA[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
 
 			// Label B
@@ -1047,38 +1074,40 @@ namespace IngameScript
 			Vector2 iconScale = buttonScale * 0.33f;
 
 			// Cmd 1
-			position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.33f);
+			//position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.33f);
+			position = topLeft + new Vector2(cellWidth / 2, buttonHeight * 1.27f);
 			//DrawText(_cmd1[page], position, fontSize, TextAlignment.CENTER, color1);
-			StringToIcon(_cmd1[page], position, iconScale, color1);
+			StringToIcon(_cmd1[page], position, iconScale, color1, bigScreen);
 
 			// Cmd 2
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd2[page], position, iconScale, color1);
+			StringToIcon(_cmd2[page], position, iconScale, color1, bigScreen);
 
 			// Cmd 3
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd3[page], position, iconScale, color1);
+			StringToIcon(_cmd3[page], position, iconScale, color1, bigScreen);
 
 			// Cmd 4
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd4[page], position, iconScale, color1);
+			StringToIcon(_cmd4[page], position, iconScale, color1, bigScreen);
 
 			// Cmd 5
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd5[page], position, iconScale, color1);
+			StringToIcon(_cmd5[page], position, iconScale, color1, bigScreen);
 
 			// Cmd 6
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd6[page], position, iconScale, color1);
+			StringToIcon(_cmd6[page], position, iconScale, color1, bigScreen);
 
 			// Cmd 7
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd7[page], position, iconScale, color1);
+			StringToIcon(_cmd7[page], position, iconScale, color1, bigScreen);
 
 			fontSize *= 1.5f;
 
 			// Key 1
-			position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.45f);
+			//position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.45f);
+			position = topLeft + new Vector2(cellWidth / 2, buttonHeight * 1.35f);
 			DrawText("1", position, fontSize, TextAlignment.CENTER, color1);
 
 			// Key 2
@@ -1114,7 +1143,7 @@ namespace IngameScript
 
 
 		// STRING TO ICON //
-		void StringToIcon(string arg, Vector2 position, Vector2 scale, Color color)
+		void StringToIcon(string arg, Vector2 position, Vector2 scale, Color color, bool bigScreen)
         {
 			switch(arg)
             {
@@ -1149,7 +1178,7 @@ namespace IngameScript
 					DrawCycle(position, scale, color);
 					break;
 				default:
-					DrawCharacters(arg, position, scale, color);
+					DrawCharacters(arg, position, scale, color, bigScreen);
 					break;
             }
         }
@@ -1254,19 +1283,26 @@ namespace IngameScript
 
 		
 		// DRAW CHARACTERS //
-		void DrawCharacters(string characters, Vector2 position, Vector2 scale, Color color)
+		void DrawCharacters(string characters, Vector2 position, Vector2 scale, Color color, bool bigScreen)
         {
 			Vector2 offset;
 			float fontSize;
 
+			// To Adjust offset for smaller screens
+			float screenMod;
+			if (bigScreen)
+				screenMod = 1;
+			else
+				screenMod = 1.5f;
+
 			if (characters.Length > 3)
 			{
-				offset = new Vector2(0, scale.Y * 0.67f);
-				fontSize = 0.75f;
+				offset = new Vector2(0, scale.Y * 0.67f * screenMod);
+				fontSize = 0.75f/screenMod;
 			}
 			else
             {
-				offset = new Vector2(0, scale.Y * 1.25f);
+				offset = new Vector2(0, scale.Y * 1.25f * screenMod);
 				fontSize = 1.25f;
 			}
 				
@@ -1283,11 +1319,7 @@ namespace IngameScript
 
 			foreach(MapMenu menu in _mapMenus)
             {
-				
-
 				DrawMenu(menu);
-
-
             }
         }
 

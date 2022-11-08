@@ -22,6 +22,13 @@ namespace IngameScript
 {
     partial class Program
     {
+		class DataDisplay
+        {
+			int CurrentPage;
+			List<string> Page1;
+			//TODO - More Pages
+        }
+
 		// DISPLAY DATA // Page selection interface for Data Display
 		void DisplayData()
 		{
