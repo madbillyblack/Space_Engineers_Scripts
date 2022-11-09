@@ -27,6 +27,11 @@ namespace IngameScript
         const string MAP_KEY = "Current Map";
         const string PAGE_KEY = "Current Page";
         const string ALIGNMENT_KEY = "Alignment";
+        const string DECAL_KEY = "Decals";
+        const string BG_KEY = "Background Color";
+        const string TITLE_KEY = "Title Color";
+        const string BUTTON_KEY = "Button Color";
+        const string LABEL_KEY = "Label Color";
         List<MapMenu> _mapMenus;
         
         public static int _buttonCountDown;
@@ -43,9 +48,13 @@ namespace IngameScript
             public int IDNumber;
             public int ActiveButton;
             public RectangleF Viewport;
-            public Color Color1;
-            public Color Color2;
+            public Color BackgroundColor;
+            public Color TitleColor;
+            public Color LabelColor;
+            public Color ButtonColor;
+            
             public string Alignment;
+            public string Decals;
             
             // Constructor //
             public MapMenu(IMyShipController controller)
@@ -53,14 +62,15 @@ namespace IngameScript
                 Controller = controller;
                 ActiveButton = 0;
 
-                Alignment = GetMenuKey(ALIGNMENT_KEY, "TOP");
+                Alignment = GetMenuKey(ALIGNMENT_KEY, "TOP").ToUpper();
+                Decals = GetMenuKey(DECAL_KEY, "").ToUpper();
             }
 
             // Initialize Surface //
             public void InitializeSurface()
             {
-                PrepareTextSurfaceForSprites(Surface);
-                Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
+                    PrepareTextSurfaceForSprites(Surface);
+                    Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
             }
 
             // Press Button //
@@ -122,11 +132,15 @@ namespace IngameScript
                     if(controller.CustomName.Contains(MENU_TAG) && GetKey(controller, SHARED, "Grid_ID", "") == _gridID)
                     {
                         MapMenu menu = MenuFromController(controller);
-                        if (menu != null)
+                        if (menu != null && menu.Surface != null)
                         {
                             menu.IDNumber = _mapMenus.Count;
                             menu.InitializeSurface();
                             _mapMenus.Add(menu);
+                        }
+                        else
+                        {
+                            _statusMessage += "MENU SURFACE ERROR! - Could not add Menu for controller \n\"" + controller.CustomName + "\"\n* Please check LCD Index in Custom Data for Controller.\n";
                         }
                     }
                 }
@@ -148,8 +162,10 @@ namespace IngameScript
 
             // Set currently available menu parameters
             menu.CurrentPage = ParseInt(GetKey(block, MENU_HEAD, PAGE_KEY, "1"), 1);
-            menu.Color1 = ParseColor(GetKey(block, MENU_HEAD, "Color 1", "0,0,0"));
-            menu.Color2 = ParseColor(GetKey(block, MENU_HEAD, "Color 2", "0,127,0"));
+            menu.BackgroundColor = ParseColor(GetKey(block, MENU_HEAD, BG_KEY, "0,0,0"));
+            menu.TitleColor = ParseColor(GetKey(block, MENU_HEAD, TITLE_KEY, "160,160,0"));
+            menu.LabelColor = ParseColor(GetKey(block, MENU_HEAD, LABEL_KEY, "160,160,160"));
+            menu.ButtonColor = ParseColor(GetKey(block, MENU_HEAD, BUTTON_KEY, "0,160,160"));
 
             int mapIndex;
 

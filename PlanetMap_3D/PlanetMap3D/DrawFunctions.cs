@@ -987,8 +987,10 @@ namespace IngameScript
 			if (bigScreen)
 				fontSize *= 1.5f;
 			
-			Color color1 = menu.Color1;
-			Color color2 = menu.Color2;
+			Color bgColor = menu.BackgroundColor;
+			Color titleColor = menu.TitleColor;
+			Color labelColor = menu.LabelColor;
+			Color buttonColor = menu.ButtonColor;
 
 			int page = menu.CurrentPage;
 			float cellWidth = (width / 7);
@@ -998,7 +1000,7 @@ namespace IngameScript
 
 			// Background
 			Vector2 position = center - new Vector2(width / 2, 0);
-			DrawTexture("SquareSimple", position, new Vector2(width, height), 0, color1);
+			DrawTexture("SquareSimple", position, new Vector2(width, height), 0, bgColor);
 
 			// Set Starting Top Edge
 			Vector2 topLeft;
@@ -1017,7 +1019,6 @@ namespace IngameScript
             }
 
 			// Button Backgrounds
-			//position = center + new Vector2(cellWidth * -3.5f + (cellWidth - buttonHeight)/2, buttonHeight / 2);
 			position = topLeft + new Vector2((cellWidth - buttonHeight)/2, buttonHeight * 1.5f);
 			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
@@ -1027,9 +1028,9 @@ namespace IngameScript
 
 				// Brighten button if active, otherwise darken
 				if (i == menu.ActiveButton)
-					color = color2 * 2;
+					color = buttonColor * 2;
 				else
-					color = color2 * 0.5f;
+					color = buttonColor * 0.5f;
 
 				if(ShouldBeVisible(menu, i))
 					DrawTexture("SquareSimple", position, buttonScale, 0, color);
@@ -1038,37 +1039,35 @@ namespace IngameScript
 			}
 
 			// Menu Title
-			//position = center - new Vector2(width/2 - 10, buttonHeight);
 			position = topLeft + new Vector2(10,0);
-			DrawText("MENU " + page + ": " + _menuTitle[page], position, fontSize, TextAlignment.LEFT, color2);
+			DrawText("MENU " + page + ": " + _menuTitle[page], position, fontSize, TextAlignment.LEFT, titleColor);
 
 			// Menu ID
-			position += new Vector2(width/2 - 10, 0);
+			position = topLeft + new Vector2(width * 0.67f, 0);
 			if(_mapMenus.Count > 1)
-				DrawText("< " + menu.IDNumber + " >", position, fontSize, TextAlignment.CENTER, color2);
+				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.CENTER, labelColor);
 
 			// Current Map
-			position += new Vector2(width / 2 - 10, 0);
+			position = topLeft + new Vector2(width -10 , 0);
 			if(_mapList.Count > 1)
-				DrawText("MAP: " + menu.CurrentMapIndex, position, fontSize, TextAlignment.RIGHT, color2);
+				DrawText("MAP: " + menu.CurrentMapIndex, position, fontSize, TextAlignment.RIGHT, titleColor);
 
 			// Label A
-			//position = center - new Vector2(cellWidth * 2.5f, buttonHeight * 0.4f);
 			position = topLeft + new Vector2(cellWidth, buttonHeight * 0.6f);
-			DrawText(_labelA[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
+			DrawText(_labelA[page], position, fontSize * 0.9f, TextAlignment.CENTER, labelColor);
 
 			// Label B
 			position += new Vector2(cellWidth * 2, 0);
-			DrawText(_labelB[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
+			DrawText(_labelB[page], position, fontSize * 0.9f, TextAlignment.CENTER, labelColor);
 
 			// Label C
 			position += new Vector2(cellWidth * 2, 0);
 			if((menu.CurrentPage != 1 || _mapList.Count > 1))
-				DrawText(_labelC[page], position, fontSize * 0.9f, TextAlignment.CENTER, color2);
+				DrawText(_labelC[page], position, fontSize * 0.9f, TextAlignment.CENTER, labelColor);
 
 			// Label D
 			position += new Vector2(cellWidth * 1.5f, 0);
-			DrawText(_labelD[page], position, fontSize * 0.75f, TextAlignment.CENTER, color2);
+			DrawText(_labelD[page], position, fontSize * 0.75f, TextAlignment.CENTER, labelColor);
 
 
 			Vector2 iconScale = buttonScale * 0.33f;
@@ -1076,64 +1075,69 @@ namespace IngameScript
 			// Cmd 1
 			//position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.33f);
 			position = topLeft + new Vector2(cellWidth / 2, buttonHeight * 1.27f);
-			//DrawText(_cmd1[page], position, fontSize, TextAlignment.CENTER, color1);
-			StringToIcon(_cmd1[page], position, iconScale, color1, bigScreen);
+			//DrawText(_cmd1[page], position, fontSize, TextAlignment.CENTER, bgColor);
+			StringToIcon(_cmd1[page], position, iconScale, bgColor, bigScreen);
 
 			// Cmd 2
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd2[page], position, iconScale, color1, bigScreen);
+			StringToIcon(_cmd2[page], position, iconScale, bgColor, bigScreen);
 
 			// Cmd 3
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd3[page], position, iconScale, color1, bigScreen);
+			StringToIcon(_cmd3[page], position, iconScale, bgColor, bigScreen);
 
 			// Cmd 4
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd4[page], position, iconScale, color1, bigScreen);
+			StringToIcon(_cmd4[page], position, iconScale, bgColor, bigScreen);
 
 			// Cmd 5
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd5[page], position, iconScale, color1, bigScreen);
+			StringToIcon(_cmd5[page], position, iconScale, bgColor, bigScreen);
 
 			// Cmd 6
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd6[page], position, iconScale, color1, bigScreen);
+			StringToIcon(_cmd6[page], position, iconScale, bgColor, bigScreen);
 
 			// Cmd 7
 			position += new Vector2(cellWidth, 0);
-			StringToIcon(_cmd7[page], position, iconScale, color1, bigScreen);
+			StringToIcon(_cmd7[page], position, iconScale, bgColor, bigScreen);
 
 			fontSize *= 1.5f;
 
 			// Key 1
 			//position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.45f);
 			position = topLeft + new Vector2(cellWidth / 2, buttonHeight * 1.35f);
-			DrawText("1", position, fontSize, TextAlignment.CENTER, color1);
+			DrawText("1", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			// Key 2
 			position += new Vector2(cellWidth, 0);
-			DrawText("2", position, fontSize, TextAlignment.CENTER, color1);
+			DrawText("2", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			// Key 3
 			position += new Vector2(cellWidth, 0);
-			DrawText("3", position, fontSize, TextAlignment.CENTER, color1);
+			DrawText("3", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			// Key 4
 			position += new Vector2(cellWidth, 0);
-			DrawText("4", position, fontSize, TextAlignment.CENTER, color1);
+			DrawText("4", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			// Key 5
 			position += new Vector2(cellWidth, 0);
-			DrawText("5", position, fontSize, TextAlignment.CENTER, color1);
+			DrawText("5", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			// Key 6
 			position += new Vector2(cellWidth, 0);
-			DrawText("6", position, fontSize, TextAlignment.CENTER, color1);
+			DrawText("6", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			// Key 7
 			position += new Vector2(cellWidth, 0);
-			DrawText("7", position, fontSize, TextAlignment.CENTER, color1);
+			DrawText("7", position, fontSize, TextAlignment.CENTER, bgColor);
 
+			
+			if(menu.Decals != "")
+            {
+				DrawDecals(menu, topLeft, buttonHeight, menu.Alignment, menu.Decals);
+            }
 
 			// Test Circle - Center
 			//DrawTexture("CircleHollow", center - new Vector2(buttonHeight/2, 0), buttonScale, 0, Color.Red);
@@ -1342,5 +1346,96 @@ namespace IngameScript
 
 			return true;
         }
+
+
+		// DRAW DECALS //
+		public void DrawDecals(MapMenu menu, Vector2 startPosition, float heightScale, string alignment, string decalType)
+        {
+			Vector2 position;
+			if (alignment == "TOP")
+				position = startPosition + new Vector2(0, menu.Viewport.Height / 2 + heightScale);
+			else
+				position = startPosition - new Vector2(0, menu.Viewport.Height / 2 - heightScale);
+
+			string texture;
+
+			switch(menu.Decals)
+            {
+				case "BLUEPRINT":
+				case "BLUEPRINTS":
+					texture = GetBlueprintDecal(menu);
+					break;
+				case "GRAPH":
+				case "GRAPHS":
+					texture = GetGraphDecal(menu);
+					break;
+				default:
+					return;
+			}
+
+			float widthMod;
+			if (menu.Viewport.Width <= 500)
+				widthMod = 1.5f;
+			else
+				widthMod = 1;
+
+			DrawTexture(texture, position, new Vector2(menu.Viewport.Height * widthMod, menu.Viewport.Height - heightScale * 2), 0, Color.White);
+        }
+
+
+		// Get Graph Decal // - Selects a graph decal based on menu's current page
+		public string GetGraphDecal(MapMenu menu)
+        {
+			string output;
+
+			switch(menu.CurrentPage)
+            {
+				case 1:
+				case 4:
+					output = "LCD_Economy_Graph_2";
+					break;
+				case 2:
+				case 5:
+					output = "LCD_Economy_Graph_3";
+					break;
+				case 3:
+				case 6:
+					output = "LCD_Economy_Graph_5";
+					break;
+				default:
+					output = "OutOfOrder";
+					break;
+			}
+
+			return output;
+        }
+
+
+		// Get Blueprint Decal // - Selects a blueprint decal based on menu's current page
+		public string GetBlueprintDecal(MapMenu menu)
+		{
+			string output;
+
+			switch (menu.CurrentPage)
+			{
+				case 1:
+				case 4:
+					output = "LCD_Economy_SC_Blueprint";
+					break;
+				case 2:
+				case 5:
+					output = "LCD_Economy_Blueprint_2";
+					break;
+				case 3:
+				case 6:
+					output = "LCD_Economy_Blueprint_3";
+					break;
+				default:
+					output = "OutOfOrder";
+					break;
+			}
+
+			return output;
+		}
 	}
 }

@@ -1254,24 +1254,7 @@ namespace IngameScript
 		}
 
 
-		// LIST TO NAMES // Builds multi-line string of names from list entries
-		string listToStrings(List<string> inputs)
-		{
-			string output = "";
-
-			if (inputs.Count < 1)
-				return output;
-
-			foreach (string input in inputs)
-			{
-				output += input + "\n";
-			}
-
-			return output.Trim();
-		}
-
-
-		// REFRESH // - Updates map info from map's custom data
+		// BUILD // - Updates map info from map's custom data
 		void Build()
 		{
 			_planetList = new List<Planet>();
@@ -1377,6 +1360,7 @@ namespace IngameScript
 					_statusMessage = "WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!";
 					_refBlock = Me as IMyTerminalBlock;
 				}
+				Echo("A");
 			}
 
 
