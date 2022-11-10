@@ -22,11 +22,80 @@ namespace IngameScript
 {
     partial class Program
     {
+		const string DATA_TAG = "[Map Data]";
+		const string DATA_HEADER = "Data Display";
+		const string DATA_PAGE = "Current Page";
+		const string DATA_SCROLL = "Scroll Level";
+		const int PAGE_LIMIT = 4;
+		List<string> _dataPage1;
+		List<string> _dataPage2;
+		List<string> _dataPage3;
+		List<string> _dataPage4;
+
+
+		// DATA DISPLAY //
 		class DataDisplay
         {
-			int CurrentPage;
-			List<string> Page1;
-			//TODO - More Pages
+			public int CurrentPage;
+			int ScrollIndex;
+			public IMyTerminalBlock Owner;
+			
+			// Constructor //
+			public DataDisplay(IMyTerminalBlock block)
+            {
+				Owner = block;
+				CurrentPage = ParseInt(GetKey(block, DATA_HEADER, DATA_PAGE, "0"), 0);
+				ScrollIndex = ParseInt(GetKey(block, DATA_HEADER, DATA_SCROLL, "0"), 0);
+			}
+
+			// Set Scroll //
+			void SetScroll(int scroll)
+            {
+				ScrollIndex = scroll;
+
+				if (ScrollIndex < 0)
+					ScrollIndex = 0;
+
+				SetKey(Owner, DATA_HEADER, DATA_SCROLL, ScrollIndex.ToString());
+            }
+
+			// Scroll Down //
+			public void ScrollDown()
+            {
+				SetScroll(ScrollIndex++);
+            }
+
+			// Scroll Up
+			public void ScrollUp()
+            {
+				SetScroll(ScrollIndex--);
+            }
+
+			// Set Page //
+			void SetPage(int page)
+            {
+				SetScroll(0);
+				CurrentPage = page;
+
+				if (CurrentPage > PAGE_LIMIT)
+					CurrentPage = 0;
+				else if (CurrentPage < 0)
+					CurrentPage = PAGE_LIMIT;
+
+				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
+            }
+
+			// Next Page //
+			public void NextPage()
+            {
+				SetPage(CurrentPage++);
+            }
+
+			// Previous Page //
+			public void PreviousPage()
+            {
+				SetPage(CurrentPage--);
+            }
         }
 
 		// DISPLAY DATA // Page selection interface for Data Display
