@@ -34,6 +34,7 @@ namespace IngameScript
 			public Vector3 position;
 			public List<Vector3> transformedCoords;
 			public String color;
+			public float Distance;
 
 			public Location() { }
 		}
@@ -449,6 +450,95 @@ namespace IngameScript
 			}
 
 			map.UpdateBasicParameters();
+		}
+
+
+		// GET DISTANCE //
+		float GetDistance(Location location)
+        {
+			return Vector3.Distance(location.position, _myPos);
+        }
+
+		
+		// UPDATE DISTANCES //
+		void UpdateDistances()
+        {
+			if(_waypointList.Count > 0)
+            {
+				foreach (Waypoint waypoint in _waypointList)
+					waypoint.Distance = GetDistance(waypoint);
+            }
+
+			if(_planetList.Count > 0)
+            {
+				foreach (Planet planet in _planetList)
+					planet.Distance = GetDistance(planet) - planet.radius;
+            }
+        }
+
+
+
+		// SORT BY NEAREST //	 Sorts Planets by nearest to farthest.
+		public void SortByNearest(List<Planet> planets)
+		{
+			int length = planets.Count;
+			if (length > 1)
+			{
+				for (int i = 0; i < length - 1; i++)
+				{
+					for (int p = 1; p < length; p++)
+					{
+						Planet planetA = planets[p - 1];
+						Planet planetB = planets[p];
+
+						float distA = planetA.Distance;
+						float distB = planetB.Distance;
+
+						if (distB < distA)
+						{
+							planets[p - 1] = planetB;
+							planets[p] = planetA;
+						}
+					}
+
+					length--;
+					if (length < 2)
+					{
+						return;
+					}
+				}
+			}
+		}
+
+
+		// SORT WAYPOINTS //
+		void SortWaypoints(List<Waypoint> waypoints)
+		{
+			int length = waypoints.Count;
+
+			for (int i = 0; i < length - 1; i++)
+			{
+				for (int w = 1; w < length; w++)
+				{
+					Waypoint pointA = waypoints[w - 1];
+					Waypoint pointB = waypoints[w];
+
+					float distA = pointA.Distance;
+					float distB = pointB.Distance;
+
+					if (distB < distA)
+					{
+						waypoints[w - 1] = pointB;
+						waypoints[w] = pointA;
+					}
+				}
+
+				length--;
+				if (length < 2)
+				{
+					return;
+				}
+			}
 		}
 	}
 }

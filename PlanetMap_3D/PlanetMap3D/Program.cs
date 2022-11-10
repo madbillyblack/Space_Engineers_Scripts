@@ -1071,70 +1071,6 @@ namespace IngameScript
 		}
 
 
-		// SORT BY NEAREST //	 Sorts Planets by nearest to farthest.
-		public void SortByNearest(List<Planet> planets)
-		{
-			int length = planets.Count;
-			if (length > 1)
-			{
-				for (int i = 0; i < length - 1; i++)
-				{
-					for (int p = 1; p < length; p++)
-					{
-						Planet planetA = planets[p - 1];
-						Planet planetB = planets[p];
-
-						float distA = Vector3.Distance(planetA.position, _myPos);
-						float distB = Vector3.Distance(planetB.position, _myPos);
-
-						if (distB < distA)
-						{
-							planets[p - 1] = planetB;
-							planets[p] = planetA;
-						}
-					}
-
-					length--;
-					if (length < 2)
-					{
-						return;
-					}
-				}
-			}
-		}
-
-
-		// SORT WAYPOINTS //
-		void SortWaypoints(List<Waypoint> waypoints)
-		{
-			int length = waypoints.Count;
-
-			for (int i = 0; i < length - 1; i++)
-			{
-				for (int w = 1; w < length; w++)
-				{
-					Waypoint pointA = waypoints[w - 1];
-					Waypoint pointB = waypoints[w];
-
-					float distA = Vector3.Distance(pointA.position, _myPos);
-					float distB = Vector3.Distance(pointB.position, _myPos);
-
-					if (distB < distA)
-					{
-						waypoints[w - 1] = pointB;
-						waypoints[w] = pointA;
-					}
-				}
-
-				length--;
-				if (length < 2)
-				{
-					return;
-				}
-			}
-		}
-
-
 		// TRANSFORM VECTOR //	   Transforms vector location of planet or waypoint for StarMap view.
 		public Vector3 transformVector(Vector3 vectorIn, StarMap map)
 		{
@@ -1217,6 +1153,8 @@ namespace IngameScript
 				//Toggle Indicator LightGray
 				_lightOn = !_lightOn;
 
+				UpdateDistances();
+
 				if (_waypointList.Count > 0)
 				{
 					_sortCounter++;
@@ -1257,6 +1195,9 @@ namespace IngameScript
 		// BUILD // - Updates map info from map's custom data
 		void Build()
 		{
+			//Grid Tag
+			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+
 			_planetList = new List<Planet>();
 			_unchartedList = new List<Planet>();
 			_waypointList = new List<Waypoint>();
@@ -1284,8 +1225,7 @@ namespace IngameScript
 			//Slow Mode
 			_slowMode = ParseBool(GetKey(Me, PROGRAM_HEAD, "Slow_Mode", "false"));
 
-			//Grid Tag
-			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+
 
 			if (_gridID == "")
 			{

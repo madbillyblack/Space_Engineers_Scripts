@@ -42,6 +42,7 @@ namespace IngameScript
         public class MapMenu
         {
             public IMyShipController Controller;
+            public DataDisplay DataDisplay;
             public IMyTextSurface Surface;
             public int CurrentMapIndex;
             public int CurrentPage;

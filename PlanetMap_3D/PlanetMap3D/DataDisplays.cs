@@ -26,26 +26,43 @@ namespace IngameScript
 		const string DATA_HEADER = "Data Display";
 		const string DATA_PAGE = "Current Page";
 		const string DATA_SCROLL = "Scroll Level";
+		const string SCREEN_KEY = "Screen Index";
 		const int PAGE_LIMIT = 4;
-		List<string> _dataPage1;
-		List<string> _dataPage2;
-		List<string> _dataPage3;
+		List<string> _dataPage0;
+		List<string> _planetDataPage;
+		List<string> _waypointDataPage;
+		static List<string> _mapDataPage;
 		List<string> _dataPage4;
+		List<DataDisplay> _dataDisplays;
 
 
 		// DATA DISPLAY //
-		class DataDisplay
+		public class DataDisplay
         {
 			public int CurrentPage;
 			int ScrollIndex;
+			int ScreenIndex;
+			public int IDNumber;
 			public IMyTerminalBlock Owner;
+			public IMyTextSurface Surface;
 			
 			// Constructor //
 			public DataDisplay(IMyTerminalBlock block)
             {
 				Owner = block;
+				ScreenIndex = ParseInt(GetKey(block, DATA_HEADER, SCREEN_KEY, "0"), 0);
 				CurrentPage = ParseInt(GetKey(block, DATA_HEADER, DATA_PAGE, "0"), 0);
 				ScrollIndex = ParseInt(GetKey(block, DATA_HEADER, DATA_SCROLL, "0"), 0);
+
+                try
+                {
+					Surface = (Owner as IMyTextSurfaceProvider).GetSurface(ScreenIndex);
+                }
+				catch
+                {
+					Surface = null;
+					_statusMessage += "Screen Index Error for Data Display on\n\"" + Owner.CustomName + "\"\n";
+                }
 			}
 
 			// Set Scroll //
@@ -97,6 +114,106 @@ namespace IngameScript
 				SetPage(CurrentPage--);
             }
         }
+
+
+		// ASSIGN DATA DISPLAYS //
+		void AssignDataDisplays()
+        {
+			// Get Tagged Display Blocks
+			List<IMyTerminalBlock> displayBlocks = new List<IMyTerminalBlock>();
+			GridTerminalSystem.SearchBlocksOfName(DATA_TAG, displayBlocks);
+
+			if (displayBlocks.Count < 1)
+				return;
+
+			// Initialize data pages and populate lists.
+			InitializeData();
+
+			foreach(IMyTerminalBlock block in displayBlocks)
+            {
+				if(OnGrid(block))
+                {
+					DataDisplay display = new DataDisplay(block);
+
+					if(display.Surface != null)
+                    {
+						display.IDNumber = _dataDisplays.Count;
+						_dataDisplays.Add(display);
+                    }
+                }
+            }
+        }
+
+
+		// INITIALIZE DATA //
+		void InitializeData()
+        {
+			// Initialize Data Display Lists
+			_dataPage0 = new List<string>();
+			_planetDataPage = new List<string>();
+			_waypointDataPage = new List<string>();
+			_mapDataPage = new List<string>();
+			_dataPage4 = new List<string>();
+			_dataDisplays = new List<DataDisplay>();
+
+			//UpdateMapDataPage();
+			UpdatePlanetDataPage();
+			UpdateWaypointDataPage();
+
+		}
+
+
+		// UPDATE MAP DATA PAGE //
+		static void UpdateMapDataPage()
+        {
+			//_dataPage0.Add("// MAP DATA" + SLASHES);
+
+			if (_mapList.Count < 1)
+				return;
+
+			foreach(StarMap map in _mapList)
+            {
+				_mapDataPage.Add("Map " + map.Number + "\n * Size: " + map.Viewport.Width + " x " + map.Viewport.Height);
+            }
+		}
+
+
+
+		// UPDATE PLANET DATA PAGE //
+		void UpdatePlanetDataPage()
+        {
+			if (!_planets)
+				return;
+
+			foreach(Planet planet in _planetList)
+            {
+				_planetDataPage.Add(planet.name + "\n * Radius: " + (planet.radius / 1000).ToString("N1") + "km\n * Dist: " + (planet.Distance / 1000).ToString("N1") + " km\n");
+            }
+        }
+
+
+		// UPDATE WAYPOINT DATA PAGE //
+		void UpdateWaypointDataPage()
+        {
+			if (_waypointList.Count < 1)
+				return;
+
+			foreach(Waypoint waypoint in _waypointList)
+            {
+				_waypointDataPage.Add(waypoint.name + "\n * Type: " + waypoint.marker + "\n * Dist: " + (waypoint.Distance / 1000).ToString("N1") + " km\n");
+            }
+        }
+
+
+		// GET DATA DISPLAY //
+		DataDisplay GetDataDisplay(int displayID)
+        {
+			if(displayID >= _dataDisplays.Count || displayID < 0)
+				return null;
+
+			return _dataDisplays[displayID];
+        }
+
 
 		// DISPLAY DATA // Page selection interface for Data Display
 		void DisplayData()

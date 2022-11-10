@@ -24,7 +24,8 @@ namespace IngameScript
     {
         const string SHARED = "Shared Data";
         const char SEPARATOR = ';';
-        string _gridID;
+        static string _gridID;
+        const string GRID_KEY = "Grid_ID";
 
         // ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
         static void EnsureKey(IMyTerminalBlock block, string header, string key, string defaultVal)
@@ -189,6 +190,13 @@ namespace IngameScript
             }
 
             return entries;
+        }
+
+
+        // On Grid //
+        static bool OnGrid(IMyTerminalBlock block)
+        {
+            return GetKey(block, SHARED, GRID_KEY, _gridID) == _gridID;
         }
     }
 }
