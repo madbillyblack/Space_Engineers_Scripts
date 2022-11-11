@@ -35,7 +35,7 @@ namespace IngameScript
 		//static List<string> _dataPage0;
 		static List<string> _planetDataPage;
 		static List<string> _waypointDataPage;
-		static List<string> _mapDataPage;
+		//static List<string> _mapDataPage;
 		//List<string> _dataPage4;
 		static List<DataDisplay> _dataDisplays;
 
@@ -345,7 +345,7 @@ namespace IngameScript
 				return;
 
 			// Initialize data pages and populate lists.
-			InitializeData();
+			UpdatePageData();
 
 			foreach(IMyTerminalBlock block in displayBlocks)
             {
@@ -367,13 +367,13 @@ namespace IngameScript
 
 
 		// INITIALIZE DATA //
-		void InitializeData()
+		void UpdatePageData()
         {
 			// Initialize Data Display Lists
 			//_dataPage0 = new List<string>();
-			_planetDataPage = new List<string>();
-			_waypointDataPage = new List<string>();
-			_mapDataPage = new List<string>();
+			
+			
+			//_mapDataPage = new List<string>();
 			//_dataPage4 = new List<string>();
 
 			//UpdateMapDataPage();
@@ -383,18 +383,18 @@ namespace IngameScript
 
 
 		// UPDATE MAP DATA PAGE //
-		static void UpdateMapDataPage()
-        {
-			//_dataPage0.Add("// MAP DATA" + SLASHES);
+		/*		static void UpdateMapDataPage()
+				{
+					//_dataPage0.Add("// MAP DATA" + SLASHES);
 
-			if (_mapList.Count < 1)
-				return;
+					if (_mapList.Count < 1)
+						return;
 
-			foreach(StarMap map in _mapList)
-            {
-				_mapDataPage.Add("Map " + map.Number + "\n * Size: " + map.Viewport.Width + " x " + map.Viewport.Height);
-            }
-		}
+					foreach(StarMap map in _mapList)
+					{
+						_mapDataPage.Add("Map " + map.Number + "\n * Size: " + map.Viewport.Width + " x " + map.Viewport.Height);
+					}
+				}*/
 
 
 
@@ -403,8 +403,10 @@ namespace IngameScript
         {
 			if (!_planets)
 				return;
+			_planetDataPage = new List<string>();
 
-			foreach(Planet planet in _planetList)
+
+			foreach (Planet planet in _planetList)
             {
 				_planetDataPage.Add(planet.name + "\n * Radius: " + (planet.radius / 1000).ToString("N1") + "km -- Dist: " + (planet.Distance / 1000).ToString("N1") + " km");
             }
@@ -417,7 +419,9 @@ namespace IngameScript
 			if (_waypointList.Count < 1)
 				return;
 
-			foreach(Waypoint waypoint in _waypointList)
+			_waypointDataPage = new List<string>();
+
+			foreach (Waypoint waypoint in _waypointList)
             {
 				_waypointDataPage.Add(waypoint.name + " --- " + waypoint.marker + "\n * Dist: " + (waypoint.Distance / 1000).ToString("N1") + " km");
             }

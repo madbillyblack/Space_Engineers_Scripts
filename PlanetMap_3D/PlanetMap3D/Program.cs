@@ -110,7 +110,7 @@ namespace IngameScript
 		static bool _planets;
 		bool _planetToLog;
 		bool _slowMode = false;
-		int _cycleLength;
+		const int CYCLE_LENGTH = 5;
 		static int _cycleStep;
 		int _sortCounter = 0;
 		//float _brightnessMod;
@@ -261,7 +261,7 @@ namespace IngameScript
 
 				if (_planets)
 				{
-					if (_cycleStep == _cycleLength || _previousCommand == "NEWLY LOADED")
+					if (_cycleStep == CYCLE_LENGTH || _previousCommand == "NEWLY LOADED")
 					{
 						SortByNearest(_planetList);
 					}
@@ -342,11 +342,6 @@ namespace IngameScript
 				cycleGPS(map);
 			}
 		}
-
-
-
-
-
 
 
 		// DATA TO LOG //
@@ -1146,51 +1141,33 @@ namespace IngameScript
 		// CYCLE EXECUTE // Wait specified number of cycles to execute cyclial commands
 		public void CycleExecute()
 		{
+
 			_cycleStep--;
 
-			// EXECUTE CYCLE DELAY FUNCTIONS
-			if (_cycleStep < 0)
-			{
-				_cycleStep = _cycleLength;
-
-				//Toggle Indicator LightGray
-				_lightOn = !_lightOn;
-
-				UpdateDistances();
-
-				if (_waypointList.Count > 0)
-				{
-					_sortCounter++;
-					if (_sortCounter >= 10)
+			switch (_cycleStep)
+            {					
+				case 4:
+					UpdateDistances();
+					break;
+				case 3:
+					SortGlobalWaypoints();
+					break;
+				case 2:
+					SortPlanetsForMaps();
+					break;
+				case 1:
+					if (_planetToLog)
 					{
-						SortWaypoints(_waypointList);
-						_sortCounter = 0;
+						DataToLog();
+						_planetToLog = false;
 					}
-				}
-
-				if (_planets)
-				{
-					//Sort Planets by proximity to ship.
-					SortByNearest(_planetList);
-					_nearestPlanet = _planetList[0];
-
-					if (_mapList.Count < 1)
-						return;
-
-					foreach (StarMap map in _mapList)
-					{
-						if (map.Mode == "PLANET" || map.Mode == "CHASE" || map.Mode == "ORBIT")
-						{
-							UpdateMap(map);
-						}
-					}
-				}
-
-				if (_planetToLog)
-				{
-					DataToLog();
-					_planetToLog = false;
-				}
+					break;
+				case 0:
+				case -1:
+					UpdatePageData();
+					_cycleStep = CYCLE_LENGTH; // Reset counter
+					_lightOn = !_lightOn; //Toggle Indicator LightGray
+					break;
 			}
 		}
 
@@ -1202,6 +1179,7 @@ namespace IngameScript
 
 			//Grid Tag
 			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+			_cycleStep = CYCLE_LENGTH;
 
 			_planetList = new List<Planet>();
 			_unchartedList = new List<Planet>();
@@ -1239,16 +1217,7 @@ namespace IngameScript
 				Me.CustomData = _mapLog.ToString();
 			}
 
-			//Cycle Step Length
-			try
-			{
-				_cycleLength = Int16.Parse(GetKey(Me, PROGRAM_HEAD, "Cycle_Step", "5"));
-			}
-			catch
-			{
-				_cycleLength = 5;
-			}
-			_cycleStep = _cycleLength;
+			
 
 			if (_mapTag == "" || _mapTag == "<name>")
 			{
@@ -1308,7 +1277,7 @@ namespace IngameScript
 				Echo("A");
 			}
 
-
+			_myPos = _refBlock.GetPosition();
 
 			string planetData = _mapLog.Get(PROGRAM_HEAD, "Planet_List").ToString();
 

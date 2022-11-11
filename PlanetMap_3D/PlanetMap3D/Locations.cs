@@ -48,7 +48,7 @@ namespace IngameScript
 
 			public Waypoint()
 			{
-				this.transformedCoords = new List<Vector3>();
+				transformedCoords = new List<Vector3>();
 			}
 		}
 
@@ -69,50 +69,50 @@ namespace IngameScript
 			{
 				string[] planetData = planetString.Split(';');
 
-				this.name = planetData[0];
+				name = planetData[0];
 
-				this.transformedCoords = new List<Vector3>();
+				transformedCoords = new List<Vector3>();
 
 				if (planetData.Length < 8)
 				{
 					return;
 				}
 
-				this.color = planetData[3];
+				color = planetData[3];
 
 				if (planetData[1] != "")
 				{
-					this.position = StringToVector3(planetData[1]);
+					position = StringToVector3(planetData[1]);
 				}
 
 				if (planetData[2] != "")
 				{
-					this.radius = float.Parse(planetData[2]);
-					this.isCharted = true;
+					radius = float.Parse(planetData[2]);
+					isCharted = true;
 				}
 				else
 				{
-					this.isCharted = false;
+					isCharted = false;
 				}
 
 				if (planetData[4] != "")
 				{
-					this.SetPoint(1, StringToVector3(planetData[4]));
+					SetPoint(1, StringToVector3(planetData[4]));
 				}
 
 				if (planetData[5] != "")
 				{
-					this.SetPoint(2, StringToVector3(planetData[5]));
+					SetPoint(2, StringToVector3(planetData[5]));
 				}
 
 				if (planetData[6] != "")
 				{
-					this.SetPoint(3, StringToVector3(planetData[6]));
+					SetPoint(3, StringToVector3(planetData[6]));
 				}
 
 				if (planetData[7] != "")
 				{
-					this.SetPoint(4, StringToVector3(planetData[7]));
+					SetPoint(4, StringToVector3(planetData[7]));
 				}
 			}
 
@@ -161,8 +161,8 @@ namespace IngameScript
 			{
 				String[] planetData = new String[8];
 
-				planetData[0] = this.name;
-				planetData[1] = Vector3ToString(this.position);
+				planetData[0] = name;
+				planetData[1] = Vector3ToString(position);
 
 				float radius = this.radius;
 				if (radius > 0)
@@ -174,13 +174,13 @@ namespace IngameScript
 					planetData[2] = "";
 				}
 
-				planetData[3] = this.color;
+				planetData[3] = color;
 
 				for (int c = 4; c < 8; c++)
 				{
-					if (this.GetPoint(c - 3) != Vector3.Zero)
+					if (GetPoint(c - 3) != Vector3.Zero)
 					{
-						planetData[c] = Vector3ToString(this.GetPoint(c - 3));
+						planetData[c] = Vector3ToString(GetPoint(c - 3));
 					}
 				}
 
@@ -203,9 +203,9 @@ namespace IngameScript
 				Vector3 yMajor = new Vector3(xCenter, yCenter + radius, zCenter);
 				Vector3 zMajor = new Vector3(xCenter, yCenter, zCenter + radius);
 
-				this.SetPoint(1, xMajor);
-				this.SetPoint(2, yMajor);
-				this.SetPoint(3, zMajor);
+				SetPoint(1, xMajor);
+				SetPoint(2, yMajor);
+				SetPoint(3, zMajor);
 			}
 
 			public void CalculatePlanet()
@@ -259,12 +259,12 @@ namespace IngameScript
 				double detG = Det4(matrixG) / detT;
 
 				Vector3 newCenter = new Vector3(detD / -2, detE / -2, detF / -2);
-				this.position = newCenter;
+				position = newCenter;
 
 				double newRad = Math.Sqrt(detD * detD + detE * detE + detF * detF - 4 * detG) / 2;
-				this.radius = (float)newRad;
+				radius = (float)newRad;
 
-				this.SetMajorAxes();
+				SetMajorAxes();
 			}
 		}
 
@@ -463,16 +463,24 @@ namespace IngameScript
 		// UPDATE DISTANCES //
 		void UpdateDistances()
         {
+
+
 			if(_waypointList.Count > 0)
             {
 				foreach (Waypoint waypoint in _waypointList)
+                {
 					waypoint.Distance = GetDistance(waypoint);
+				}
+					
             }
 
 			if(_planetList.Count > 0)
             {
 				foreach (Planet planet in _planetList)
+                {
 					planet.Distance = GetDistance(planet) - planet.radius;
+				}
+					
             }
         }
 
@@ -537,6 +545,44 @@ namespace IngameScript
 				if (length < 2)
 				{
 					return;
+				}
+			}
+		}
+
+
+		// SORT GLOBAL WAYPOINTS //
+		void SortGlobalWaypoints()
+        {
+			if (_waypointList.Count < 1)
+				return;
+
+			_sortCounter++;
+			if (_sortCounter >= 10)
+			{
+				SortWaypoints(_waypointList);
+				_sortCounter = 0;
+			}
+		}
+
+
+		// SORT PLANETS FOR MAPS //
+		void SortPlanetsForMaps()
+        {
+			if (_planets)
+			{
+				//Sort Planets by proximity to ship.
+				SortByNearest(_planetList);
+				_nearestPlanet = _planetList[0];
+
+				if (_mapList.Count < 1)
+					return;
+
+				foreach (StarMap map in _mapList)
+				{
+					if (map.Mode == "PLANET" || map.Mode == "CHASE" || map.Mode == "ORBIT")
+					{
+						UpdateMap(map);
+					}
 				}
 			}
 		}
