@@ -32,6 +32,7 @@ namespace IngameScript
         const string TITLE_KEY = "Title Color";
         const string BUTTON_KEY = "Button Color";
         const string LABEL_KEY = "Label Color";
+        const string DATA_KEY = "Data Display Index";
         List<MapMenu> _mapMenus;
         
         public static int _buttonCountDown;
@@ -65,6 +66,24 @@ namespace IngameScript
 
                 Alignment = GetMenuKey(ALIGNMENT_KEY, "TOP").ToUpper();
                 Decals = GetMenuKey(DECAL_KEY, "").ToUpper();
+
+                SetDataDisplay();
+
+            }
+
+            // Set Data Display //
+            void SetDataDisplay()
+            {
+                if (_dataDisplays.Count < 1)
+                    return;
+                
+                string dataKey = GetMenuKey(DATA_KEY, "");
+                int dataIndex = ParseInt(dataKey, 0);
+
+                if (dataKey != "" && dataIndex < _dataDisplays.Count)
+                    DataDisplay = GetDataDisplay(dataIndex);
+                else
+                    DataDisplay = null;
             }
 
             // Initialize Surface //
@@ -113,6 +132,42 @@ namespace IngameScript
             string GetMenuKey(string key, string defaultValue)
             {
                 return GetKey(Controller, MENU_HEAD, key, defaultValue);
+            }
+
+            // Next Data Page //
+            public void NextDataPage()
+            {
+                if (DataDisplay == null)
+                    return;
+
+                DataDisplay.NextPage();
+            }
+
+            // Previous Data Page //
+            public void PreviousDataPage()
+            {
+                if (DataDisplay == null)
+                    return;
+
+                DataDisplay.PreviousPage();
+            }
+
+            // Scroll Down //
+            public void ScrollDown()
+            {
+                if (DataDisplay == null)
+                    return;
+
+                DataDisplay.ScrollDown();
+            }
+
+            // Scroll Up //
+            public void ScrollUp()
+            {
+                if (DataDisplay == null)
+                    return;
+
+                DataDisplay.ScrollUp();
             }
         }
 
@@ -274,6 +329,26 @@ namespace IngameScript
                     menu.ActiveButton = 0;
                     DrawMenu(menu);
                 }
+            }
+        }
+
+
+        // SHOW MENU DATA //
+        void ShowMenuData()
+        {
+            Echo("Menus: " + _mapMenus.Count);
+
+            if (_mapMenus.Count < 1)
+                return;
+
+            foreach (MapMenu menu in _mapMenus)
+            {
+                string display;
+                if (menu.DataDisplay != null)
+                    display = menu.DataDisplay.IDNumber.ToString();
+                else
+                    display = "null";
+                Echo(menu.Controller.CustomName + "\n * Data Display: " + display + "\n");
             }
         }
     }

@@ -99,7 +99,7 @@ namespace IngameScript
            {3,"v"},
            {4,"v"},
            {5,"vv"},
-           {6,"v"}
+           {6,"^"}
         };
 
         readonly Dictionary<int, string> _cmd4 = new Dictionary<int, string>()
@@ -109,7 +109,7 @@ namespace IngameScript
            {3,"^"},
            {4,"^"},
            {5,"^^"},
-           {6,"^"}
+           {6,"v"}
         };
 
         readonly Dictionary<int, string> _cmd5 = new Dictionary<int, string>()

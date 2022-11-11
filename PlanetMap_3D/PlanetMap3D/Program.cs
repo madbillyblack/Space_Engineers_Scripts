@@ -80,9 +80,9 @@ namespace IngameScript
 		const int TOP_MARGIN = 8; // Margin for top and bottom of frame
 		const int SIDE_MARGIN = 15; // Margin for sides of frame
 		const int MAX_VALUE = 1073741824; //General purpose MAX value = 2^30
-		const int DATA_PAGES = 5;  // Number of Data Display Pages
+		
 		const string SLASHES = " //////////////////////////////////////////////////////////////";
-		const string GPS_INPUT = "// GPS INPUT ";
+
 		const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_ID=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
 		const string PROGRAM_HEAD = "Map Settings";
 
@@ -111,13 +111,13 @@ namespace IngameScript
 		bool _planetToLog;
 		bool _slowMode = false;
 		int _cycleLength;
-		int _cycleStep;
+		static int _cycleStep;
 		int _sortCounter = 0;
 		//float _brightnessMod;
 		static string _statusMessage;
 		string _activePlanet = "";
 		string _activeWaypoint = "";
-		string _clipboard = "";
+		static string _clipboard = "";
 		//Vector3 _trackSpeed;
 		Vector3 _origin = new Vector3(0, 0, 0);
 		Vector3 _myPos;
@@ -167,7 +167,7 @@ namespace IngameScript
 			string oldData = Me.CustomData;
 			string newData = DEFAULT_SETTINGS;
 
-			_statusMessage = "";
+
 			_planetToLog = false;
 
 			if (!oldData.Contains("[Map Settings]"))
@@ -246,6 +246,9 @@ namespace IngameScript
 				Echo("No Waypoints Logged!");
 			}
 
+			ShowMenuData();
+
+
 			if (_mapList.Count > 0)
 			{
 				CycleExecute();
@@ -276,7 +279,7 @@ namespace IngameScript
 			}
 
 			if (_dataBlocks.Count > 0)
-				DisplayData();
+				UpdateDisplays();
 		}
 
 
@@ -1195,6 +1198,8 @@ namespace IngameScript
 		// BUILD // - Updates map info from map's custom data
 		void Build()
 		{
+			_statusMessage = "";
+
 			//Grid Tag
 			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 
@@ -1336,6 +1341,8 @@ namespace IngameScript
 					_waypointList.Add(waypoint);
 				}
 			}
+
+			AssignDataDisplays();
 
 			AssignMenus();
 

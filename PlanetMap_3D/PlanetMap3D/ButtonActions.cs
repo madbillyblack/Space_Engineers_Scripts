@@ -96,6 +96,7 @@ namespace IngameScript
                     map.Track("LEFT");
                     break;
                 case 6:
+                    menu.PreviousDataPage();
                     break;
             }
 
@@ -126,6 +127,7 @@ namespace IngameScript
                     map.Track("RIGHT");
                     break;
                 case 6:
+                    menu.NextDataPage();
                     break;
             }
 
@@ -157,6 +159,7 @@ namespace IngameScript
                     map.Track("DOWN");
                     break;
                 case 6:
+                    menu.ScrollUp();
                     break;
             }
 
@@ -187,6 +190,7 @@ namespace IngameScript
                     map.Track("UP");
                     break;
                 case 6:
+                    menu.ScrollDown();
                     break;
             }
 

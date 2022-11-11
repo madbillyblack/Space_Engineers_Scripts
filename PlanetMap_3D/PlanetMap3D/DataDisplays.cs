@@ -27,20 +27,24 @@ namespace IngameScript
 		const string DATA_PAGE = "Current Page";
 		const string DATA_SCROLL = "Scroll Level";
 		const string SCREEN_KEY = "Screen Index";
-		const int PAGE_LIMIT = 4;
-		List<string> _dataPage0;
-		List<string> _planetDataPage;
-		List<string> _waypointDataPage;
+		const string PLANET_TITLE = "PLANETS";
+		const string WAYPOINT_TITLE = "WAYPOINTS";
+		const string GPS_INPUT = "GPS INPUT";
+		const int PAGE_LIMIT = 3;
+		const int DATA_PAGES = 4;  // Number of Data Display Pages
+		//static List<string> _dataPage0;
+		static List<string> _planetDataPage;
+		static List<string> _waypointDataPage;
 		static List<string> _mapDataPage;
-		List<string> _dataPage4;
-		List<DataDisplay> _dataDisplays;
+		//List<string> _dataPage4;
+		static List<DataDisplay> _dataDisplays;
 
 
 		// DATA DISPLAY //
 		public class DataDisplay
         {
 			public int CurrentPage;
-			int ScrollIndex;
+			public int ScrollIndex;
 			int ScreenIndex;
 			public int IDNumber;
 			public IMyTerminalBlock Owner;
@@ -74,13 +78,14 @@ namespace IngameScript
 					ScrollIndex = 0;
 
 				SetKey(Owner, DATA_HEADER, DATA_SCROLL, ScrollIndex.ToString());
-            }
+				DisplayData(this);
+			}
 
 			// Scroll Down //
 			public void ScrollDown()
             {
-				SetScroll(ScrollIndex++);
-            }
+				SetScroll(ScrollIndex++);	
+			}
 
 			// Scroll Up
 			public void ScrollUp()
@@ -100,7 +105,8 @@ namespace IngameScript
 					CurrentPage = PAGE_LIMIT;
 
 				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
-            }
+				DisplayData(this);
+			}
 
 			// Next Page //
 			public void NextPage()
@@ -119,6 +125,9 @@ namespace IngameScript
 		// ASSIGN DATA DISPLAYS //
 		void AssignDataDisplays()
         {
+			_dataDisplays = new List<DataDisplay>();
+			Echo("Assigning Data Displays");
+
 			// Get Tagged Display Blocks
 			List<IMyTerminalBlock> displayBlocks = new List<IMyTerminalBlock>();
 			GridTerminalSystem.SearchBlocksOfName(DATA_TAG, displayBlocks);
@@ -138,10 +147,13 @@ namespace IngameScript
 					if(display.Surface != null)
                     {
 						display.IDNumber = _dataDisplays.Count;
+						display.Surface.ContentType = ContentType.TEXT_AND_IMAGE;
 						_dataDisplays.Add(display);
                     }
                 }
             }
+
+			Echo("Data Displays: " + _dataDisplays.Count);
         }
 
 
@@ -149,17 +161,15 @@ namespace IngameScript
 		void InitializeData()
         {
 			// Initialize Data Display Lists
-			_dataPage0 = new List<string>();
+			//_dataPage0 = new List<string>();
 			_planetDataPage = new List<string>();
 			_waypointDataPage = new List<string>();
 			_mapDataPage = new List<string>();
-			_dataPage4 = new List<string>();
-			_dataDisplays = new List<DataDisplay>();
+			//_dataPage4 = new List<string>();
 
 			//UpdateMapDataPage();
 			UpdatePlanetDataPage();
 			UpdateWaypointDataPage();
-
 		}
 
 
@@ -206,7 +216,7 @@ namespace IngameScript
 
 
 		// GET DATA DISPLAY //
-		DataDisplay GetDataDisplay(int displayID)
+		static DataDisplay GetDataDisplay(int displayID)
         {
 			if(displayID >= _dataDisplays.Count || displayID < 0)
 				return null;
@@ -215,54 +225,67 @@ namespace IngameScript
         }
 
 
-		// DISPLAY DATA // Page selection interface for Data Display
-		void DisplayData()
+		// DISPLAY DATA // Write current data to individual data display depending on current page
+		static void DisplayData(DataDisplay display)
 		{
-			if (_dataSurface == null)
-				return;
-
-			switch (_pageIndex)
+			switch (display.CurrentPage)
 			{
 				case 0:
-					DisplayGPSInput();
+					DisplayPlanetData(display);
 					break;
 				case 1:
-					DisplayPlanetData();
+					DisplayWaypointData(display);
 					break;
 				case 2:
-					DisplayWaypointData();
+					DisplayGPSInput(display);
 					break;
 				case 3:
-					DisplayMapData();
-					break;
+					DisplayClipboard(display);
+					break;/*
 				case 4:
-					DisplayClipboard();
-					break;
+					DisplayMapData(display.Surface);
+					break;*/
 			}
 		}
 
 
-		// DISPLAY GPS INPUT //
-		void DisplayGPSInput()
-		{
-			if (_cycleStep > 0 || _dataSurface == null)
+		// UPDATE DISPLAYS // Write current data to all Data Displays
+		void UpdateDisplays()
+        {
+			if (_dataDisplays.Count < 1)
 				return;
 
-			StringBuilder menuText = new StringBuilder();
-			_dataSurface.ReadText(menuText, false);
-
-			string output = menuText.ToString();
-
-			if (!output.StartsWith(GPS_INPUT))
-				output = GPS_INPUT + SLASHES + "\n~Input Terminal Coords Below This Line~";
-
-			_dataSurface.WriteText(output);
+			foreach (DataDisplay display in _dataDisplays)
+				DisplayData(display);
 		}
 
 
-		// DISPLAY PLANET DATA //
-		void DisplayPlanetData()
+		// DISPLAY GPS INPUT //
+		static void DisplayGPSInput(DataDisplay display)
 		{
+			if (_cycleStep > 0)
+				return;
+
+			StringBuilder menuText = new StringBuilder();
+			display.Surface.ReadText(menuText, false);
+
+			string output = menuText.ToString();
+
+			if (!output.Contains(GPS_INPUT))
+				output = BuildPageHeader(display, GPS_INPUT) + "~Input Terminal Coords Below This Line~";
+
+			display.Surface.WriteText(output);
+		}
+
+
+		// DISPLAY PLANET DATA // - Writes Planet Title and Data to Display Surface
+		static void DisplayPlanetData(DataDisplay display)
+		{
+			display.Surface.WriteText(BuildPageHeader(display, PLANET_TITLE) + GetScrolledPage(display, _planetDataPage));
+
+			// old code
+			#region
+			/*
 			string output = "// PLANET LIST" + SLASHES;
 			List<string> planetData = new List<string>();
 			planetData.Add("Charted: " + _planetList.Count + "	  Uncharted: " + _unchartedList.Count);
@@ -308,13 +331,20 @@ namespace IngameScript
 
 			output += ScrollToString(planetData);
 
-			_dataSurface.WriteText(output);
+
+			surface.WriteText(output);
+			*/
+			#endregion
 		}
 
 
 		// DISPLAY WAYPOINT DATA //
-		void DisplayWaypointData()
+		static void DisplayWaypointData(DataDisplay display)
 		{
+			display.Surface.WriteText(BuildPageHeader(display, WAYPOINT_TITLE) + GetScrolledPage(display, _waypointDataPage));
+			// old code
+			#region
+			/*
 			string output = "// WAYPOINT LIST" + SLASHES;
 
 			List<string> waypointData = new List<string>();
@@ -342,12 +372,15 @@ namespace IngameScript
 
 			output += ScrollToString(waypointData);
 
-			_dataSurface.WriteText(output);
+			surface.WriteText(output);
+			*/
+			#endregion
 		}
 
 
 		// DISPLAY MAP DATA //
-		void DisplayMapData()
+		/*
+        void DisplayMapData(IMyTextSurface surface)
 		{
 			string output = "// MAP DATA" + SLASHES;
 
@@ -393,15 +426,18 @@ namespace IngameScript
 				output += "\n\n NO MAP BLOCKS TO DISPLAY!!!";
 			}
 
-			_dataSurface.WriteText(output);
+			surface.WriteText(output);
 		}
+		*/
 
 
 		// DISPLAY CLIPBOARD //
-		void DisplayClipboard()
+		static void DisplayClipboard(DataDisplay display)
 		{
-			string output = "// CLIPBOARD" + SLASHES + "\n\n" + _clipboard;
-			_dataSurface.WriteText(output);
+			display.Surface.WriteText(BuildPageHeader(display, "CLIPBOARD") + "\n" + _clipboard);
+
+			//string output = "// CLIPBOARD" + SLASHES + "\n\n" + _clipboard;
+			//surface.WriteText(output);
 		}
 
 
@@ -461,5 +497,39 @@ namespace IngameScript
 					break;
 			}
 		}
+
+
+		// WRITE PAGE HEADER //
+		static string BuildPageHeader(DataDisplay display, string pageTitle)
+        {
+			string displayNumber = "";
+
+			if(_dataDisplays.Count > 1)
+				displayNumber = "[" + display.IDNumber + "] ";
+
+			return "// " + displayNumber + pageTitle + SLASHES + "\n";
+        }
+
+
+		// GET SCROLLED PAGE // -  Return page data from string list, based on display's scroll index
+		static string GetScrolledPage(DataDisplay display, List<string> entries)
+        {
+			string output = "";
+
+			if(entries.Count > 0)
+            {
+				// If display is scrolled past the end of the page, set it to the end of the page
+				if (display.ScrollIndex >= entries.Count)
+                {
+					display.ScrollIndex = entries.Count - 1;
+					SetKey(display.Owner, DATA_HEADER, DATA_SCROLL, display.ScrollIndex.ToString());
+				}
+
+				for (int i = display.ScrollIndex; i < entries.Count; i++)
+					output += entries[i] + "\n\n";
+			}
+
+			return output;
+        }
 	}
 }
