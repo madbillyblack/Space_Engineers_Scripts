@@ -112,6 +112,7 @@ namespace IngameScript
 		bool _slowMode = false;
 		const int CYCLE_LENGTH = 5;
 		static int _cycleStep;
+		static int _cycleOffset;
 		int _sortCounter = 0;
 		//float _brightnessMod;
 		static string _statusMessage;
@@ -162,6 +163,7 @@ namespace IngameScript
 				_showShip = true;
 			}
 			*/
+			_cycleOffset = Math.Abs((int) Me.CubeGrid.EntityId % CYCLE_LENGTH);
 			_pageIndex = 0;
 
 			string oldData = Me.CustomData;
@@ -213,6 +215,8 @@ namespace IngameScript
 			Echo("////// PLANET MAP 3D ////// " + _cycleSpinner[_cycleStep % _cycleSpinner.Length]);
 			Echo(_previousCommand);
 			Echo(_statusMessage);
+			Echo("Cycle Offset" + _cycleOffset);
+
 			Echo("MAP Count: " + _mapList.Count);
 
 			if (_dataSurface == null)
@@ -1141,10 +1145,14 @@ namespace IngameScript
 		// CYCLE EXECUTE // Wait specified number of cycles to execute cyclial commands
 		public void CycleExecute()
 		{
-
 			_cycleStep--;
 
-			switch (_cycleStep)
+			// Decide which stage of the cycle will be executed based on this grid's offset
+			int stage = (_cycleStep - _cycleOffset + CYCLE_LENGTH) % CYCLE_LENGTH;
+
+			Echo("Cycle Stage: " + stage);
+
+			switch (stage)
             {					
 				case 4:
 					UpdateDistances();
@@ -1163,11 +1171,14 @@ namespace IngameScript
 					}
 					break;
 				case 0:
-				case -1:
 					UpdatePageData();
-					_cycleStep = CYCLE_LENGTH; // Reset counter
-					_lightOn = !_lightOn; //Toggle Indicator LightGray
 					break;
+			}
+
+			if(_cycleStep < 1)
+            {
+				_cycleStep = CYCLE_LENGTH; // Reset counter
+				_lightOn = !_lightOn; //Toggle Indicator LightGray
 			}
 		}
 
