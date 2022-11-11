@@ -70,32 +70,42 @@ namespace IngameScript
 			}
 
 			// Set Scroll //
-			void SetScroll(int scroll)
+/*			void SetScroll(int scroll)
             {
+				_statusMessage = "Data [" + IDNumber + "] scrolled from entry " + ScrollIndex + " to " + scroll + ".";
 				ScrollIndex = scroll;
 
 				if (ScrollIndex < 0)
 					ScrollIndex = 0;
 
 				SetKey(Owner, DATA_HEADER, DATA_SCROLL, ScrollIndex.ToString());
-				DisplayData(this);
-			}
+				DisplayPage();
+			}*/
 
 			// Scroll Down //
 			public void ScrollDown()
             {
-				SetScroll(ScrollIndex++);	
+				//SetScroll(ScrollIndex++);	
+				ScrollIndex++;
+				DisplayPage();
 			}
 
 			// Scroll Up
 			public void ScrollUp()
             {
-				SetScroll(ScrollIndex--);
+				if(ScrollIndex > 0)
+					ScrollIndex--;
+
+				DisplayPage();
+
+				//SetScroll(ScrollIndex--);
             }
 
 			// Set Page //
-			void SetPage(int page)
+/*			void SetPage(int page)
             {
+				_statusMessage = "Data [" + IDNumber + "] changed from page " + CurrentPage + " to " + page + ".";
+
 				SetScroll(0);
 				CurrentPage = page;
 
@@ -105,21 +115,220 @@ namespace IngameScript
 					CurrentPage = PAGE_LIMIT;
 
 				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
-				DisplayData(this);
-			}
+				DisplayPage();
+			}*/
 
 			// Next Page //
 			public void NextPage()
             {
-				SetPage(CurrentPage++);
-            }
+				CurrentPage++;
+				if (CurrentPage > PAGE_LIMIT)
+					CurrentPage = 0;
+
+				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
+
+				ScrollIndex = 0;
+				SetKey(Owner, DATA_HEADER, DATA_SCROLL, "0");
+
+				DisplayPage();
+				//SetPage(CurrentPage++);
+			}
 
 			// Previous Page //
 			public void PreviousPage()
             {
-				SetPage(CurrentPage--);
-            }
-        }
+				CurrentPage--;
+				if (CurrentPage < 0)
+					CurrentPage = PAGE_LIMIT;
+
+				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
+
+				ScrollIndex = 0;
+				SetKey(Owner, DATA_HEADER, DATA_SCROLL, "0");
+
+				DisplayPage();
+				//SetPage(CurrentPage--);
+			}
+
+			// WRITE PAGE HEADER //
+			string BuildPageHeader(string pageTitle)
+			{
+				string displayNumber = "";
+
+				if (_dataDisplays.Count > 1)
+					displayNumber = "[" + IDNumber + "] ";
+
+				return "// " + displayNumber + pageTitle + SLASHES + "\n";
+			}
+
+			// GET SCROLLED PAGE // -  Return page data from string list, based on display's scroll index
+			string GetScrolledPage(List<string> entries)
+			{
+				string output = "";
+
+				if (entries.Count > 0)
+				{
+					// If display is scrolled past the end of the page, set it to the end of the page
+					if (ScrollIndex >= entries.Count)
+					{
+						ScrollIndex = entries.Count - 1;
+						SetKey(Owner, DATA_HEADER, DATA_SCROLL, ScrollIndex.ToString());
+					}
+
+					for (int i = ScrollIndex; i < entries.Count; i++)
+						output += entries[i] + "\n\n";
+				}
+
+				return output;
+			}
+
+			// DISPLAY PLANET DATA // - Writes Planet Title and Data to Display Surface
+			void DisplayPlanetData()
+			{
+				Surface.WriteText(BuildPageHeader(PLANET_TITLE) + GetScrolledPage(_planetDataPage));
+
+				// old code
+				#region
+				/*
+				string output = "// PLANET LIST" + SLASHES;
+				List<string> planetData = new List<string>();
+				planetData.Add("Charted: " + _planetList.Count + "	  Uncharted: " + _unchartedList.Count);
+
+				if (_planets)
+				{
+					foreach (Planet planet in _planetList)
+					{
+						float surfaceDistance = (Vector3.Distance(planet.position, _myPos) - planet.radius) / 1000;
+						if (surfaceDistance < 0)
+						{
+							surfaceDistance = 0;
+						}
+						string planetEntry;
+						if (planet.name.ToUpper() == _activePlanet.ToUpper())
+						{
+							planetEntry = ">>> ";
+						}
+						else
+						{
+							planetEntry = "		   ";
+						}
+
+						planetEntry += planet.name + "	  R: " + abbreviateValue(planet.radius) + "m    dist: " + surfaceDistance.ToString("N1") + "km";
+
+						planetData.Add(planetEntry);
+					}
+				}
+
+				if (_unchartedList.Count > 0)
+				{
+					string unchartedHeader = "\n----Uncharted Planets----";
+					planetData.Add(unchartedHeader);
+					foreach (Planet uncharted in _unchartedList)
+					{
+						float unchartedDistance = Vector3.Distance(_myPos, uncharted.GetPoint(1)) / 1000;
+
+						string unchartedEntry = "  " + uncharted.name + "	 dist: " + unchartedDistance.ToString("N1") + "km";
+
+						planetData.Add(unchartedEntry);
+					}
+				}
+
+				output += ScrollToString(planetData);
+
+
+				surface.WriteText(output);
+				*/
+				#endregion
+			}
+
+			// DISPLAY WAYPOINT DATA //
+			void DisplayWaypointData()
+			{
+				Surface.WriteText(BuildPageHeader(WAYPOINT_TITLE) + GetScrolledPage(_waypointDataPage));
+				// old code
+				#region
+				/*
+				string output = "// WAYPOINT LIST" + SLASHES;
+
+				List<string> waypointData = new List<string>();
+				waypointData.Add("Count: " + _waypointList.Count);
+
+				if (_waypointList.Count > 0)
+				{
+					foreach (Waypoint waypoint in _waypointList)
+					{
+						float distance = Vector3.Distance(_myPos, waypoint.position) / 1000;
+						string status = "Active";
+						if (!waypoint.isActive)
+						{
+							status = "Inactive";
+						}
+						string waypointEntry = "		";
+						if (waypoint.name.ToUpper() == _activeWaypoint.ToUpper())
+						{
+							waypointEntry = ">>> ";
+						}
+						waypointEntry += waypoint.name + "	  " + waypoint.marker + "	  " + status + "	  dist: " + distance.ToString("N1") + "km";
+						waypointData.Add(waypointEntry);
+					}
+				}
+
+				output += ScrollToString(waypointData);
+
+				surface.WriteText(output);
+				*/
+				#endregion
+			}
+
+			// DISPLAY GPS INPUT //
+			public void DisplayGPSInput()
+			{
+				if (_cycleStep > 0)
+					return;
+
+				StringBuilder menuText = new StringBuilder();
+				Surface.ReadText(menuText, false);
+
+				string output = menuText.ToString();
+
+				if (!output.Contains(GPS_INPUT))
+					output = BuildPageHeader(GPS_INPUT) + "~Input Terminal Coords Below This Line~";
+
+				Surface.WriteText(output);
+			}
+
+			// DISPLAY CLIPBOARD //
+			void DisplayClipboard()
+			{
+				Surface.WriteText(BuildPageHeader("CLIPBOARD") + "\n" + _clipboard);
+
+				//string output = "// CLIPBOARD" + SLASHES + "\n\n" + _clipboard;
+				//surface.WriteText(output);
+			}
+
+			// DISPLAY DATA // Write current data to individual data display depending on current page
+			public void DisplayPage()
+			{
+				switch (CurrentPage)
+				{
+					case 0:
+						DisplayPlanetData();
+						break;
+					case 1:
+						DisplayWaypointData();
+						break;
+					case 2:
+						DisplayGPSInput();
+						break;
+					case 3:
+						DisplayClipboard();
+						break;/*
+				case 4:
+					DisplayMapData(display.Surface);
+					break;*/
+				}
+			}
+		}
 
 
 		// ASSIGN DATA DISPLAYS //
@@ -197,7 +406,7 @@ namespace IngameScript
 
 			foreach(Planet planet in _planetList)
             {
-				_planetDataPage.Add(planet.name + "\n * Radius: " + (planet.radius / 1000).ToString("N1") + "km\n * Dist: " + (planet.Distance / 1000).ToString("N1") + " km\n");
+				_planetDataPage.Add(planet.name + "\n * Radius: " + (planet.radius / 1000).ToString("N1") + "km -- Dist: " + (planet.Distance / 1000).ToString("N1") + " km");
             }
         }
 
@@ -210,7 +419,7 @@ namespace IngameScript
 
 			foreach(Waypoint waypoint in _waypointList)
             {
-				_waypointDataPage.Add(waypoint.name + "\n * Type: " + waypoint.marker + "\n * Dist: " + (waypoint.Distance / 1000).ToString("N1") + " km\n");
+				_waypointDataPage.Add(waypoint.name + " --- " + waypoint.marker + "\n * Dist: " + (waypoint.Distance / 1000).ToString("N1") + " km");
             }
         }
 
@@ -225,28 +434,7 @@ namespace IngameScript
         }
 
 
-		// DISPLAY DATA // Write current data to individual data display depending on current page
-		static void DisplayData(DataDisplay display)
-		{
-			switch (display.CurrentPage)
-			{
-				case 0:
-					DisplayPlanetData(display);
-					break;
-				case 1:
-					DisplayWaypointData(display);
-					break;
-				case 2:
-					DisplayGPSInput(display);
-					break;
-				case 3:
-					DisplayClipboard(display);
-					break;/*
-				case 4:
-					DisplayMapData(display.Surface);
-					break;*/
-			}
-		}
+
 
 
 		// UPDATE DISPLAYS // Write current data to all Data Displays
@@ -256,127 +444,8 @@ namespace IngameScript
 				return;
 
 			foreach (DataDisplay display in _dataDisplays)
-				DisplayData(display);
+				display.DisplayPage();
 		}
-
-
-		// DISPLAY GPS INPUT //
-		static void DisplayGPSInput(DataDisplay display)
-		{
-			if (_cycleStep > 0)
-				return;
-
-			StringBuilder menuText = new StringBuilder();
-			display.Surface.ReadText(menuText, false);
-
-			string output = menuText.ToString();
-
-			if (!output.Contains(GPS_INPUT))
-				output = BuildPageHeader(display, GPS_INPUT) + "~Input Terminal Coords Below This Line~";
-
-			display.Surface.WriteText(output);
-		}
-
-
-		// DISPLAY PLANET DATA // - Writes Planet Title and Data to Display Surface
-		static void DisplayPlanetData(DataDisplay display)
-		{
-			display.Surface.WriteText(BuildPageHeader(display, PLANET_TITLE) + GetScrolledPage(display, _planetDataPage));
-
-			// old code
-			#region
-			/*
-			string output = "// PLANET LIST" + SLASHES;
-			List<string> planetData = new List<string>();
-			planetData.Add("Charted: " + _planetList.Count + "	  Uncharted: " + _unchartedList.Count);
-
-			if (_planets)
-			{
-				foreach (Planet planet in _planetList)
-				{
-					float surfaceDistance = (Vector3.Distance(planet.position, _myPos) - planet.radius) / 1000;
-					if (surfaceDistance < 0)
-					{
-						surfaceDistance = 0;
-					}
-					string planetEntry;
-					if (planet.name.ToUpper() == _activePlanet.ToUpper())
-					{
-						planetEntry = ">>> ";
-					}
-					else
-					{
-						planetEntry = "		   ";
-					}
-
-					planetEntry += planet.name + "	  R: " + abbreviateValue(planet.radius) + "m    dist: " + surfaceDistance.ToString("N1") + "km";
-
-					planetData.Add(planetEntry);
-				}
-			}
-
-			if (_unchartedList.Count > 0)
-			{
-				string unchartedHeader = "\n----Uncharted Planets----";
-				planetData.Add(unchartedHeader);
-				foreach (Planet uncharted in _unchartedList)
-				{
-					float unchartedDistance = Vector3.Distance(_myPos, uncharted.GetPoint(1)) / 1000;
-
-					string unchartedEntry = "  " + uncharted.name + "	 dist: " + unchartedDistance.ToString("N1") + "km";
-
-					planetData.Add(unchartedEntry);
-				}
-			}
-
-			output += ScrollToString(planetData);
-
-
-			surface.WriteText(output);
-			*/
-			#endregion
-		}
-
-
-		// DISPLAY WAYPOINT DATA //
-		static void DisplayWaypointData(DataDisplay display)
-		{
-			display.Surface.WriteText(BuildPageHeader(display, WAYPOINT_TITLE) + GetScrolledPage(display, _waypointDataPage));
-			// old code
-			#region
-			/*
-			string output = "// WAYPOINT LIST" + SLASHES;
-
-			List<string> waypointData = new List<string>();
-			waypointData.Add("Count: " + _waypointList.Count);
-
-			if (_waypointList.Count > 0)
-			{
-				foreach (Waypoint waypoint in _waypointList)
-				{
-					float distance = Vector3.Distance(_myPos, waypoint.position) / 1000;
-					string status = "Active";
-					if (!waypoint.isActive)
-					{
-						status = "Inactive";
-					}
-					string waypointEntry = "		";
-					if (waypoint.name.ToUpper() == _activeWaypoint.ToUpper())
-					{
-						waypointEntry = ">>> ";
-					}
-					waypointEntry += waypoint.name + "	  " + waypoint.marker + "	  " + status + "	  dist: " + distance.ToString("N1") + "km";
-					waypointData.Add(waypointEntry);
-				}
-			}
-
-			output += ScrollToString(waypointData);
-
-			surface.WriteText(output);
-			*/
-			#endregion
-		}
-
 
 		// DISPLAY MAP DATA //
 		/*
@@ -431,14 +500,7 @@ namespace IngameScript
 		*/
 
 
-		// DISPLAY CLIPBOARD //
-		static void DisplayClipboard(DataDisplay display)
-		{
-			display.Surface.WriteText(BuildPageHeader(display, "CLIPBOARD") + "\n" + _clipboard);
 
-			//string output = "// CLIPBOARD" + SLASHES + "\n\n" + _clipboard;
-			//surface.WriteText(output);
-		}
 
 
 		// SCROLL TO STRING // Returns string from List based on ScrollIndex
@@ -499,37 +561,8 @@ namespace IngameScript
 		}
 
 
-		// WRITE PAGE HEADER //
-		static string BuildPageHeader(DataDisplay display, string pageTitle)
-        {
-			string displayNumber = "";
-
-			if(_dataDisplays.Count > 1)
-				displayNumber = "[" + display.IDNumber + "] ";
-
-			return "// " + displayNumber + pageTitle + SLASHES + "\n";
-        }
 
 
-		// GET SCROLLED PAGE // -  Return page data from string list, based on display's scroll index
-		static string GetScrolledPage(DataDisplay display, List<string> entries)
-        {
-			string output = "";
 
-			if(entries.Count > 0)
-            {
-				// If display is scrolled past the end of the page, set it to the end of the page
-				if (display.ScrollIndex >= entries.Count)
-                {
-					display.ScrollIndex = entries.Count - 1;
-					SetKey(display.Owner, DATA_HEADER, DATA_SCROLL, display.ScrollIndex.ToString());
-				}
-
-				for (int i = display.ScrollIndex; i < entries.Count; i++)
-					output += entries[i] + "\n\n";
-			}
-
-			return output;
-        }
 	}
 }
