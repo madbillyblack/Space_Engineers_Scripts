@@ -86,6 +86,52 @@ namespace IngameScript
                     DataDisplay = null;
             }
 
+            // Check for Display //
+            void CheckForDisplay()
+            {
+                if(DataDisplay == null && _dataDisplays.Count > 0)
+                {
+                    DataDisplay = GetDataDisplay(0);
+                    SetKey(Controller, MENU_HEAD, DATA_KEY, "0");
+                }
+            }
+
+            // Next Data Displa //
+            public void NextDataDisplay()
+            {
+                CheckForDisplay();
+
+                if (_dataDisplays.Count < 2)
+                    return;
+
+                int index = DataDisplay.IDNumber + 1;
+
+                if (index >= _dataDisplays.Count)
+                    index = 0;
+
+                DataDisplay = GetDataDisplay(index);
+                SetKey(Controller, MENU_HEAD, DATA_KEY, index.ToString());
+            }
+
+
+            // Previous Data Display //
+            public void PreviousDataDisplay()
+            {
+                CheckForDisplay();
+
+                if (_dataDisplays.Count < 2)
+                    return;
+
+                int index = DataDisplay.IDNumber - 1;
+
+                if (index < 0)
+                    index = _dataDisplays.Count - 1;
+
+                DataDisplay = GetDataDisplay(index);
+                SetKey(Controller, MENU_HEAD, DATA_KEY, index.ToString());
+            }
+
+
             // Initialize Surface //
             public void InitializeSurface()
             {
@@ -169,6 +215,25 @@ namespace IngameScript
 
                 DataDisplay.ScrollUp();
             }
+            /*
+            // Active Planet To Data //
+            void ActivePlanetToData(StarMap map)
+            {
+                if (DataDisplay == null || map.ActivePlanet == null)
+                    return;
+
+                DataDisplay.SetActivePlanet(map.ActivePlanet.name);
+            }
+
+            // Active Waypoint To Data //
+            void ActiveWaypointToData(StarMap map)
+            {
+                if (DataDisplay == null || map.ActiveWaypoint == null)
+                    return;
+
+                DataDisplay.SetActiveWaypoint(map.ActiveWaypoint.name);
+            }
+            */
         }
 
 
@@ -185,7 +250,7 @@ namespace IngameScript
                 foreach(IMyShipController controller in controllers)
                 {
                     // Check that controller has MENU_TAG and same Grid ID
-                    if(controller.CustomName.Contains(MENU_TAG) && GetKey(controller, SHARED, "Grid_ID", "") == _gridID)
+                    if(controller.CustomName.Contains(MENU_TAG) && GetKey(controller, SHARED, "Grid_ID", _gridID) == _gridID)
                     {
                         MapMenu menu = MenuFromController(controller);
                         if (menu != null && menu.Surface != null)

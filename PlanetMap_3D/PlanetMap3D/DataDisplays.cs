@@ -49,6 +49,8 @@ namespace IngameScript
 			public int IDNumber;
 			public IMyTerminalBlock Owner;
 			public IMyTextSurface Surface;
+			//string ActivePlanetName;
+			//string ActiveWaypointName;
 			
 			// Constructor //
 			public DataDisplay(IMyTerminalBlock block)
@@ -58,6 +60,9 @@ namespace IngameScript
 				CurrentPage = ParseInt(GetKey(block, DATA_HEADER, DATA_PAGE, "0"), 0);
 				ScrollIndex = ParseInt(GetKey(block, DATA_HEADER, DATA_SCROLL, "0"), 0);
 
+				//ActivePlanetName = "";
+				//ActiveWaypointName = "";
+				
                 try
                 {
 					Surface = (Owner as IMyTextSurfaceProvider).GetSurface(ScreenIndex);
@@ -283,16 +288,20 @@ namespace IngameScript
 			// DISPLAY GPS INPUT //
 			public void DisplayGPSInput()
 			{
+				/*
 				if (_cycleStep > 0)
-					return;
+					return;*/
 
+				// Gets previous displayed text
 				StringBuilder menuText = new StringBuilder();
 				Surface.ReadText(menuText, false);
 
 				string output = menuText.ToString();
 
-				if (!output.Contains(GPS_INPUT))
-					output = BuildPageHeader(GPS_INPUT) + "~Input Terminal Coords Below This Line~";
+				string title = BuildPageHeader(GPS_INPUT);
+
+				if (!(output.StartsWith(title)))
+					output = title + "~Input Terminal Coords Below This Line~";
 
 				Surface.WriteText(output);
 			}
@@ -328,6 +337,21 @@ namespace IngameScript
 					break;*/
 				}
 			}
+			/*
+			// SET ACTIVE WAYPOINT //
+			public void SetActiveWaypoint(string waypointName)
+            {
+				ActivePlanetName = "";
+				ActiveWaypointName = waypointName;
+            }
+
+			// Set Active Planet //
+			public void SetActivePlanet(string planetName)
+            {
+				ActiveWaypointName = "";
+				ActivePlanetName = planetName;
+            }
+			*/
 		}
 
 
@@ -438,9 +462,6 @@ namespace IngameScript
         }
 
 
-
-
-
 		// UPDATE DISPLAYS // Write current data to all Data Displays
 		void UpdateDisplays()
         {
@@ -501,10 +522,6 @@ namespace IngameScript
 
 			surface.WriteText(output);
 		}
-		*/
-
-
-
 
 
 		// SCROLL TO STRING // Returns string from List based on ScrollIndex
@@ -522,7 +539,7 @@ namespace IngameScript
 
 			return output;
 		}
-
+		*/
 
 		// NEXT PAGE //
 		void NextPage(bool next)

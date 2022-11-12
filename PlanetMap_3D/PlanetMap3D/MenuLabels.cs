@@ -59,7 +59,7 @@ namespace IngameScript
            {3,""},
            {4,""},
            {5,""},
-           {6,""}
+           {6,"DATA"}
         };
 
         readonly Dictionary<int, string> _labelD = new Dictionary<int, string>()
@@ -119,7 +119,7 @@ namespace IngameScript
            {3,"<<"},
            {4,"-"},
            {5,"--"},
-           {6,""}
+           {6,"<"}
         };
 
         readonly Dictionary<int, string> _cmd6 = new Dictionary<int, string>()
@@ -129,7 +129,7 @@ namespace IngameScript
            {3,">>"},
            {4,"+"},
            {5,"++"},
-           {6,""}
+           {6,">"}
         };
 
         readonly Dictionary<int, string> _cmd7 = new Dictionary<int, string>()

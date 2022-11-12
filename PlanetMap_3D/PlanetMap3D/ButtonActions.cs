@@ -221,6 +221,7 @@ namespace IngameScript
                     map.Track("BACKWARD");
                     break;
                 case 6:
+                    menu.PreviousDataDisplay();
                     break;
             }
 
@@ -251,6 +252,7 @@ namespace IngameScript
                     map.Track("FORWARD");
                     break;
                 case 6:
+                    menu.NextDataDisplay();
                     break;
             }
 

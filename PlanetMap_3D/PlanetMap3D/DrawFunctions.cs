@@ -1062,8 +1062,14 @@ namespace IngameScript
 
 			// Label C
 			position += new Vector2(cellWidth * 2, 0);
-			if((menu.CurrentPage != 1 || _mapList.Count > 1))
-				DrawText(_labelC[page], position, fontSize * 0.9f, TextAlignment.CENTER, labelColor);
+
+			string cLabel = _labelC[page];
+			if ((menu.CurrentPage == 1 && _mapList.Count < 2) || (menu.CurrentPage == 6 && _dataDisplays.Count < 2))
+				cLabel = ""; // Blank if no maps or data displays on relevant page
+			else if (menu.CurrentPage == 6 && _dataDisplays.Count > 1 && menu.DataDisplay != null)
+				cLabel += " " + menu.DataDisplay.IDNumber; // Add Display number if in menu 6
+
+			DrawText(cLabel, position, fontSize * 0.9f, TextAlignment.CENTER, labelColor);
 
 			// Label D
 			position += new Vector2(cellWidth * 1.5f, 0);
@@ -1335,7 +1341,7 @@ namespace IngameScript
             {
 				case 5:
 				case 6:
-					if ((menu.CurrentPage == 1 && _mapList.Count < 2) || menu.CurrentPage == 6)
+					if ((menu.CurrentPage == 1 && _mapList.Count < 2) || (menu.CurrentPage == 6 && _dataDisplays.Count < 2))
 						return false;
 					break;
 				case 7:
