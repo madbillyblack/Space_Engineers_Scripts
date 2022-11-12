@@ -87,28 +87,33 @@ namespace IngameScript
             }
 
             // Check for Display //
-            void CheckForDisplay()
+            bool NewDisplayAssignment()
             {
                 if(DataDisplay == null && _dataDisplays.Count > 0)
-                {
-                    DataDisplay = GetDataDisplay(0);
-                    SetKey(Controller, MENU_HEAD, DATA_KEY, "0");
-                }
+                    return true;
+
+                return false;
             }
 
             // Next Data Displa //
             public void NextDataDisplay()
             {
-                CheckForDisplay();
+                bool newDisplay = NewDisplayAssignment();
 
                 if (_dataDisplays.Count < 2)
                     return;
 
-                int index = DataDisplay.IDNumber + 1;
+                int index;
 
-                if (index >= _dataDisplays.Count)
+                if (newDisplay)
                     index = 0;
-
+                else
+                {
+                    index = DataDisplay.IDNumber + 1;
+                    if (index >= _dataDisplays.Count)
+                        index = 0;
+                }
+                    
                 DataDisplay = GetDataDisplay(index);
                 SetKey(Controller, MENU_HEAD, DATA_KEY, index.ToString());
             }
@@ -117,16 +122,24 @@ namespace IngameScript
             // Previous Data Display //
             public void PreviousDataDisplay()
             {
-                CheckForDisplay();
+                bool newDisplay = NewDisplayAssignment();
 
                 if (_dataDisplays.Count < 2)
                     return;
 
-                int index = DataDisplay.IDNumber - 1;
+                int index;
 
-                if (index < 0)
-                    index = _dataDisplays.Count - 1;
-
+                if(newDisplay)
+                {
+                    index = 0;
+                }
+                else
+                {
+                    index = DataDisplay.IDNumber - 1;
+                    if (index < 0)
+                        index = _dataDisplays.Count - 1;
+                }
+                    
                 DataDisplay = GetDataDisplay(index);
                 SetKey(Controller, MENU_HEAD, DATA_KEY, index.ToString());
             }
