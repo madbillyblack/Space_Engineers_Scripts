@@ -27,12 +27,13 @@ namespace IngameScript
 		const string DATA_PAGE = "Current Page";
 		const string DATA_SCROLL = "Scroll Level";
 		const string SCREEN_KEY = "Screen Index";
+		const string SYSTEM_TITLE = "SYSTEM DATA";
 		const string PLANET_TITLE = "PLANETS";
 		const string WAYPOINT_TITLE = "WAYPOINTS";
 		const string GPS_INPUT = "GPS INPUT";
 		const int PAGE_LIMIT = 3;
-		const int DATA_PAGES = 4;  // Number of Data Display Pages
-		//static List<string> _dataPage0;
+		const int DATA_PAGES = 5;  // Number of Data Display Pages
+		static List<string> _systemDataPage;
 		static List<string> _planetDataPage;
 		static List<string> _waypointDataPage;
 		//static List<string> _mapDataPage;
@@ -187,6 +188,13 @@ namespace IngameScript
 				return output;
 			}
 
+			// DISPLAY STAT DATA //
+			void DisplaySystemData()
+            {
+				Surface.WriteText(BuildPageHeader(SYSTEM_TITLE) + GetScrolledPage(_systemDataPage));
+            }
+
+
 			// DISPLAY PLANET DATA // - Writes Planet Title and Data to Display Surface
 			void DisplayPlanetData()
 			{
@@ -321,15 +329,18 @@ namespace IngameScript
 				switch (CurrentPage)
 				{
 					case 0:
-						DisplayPlanetData();
+						DisplaySystemData();
 						break;
 					case 1:
-						DisplayWaypointData();
+						DisplayPlanetData();
 						break;
 					case 2:
-						DisplayGPSInput();
+						DisplayWaypointData();
 						break;
 					case 3:
+						DisplayGPSInput();
+						break;
+					case 4:
 						DisplayClipboard();
 						break;/*
 				case 4:
@@ -395,12 +406,13 @@ namespace IngameScript
         {
 			// Initialize Data Display Lists
 			//_dataPage0 = new List<string>();
-			
-			
+
+
 			//_mapDataPage = new List<string>();
 			//_dataPage4 = new List<string>();
 
 			//UpdateMapDataPage();
+			UpdateSystemDataPage();
 			UpdatePlanetDataPage();
 			UpdateWaypointDataPage();
 		}
@@ -420,6 +432,18 @@ namespace IngameScript
 					}
 				}*/
 
+
+		// UPDATE SYSTEM DATA PAGE //
+		void UpdateSystemDataPage()
+        {
+			_systemDataPage = new List<string>();
+			_systemDataPage.Add("  Command: " + _previousCommand);
+			_systemDataPage.Add("  Maps: " + _mapList.Count + " -- Data Screens: " + _dataDisplays.Count + " -- Menus: " + _mapMenus.Count);
+			_systemDataPage.Add("  Planets: " + _planetList.Count + " -- Waypoints: " + _waypointList.Count);
+			
+			_systemDataPage.Add("Messages:");
+			_systemDataPage.Add(_statusMessage);
+        }
 
 
 		// UPDATE PLANET DATA PAGE //
