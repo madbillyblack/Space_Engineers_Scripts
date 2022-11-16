@@ -44,27 +44,132 @@ namespace IngameScript
         // to learn more about ingame scripts.
 
         IMyTextSurface _surface;
-        List<string> _sprites;
+        List<IMyCameraBlock> _cameras;
+        string _castData;
+        double _castRange;
+        int _counter = 0;
 
+        #region
+        // PRORGRAM //
         public Program()
         {
             _surface = Me.GetSurface(0);
             _surface.ContentType = ContentType.TEXT_AND_IMAGE;
-            _sprites = new List<string>();
-            _surface.GetSprites(_sprites);
+
+            _cameras = new List<IMyCameraBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyCameraBlock>(_cameras);
+
+            _castData = "";
+            Runtime.UpdateFrequency = UpdateFrequency.Update10;
+        }
+
+
+        // SAVE //
+        public void Save(){}
+        #endregion
+
+        #region
+        // MAIN //
+        public void Main(string argument, UpdateType updateSource)
+        {
+            _counter++;
+            // Clear surface from last run
+            _surface.WriteText(_counter.ToString() + "\n");
+
+            //PrintSpriteList();
+
+            if (_cameras.Count < 1)
+            { 
+                DisplayMessage("NO CAMERAS FOUND!");
+                return;
+            }
+
+            IMyCameraBlock camera = _cameras[0];
+            camera.EnableRaycast = true;
+
+            DisplayMessage(camera.CustomName);
+
+
+            double range = camera.RaycastDistanceLimit;
+            string rangeString;
+            if (range < 0)
+            {
+                rangeString = "INF";
+                _castRange = camera.AvailableScanRange;
+            }
+                
+            else
+            {
+                rangeString = range.ToString("N1");
+                _castRange = range;
+            }
+                
+            DisplayMessage("  Range: " + camera.AvailableScanRange.ToString("N1"));
+            DisplayMessage(" Time: " + camera.RaycastTimeMultiplier);
+            
+
+            if(argument.ToUpper() == "CAST")
+            {
+                CastRay(camera);
+            }
+
+            DisplayMessage(_castData);
+        }
+        #endregion
+
+
+
+        #region
+        // CAST RAY //
+        void CastRay(IMyCameraBlock camera)
+        {
+            UpdateCastData(camera.Raycast(_castRange, 0, 0));
+        }
+
+
+        void UpdateCastData(MyDetectedEntityInfo entity)
+        {
+            
+            _castData = "TARGET INFO:\n";
+            if (entity.IsEmpty())
+            {
+                _castData += "  Miss";
+                return;
+            }
+                
+
+           Vector3D? hitposition = entity.HitPosition;
+
+            if (hitposition == null)
+            {
+                _castData = ("Ray Cast Error");
+                return;
+            }
+
+           Vector3D center = entity.Position;
+           double radius = Vector3D.Distance((Vector3D) hitposition, center);
+
+            _castData += "  Name: " + entity.Name + "\n  Type: " + entity.Type.ToString() + "\n  Radius: " + radius.ToString("N1") +"\n  Center:\n    X:" + center.X + "\n    Y:" + center.Y + "\n    " + center.Z;
+        }
+
+
+        // PRINT SPRITE LIST //
+        void PrintSpriteList()
+        {
+            List<string> sprites = new List<string>();
+            _surface.GetSprites(sprites);
+
             _surface.WriteText("");
-            foreach (string sprite in _sprites)
+            foreach (string sprite in sprites)
                 _surface.WriteText(sprite + "\n", true);
         }
 
-        public void Save()
+        // DISPLAY MESSAGE //
+        void DisplayMessage(string message)
         {
-
+            Echo(message);
+            _surface.WriteText(message + "\n", true);
         }
-
-        public void Main(string argument, UpdateType updateSource)
-        {  
-
-        }
+        #endregion
     }
 }
