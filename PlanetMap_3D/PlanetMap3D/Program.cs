@@ -75,7 +75,6 @@ namespace IngameScript
 
 
 		// OTHER CONSTANTS //
-		const string SYNC_TAG = "[SYNC]"; //Tag used to indicate master sync computer.
 		const int BAR_HEIGHT = 20; //Default height of parameter bars
 		const int TOP_MARGIN = 8; // Margin for top and bottom of frame
 		const int SIDE_MARGIN = 15; // Margin for sides of frame
@@ -214,8 +213,12 @@ namespace IngameScript
 
 			Echo("////// PLANET MAP 3D ////// " + _cycleSpinner[_cycleStep % _cycleSpinner.Length]);
 			Echo(_previousCommand);
-			Echo(_statusMessage);
-			Echo("Cycle Offset" + _cycleOffset);
+			Echo(_statusMessage + "\n");
+
+			// Display Data from Planet Scanning System
+			DisplayScanData();
+
+			//Echo("Cycle Offset" + _cycleOffset);
 
 			Echo("MAP Count: " + _mapList.Count);
 
@@ -1150,7 +1153,7 @@ namespace IngameScript
 			// Decide which stage of the cycle will be executed based on this grid's offset
 			int stage = (_cycleStep - _cycleOffset + CYCLE_LENGTH) % CYCLE_LENGTH;
 
-			Echo("Cycle Stage: " + stage);
+			//Echo("Cycle Stage: " + stage);
 
 			switch (stage)
             {					

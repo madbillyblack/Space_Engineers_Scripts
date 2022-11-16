@@ -63,6 +63,7 @@ namespace IngameScript
 			public Vector3 point4;
 			public Vector2 mapPos;
 			public bool isCharted;
+			public int SampleCount;
 
 
 			public Planet(String planetString)
@@ -73,10 +74,15 @@ namespace IngameScript
 
 				transformedCoords = new List<Vector3>();
 
-				if (planetData.Length < 8)
+				if (planetData.Length < 9)
 				{
-					return;
+					if (planetData.Length == 8)
+						SampleCount = 0;
+					else
+						return;
 				}
+				else
+					SampleCount = ParseInt(planetData[8], 0);
 
 				color = planetData[3];
 
@@ -159,7 +165,7 @@ namespace IngameScript
 
 			public override String ToString()
 			{
-				String[] planetData = new String[8];
+				String[] planetData = new String[9];
 
 				planetData[0] = name;
 				planetData[1] = Vector3ToString(position);
@@ -184,8 +190,10 @@ namespace IngameScript
 					}
 				}
 
+				planetData[8] = SampleCount.ToString();
+
 				String planetString = planetData[0];
-				for (int i = 1; i < 8; i++)
+				for (int i = 1; i < 9; i++)
 				{
 					planetString = planetString + ";" + planetData[i];
 				}

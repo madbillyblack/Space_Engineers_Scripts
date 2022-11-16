@@ -22,6 +22,9 @@ namespace IngameScript
 {
     partial class Program
     {
+		const string SYNC_TAG = "[SYNC]"; //Tag used to indicate master sync computer.
+
+
 		// SYNC // Switch function for all sync commands
 		void sync(string cmdArg, string argData)
 		{

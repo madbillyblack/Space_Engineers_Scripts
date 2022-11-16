@@ -57,7 +57,10 @@ namespace IngameScript
 				}
 			}
 
-			List<StarMap> maps = ArgToMaps(argData);
+
+			List<StarMap> maps = new List<StarMap>();
+			if(!(cmdArg.Contains("SCAN")))
+				maps = ArgToMaps(argData);
 
 			switch (command)
 			{
@@ -232,9 +235,14 @@ namespace IngameScript
 				case "SET": // GRID_ID
 					if (cmdArg.Contains("GRID") || cmdArg.Contains("TAGS"))
 						SetGridID(argData);
+					else if (cmdArg.Contains("SCAN"))
+						SetScanRange(argData);
 					break;
 				case "BUTTON":
 					ButtonPress(cmdArg, argData);
+					break;
+				case "SCAN": // PLANET
+					ScanPlanet(argData);
 					break;
 				default:
 					_statusMessage = "UNRECOGNIZED COMMAND!";

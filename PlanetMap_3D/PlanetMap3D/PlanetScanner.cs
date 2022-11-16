@@ -77,35 +77,45 @@ namespace IngameScript
             else
                 flasher = "";
 
-            Echo("\nPLANET SCANNER" + flasher);
+            Echo("PLANET SCANNER" + flasher);
 
-            if(_scannerActive)
+            if(_scanCamera == null)
+            {
+                Echo("  Inoperable: No Scan Camera Specified.\n");
+            }
+            else if(_scannerActive)
             {
                 string planetToScan;
 
                 if (_scanPlanet == _activePlanet)
-                    planetToScan = " Rescanning Planet:\n    ";
+                    planetToScan = "* Rescanning Planet:\n    ";
                 else
-                    planetToScan = "  Scanning New Planet:\n    ";
+                    planetToScan = "* Scanning New Planet:\n    ";
 
-                Echo(planetToScan);
-                Echo("  " + _scanCamera.CustomName
-                    + "\n  Range: " + (_scanRange / 1000).ToString("N1"));
+                Echo(planetToScan + _scanPlanet);
+                Echo("* " + _scanCamera.CustomName
+                    + "\n  - Range: " + (_scanRange / 1000).ToString("N1") + "km");
 
                 string countdown;
                 int milliseconds = _scanCamera.TimeUntilScan(_scanRange);
 
                 TimeSpan time = TimeSpan.FromMilliseconds(milliseconds);
                 if (milliseconds < 1)
-                    countdown = "    READY";
+                {
+                    // Make READY flash opposite of SCANNING
+                    if (_lightOn)
+                        countdown = "  -";
+                    else
+                        countdown = "  - READY";
+                }
                 else
-                    countdown = "  Ready in: " + time.ToString("c");//should print time in format "00:00:00"
+                    countdown = "  - Ready in: " + time.ToString(@"hh\:mm\:ss");//should print time in format "00:00:00"
 
-                Echo(countdown);
+                Echo(countdown + "\n");
             }
             else
             {
-                Echo("  Inactive");
+                Echo("  Inactive\n");
             }
         }
 
@@ -113,7 +123,12 @@ namespace IngameScript
         // SCAN PLANET //
         void ScanPlanet(string planetName)
         {
-            if(string.IsNullOrEmpty(planetName))
+            if(_scanCamera == null)
+            {
+                _statusMessage += "No Scan Camera Specified!";
+                return;
+            }
+            else if(string.IsNullOrEmpty(planetName))
             {
                 _statusMessage += "No PLANET NAME specified for SCAN!";
             }
@@ -158,20 +173,39 @@ namespace IngameScript
         // NEW PLANET FROM CAST //
         void NewPlanetFromCast(MyDetectedEntityInfo planetInfo)
         {
-            DisableScanner();
             DisplayScannedPlanet(planetInfo, true);
 
-            // TODO - Build/Add new planet
+            Vector3D? contact = planetInfo.HitPosition;
+
+            if (contact == null)
+            {
+                _statusMessage += "Hip Position Error\n";
+                return;
+            }
+
+            Vector3D samplePoint = (Vector3D)contact;
+            Vector3D center = planetInfo.Position;
+
+            double radius = Vector3D.Distance(samplePoint, center);
+            string planetString = _scanPlanet + ";" + Vector3ToString(center) + ";" + ((int)radius).ToString() + ";GRAY;;;;;0";
+
+            _planetList.Add(new Planet(planetString));
+
+            DisableScanner();
+            DataToLog();
         }
 
 
         // UPDATE PLANET FROM CAST //
         void UpdatePlanetFromCast(MyDetectedEntityInfo planetInfo)
         {
-            DisableScanner();
+            
             DisplayScannedPlanet(planetInfo, false);
 
             // TODO - Update Planet Parameters
+
+            DataToLog();
+            DisableScanner();
         }
 
 
@@ -191,6 +225,16 @@ namespace IngameScript
             _scannerActive = false;
             _scanPlanet = "";
             _scanCamera.EnableRaycast = false;
+        }
+
+
+        // SET SCAN DISTANCE //
+        void SetScanRange(string arg)
+        {
+            _scanRange = ParseFloat(arg, DV_SCAN) * 1000;
+            
+            if (_scanRange < 0)
+                _scanRange *= -1;
         }
     }
 }

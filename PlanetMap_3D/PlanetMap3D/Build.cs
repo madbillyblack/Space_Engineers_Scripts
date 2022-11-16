@@ -165,6 +165,8 @@ namespace IngameScript
 
 			AssignMenus();
 
+			SetScanCamera();
+
 			// Start with indicator light on.
 			_lightOn = true;
 		}
