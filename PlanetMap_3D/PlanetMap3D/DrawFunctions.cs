@@ -225,6 +225,9 @@ namespace IngameScript
 				float headingY = heading.Y;
 				float headingZ = heading.Z;
 
+				// Adjust the apparent distance of aft
+				float aftScale = SHIP_SCALE * (1 + 0.125f * headingZ);
+
 				//Get the Ratio of direction Vector's apparent vs actual magnitudes.
 				float shipLength = (float)1.33 * SHIP_SCALE * (float)Math.Sqrt(headingX * headingX + headingY * headingY) / (float)Math.Sqrt(headingX * headingX + headingY * headingY + headingZ * headingZ);
 
@@ -234,40 +237,40 @@ namespace IngameScript
 
 				Vector2 offset = new Vector2((float)Math.Sin(shipAngle), (float)Math.Cos(shipAngle) * -1);
 				position += offset * shipLength / 4;
-				position -= new Vector2(SHIP_SCALE / 2, 0);
+				position -= new Vector2(aftScale / 2, 0);
 				Vector2 startPosition = position;
 
 				position -= new Vector2(2, 0);
 
 				//Outline
-				DrawTexture("Triangle", position, new Vector2(SHIP_SCALE + 4, shipLength + 4), shipAngle, Color.Black);
+				DrawTexture("Triangle", position, new Vector2(aftScale + 4, shipLength + 4), shipAngle, Color.Black);
 
-				float aftHeight = SHIP_SCALE - shipLength / (float)1.33;
+				float aftHeight = aftScale - shipLength / (float)1.33;
 
 				position = startPosition;
 				position -= offset * shipLength / 2;
 				position -= new Vector2(2, 0);
 
-				DrawTexture("Circle", position, new Vector2(SHIP_SCALE + 4, aftHeight + 4), shipAngle, Color.Black);
+				DrawTexture("Circle", position, new Vector2(aftScale + 4, aftHeight + 4), shipAngle, Color.Black);
 
 				position = startPosition;
 
 				// Ship Body
-				DrawTexture("Triangle", position, new Vector2(SHIP_SCALE, shipLength), shipAngle, bodyColor);
+				DrawTexture("Triangle", position, new Vector2(aftScale, shipLength), shipAngle, bodyColor);
 
 				if (headingZ < 0)
 				{
 					position = startPosition;
 					position -= offset * shipLength / 2;
 
-					DrawTexture("Circle", position, new Vector2(SHIP_SCALE, aftHeight), shipAngle, bodyColor);
+					DrawTexture("Circle", position, new Vector2(aftScale, aftHeight), shipAngle, bodyColor);
 				}
 
 				// Canopy
 				position = startPosition;
 				position += offset * shipLength / 8;
-				position += new Vector2(SHIP_SCALE / 4, 0);
-				DrawTexture("Triangle", position, new Vector2(SHIP_SCALE * 0.5f, shipLength * 0.5f), shipAngle, canopyColor);
+				position += new Vector2(aftScale / 4, 0);
+				DrawTexture("Triangle", position, new Vector2(aftScale * 0.5f, shipLength * 0.5f), shipAngle, canopyColor);
 
 
 
@@ -300,16 +303,16 @@ namespace IngameScript
 
 				position = startPosition;
 				position -= offset * shipLength / 8;
-				position += new Vector2(SHIP_SCALE / 4, 0);
-				DrawTexture("SemiCircle", position, new Vector2(SHIP_SCALE * 0.5f, aftHeight * 0.5f * edgeMod), shipAngle, edgeColor);
+				position += new Vector2(aftScale / 4, 0);
+				DrawTexture("SemiCircle", position, new Vector2(aftScale * 0.5f, aftHeight * 0.5f * edgeMod), shipAngle, edgeColor);
 
 				// Canopy Mask
 				position = startPosition;
-				position += new Vector2((1 - rollScale) * SHIP_SCALE / 2, 0);
+				position += new Vector2((1 - rollScale) * aftScale / 2, 0);
 				position += offset * shipLength * 0.25f;
 				position -= rollOffset * 0.7f * shipLength / 3;
 
-				DrawTexture("Triangle", position, new Vector2(SHIP_SCALE * rollScale, shipLength * maskMod), shipAngle - rollAngle, bodyColor);
+				DrawTexture("Triangle", position, new Vector2(aftScale * rollScale, shipLength * maskMod), shipAngle - rollAngle, bodyColor);
 
 				//Aft Plume
 				if (headingZ >= 0)
@@ -317,12 +320,12 @@ namespace IngameScript
 					position = startPosition;
 					position -= offset * shipLength / 2;
 
-					DrawTexture("Circle", position, new Vector2(SHIP_SCALE, aftHeight), shipAngle, aftColor);
+					DrawTexture("Circle", position, new Vector2(aftScale, aftHeight), shipAngle, aftColor);
 
 					position -= offset * shipLength / 16;
-					position += new Vector2(SHIP_SCALE / 6, 0);
+					position += new Vector2(aftScale / 6, 0);
 
-					DrawTexture("Circle", position, new Vector2(SHIP_SCALE * 0.67f, aftHeight * 0.67f), shipAngle, plumeColor);
+					DrawTexture("Circle", position, new Vector2(aftScale * 0.67f, aftHeight * 0.67f), shipAngle, plumeColor);
 
 					/* //CHASE ROLL INDICATOR
 					if(map.mode == "CHASE"){
