@@ -153,27 +153,13 @@ namespace IngameScript
         // CAST RAY //
         void CastRay(string planetName)
         {
-            MyDetectedEntityInfo entity = _scanCamera.Raycast(_scanRange, 0, 0);
+            MyDetectedEntityInfo planetInfo = _scanCamera.Raycast(_scanRange, 0, 0);
 
-            if(entity.IsEmpty() || entity.Type.ToString().ToUpper() != "PLANET")
+            if(planetInfo.IsEmpty() || planetInfo.Type.ToString().ToUpper() != "PLANET")
             {
-
+                _statusMessage += "Scan Missed\n";
+                return;
             }
-            else if(_scanPlanet == _activePlanet)
-            {
-                UpdatePlanetFromCast(entity);
-            }
-            else
-            {
-                NewPlanetFromCast(entity);
-            }
-        }
-
-
-        // NEW PLANET FROM CAST //
-        void NewPlanetFromCast(MyDetectedEntityInfo planetInfo)
-        {
-            DisplayScannedPlanet(planetInfo, true);
 
             Vector3D? contact = planetInfo.HitPosition;
 
@@ -185,25 +171,54 @@ namespace IngameScript
 
             Vector3D samplePoint = (Vector3D)contact;
             Vector3D center = planetInfo.Position;
-
             double radius = Vector3D.Distance(samplePoint, center);
-            string planetString = _scanPlanet + ";" + Vector3ToString(center) + ";" + ((int)radius).ToString() + ";GRAY;;;;;0";
 
+
+            if (_scanPlanet == _activePlanet)
+                UpdatePlanetFromCast(planetInfo, center, (float) radius);
+            else
+                NewPlanetFromCast(planetInfo, center, (float)radius);
+
+        }
+
+
+        // NEW PLANET FROM CAST //
+        void NewPlanetFromCast(MyDetectedEntityInfo planetInfo, Vector3D center, float radius)
+        {
+
+            string planetString = _scanPlanet + ";" + Vector3ToString(center) + ";" + radius.ToString("0.#") + ";GRAY;;;;;1";
             _planetList.Add(new Planet(planetString));
 
+            DisplayScannedPlanet(planetInfo, true);
             DisableScanner();
             DataToLog();
         }
 
 
         // UPDATE PLANET FROM CAST //
-        void UpdatePlanetFromCast(MyDetectedEntityInfo planetInfo)
+        void UpdatePlanetFromCast(MyDetectedEntityInfo planetInfo, Vector3D center, float radius)
         {
+            Planet planet = GetPlanet(_activePlanet);
+            if(planet == null)
+            {
+                _statusMessage += "Rescanning Error for planet: " + _activePlanet;
+                return;
+            }
+
+            // Account for old format error
+            if (planet.SampleCount == 0)
+                planet.SampleCount = 1;
+
+            float oldRadius = planet.radius;
+            float newRadius = ((oldRadius * planet.SampleCount) + radius) / (planet.SampleCount + 1);
+
+            // Count new sample point
+            planet.SampleCount++;
+
+            float difference = (newRadius - oldRadius)/1000;
             
             DisplayScannedPlanet(planetInfo, false);
-
-            // TODO - Update Planet Parameters
-
+            _statusMessage += "    Radius change of " + difference.ToString("0.#") + "km\n";
             DataToLog();
             DisableScanner();
         }
