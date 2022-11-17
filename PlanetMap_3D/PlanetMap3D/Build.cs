@@ -161,8 +161,9 @@ namespace IngameScript
 				}
 			}
 
+			UpdateMapDataPage();
 			AssignDataDisplays();
-
+			
 			AssignMenus();
 
 			SetScanCamera();

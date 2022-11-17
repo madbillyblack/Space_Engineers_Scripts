@@ -24,7 +24,7 @@ namespace IngameScript
     partial class Program
     {
         const string SCAN_TAG = "[Scan Cam]";
-        const float DV_SCAN = 100;
+        const float DV_SCAN = 10;
         const string RANGE_KEY = "Scan Range";
     
         IMyCameraBlock _scanCamera;

@@ -817,7 +817,9 @@ namespace IngameScript
 
 			// Create background sprite
 			Color gridColor = new Color(0, 64, 0);
-			DrawTexture("Grid", new Vector2(0, map.Viewport.Width / 2), map.Viewport.Size, 0, gridColor);
+			Vector2 position = map.Viewport.Center - new Vector2(map.Viewport.Width / 2, 0);
+			DrawTexture("Grid", position, map.Viewport.Size, 0, gridColor);
+			//DrawTexture("Grid", new Vector2(0, map.Viewport.Width / 2), map.Viewport.Size, 0, gridColor);
 
 			//DRAW PLANETS
 			List<Planet> displayPlanets = new List<Planet>();

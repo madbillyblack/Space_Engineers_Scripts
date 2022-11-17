@@ -31,12 +31,12 @@ namespace IngameScript
 		const string PLANET_TITLE = "PLANETS";
 		const string WAYPOINT_TITLE = "WAYPOINTS";
 		const string GPS_INPUT = "GPS INPUT";
-		const int PAGE_LIMIT = 3;
-		const int DATA_PAGES = 5;  // Number of Data Display Pages
+		const int PAGE_LIMIT = 5;
+		const int DATA_PAGES = 6;  // Number of Data Display Pages
 		static List<string> _systemDataPage;
 		static List<string> _planetDataPage;
 		static List<string> _waypointDataPage;
-		//static List<string> _mapDataPage;
+		static List<string> _mapDataPage;
 		//List<string> _dataPage4;
 		static List<DataDisplay> _dataDisplays;
 
@@ -323,9 +323,18 @@ namespace IngameScript
 				//surface.WriteText(output);
 			}
 
+
+			// DISPLAY MAP DATA //
+			void DisplayMapData()
+            {
+				Surface.WriteText(BuildPageHeader("MAP SCREENS") + GetScrolledPage(_mapDataPage));
+            }
+
+
 			// DISPLAY DATA // Write current data to individual data display depending on current page
 			public void DisplayPage()
 			{
+				_statusMessage = "Data Page set to " + CurrentPage;
 				switch (CurrentPage)
 				{
 					case 0:
@@ -342,10 +351,10 @@ namespace IngameScript
 						break;
 					case 4:
 						DisplayClipboard();
-						break;/*
-				case 4:
-					DisplayMapData(display.Surface);
-					break;*/
+						break;
+					case 5:
+						DisplayMapData();
+						break;
 				}
 			}
 			/*
@@ -405,13 +414,6 @@ namespace IngameScript
 		void UpdatePageData()
         {
 			// Initialize Data Display Lists
-			//_dataPage0 = new List<string>();
-
-
-			//_mapDataPage = new List<string>();
-			//_dataPage4 = new List<string>();
-
-			//UpdateMapDataPage();
 			UpdateSystemDataPage();
 			UpdatePlanetDataPage();
 			UpdateWaypointDataPage();
@@ -419,18 +421,20 @@ namespace IngameScript
 
 
 		// UPDATE MAP DATA PAGE //
-		/*		static void UpdateMapDataPage()
-				{
-					//_dataPage0.Add("// MAP DATA" + SLASHES);
+		static void UpdateMapDataPage()
+		{
+			_mapDataPage = new List<string>();
 
-					if (_mapList.Count < 1)
-						return;
+			if (_mapList.Count < 1)
+					return;
 
-					foreach(StarMap map in _mapList)
-					{
-						_mapDataPage.Add("Map " + map.Number + "\n * Size: " + map.Viewport.Width + " x " + map.Viewport.Height);
-					}
-				}*/
+			foreach(StarMap map in _mapList)
+			{
+				_mapDataPage.Add("Map " + map.Number + " --- " + map.Viewport.Width + " x " + map.Viewport.Height
+							+ "\n * Block: " + map.Block.CustomName
+							+ "\n * Screen: " + map.Index);
+			}
+		}
 
 
 		// UPDATE SYSTEM DATA PAGE //
@@ -495,6 +499,10 @@ namespace IngameScript
 			foreach (DataDisplay display in _dataDisplays)
 				display.DisplayPage();
 		}
+
+
+
+
 
 		// DISPLAY MAP DATA //
 		/*
