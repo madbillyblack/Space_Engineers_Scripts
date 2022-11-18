@@ -244,6 +244,10 @@ namespace IngameScript
 				case "SCAN": // PLANET
 					ScanPlanet(argData);
 					break;
+				case "LOAD": // VANILLA PLANETS
+					if (cmdArg.Contains("VANILLA") || cmdArg.Contains("PLANETS"))
+						LoadVanillaPlanets();
+					break;
 				default:
 					_statusMessage = "UNRECOGNIZED COMMAND!";
 					break;

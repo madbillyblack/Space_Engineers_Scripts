@@ -824,16 +824,21 @@ namespace IngameScript
 			DrawTexture("Grid", position, map.Viewport.Size, 0, gridColor);
 			//DrawTexture("Grid", new Vector2(0, map.Viewport.Width / 2), map.Viewport.Size, 0, gridColor);
 
+			Echo("A");
+
 			//DRAW PLANETS
 			List<Planet> displayPlanets = new List<Planet>();
-
-			foreach (Planet planet in _planetList)
-			{
-				if (planet.transformedCoords.Count == _mapList.Count && planet.transformedCoords[map.Number].Z > map.FocalLength)
+			if(_planetList.Count > 0)
+            {
+				foreach (Planet planet in _planetList)
 				{
-					displayPlanets.Add(planet);
+					if (planet.transformedCoords.Count == _mapList.Count && planet.transformedCoords[map.Number].Z > map.FocalLength)
+					{
+						displayPlanets.Add(planet);
+					}
 				}
 			}
+			Echo("B");
 
 			DrawPlanets(displayPlanets, map);
 			//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
@@ -842,13 +847,13 @@ namespace IngameScript
 				DrawWaypoints(map);
 				PlotUncharted(map);
 			}
-
+			Echo("C");
 			// DRAW SHIP
 			if (map.ShowShip)
 			{
 				DrawShip(map, displayPlanets);
 			}
-
+			Echo("D");
 			// MAP INFO
 			if (map.ShowInfo)
 			{

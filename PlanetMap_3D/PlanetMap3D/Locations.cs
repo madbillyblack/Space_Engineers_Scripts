@@ -22,6 +22,17 @@ namespace IngameScript
 {
     partial class Program
     {
+		const string EARTH = "EARTHLIKE;(0,0,0);60000;GREEN;;;;;1";
+		const string MOON = "MOON;(16388,136375,-113547);9394;GRAY;;;;;1";
+		const string MARS = "MARS;(1032762,134086,1632659);64606;RUST;;;;;1";
+		const string EUROPA = "EUROPA;(916410,16373.72,1616441);9600;LIGHTBLUE;;;;;1";
+		const string ALIEN = "ALIEN;(131110.8,131220.6,5731113);60894.06;MAGENTA;;;;;1";
+		const string TITAN = "TITAN;(36385.04,226384,5796385);9238.224;CYAN;;;;;1";
+		const string TRITON = "TRITON;(-284463.6,-2434464,365536.2);38128.81;WHITE;;;;;1";
+		const string PERTAM = "PERTAM;(-3967231.50,-32231.50,-767231.50);30066.50;BROWN;;;;;1";
+		
+		
+
 		static List<Planet> _planetList;
 		static List<Planet> _unchartedList;
 		static List<Waypoint> _waypointList;
@@ -594,5 +605,27 @@ namespace IngameScript
 				}
 			}
 		}
+
+
+		// LOAD VANILLA PLANETS //
+		void LoadVanillaPlanets()
+        {
+			// List of Vanilla Planet Data Strings
+			List<string> planetData = new List<string> { EARTH, MOON, MARS, EUROPA, ALIEN, TITAN, TRITON, PERTAM };
+			
+			foreach(string entry in planetData)
+            {
+				// Check to see if planet with same name is already logged
+				string planetName = entry.Split(';')[0];
+				Planet planet = GetPlanet(planetName);
+
+				if (planet == null)
+					_planetList.Add(new Planet(entry));
+				else
+					_statusMessage += "Planet of name \"" + planetName + "\" already logged.\n";
+            }
+
+			DataToLog();
+        }
 	}
 }
