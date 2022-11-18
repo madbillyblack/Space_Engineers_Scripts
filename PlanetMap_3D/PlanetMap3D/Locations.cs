@@ -31,7 +31,6 @@ namespace IngameScript
 		const string TRITON = "TRITON;(-284463.6,-2434464,365536.2);38128.81;WHITE;;;;;1";
 		const string PERTAM = "PERTAM;(-3967231.50,-32231.50,-767231.50);30066.50;BROWN;;;;;1";
 		
-		
 
 		static List<Planet> _planetList;
 		static List<Planet> _unchartedList;
@@ -227,7 +226,7 @@ namespace IngameScript
 				SetPoint(3, zMajor);
 			}
 
-			public void CalculatePlanet()
+			public void Calculate()
 			{
 				//GET TVALUES OF ALL POINTS THEN ADD TO ARRAY
 				double t1 = TValue(point1);
@@ -304,7 +303,7 @@ namespace IngameScript
         {
 			if (!_planets)
 			{
-				_statusMessage = "No Planets Logged!";
+				AddMessage("No Planets Logged!");
 				return;
 			}
 
@@ -390,7 +389,7 @@ namespace IngameScript
 
 			if (gpsCount < 1)
 			{
-				_statusMessage = "No Waypoints Logged!";
+				AddMessage("No Waypoints Logged!");
 				return;
 			}
 
@@ -622,7 +621,7 @@ namespace IngameScript
 				if (planet == null)
 					_planetList.Add(new Planet(entry));
 				else
-					_statusMessage += "Planet of name \"" + planetName + "\" already logged.\n";
+					AddMessage("Planet of name \"" + planetName + "\" already logged.\n");
             }
 
 			DataToLog();

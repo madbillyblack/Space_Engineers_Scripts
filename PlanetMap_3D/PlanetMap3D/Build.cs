@@ -25,7 +25,8 @@ namespace IngameScript
 		// BUILD // - Updates map info from map's custom data
 		void Build()
 		{
-			_statusMessage = "";
+			//_statusMessage = "";
+			_messages = new List<string>();
 
 			//Grid Tag
 			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
@@ -44,16 +45,16 @@ namespace IngameScript
 			_mapTag = _mapLog.Get(PROGRAM_HEAD, "MAP_Tag").ToString();
 
 			//Index of screen to print map to.
-			_mapIndex = _mapLog.Get(PROGRAM_HEAD, "MAP_Index").ToUInt16();
+			//_mapIndex = _mapLog.Get(PROGRAM_HEAD, "MAP_Index").ToUInt16();
 
 			//Index of screen to print map data to.
-			_dataIndex = _mapLog.Get(PROGRAM_HEAD, "Data_Index").ToUInt16();
+			//_dataIndex = _mapLog.Get(PROGRAM_HEAD, "Data_Index").ToUInt16();
 
 			//Name of reference block
 			_refName = _mapLog.Get(PROGRAM_HEAD, "Reference_Name").ToString();
 
 			//Name of Data Display Block
-			_dataName = _mapLog.Get(PROGRAM_HEAD, "Data_Tag").ToString();
+			//_dataName = _mapLog.Get(PROGRAM_HEAD, "Data_Tag").ToString();
 
 			//Slow Mode
 			_slowMode = ParseBool(GetKey(Me, PROGRAM_HEAD, "Slow_Mode", "false"));
@@ -93,7 +94,7 @@ namespace IngameScript
 					}
 				}
 			}
-
+			/*
 			if (_dataName != "" || _dataName != "<name>")
 			{
 				GridTerminalSystem.SearchBlocksOfName(_dataName, _dataBlocks);
@@ -103,11 +104,11 @@ namespace IngameScript
 					_dataSurface = dataBlock.GetSurface(_dataIndex);
 					_dataSurface.ContentType = ContentType.TEXT_AND_IMAGE;
 				}
-			}
+			}*/
 
 			if (_refName == "" || _refName == "<name>")
 			{
-				_statusMessage = "WARNING: No Reference Block Name Specified!\nMay result in false orientation!";
+				AddMessage("WARNING: No Reference Block Name Specified!\nMay result in false orientation!");
 				_refBlock = Me as IMyTerminalBlock;
 			}
 			else
@@ -121,7 +122,7 @@ namespace IngameScript
 				}
 				else
 				{
-					_statusMessage = "WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!";
+					AddMessage("WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!");
 					_refBlock = Me as IMyTerminalBlock;
 				}
 				Echo("A");

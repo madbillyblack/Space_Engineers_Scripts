@@ -93,18 +93,11 @@ namespace IngameScript
 		MyIni _mapLog = new MyIni();
 		string _mapTag;
 		string _refName;
-		string _dataName;
+		//string _dataName;
 		string _previousCommand;
-		int _mapIndex;
-		int _dataIndex;
-		int _pageIndex;
-		int _scrollIndex = 0;
-		//int _azSpeed;
-		//int _planetIndex;
-		//bool _gpsActive;
-		//bool _showMapParameters;
-		//bool _showShip;
-		//bool _showNames;
+		//int _dataIndex;
+		//int _pageIndex;
+		//int _scrollIndex = 0;
 		bool _lightOn;
 		static bool _planets;
 		bool _planetToLog;
@@ -113,57 +106,29 @@ namespace IngameScript
 		static int _cycleStep;
 		static int _cycleOffset;
 		int _sortCounter = 0;
-		//float _brightnessMod;
-		static string _statusMessage;
+		//static string _statusMessage;
 		string _activePlanet = "";
 		string _activeWaypoint = "";
 		static string _clipboard = "";
-		//Vector3 _trackSpeed;
-		Vector3 _origin = new Vector3(0, 0, 0);
+		//readonly Vector3 _origin = new Vector3(0, 0, 0);
 		Vector3 _myPos;
 		List<IMyTerminalBlock> _mapBlocks;
-		List<IMyTerminalBlock> _dataBlocks = new List<IMyTerminalBlock>();
+		//List<IMyTerminalBlock> _dataBlocks;
+		
+		static List<string> _messages;
+		const int MESSAGE_LIMIT = 20;
+
 		Planet _nearestPlanet;
 
-		IMyTextSurface _dataSurface;
+		//IMyTextSurface _dataSurface;
 		IMyTerminalBlock _refBlock;
 
 
 		// PROGRAM ///////////////////////////////////////////////////////////////////////////////////////////////
 		public Program()
 		{
-			/*
-			//Load Saved Variables
-			String[] loadData = Storage.Split('\n');
-			if (loadData.Length > 8)
-			{
-				//Previously Compiled
-				_planetIndex = int.Parse(loadData[0]);
-				_gpsActive = bool.Parse(loadData[1]);
-				_azSpeed = int.Parse(loadData[2]);
-				_trackSpeed = StringToVector3(loadData[3]);
-				_showMapParameters = bool.Parse(loadData[4]);
-				_showNames = bool.Parse(loadData[5]);
-				_pageIndex = int.Parse(loadData[6]);
-				_brightnessMod = float.Parse(loadData[7]);
-				_showShip = bool.Parse(loadData[8]);
-			}
-			else
-			{
-				//Newly Compiled
-				_planetIndex = 0;
-				_gpsActive = true;
-				_azSpeed = 0;
-				_trackSpeed = new Vector3(0, 0, 0);
-				_showMapParameters = true;
-				_showNames = true;
-				_pageIndex = 0;
-				_brightnessMod = 1;
-				_showShip = true;
-			}
-			*/
 			_cycleOffset = Math.Abs((int) Me.CubeGrid.EntityId % CYCLE_LENGTH);
-			_pageIndex = 0;
+			//_pageIndex = 0;
 
 			string oldData = Me.CustomData;
 			string newData = DEFAULT_SETTINGS;
@@ -197,10 +162,7 @@ namespace IngameScript
 
 		public void Save()
 		{
-			//String saveData = _planetIndex.ToString() + "\n" + _gpsActive.ToString() + "\n" + _azSpeed.ToString();
-			//saveData += "\n" + Vector3ToString(_trackSpeed) + "\n" + _showMapParameters.ToString() + "\n" + _showNames.ToString();
-			//saveData += "\n" + _pageIndex.ToString() + "\n" + _brightnessMod.ToString() + "\n" + _showShip.ToString();
-
+			//String saveData = "";
 			//Storage = saveData;
 		}
 
@@ -212,31 +174,22 @@ namespace IngameScript
 			_myPos = _refBlock.GetPosition();
 
 			Echo("////// PLANET MAP 3D ////// " + _cycleSpinner[_cycleStep % _cycleSpinner.Length]);
-			Echo(_previousCommand);
-			Echo(_statusMessage + "\n");
+			Echo("Cmd: " + _previousCommand + "\n");
+
+			//Echo(_statusMessage + "\n");
+			EchoMessages();
 
 			// Display Data from Planet Scanning System
 			DisplayScanData();
 
 			//Echo("Cycle Offset" + _cycleOffset);
 
-			Echo("MAP Count: " + _mapList.Count);
-
-			if (_dataSurface == null)
-			{
-				Echo("Data Screen: Unassigned");
-			}
-			else
-			{
-				Echo("Data Screen: Active");
-			}
-
-			Echo("Active Menus " + _mapMenus.Count);
+			Echo("\nMAPS: " + _mapList.Count + "\nMENUS: " + _mapMenus.Count + "\nDATA DISPLAYS: " + _dataDisplays.Count);
 
 			if (_planets)
 			{
 				Echo("Planet Count: " + _planetList.Count);
-				Planet planet = _planetList[_planetList.Count - 1];
+				//Planet planet = _planetList[_planetList.Count - 1];
 			}
 			else
 			{
@@ -282,11 +235,10 @@ namespace IngameScript
 				SetGridID("");
 
 				if (_mapList.Count < 1)
-					_statusMessage = "NO MAP DISPLAY FOUND!\nPlease add tag " + _mapTag + " to desired block.\n";
+					AddMessage("NO MAP DISPLAY FOUND!\nPlease add tag " + _mapTag + " to desired block.");
 			}
 
-			if (_dataBlocks.Count > 0)
-				UpdateDisplays();
+			UpdateDisplays();
 		}
 
 
@@ -322,7 +274,7 @@ namespace IngameScript
 						map.ShowInfo = setState(map.ShowInfo, state);
 						break;
 					default:
-						_statusMessage = "INVALID DISPLAY COMMAND";
+						AddMessage("INVALID DISPLAY COMMAND");
 						break;
 				}
 
@@ -367,7 +319,7 @@ namespace IngameScript
 			}
 
 			String planetData = "";
-			if (_planets)
+			if (_planetList.Count > 0)
 			{
 				foreach (Planet planet in _planetList)
 				{
@@ -398,7 +350,7 @@ namespace IngameScript
 			string[] waypointData = clipboard.Split(':');
 			if (waypointData.Length < 6)
 			{
-				_statusMessage = "Does not match GPS format:/nGPS:<name>:X:Y:Z:<color>:";
+				AddMessage("Does not match GPS format:/nGPS:<name>:X:Y:Z:<color>:");
 				return;
 			}
 
@@ -413,8 +365,8 @@ namespace IngameScript
 			Waypoint waypoint = GetWaypoint(waypointName);
 			if (waypoint == null)
 			{
-				_statusMessage = "No waypoint " + waypointName + " found!";
-				return _statusMessage;
+				AddMessage("No waypoint " + waypointName + " found!");
+				return _messages[_messages.Count - 1];
 			}
 
 			Vector3 location = waypoint.position;
@@ -429,7 +381,7 @@ namespace IngameScript
 		{
 			if (waypointName == "")
 			{
-				_statusMessage = "No Waypoint Name Provided! Please Try Again.\n";
+				AddMessage("No Waypoint Name Provided! Please Try Again.");
 				return;
 			}
 
@@ -437,7 +389,7 @@ namespace IngameScript
 
 			if (waypoint != null)
 			{
-				_statusMessage = "Waypoint " + waypointName + " already exists! Please choose different name.\n";
+				AddMessage("Waypoint " + waypointName + " already exists! Please choose different name.");
 				return;
 			}
 
@@ -482,10 +434,10 @@ namespace IngameScript
 					break;
 				case 3:
 					_waypointList.Remove(waypoint);
-					_statusMessage = "Waypoint deleted: " + waypointName + " \n";
+					AddMessage("Waypoint deleted: " + waypointName);
 					break;
 				default:
-					_statusMessage = "Invalid waypoint state int!\n";
+					AddMessage("Invalid waypoint state int!");
 					break;
 			}
 
@@ -527,7 +479,7 @@ namespace IngameScript
 
 			if (args.Length < 2)
 			{
-				_statusMessage = "INSUFFICIENT ARGUMENT!\nPlease include arguments <DISTANCE(in meters)> <WAYPOINT NAME>";
+				AddMessage("INSUFFICIENT ARGUMENT!\nPlease include arguments <DISTANCE(in meters)> <WAYPOINT NAME>");
 				return;
 			}
 
@@ -547,21 +499,21 @@ namespace IngameScript
 				return;
 			}
 
-			_statusMessage = "DISTANCE ARGEMENT FAILED!\nPlease include Distance in meters. Do not include unit.";
+			AddMessage("DISTANCE ARGEMENT FAILED!\nPlease include Distance in meters. Do not include unit.");
 		}
 
 
 		// PLANET ERROR //
 		void PlanetError(string name)
 		{
-			_statusMessage = "No planet " + name + " found!";
+			AddMessage("No planet " + name + " found!");
 		}
 
 
 		// WAYPOINT ERROR //
 		void WaypointError(string name)
 		{
-			_statusMessage = "No waypoint " + name + " found!";
+			AddMessage("No waypoint " + name + " found!");
 		}
 
 
@@ -572,7 +524,7 @@ namespace IngameScript
 
 			if (planet != null)
 			{
-				_statusMessage = "Planet " + planetName + " already exists! Please choose different name.\n";
+				AddMessage("Planet " + planetName + " already exists! Please choose different name.");
 				return;
 			}
 
@@ -599,7 +551,7 @@ namespace IngameScript
 			_unchartedList.Remove(alderaan);
 			_planetList.Remove(alderaan);
 			DataToLog();
-            _statusMessage = "PLANET DELETED: " + planetName + "\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.\n";
+			AddMessage("PLANET DELETED: " + planetName + "\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.");
 
 
             _planets = _planetList.Count > 0;
@@ -645,7 +597,7 @@ namespace IngameScript
 					_planets = true;
 				}
 
-				planet.CalculatePlanet();
+				planet.Calculate();
 				_planetToLog = true; // Specify that DataToLog needs to be called in CycleExecute.
 
 				foreach (StarMap map in _mapList)
@@ -666,7 +618,7 @@ namespace IngameScript
 
 			if (args.Length < 2)
 			{
-				_statusMessage = "Insufficient Argument.  COLOR_PLANET requires COLOR and PLANET NAME.\n";
+				AddMessage("Insufficient Argument.  COLOR_PLANET requires COLOR and PLANET NAME.");
 			}
 			else
 			{
@@ -682,7 +634,7 @@ namespace IngameScript
 				if (planet != null)
 				{
 					planet.color = planetColor;
-					_statusMessage = planetName + " color changed to " + planetColor + ".\n";
+					AddMessage(planetName + " color changed to " + planetColor);
 					DataToLog();
 					return;
 				}
@@ -700,7 +652,7 @@ namespace IngameScript
 
 			if (args.Length < 2)
 			{
-				_statusMessage = "Insufficient Argument.  COLOR_WAYPOINT requires COLOR and WAYPOINT NAME.\n";
+				AddMessage("Insufficient Argument.  COLOR_WAYPOINT requires COLOR and WAYPOINT NAME.");
 			}
 			else
 			{
@@ -716,7 +668,7 @@ namespace IngameScript
 				if (waypoint != null)
 				{
 					waypoint.color = waypointColor;
-					_statusMessage = waypointName + " color changed to " + waypointColor + ".\n";
+					AddMessage(waypointName + " color changed to " + waypointColor);
 					DataToLog();
 					return;
 				}
@@ -1243,5 +1195,28 @@ namespace IngameScript
 			_mapList.Add(map);
 			UpdateMap(map);
 		}
+
+
+		// ADD MESSAGE //
+		static void AddMessage(string message)
+        {
+			_messages.Add(message);
+
+			if (_messages.Count >= MESSAGE_LIMIT)
+				_messages.RemoveAt(0);
+        }
+
+		
+		// ECHO MESSAGES //
+		void EchoMessages()
+        {
+			if (_messages.Count < 1)
+				return;
+
+			Echo("-- MESSAGES --");
+
+			for (int i = _messages.Count - 1; i > -1; i--)
+				Echo("* " + _messages[i]);
+        }
 	}
 }

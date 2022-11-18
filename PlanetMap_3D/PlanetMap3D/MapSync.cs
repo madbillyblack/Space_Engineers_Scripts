@@ -40,7 +40,7 @@ namespace IngameScript
 			}
 			else
 			{
-				_statusMessage = "Invalid Sync Command!";
+				AddMessage("Invalid Sync Command!");
 			}
 		}
 
@@ -51,7 +51,7 @@ namespace IngameScript
 
 			if (Me.CustomName.Contains(SYNC_TAG))
 			{
-				_statusMessage = "SYNC Requests cannot be made from SYNC terminal!\n";
+				AddMessage("SYNC Requests cannot be made from SYNC terminal!");
 				return;
 			}
 
@@ -60,13 +60,13 @@ namespace IngameScript
 
 			if (syncBlocks.Count < 1)
 			{
-				_statusMessage = "NO MAP MASTER FOUND.\nPlease add tag '" + SYNC_TAG + "' to the map computer's name on your station or capital ship.\n";
+				AddMessage("NO MAP MASTER FOUND.\nPlease add tag '" + SYNC_TAG + "' to the map computer's name on your station or capital ship.");
 				return;
 			}
 
 			if (syncBlocks.Count > 1)
 			{
-				_statusMessage = "Multiple blocks found with tag '" + SYNC_TAG + "'! Please resolve conflict before syncing.\n";
+				AddMessage("Multiple blocks found with tag '" + SYNC_TAG + "'! Please resolve conflict before syncing.");
 				return;
 			}
 
@@ -102,7 +102,7 @@ namespace IngameScript
 				return;
 			}
 
-			_statusMessage = "No other mapping computers available to sync!";
+			AddMessage("No other mapping computers available to sync!");
 		}
 
 
@@ -131,7 +131,7 @@ namespace IngameScript
 			syncBlock.TryRun("SYNC_ALERT " + Me.CustomName);
 			Build();
 
-			_statusMessage = "MAP DATA SYNCED\n-- Planets --\nDownloaded: " + pSync[0] + "\nUploaded: " + pSync[1] + "\n\n--Waypoints--\nDownloaded: " + wSync[0] + "\nUploaded: " + wSync[1] + "\n";
+			AddMessage("MAP DATA SYNCED\n-- Planets --\nDownloaded: " + pSync[0] + "\nUploaded: " + pSync[1] + "\n\n--Waypoints--\nDownloaded: " + wSync[0] + "\nUploaded: " + wSync[1]);
 		}
 
 
@@ -222,7 +222,7 @@ namespace IngameScript
 				return false;
 			}
 
-			_statusMessage = "SYNC Block '" + sync.CustomName + "' contains no map settings! Please ensure that SYNC Block is also running this script!\n";
+			AddMessage("SYNC Block '" + sync.CustomName + "' contains no map settings! Please ensure that SYNC Block is also running this script!");
 			return true;
 		}
 
@@ -243,26 +243,29 @@ namespace IngameScript
 			{
 				senderData = "UNKNOWN";
 			}
-			_statusMessage = "Origin Grid ID: " + senderData + "\n";
+			AddMessage("Origin Grid ID: " + senderData);
 		}
 
 
 		// LOG BATCH //  Logs multiple pasted terminal coordinates.
-		void LogBatch()
+		void LogBatch(string arg)
 		{
-			if (_dataSurface == null)
+			int number = ParseInt(arg, 0);
+			DataDisplay display = GetDataDisplay(number);
+
+			if (display.Surface == null)
 			{
-				_statusMessage = "No DATA DISPLAY Screen Designated!";
+				AddMessage("No DATA DISPLAY Screen Designated!");
 				return;
 			}
 
-			if (_pageIndex != 0)
+			if (display.CurrentPage != INPUT_PAGE)
 			{
-				_statusMessage = "Please navigate to GPS INPUT page before running LOG_BATCH command.";
+				AddMessage("Please navigate to GPS INPUT page before running LOG_BATCH command.");
 			}
 
 			StringBuilder inputText = new StringBuilder();
-			_dataSurface.ReadText(inputText, false);
+			display.Surface.ReadText(inputText, false);
 			string[] inputs = inputText.ToString().Split('\n');
 
 			List<string> outputs = new List<string>();
@@ -285,7 +288,7 @@ namespace IngameScript
 				output += item + "\n";
 			}
 
-			_dataSurface.WriteText(output);
+			display.Surface.WriteText(output);
 		}
 	}
 }

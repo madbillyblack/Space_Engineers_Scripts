@@ -130,7 +130,7 @@ namespace IngameScript
 			{
 				if (Mode.ToUpper() == "PLANET" || Mode.ToUpper() == "CHASE" || Mode.ToUpper() == "ORBIT")
 				{
-					_statusMessage = "Yaw controls locked in PLANET, CHASE & ORBIT modes.";
+					AddMessage("Yaw controls locked in PLANET, CHASE & ORBIT modes.");
 					return;
 				}
 				Azimuth = DegreeAdd(Azimuth, angle);
@@ -158,7 +158,7 @@ namespace IngameScript
 				}
 				else
 				{
-					_statusMessage = "Pitch controls locked in PLANET & ORBIT modes.";
+					AddMessage("Pitch controls locked in PLANET & ORBIT modes.");
 				}
 
 				SetMapKey( ALT_KEY, Altitude.ToString());
@@ -221,7 +221,7 @@ namespace IngameScript
 				}
 				else
 				{
-					_statusMessage = "Translation controls only available in FREE & WORLD modes.";
+					AddMessage("Translation controls only available in FREE & WORLD modes.");
 				}
 
 				SetMapKey( CENTER_KEY, Vector3ToString(Center));
@@ -252,7 +252,7 @@ namespace IngameScript
 						dZ -= MOVE_STEP;
 						break;
 					default:
-						_statusMessage = "Error with Track Command";
+						AddMessage("Error with Track Command");
 						break;
 				}
 
@@ -486,7 +486,7 @@ namespace IngameScript
 
 			if (surfaceCount < 1)
             {
-				_statusMessage += "Block \"" + mapBlock.CustomName + "\" has no screens!\n";
+				AddMessage("Block \"" + mapBlock.CustomName + "\" has no screens!");
 				return mapsOut;
             }
 			else if (surfaceCount == 1)
@@ -546,7 +546,7 @@ namespace IngameScript
 					}
 					else
 					{
-						_statusMessage = "screenID " + argValue + " outside range of Map List!";
+						AddMessage("screenID " + argValue + " outside range of Map List!");
 					}
 				}
 			}
@@ -560,7 +560,7 @@ namespace IngameScript
 		{
 			if (maps.Count < 1)
 			{
-				_statusMessage = "No relevant maps found! Check arguments!";
+				AddMessage("No relevant maps found! Check arguments!");
 				return true;
 			}
 

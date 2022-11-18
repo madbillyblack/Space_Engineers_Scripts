@@ -69,10 +69,12 @@ namespace IngameScript
         // DISPLAY SCAN DATA //
         void DisplayScanData()
         {
+            if (!_scannerActive)
+                return;
             // Print title and flasher
             string flasher;
 
-            if (_scannerActive && _lightOn)
+            if (_lightOn)
                 flasher = " - SCANNING -";
             else
                 flasher = "";
@@ -83,7 +85,7 @@ namespace IngameScript
             {
                 Echo("  Inoperable: No Scan Camera Specified.\n");
             }
-            else if(_scannerActive)
+            else
             {
                 string planetToScan;
 
@@ -113,10 +115,6 @@ namespace IngameScript
 
                 Echo(countdown + "\n");
             }
-            else
-            {
-                Echo("  Inactive\n");
-            }
         }
 
 
@@ -125,12 +123,12 @@ namespace IngameScript
         {
             if(_scanCamera == null)
             {
-                _statusMessage += "No Scan Camera Specified!";
+                AddMessage("No Scan Camera Specified!");
                 return;
             }
             else if(string.IsNullOrEmpty(planetName))
             {
-                _statusMessage += "No PLANET NAME specified for SCAN!";
+                AddMessage("No PLANET NAME specified for SCAN!");
             }
             else if(_scannerActive)
             {
@@ -157,7 +155,7 @@ namespace IngameScript
 
             if(planetInfo.IsEmpty() || planetInfo.Type.ToString().ToUpper() != "PLANET")
             {
-                _statusMessage += "Scan Missed\n";
+                AddMessage("Scan Missed");
                 return;
             }
 
@@ -165,7 +163,7 @@ namespace IngameScript
 
             if (contact == null)
             {
-                _statusMessage += "Hip Position Error\n";
+                AddMessage("Hit Position Error");
                 return;
             }
 
@@ -201,7 +199,7 @@ namespace IngameScript
             Planet planet = GetPlanet(_activePlanet);
             if(planet == null)
             {
-                _statusMessage += "Rescanning Error for planet: " + _activePlanet;
+                AddMessage("Rescanning Error for planet: " + _activePlanet);
                 return;
             }
 
@@ -218,7 +216,7 @@ namespace IngameScript
             float difference = (newRadius - oldRadius)/1000;
             
             DisplayScannedPlanet(planetInfo, false);
-            _statusMessage += "    Radius change of " + difference.ToString("0.#") + "km\n";
+            AddMessage("Radius change of " + difference.ToString("0.#") + "km");
             DataToLog();
             DisableScanner();
         }
@@ -228,9 +226,9 @@ namespace IngameScript
         void DisplayScannedPlanet(MyDetectedEntityInfo planetInfo, bool newPlanet)
         {
             if(newPlanet)
-                _statusMessage += "New Planet Logged:\n  " + _scanPlanet;
+                AddMessage("New Planet Logged:\n  " + _scanPlanet);
             else
-                _statusMessage += "Planet Updated:\n  " + _scanPlanet;
+                AddMessage("Planet Updated:\n  " + _scanPlanet);
         }
 
 

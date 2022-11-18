@@ -274,7 +274,7 @@ namespace IngameScript
                         }
                         else
                         {
-                            _statusMessage += "MENU SURFACE ERROR! - Could not add Menu for controller \n\"" + controller.CustomName + "\"\n* Please check LCD Index in Custom Data for Controller.\n";
+                            AddMessage("MENU SURFACE ERROR! - Could not add Menu for controller \n\"" + controller.CustomName + "\"\n* Please check LCD Index in Custom Data for Controller.");
                         }
                     }
                 }
@@ -324,7 +324,7 @@ namespace IngameScript
             }
             catch
             {
-                _statusMessage += "Menu Surface could not be retrieved from block " + blockName + "\n";
+                AddMessage("Menu Surface could not be retrieved from block " + blockName);
                 return null;
             }
         }
@@ -358,7 +358,7 @@ namespace IngameScript
 
             if(menu == null)
             {
-                _statusMessage += "No Menu " + arg + " found!\n";
+                AddMessage("No Menu " + arg + " found!");
                 return;
             }
 

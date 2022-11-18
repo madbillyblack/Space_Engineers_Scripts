@@ -29,7 +29,7 @@ namespace IngameScript
 
             if(menu == null)
             {
-                _statusMessage += "Invalid Button Call: " + buttonIndex + "," + menuIndex + "\n";
+                AddMessage("Invalid Button Call: " + buttonIndex + "," + menuIndex);
                 return;
             }
 
@@ -38,7 +38,7 @@ namespace IngameScript
             
             if(map == null)
             {
-                _statusMessage += "Invalid Index for Menu " + menu.IDNumber + "!\n- Index:" + menu.CurrentMapIndex;
+                AddMessage("Invalid Index for Menu " + menu.IDNumber + "!\n- Index:" + menu.CurrentMapIndex);
                 return;
             }
 
@@ -67,7 +67,7 @@ namespace IngameScript
                     Action7(menu, map);
                     break;
                 default:
-                    _statusMessage += "No Such Button \"" + buttonIndex + "\"!\n";
+                    AddMessage("No Such Button \"" + buttonIndex + "\"!");
                     break;
             }
         }

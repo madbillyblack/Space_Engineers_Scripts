@@ -36,7 +36,7 @@ namespace IngameScript
 				command = args[0];
 
 			string argData = "";
-			_statusMessage = "";
+			//_statusMessage = "";
 			_activeWaypoint = "";
 			_previousCommand = "Command: " + argument;
 
@@ -183,7 +183,7 @@ namespace IngameScript
 					}
 					else if (cmdArg == "BATCH")
 					{
-						LogBatch();
+						LogBatch(argData);
 					}
 					else
 					{
@@ -205,10 +205,10 @@ namespace IngameScript
 					break;
 				case "PLOT_JUMP":
 					PlotJumpPoint(argData);
-					break;
+					break;/*
 				case "SCROLL":
 					pageScroll(cmdArg);
-					break;
+					break;*/
 				case "BRIGHTEN":
 					BrightenMaps(maps, true);
 					break;
@@ -249,7 +249,7 @@ namespace IngameScript
 						LoadVanillaPlanets();
 					break;
 				default:
-					_statusMessage = "UNRECOGNIZED COMMAND!";
+					AddMessage("UNRECOGNIZED COMMAND!");
 					break;
 			}
 
@@ -277,10 +277,10 @@ namespace IngameScript
 					break;
 				case "MODE":
 					CycleModeForList(maps, state);
-					break;
+					break;/*
 				case "PAGE":
 					NextPage(state);
-					break;
+					break;*/
 				case "MENU":
 					NextMenu(data, state);
 					break;

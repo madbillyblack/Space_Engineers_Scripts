@@ -31,8 +31,17 @@ namespace IngameScript
 		const string PLANET_TITLE = "PLANETS";
 		const string WAYPOINT_TITLE = "WAYPOINTS";
 		const string GPS_INPUT = "GPS INPUT";
+		
+		// DATA PAGE CONSTANTS
 		const int PAGE_LIMIT = 5;
-		const int DATA_PAGES = 6;  // Number of Data Display Pages
+		const int SYSTEM_PAGE = 0;
+		const int PLANET_PAGE = 1;
+		const int WAYPOINT_PAGE = 2;
+		const int INPUT_PAGE = 3;
+		const int CLIPBOARD_PAGE = 4;
+		const int MAP_PAGE = 5;
+
+		//const int DATA_PAGES = 6;  // Number of Data Display Pages
 		static List<string> _systemDataPage;
 		static List<string> _planetDataPage;
 		static List<string> _waypointDataPage;
@@ -71,22 +80,9 @@ namespace IngameScript
 				catch
                 {
 					Surface = null;
-					_statusMessage += "Screen Index Error for Data Display on\n\"" + Owner.CustomName + "\"\n";
+					AddMessage("Screen Index Error for Data Display on\n\"" + Owner.CustomName + "\"");
                 }
 			}
-
-			// Set Scroll //
-/*			void SetScroll(int scroll)
-            {
-				_statusMessage = "Data [" + IDNumber + "] scrolled from entry " + ScrollIndex + " to " + scroll + ".";
-				ScrollIndex = scroll;
-
-				if (ScrollIndex < 0)
-					ScrollIndex = 0;
-
-				SetKey(Owner, DATA_HEADER, DATA_SCROLL, ScrollIndex.ToString());
-				DisplayPage();
-			}*/
 
 			// Scroll Down //
 			public void ScrollDown()
@@ -107,23 +103,6 @@ namespace IngameScript
 				//SetScroll(ScrollIndex--);
             }
 
-			// Set Page //
-/*			void SetPage(int page)
-            {
-				_statusMessage = "Data [" + IDNumber + "] changed from page " + CurrentPage + " to " + page + ".";
-
-				SetScroll(0);
-				CurrentPage = page;
-
-				if (CurrentPage > PAGE_LIMIT)
-					CurrentPage = 0;
-				else if (CurrentPage < 0)
-					CurrentPage = PAGE_LIMIT;
-
-				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
-				DisplayPage();
-			}*/
-
 			// Next Page //
 			public void NextPage()
             {
@@ -137,7 +116,6 @@ namespace IngameScript
 				SetKey(Owner, DATA_HEADER, DATA_SCROLL, "0");
 
 				DisplayPage();
-				//SetPage(CurrentPage++);
 			}
 
 			// Previous Page //
@@ -153,7 +131,6 @@ namespace IngameScript
 				SetKey(Owner, DATA_HEADER, DATA_SCROLL, "0");
 
 				DisplayPage();
-				//SetPage(CurrentPage--);
 			}
 
 			// WRITE PAGE HEADER //
@@ -199,59 +176,6 @@ namespace IngameScript
 			void DisplayPlanetData()
 			{
 				Surface.WriteText(BuildPageHeader(PLANET_TITLE) + GetScrolledPage(_planetDataPage));
-
-				// old code
-				#region
-				/*
-				string output = "// PLANET LIST" + SLASHES;
-				List<string> planetData = new List<string>();
-				planetData.Add("Charted: " + _planetList.Count + "	  Uncharted: " + _unchartedList.Count);
-
-				if (_planets)
-				{
-					foreach (Planet planet in _planetList)
-					{
-						float surfaceDistance = (Vector3.Distance(planet.position, _myPos) - planet.radius) / 1000;
-						if (surfaceDistance < 0)
-						{
-							surfaceDistance = 0;
-						}
-						string planetEntry;
-						if (planet.name.ToUpper() == _activePlanet.ToUpper())
-						{
-							planetEntry = ">>> ";
-						}
-						else
-						{
-							planetEntry = "		   ";
-						}
-
-						planetEntry += planet.name + "	  R: " + abbreviateValue(planet.radius) + "m    dist: " + surfaceDistance.ToString("N1") + "km";
-
-						planetData.Add(planetEntry);
-					}
-				}
-
-				if (_unchartedList.Count > 0)
-				{
-					string unchartedHeader = "\n----Uncharted Planets----";
-					planetData.Add(unchartedHeader);
-					foreach (Planet uncharted in _unchartedList)
-					{
-						float unchartedDistance = Vector3.Distance(_myPos, uncharted.GetPoint(1)) / 1000;
-
-						string unchartedEntry = "  " + uncharted.name + "	 dist: " + unchartedDistance.ToString("N1") + "km";
-
-						planetData.Add(unchartedEntry);
-					}
-				}
-
-				output += ScrollToString(planetData);
-
-
-				surface.WriteText(output);
-				*/
-				#endregion
 			}
 
 			// DISPLAY WAYPOINT DATA //
@@ -318,9 +242,6 @@ namespace IngameScript
 			void DisplayClipboard()
 			{
 				Surface.WriteText(BuildPageHeader("CLIPBOARD") + "\n" + _clipboard);
-
-				//string output = "// CLIPBOARD" + SLASHES + "\n\n" + _clipboard;
-				//surface.WriteText(output);
 			}
 
 
@@ -334,25 +255,24 @@ namespace IngameScript
 			// DISPLAY DATA // Write current data to individual data display depending on current page
 			public void DisplayPage()
 			{
-				_statusMessage = "Data Page set to " + CurrentPage;
 				switch (CurrentPage)
 				{
-					case 0:
+					case SYSTEM_PAGE:
 						DisplaySystemData();
 						break;
-					case 1:
+					case PLANET_PAGE:
 						DisplayPlanetData();
 						break;
-					case 2:
+					case WAYPOINT_PAGE:
 						DisplayWaypointData();
 						break;
-					case 3:
+					case INPUT_PAGE:
 						DisplayGPSInput();
 						break;
-					case 4:
+					case CLIPBOARD_PAGE:
 						DisplayClipboard();
 						break;
-					case 5:
+					case MAP_PAGE:
 						DisplayMapData();
 						break;
 				}
@@ -446,7 +366,12 @@ namespace IngameScript
 			_systemDataPage.Add("  Planets: " + _planetList.Count + " -- Waypoints: " + _waypointList.Count);
 			
 			_systemDataPage.Add("Messages:");
-			_systemDataPage.Add(_statusMessage);
+
+			if (_messages.Count < 0)
+				return;
+
+			for (int i = _messages.Count - 1; i > -1; i--)
+				_systemDataPage.Add(_messages[i]);
         }
 
 
@@ -499,123 +424,5 @@ namespace IngameScript
 			foreach (DataDisplay display in _dataDisplays)
 				display.DisplayPage();
 		}
-
-
-
-
-
-		// DISPLAY MAP DATA //
-		/*
-        void DisplayMapData(IMyTextSurface surface)
-		{
-			string output = "// MAP DATA" + SLASHES;
-
-			if (_statusMessage != "")
-				output += "\n" + _statusMessage;
-
-			if (_mapBlocks.Count > 0)
-			{
-				List<string> mapData = new List<string>();
-				foreach (StarMap map in _mapList)
-				{
-					mapData.Add("MAP " + map.Number + " --- " + map.Viewport.Width.ToString("N0") + " x " + map.Viewport.Height.ToString("N0") + " --- " + map.Mode + " Mode");
-					mapData.Add("   On: " + map.Block.CustomName + "   Screen: " + map.Index);
-
-					if (map.ActivePlanetName != "")
-						mapData.Add("   Selected Planet: " + map.ActivePlanetName);
-
-					string hidden = "   Hidden:";
-					if (!map.ShowInfo)
-						hidden += " Stat-Bars ";
-
-					if (map.GpsState == 0)
-						hidden += " GPS ";
-
-					if (!map.ShowNames)
-						hidden += " Names ";
-
-					if (!map.ShowShip)
-						hidden += " Ship";
-
-					if (map.GpsState == 0 || !map.ShowInfo || !map.ShowShip && !map.ShowNames)
-						mapData.Add(hidden);
-
-					mapData.Add("   Center: " + Vector3ToString(map.Center));
-					mapData.Add("   Azimuth: " + map.Azimuth + "°   Altitude: " + map.Altitude * -1 + "°");
-					mapData.Add("   Focal Length: " + abbreviateValue(map.FocalLength) + "   Radius: " + abbreviateValue(map.RotationalRadius) + "\n");
-				}
-
-				output += ScrollToString(mapData);
-			}
-			else
-			{
-				output += "\n\n NO MAP BLOCKS TO DISPLAY!!!";
-			}
-
-			surface.WriteText(output);
-		}
-
-
-		// SCROLL TO STRING // Returns string from List based on ScrollIndex
-		string ScrollToString(List<string> dataList)
-		{
-			string output = "";
-
-			if (dataList.Count > 0 && _scrollIndex < dataList.Count)
-			{
-				for (int d = _scrollIndex; d < dataList.Count; d++)
-				{
-					output += "\n" + dataList[d];
-				}
-			}
-
-			return output;
-		}
-		*/
-
-		// NEXT PAGE //
-		void NextPage(bool next)
-		{
-			if (next)
-			{
-				_pageIndex++;
-				if (_pageIndex >= DATA_PAGES)
-					_pageIndex = 0;
-				return;
-			}
-
-			if (_pageIndex == 0)
-				_pageIndex = DATA_PAGES;
-
-			_pageIndex--;
-		}
-
-
-		// PAGE SCROLL //
-		void pageScroll(string arg)
-		{
-			switch (arg)
-			{
-				case "UP":
-					_scrollIndex--;
-					if (_scrollIndex < 0)
-						_scrollIndex = 0;
-					break;
-				case "DOWN":
-					_scrollIndex++;
-					break;
-				case "HOME":
-					_scrollIndex = 0;
-					break;
-				default:
-					_statusMessage = "INVALID SCROLL COMMAND";
-					break;
-			}
-		}
-
-
-
-
-
 	}
 }
