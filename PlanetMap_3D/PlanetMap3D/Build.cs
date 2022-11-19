@@ -125,7 +125,6 @@ namespace IngameScript
 					AddMessage("WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!");
 					_refBlock = Me as IMyTerminalBlock;
 				}
-				Echo("A");
 			}
 
 			_myPos = _refBlock.GetPosition();

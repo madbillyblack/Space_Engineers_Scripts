@@ -244,7 +244,16 @@ namespace IngameScript
         // SET SCAN DISTANCE //
         void SetScanRange(string arg)
         {
-            _scanRange = ParseFloat(arg, DV_SCAN) * 1000;
+            if (arg == "" || arg.ToUpper() == "DEFAULT")
+                _scanRange = DV_SCAN * 1000;
+            else
+                _scanRange = ParseFloat(arg, DV_SCAN) * 1000;
+
+            string range = (_scanRange/1000).ToString("0.###");
+
+            AddMessage("Scan Range set to " + range + "km");
+
+            SetKey(_scanCamera, PROGRAM_HEAD, RANGE_KEY, range);
             
             if (_scanRange < 0)
                 _scanRange *= -1;

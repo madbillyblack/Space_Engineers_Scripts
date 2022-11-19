@@ -824,8 +824,6 @@ namespace IngameScript
 			DrawTexture("Grid", position, map.Viewport.Size, 0, gridColor);
 			//DrawTexture("Grid", new Vector2(0, map.Viewport.Width / 2), map.Viewport.Size, 0, gridColor);
 
-			Echo("A");
-
 			//DRAW PLANETS
 			List<Planet> displayPlanets = new List<Planet>();
 			if(_planetList.Count > 0)
@@ -838,7 +836,6 @@ namespace IngameScript
 					}
 				}
 			}
-			Echo("B");
 
 			DrawPlanets(displayPlanets, map);
 			//DRAW WAYPOINTS & UNCHARTED SURFACE POINTS
@@ -847,13 +844,13 @@ namespace IngameScript
 				DrawWaypoints(map);
 				PlotUncharted(map);
 			}
-			Echo("C");
+
 			// DRAW SHIP
 			if (map.ShowShip)
 			{
 				DrawShip(map, displayPlanets);
 			}
-			Echo("D");
+
 			// MAP INFO
 			if (map.ShowInfo)
 			{
