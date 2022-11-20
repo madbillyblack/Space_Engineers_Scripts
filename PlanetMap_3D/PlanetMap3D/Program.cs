@@ -69,14 +69,8 @@ namespace IngameScript
 
 
 		// GLOBALS //
-		//MyIni _mapLog = new MyIni();
 		string _mapTag;
-		//string _refName;
-		//string _dataName;
 		string _previousCommand;
-		//int _dataIndex;
-		//int _pageIndex;
-		//int _scrollIndex = 0;
 		bool _lightOn;
 		static bool _planets;
 		bool _planetToLog;
@@ -85,14 +79,12 @@ namespace IngameScript
 		static int _cycleStep;
 		static int _cycleOffset;
 		int _sortCounter = 0;
-		//static string _statusMessage;
 		string _activePlanet = "";
-		string _activeWaypoint = "";
+		//string _activeWaypoint = "";
 		static string _clipboard = "";
 		//readonly Vector3 _origin = new Vector3(0, 0, 0);
 		Vector3 _myPos;
 		List<IMyTerminalBlock> _mapBlocks;
-		//List<IMyTerminalBlock> _dataBlocks;
 		
 		static List<string> _messages;
 		const int MESSAGE_LIMIT = 20;
@@ -107,34 +99,12 @@ namespace IngameScript
 		public Program()
 		{
 			_cycleOffset = Math.Abs((int) Me.CubeGrid.EntityId % CYCLE_LENGTH);
-			//_pageIndex = 0;
+
 			_planetToLog = false;
 
-			/*
-			string oldData = Me.CustomData;
-			string newData = DEFAULT_SETTINGS;
-
-			if (!oldData.Contains("[Map Settings]"))
-			{
-				if (oldData.StartsWith("["))
-				{
-					newData += oldData;
-				}
-				else
-				{
-					newData += "---\n\n" + oldData;
-				}
-				Me.CustomData = newData;
-			}*/
-
 			Build();
-			_previousCommand = "NEWLY LOADED";
 
-			// Set the continuous update frequency of this script
-			if (_slowMode)
-				Runtime.UpdateFrequency = UpdateFrequency.Update100;
-			else
-				Runtime.UpdateFrequency = UpdateFrequency.Update10;
+			_previousCommand = "NEWLY LOADED";
 		}
 
 
@@ -494,7 +464,7 @@ namespace IngameScript
 			AddMessage("No waypoint " + name + " found!");
 		}
 
-
+		/*
 		// NEW PLANET //
 		public void NewPlanet(String planetName)
 		{
@@ -512,30 +482,6 @@ namespace IngameScript
 
 			_unchartedList.Add(planet);
 			DataToLog();
-		}
-
-
-		// DELETE PLANET //
-		public void DeletePlanet(String planetName)
-		{
-			Planet alderaan = GetPlanet(planetName);
-
-			if (alderaan == null)
-			{
-				PlanetError(planetName);
-				return;
-			}
-
-			_unchartedList.Remove(alderaan);
-			_planetList.Remove(alderaan);
-			DataToLog();
-			AddMessage("PLANET DELETED: " + planetName + "\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.");
-
-
-            _planets = _planetList.Count > 0;
-
-			if (_planets)
-				_nearestPlanet = _planetList[0];
 		}
 
 
@@ -585,6 +531,30 @@ namespace IngameScript
 			}
 
 			DataToLog();
+		}*/
+
+
+		// DELETE PLANET //
+		public void DeletePlanet(String planetName)
+		{
+			Planet alderaan = GetPlanet(planetName);
+
+			if (alderaan == null)
+			{
+				PlanetError(planetName);
+				return;
+			}
+
+			//_unchartedList.Remove(alderaan);
+			_planetList.Remove(alderaan);
+			DataToLog();
+			AddMessage("PLANET DELETED: " + planetName + "\n\nDon't be too proud of this TECHNOLOGICAL TERROR you have constructed. The ability to DESTROY a PLANET is insignificant next to the POWER of the FORCE.");
+
+
+			_planets = _planetList.Count > 0;
+
+			if (_planets)
+				_nearestPlanet = _planetList[0];
 		}
 
 

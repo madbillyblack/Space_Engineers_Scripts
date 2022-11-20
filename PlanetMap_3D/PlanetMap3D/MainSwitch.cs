@@ -37,7 +37,7 @@ namespace IngameScript
 
 			string argData = "";
 			//_statusMessage = "";
-			_activeWaypoint = "";
+			//_activeWaypoint = "";
 			_previousCommand = "Command: " + argument;
 
 			// If there are multiple words in the argument. Combine the latter words into the entity name.
@@ -173,15 +173,16 @@ namespace IngameScript
 				case "PROJECT":
 					ProjectPoint(cmdArg, argData);
 					break;
-				case "NEW"://PLANET
+			/*	case "NEW"://PLANET
 					NewPlanet(argData);
-					break;
-				case "LOG":
+					break;*/
+				case "LOG":/*
 					if (cmdArg == "NEXT")
 					{
 						LogNext(argData);
 					}
-					else if (cmdArg == "BATCH")
+					else*/
+					if (cmdArg == "BATCH")
 					{
 						LogBatch(argData);
 					}

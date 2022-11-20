@@ -22,14 +22,17 @@ namespace IngameScript
 {
     partial class Program
     {
-		const string EARTH = "EARTHLIKE;(0,0,0);60000;GREEN;;;;;1";
-		const string MOON = "MOON;(16388,136375,-113547);9394;GRAY;;;;;1";
-		const string MARS = "MARS;(1032762,134086,1632659);64606;RUST;;;;;1";
-		const string EUROPA = "EUROPA;(916410,16373.72,1616441);9600;LIGHTBLUE;;;;;1";
-		const string ALIEN = "ALIEN;(131110.8,131220.6,5731113);60894.06;MAGENTA;;;;;1";
-		const string TITAN = "TITAN;(36385.04,226384,5796385);9238.224;CYAN;;;;;1";
-		const string TRITON = "TRITON;(-284463.6,-2434464,365536.2);38128.81;WHITE;;;;;1";
-		const string PERTAM = "PERTAM;(-3967231.50,-32231.50,-767231.50);30066.50;BROWN;;;;;1";
+		// Vanilla Planet Strings
+		const string EARTH = "EARTHLIKE;(0,0,0);60000;GREEN;1";
+		const string MOON = "MOON;(16388,136375,-113547);9394;GRAY;1";
+		const string MARS = "MARS;(1032762,134086,1632659);64606;RUST;1";
+		const string EUROPA = "EUROPA;(916410,16373.72,1616441);9600;LIGHTBLUE;1";
+		const string ALIEN = "ALIEN;(131110.8,131220.6,5731113);60894.06;MAGENTA;1";
+		const string TITAN = "TITAN;(36385.04,226384,5796385);9238.224;CYAN;1";
+		const string TRITON = "TRITON;(-284463.6,-2434464,365536.2);38128.81;WHITE;1";
+		const string PERTAM = "PERTAM;(-3967231.50,-32231.50,-767231.50);30066.50;BROWN;1";
+
+		const int STRING_LENGTH = 5; // Length of Planet Data String
 		
 
 		static List<Planet> _planetList;
@@ -67,12 +70,15 @@ namespace IngameScript
 		public class Planet : Location
 		{
 			public float radius;
+			/*
 			public Vector3 point1;
 			public Vector3 point2;
 			public Vector3 point3;
 			public Vector3 point4;
+			*/
 			public Vector2 mapPos;
-			public bool isCharted;
+			//public bool isCharted;
+
 			public int SampleCount;
 
 
@@ -84,17 +90,11 @@ namespace IngameScript
 
 				transformedCoords = new List<Vector3>();
 
-				if (planetData.Length < 9)
+				if (planetData.Length < STRING_LENGTH)
 				{
-					if (planetData.Length == 8)
-						SampleCount = 0;
-					else
+						radius = 0;
 						return;
 				}
-				else
-					SampleCount = ParseInt(planetData[8], 0);
-
-				color = planetData[3];
 
 				if (planetData[1] != "")
 				{
@@ -104,13 +104,16 @@ namespace IngameScript
 				if (planetData[2] != "")
 				{
 					radius = float.Parse(planetData[2]);
-					isCharted = true;
+					//isCharted = true;
 				}
 				else
 				{
-					isCharted = false;
+					radius = 0;
 				}
 
+				color = planetData[3];
+				SampleCount = ParseInt(planetData[4], 1);
+				/*
 				if (planetData[4] != "")
 				{
 					SetPoint(1, StringToVector3(planetData[4]));
@@ -129,9 +132,10 @@ namespace IngameScript
 				if (planetData[7] != "")
 				{
 					SetPoint(4, StringToVector3(planetData[7]));
-				}
+				}*/
 			}
 
+			/*
 			public void SetPoint(int point, Vector3 vec3)
 			{
 				switch (point)
@@ -171,7 +175,7 @@ namespace IngameScript
 						break;
 				}
 				return pointN;
-			}
+			}*/
 
 			public override String ToString()
 			{
@@ -192,24 +196,26 @@ namespace IngameScript
 
 				planetData[3] = color;
 
+				/*
 				for (int c = 4; c < 8; c++)
 				{
 					if (GetPoint(c - 3) != Vector3.Zero)
 					{
 						planetData[c] = Vector3ToString(GetPoint(c - 3));
 					}
-				}
+				}*/
 
-				planetData[8] = SampleCount.ToString();
+				planetData[4] = SampleCount.ToString();
 
 				String planetString = planetData[0];
-				for (int i = 1; i < 9; i++)
+				for (int i = 1; i < STRING_LENGTH; i++)
 				{
 					planetString = planetString + ";" + planetData[i];
 				}
 				return planetString;
 			}
 
+			/*
 			public void SetMajorAxes()
 			{
 				//USE RADIUS AND CENTER OF PLANET TO SET POINTS 1, 2 & 3 TO BE ALONG X,Y & Z AXES FROM PLANET CENTER
@@ -283,7 +289,7 @@ namespace IngameScript
 				radius = (float)newRad;
 
 				SetMajorAxes();
-			}
+			}*/
 		}
 
 
@@ -626,5 +632,44 @@ namespace IngameScript
 
 			DataToLog();
         }
+
+
+		// CONVERT OLD PLANET DATA //
+		string ConvertOldPlanetData(string dataToCheck)
+        {
+			string [] data = dataToCheck.Split(';');
+			int length = data.Length;
+
+			if (length == 5)
+				return dataToCheck;
+
+			string dataOut = "";
+			
+			// Name
+			if (dataToCheck != "")
+				dataOut += data[0] + ";";
+			else
+				dataOut += "ERROR;";
+
+			// Center
+			if (length > 1 && data[1] != "")
+				dataOut += data[1] + ";";
+			else
+				dataOut += "(0,0,0);";
+
+			// Radius
+			if (length > 2 && data[2] != "")
+				dataOut += data[2] + ";";
+			else
+				dataOut += "0";
+
+			// Color
+			if (length > 3)
+				dataOut += data[3];
+
+			dataOut += ";1";
+
+			return dataOut;
+		}
 	}
 }

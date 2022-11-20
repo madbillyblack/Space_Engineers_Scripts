@@ -43,9 +43,6 @@ namespace IngameScript
 
 			AssignRefBlock();
 			AssignMaps();
-			
-			//Slow Mode
-			_slowMode = ParseBool(GetKey(Me, PROGRAM_HEAD, "Slow_Mode", "false"));
 
 			LoadPlanetData();
 			LoadWaypointData();
@@ -56,6 +53,8 @@ namespace IngameScript
 			AssignMenus();
 
 			SetScanCamera();
+
+			SetRefreshRate();
 		}
 
 
@@ -137,6 +136,12 @@ namespace IngameScript
 			string[] mapEntries = planetData.Split('\n');
 			foreach (string planetString in mapEntries)
 			{
+				string newPlanetString = ConvertOldPlanetData(planetString);
+				Planet planet = new Planet(newPlanetString);
+
+				if (planet.radius > 0)
+					_planetList.Add(planet);
+				/*
 				if (planetString.Contains(";"))
 				{
 					Planet planet = new Planet(planetString);
@@ -148,8 +153,12 @@ namespace IngameScript
 					{
 						_unchartedList.Add(planet);
 					}
-				}
+				}*/
 			}
+
+			// Write planets to INI in case of converted strings
+			DataToLog();
+
 			_planets = _planetList.Count > 0;
 		}
 
@@ -168,6 +177,19 @@ namespace IngameScript
 					_waypointList.Add(waypoint);
 				}
 			}
+		}
+
+
+		// SET REFRESH RATE //
+		void SetRefreshRate()
+        {
+			//Slow Mode
+			_slowMode = ParseBool(GetKey(Me, PROGRAM_HEAD, "Slow_Mode", "false"));
+			// Set the continuous update frequency of this script
+			if (_slowMode)
+				Runtime.UpdateFrequency = UpdateFrequency.Update100;
+			else
+				Runtime.UpdateFrequency = UpdateFrequency.Update10;
 		}
 	}
 }

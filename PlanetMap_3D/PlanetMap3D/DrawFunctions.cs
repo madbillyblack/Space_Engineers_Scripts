@@ -738,7 +738,7 @@ namespace IngameScript
 			}
 		}
 
-
+		/*
 		// PLOT UNCHARTED //
 		public void PlotUncharted(StarMap map)
 		{
@@ -757,7 +757,7 @@ namespace IngameScript
 				}
 			}
 		}
-
+		*/
 
 		// PROJECT DIAMETER //
 		float ProjectDiameter(Planet planet, StarMap map)
@@ -842,7 +842,7 @@ namespace IngameScript
 			if (map.GpsState > 0)
 			{
 				DrawWaypoints(map);
-				PlotUncharted(map);
+				//PlotUncharted(map);
 			}
 
 			// DRAW SHIP
