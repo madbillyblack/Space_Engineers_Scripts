@@ -314,15 +314,22 @@ namespace IngameScript
 
             menu.CurrentMapIndex = mapIndex;
 
-
-            try
+            IMyTerminalBlock lcdBlock = GridTerminalSystem.GetBlockWithName(blockName);
+            if (lcdBlock == null)
             {
-                IMyTerminalBlock lcdBlock = GridTerminalSystem.GetBlockWithName(blockName);
-                menu.Surface = (lcdBlock as IMyTextSurfaceProvider).GetSurface(index);
+                lcdBlock = block;
+                blockName = block.CustomName;
+            }
 
+            int surfaceCount = GetSurfaceCount(lcdBlock);
+
+            if (surfaceCount > 0 && index < surfaceCount)
+            {
+                
+                menu.Surface = (lcdBlock as IMyTextSurfaceProvider).GetSurface(index);
                 return menu;
             }
-            catch
+            else
             {
                 AddMessage("Menu Surface could not be retrieved from block " + blockName);
                 return null;

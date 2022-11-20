@@ -22,6 +22,20 @@ namespace IngameScript
 {
     partial class Program
     {
+        // HAS SURFACES //
+        static int GetSurfaceCount(IMyTerminalBlock block)
+        {
+            try
+            {
+                return (block as IMyTextSurfaceProvider).SurfaceCount;
+            }
+            catch
+            {
+                return 0;
+            }
+            
+        }
+
         // PARSE INT //
         static int ParseInt(string arg, int defaultValue)
         {

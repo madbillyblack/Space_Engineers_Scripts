@@ -482,8 +482,9 @@ namespace IngameScript
 			List<StarMap> mapsOut = new List<StarMap>();
 			List<string> headers = new List<string>();
 			List<int> indexes = new List<int>();
-			int surfaceCount = (mapBlock as IMyTextSurfaceProvider).SurfaceCount;
 
+			int surfaceCount = (mapBlock as IMyTextSurfaceProvider).SurfaceCount;
+			
 			if (surfaceCount < 1)
             {
 				AddMessage("Block \"" + mapBlock.CustomName + "\" has no screens!");
@@ -512,12 +513,12 @@ namespace IngameScript
                 }
             }
 
-			for(int j = 0; j < headers.Count; j++)
+			for (int j = 0; j < headers.Count; j++)
             {
 				mapsOut.Add(new StarMap(mapBlock, indexes[j], headers[j]));
             }
 
-            return mapsOut;
+			return mapsOut;
 		}
 
 

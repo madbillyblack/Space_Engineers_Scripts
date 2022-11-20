@@ -25,13 +25,12 @@ namespace IngameScript
 		// BUILD // - Updates map info from map's custom data
 		void Build()
 		{
-			//_statusMessage = "";
+			// Initialize Basic System Settings
 			_messages = new List<string>();
-
-			//Grid Tag
-			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 			_cycleStep = CYCLE_LENGTH;
+			_lightOn = true;
 
+			// Initialize Lists
 			_planetList = new List<Planet>();
 			_unchartedList = new List<Planet>();
 			_waypointList = new List<Waypoint>();
@@ -39,74 +38,34 @@ namespace IngameScript
 			_mapBlocks = new List<IMyTerminalBlock>();
 			_mapMenus = new List<MapMenu>();
 
-			_mapLog = DataToIni(Me);
+			//Grid Tag
+			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 
-			//Name of screen to print map to.
-			_mapTag = _mapLog.Get(PROGRAM_HEAD, "MAP_Tag").ToString();
-
-			//Index of screen to print map to.
-			//_mapIndex = _mapLog.Get(PROGRAM_HEAD, "MAP_Index").ToUInt16();
-
-			//Index of screen to print map data to.
-			//_dataIndex = _mapLog.Get(PROGRAM_HEAD, "Data_Index").ToUInt16();
-
-			//Name of reference block
-			_refName = _mapLog.Get(PROGRAM_HEAD, "Reference_Name").ToString();
-
-			//Name of Data Display Block
-			//_dataName = _mapLog.Get(PROGRAM_HEAD, "Data_Tag").ToString();
-
+			AssignRefBlock();
+			AssignMaps();
+			
 			//Slow Mode
 			_slowMode = ParseBool(GetKey(Me, PROGRAM_HEAD, "Slow_Mode", "false"));
 
+			LoadPlanetData();
+			LoadWaypointData();
+
+			UpdateMapDataPage();
+			AssignDataDisplays();
+			
+			AssignMenus();
+
+			SetScanCamera();
+		}
 
 
-			if (_gridID == "")
-			{
-				_gridID = Me.CubeGrid.EntityId.ToString();
-				_mapLog.Set(SHARED, "Grid_ID", _gridID);
-				Me.CustomData = _mapLog.ToString();
-			}
+		// ASSIGN REFBLOCK //
+		void AssignRefBlock()
+        {
+			//Name of reference block
+			string refName = GetKey(Me, PROGRAM_HEAD, "Reference_Name", "[Reference]");
 
-
-
-			if (_mapTag == "" || _mapTag == "<name>")
-			{
-				Echo("No LCD specified!!!");
-			}
-			else
-			{
-				GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
-				foreach (IMyTerminalBlock mapBlock in _mapBlocks)
-				{
-					if (onGrid(mapBlock))
-					{
-						List<StarMap> maps = ParametersToMaps(mapBlock);
-
-						if (maps.Count > 0)
-						{
-							foreach (StarMap map in maps)
-							{
-								activateMap(map);
-								//MapToParameters(map);
-							}
-						}
-					}
-				}
-			}
-			/*
-			if (_dataName != "" || _dataName != "<name>")
-			{
-				GridTerminalSystem.SearchBlocksOfName(_dataName, _dataBlocks);
-				if (_dataBlocks.Count > 0)
-				{
-					IMyTextSurfaceProvider dataBlock = _dataBlocks[0] as IMyTextSurfaceProvider;
-					_dataSurface = dataBlock.GetSurface(_dataIndex);
-					_dataSurface.ContentType = ContentType.TEXT_AND_IMAGE;
-				}
-			}*/
-
-			if (_refName == "" || _refName == "<name>")
+			if (refName == "")
 			{
 				AddMessage("WARNING: No Reference Block Name Specified!\nMay result in false orientation!");
 				_refBlock = Me as IMyTerminalBlock;
@@ -114,7 +73,7 @@ namespace IngameScript
 			else
 			{
 				List<IMyTerminalBlock> refBlocks = new List<IMyTerminalBlock>();
-				GridTerminalSystem.SearchBlocksOfName(_refName, refBlocks);
+				GridTerminalSystem.SearchBlocksOfName(refName, refBlocks);
 				if (refBlocks.Count > 0)
 				{
 					_refBlock = refBlocks[0] as IMyTerminalBlock;
@@ -122,14 +81,58 @@ namespace IngameScript
 				}
 				else
 				{
-					AddMessage("WARNING: No Block containing " + _refName + " found.\nMay result in false orientation!");
+					AddMessage("WARNING: No Block containing " + refName + " found.\nMay result in false orientation!");
 					_refBlock = Me as IMyTerminalBlock;
 				}
 			}
 
 			_myPos = _refBlock.GetPosition();
+		}
 
-			string planetData = _mapLog.Get(PROGRAM_HEAD, "Planet_List").ToString();
+
+		// ASSIGN MAPS //
+		void AssignMaps()
+        {
+			//Tag to designate screens for map displays
+			_mapTag = GetKey(Me, PROGRAM_HEAD, "MAP_TAG", "[MAP]");
+
+			if (_mapTag == "")
+			{
+				Echo("No LCD specified!!!");
+			}
+			else
+			{
+				GridTerminalSystem.SearchBlocksOfName(_mapTag, _mapBlocks);
+
+				if(_mapBlocks.Count < 1)
+                {
+					AddMessage("No screens with tag \"" + _mapTag + "\" found!");
+					return;
+                }
+
+				foreach (IMyTerminalBlock mapBlock in _mapBlocks)
+				{
+					Echo(mapBlock.CustomName);
+
+					if (onGrid(mapBlock) && GetSurfaceCount(mapBlock) > 0)
+					{
+						List<StarMap> maps = ParametersToMaps(mapBlock);
+
+						if (maps.Count > 0)
+						{
+							foreach (StarMap map in maps)
+								activateMap(map);	
+						}
+					}
+				}
+			}
+		}
+
+
+		// LOAD PLANET DATA
+		void LoadPlanetData()
+        {
+			string planetData = GetKey(Me, PROGRAM_HEAD, "Planet_List", "");
 
 			string[] mapEntries = planetData.Split('\n');
 			foreach (string planetString in mapEntries)
@@ -148,8 +151,13 @@ namespace IngameScript
 				}
 			}
 			_planets = _planetList.Count > 0;
+		}
 
-			string waypointData = _mapLog.Get(PROGRAM_HEAD, "Waypoint_List").ToString();
+
+		// LOAD WAYPOINT DATA //
+		void LoadWaypointData()
+        {
+			string waypointData = GetKey(Me, PROGRAM_HEAD, "Waypoint_List", "");
 			string[] gpsEntries = waypointData.Split('\n');
 
 			foreach (string waypointString in gpsEntries)
@@ -160,16 +168,6 @@ namespace IngameScript
 					_waypointList.Add(waypoint);
 				}
 			}
-
-			UpdateMapDataPage();
-			AssignDataDisplays();
-			
-			AssignMenus();
-
-			SetScanCamera();
-
-			// Start with indicator light on.
-			_lightOn = true;
 		}
 	}
 }

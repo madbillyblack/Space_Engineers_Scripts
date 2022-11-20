@@ -22,27 +22,6 @@ namespace IngameScript
 {
 	partial class Program : MyGridProgram
 	{
-		// This file contains your actual script.
-		//
-		// You can either keep all your code here, or you can create separate
-		// code files to make your program easier to navigate while coding.
-		//
-		// In order to add a new utility class, right-click on your project, 
-		// select 'New' then 'Add Item...'. Now find the 'Space Engineers'
-		// category under 'Visual C# Items' on the left hand side, and select
-		// 'Utility Class' in the main area. Name it in the box below, and
-		// press OK. This utility class will be merged in with your code when
-		// deploying your final script.
-		//
-		// You can also simply create a new utility class manually, you don't
-		// have to use the template if you don't want to. Just do so the first
-		// time to see what a utility class looks like.
-		// 
-		// Go to:
-		// https://github.com/malware-dev/MDK-SE/wiki/Quick-Introduction-to-Space-Engineers-Ingame-Scripts
-		//
-		// to learn more about ingame scripts.
-
 		//////////////////////
 		// PLANET MAP 3D //
 		///////////////////// 1.3.0
@@ -82,7 +61,7 @@ namespace IngameScript
 		
 		const string SLASHES = " //////////////////////////////////////////////////////////////";
 
-		const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_ID=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
+		//const string DEFAULT_SETTINGS = "[Map Settings]\nMAP_Tag=[MAP]\nMAP_Index=0\nData_Tag=[Map Data]\nGrid_ID=\nData_Index=0\nReference_Name=[Reference]\nSlow_Mode=false\nCycle_Step=5\nPlanet_List=\nWaypoint_List=\n";
 		const string PROGRAM_HEAD = "Map Settings";
 
 		string[] _cycleSpinner = { "--", " / ", " | ", " \\ " };
@@ -90,9 +69,9 @@ namespace IngameScript
 
 
 		// GLOBALS //
-		MyIni _mapLog = new MyIni();
+		//MyIni _mapLog = new MyIni();
 		string _mapTag;
-		string _refName;
+		//string _refName;
 		//string _dataName;
 		string _previousCommand;
 		//int _dataIndex;
@@ -129,12 +108,11 @@ namespace IngameScript
 		{
 			_cycleOffset = Math.Abs((int) Me.CubeGrid.EntityId % CYCLE_LENGTH);
 			//_pageIndex = 0;
+			_planetToLog = false;
 
+			/*
 			string oldData = Me.CustomData;
 			string newData = DEFAULT_SETTINGS;
-
-
-			_planetToLog = false;
 
 			if (!oldData.Contains("[Map Settings]"))
 			{
@@ -147,7 +125,7 @@ namespace IngameScript
 					newData += "---\n\n" + oldData;
 				}
 				Me.CustomData = newData;
-			}
+			}*/
 
 			Build();
 			_previousCommand = "NEWLY LOADED";
