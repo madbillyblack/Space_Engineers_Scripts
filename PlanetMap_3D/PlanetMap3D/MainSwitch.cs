@@ -173,15 +173,7 @@ namespace IngameScript
 				case "PROJECT":
 					ProjectPoint(cmdArg, argData);
 					break;
-			/*	case "NEW"://PLANET
-					NewPlanet(argData);
-					break;*/
-				case "LOG":/*
-					if (cmdArg == "NEXT")
-					{
-						LogNext(argData);
-					}
-					else*/
+				case "LOG":
 					if (cmdArg == "BATCH")
 					{
 						LogBatch(argData);
@@ -206,10 +198,7 @@ namespace IngameScript
 					break;
 				case "PLOT_JUMP":
 					PlotJumpPoint(argData);
-					break;/*
-				case "SCROLL":
-					pageScroll(cmdArg);
-					break;*/
+					break;
 				case "BRIGHTEN":
 					BrightenMaps(maps, true);
 					break;

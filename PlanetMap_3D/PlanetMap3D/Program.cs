@@ -80,9 +80,7 @@ namespace IngameScript
 		static int _cycleOffset;
 		int _sortCounter = 0;
 		string _activePlanet = "";
-		//string _activeWaypoint = "";
 		static string _clipboard = "";
-		//readonly Vector3 _origin = new Vector3(0, 0, 0);
 		Vector3 _myPos;
 		List<IMyTerminalBlock> _mapBlocks;
 		
@@ -91,7 +89,6 @@ namespace IngameScript
 
 		Planet _nearestPlanet;
 
-		//IMyTextSurface _dataSurface;
 		IMyTerminalBlock _refBlock;
 
 
@@ -124,7 +121,6 @@ namespace IngameScript
 			Echo("////// PLANET MAP 3D ////// " + _cycleSpinner[_cycleStep % _cycleSpinner.Length]);
 			Echo("Cmd: " + _previousCommand + "\n");
 
-			//Echo(_statusMessage + "\n");
 			EchoMessages();
 
 			// Display Data from Planet Scanning System
@@ -464,75 +460,6 @@ namespace IngameScript
 			AddMessage("No waypoint " + name + " found!");
 		}
 
-		/*
-		// NEW PLANET //
-		public void NewPlanet(String planetName)
-		{
-			Planet planet = GetPlanet(planetName);
-
-			if (planet != null)
-			{
-				AddMessage("Planet " + planetName + " already exists! Please choose different name.");
-				return;
-			}
-
-			planetName += ";;;;;;;";
-			planet = new Planet(planetName);
-			planet.SetPoint(1, _myPos);
-
-			_unchartedList.Add(planet);
-			DataToLog();
-		}
-
-
-		// LOG NEXT //
-		public void LogNext(String planetName)
-		{
-			Planet planet = GetPlanet(planetName);
-
-			if (planet == null)
-			{
-				PlanetError(planetName);
-				return;
-			}
-
-			String[] planetData = planet.ToString().Split(';');
-
-			if (planetData[4] == "")
-			{
-				planet.SetPoint(1, _myPos);
-			}
-			else if (planetData[5] == "")
-			{
-				planet.SetPoint(2, _myPos);
-			}
-			else if (planetData[6] == "")
-			{
-				planet.SetPoint(3, _myPos);
-			}
-			else
-			{
-				planet.SetPoint(4, _myPos);
-
-				if (!planet.isCharted)
-				{
-					_planetList.Add(planet);
-					_unchartedList.Remove(planet);
-					_planets = true;
-				}
-
-				planet.Calculate();
-				_planetToLog = true; // Specify that DataToLog needs to be called in CycleExecute.
-
-				foreach (StarMap map in _mapList)
-				{
-					UpdateMap(map);
-				}
-			}
-
-			DataToLog();
-		}*/
-
 
 		// DELETE PLANET //
 		public void DeletePlanet(String planetName)
@@ -659,6 +586,7 @@ namespace IngameScript
 				return false;
 		}
 
+
 		// DATA TO INI //
 		MyIni DataToIni(IMyTerminalBlock block)
 		{
@@ -670,6 +598,7 @@ namespace IngameScript
 
 			return iniOuti;
 		}
+
 
 		// COLOR SWITCH //
 		Color ColorSwitch(string colorString, bool isWaypoint)
@@ -739,6 +668,7 @@ namespace IngameScript
 
 			return colorOut;
 		}
+
 
 		// HEX TO COLOR //
 		Color HexToColor(string hexString)
@@ -856,8 +786,6 @@ namespace IngameScript
             {
 				return Vector3.Zero;
             }
-
-			
 		}
 
 
@@ -885,66 +813,6 @@ namespace IngameScript
 				abbreviatedValue = valueIn.ToString("F0");
 			}
 			return abbreviatedValue;
-		}
-
-
-		// REPLACE COLUMN //
-		static void ReplaceColumn(double[,] matrix1, double[,] matrix2, double[] t, int column)
-		{
-			for (int i = 0; i < 4; i++)
-			{
-				for (int j = 0; j < 4; j++)
-				{
-					matrix2[i, j] = matrix1[i, j];
-				}
-			}
-			matrix2[0, column] = t[0];
-			matrix2[1, column] = t[1];
-			matrix2[2, column] = t[2];
-			matrix2[3, column] = t[3];
-		}
-
-
-		// T-VALUE //
-		public static double TValue(Vector3 vec3)
-		{
-			double result;
-			double x = vec3.X;
-			double y = vec3.Y;
-			double z = vec3.Z;
-
-			result = -1 * (x * x + y * y + z * z);
-			return result;
-		}
-
-
-		// Det4 // Gets determinant of a 4x4 Matrix
-		public static double Det4(double[,] q)
-		{
-			double a = q[0, 0];
-			double b = q[0, 1];
-			double c = q[0, 2];
-			double d = q[0, 3];
-			double e = q[1, 0];
-			double f = q[1, 1];
-			double g = q[1, 2];
-			double h = q[1, 3];
-			double i = q[2, 0];
-			double j = q[2, 1];
-			double k = q[2, 2];
-			double l = q[2, 3];
-			double m = q[3, 0];
-			double n = q[3, 1];
-			double o = q[3, 2];
-			double p = q[3, 3];
-
-			double determinant = a * (f * (k * p - l * o) - g * (j * p - l * n) + h * (j * o - k * n))
-								- b * (e * (k * p - l * o) - g * (i * p - l * m) + h * (i * o - k * m))
-								+ c * (e * (j * p - l * n) - f * (i * p - l * m) + h * (i * n - j * m))
-								- d * (e * (j * o - k * n) - f * (i * o - k * m) + g * (i * n - j * m));
-
-
-			return determinant;
 		}
 
 

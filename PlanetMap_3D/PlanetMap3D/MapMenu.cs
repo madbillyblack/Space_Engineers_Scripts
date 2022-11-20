@@ -228,25 +228,6 @@ namespace IngameScript
 
                 DataDisplay.ScrollUp();
             }
-            /*
-            // Active Planet To Data //
-            void ActivePlanetToData(StarMap map)
-            {
-                if (DataDisplay == null || map.ActivePlanet == null)
-                    return;
-
-                DataDisplay.SetActivePlanet(map.ActivePlanet.name);
-            }
-
-            // Active Waypoint To Data //
-            void ActiveWaypointToData(StarMap map)
-            {
-                if (DataDisplay == null || map.ActiveWaypoint == null)
-                    return;
-
-                DataDisplay.SetActiveWaypoint(map.ActiveWaypoint.name);
-            }
-            */
         }
 
 

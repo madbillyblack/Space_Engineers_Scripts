@@ -70,17 +70,8 @@ namespace IngameScript
 		public class Planet : Location
 		{
 			public float radius;
-			/*
-			public Vector3 point1;
-			public Vector3 point2;
-			public Vector3 point3;
-			public Vector3 point4;
-			*/
 			public Vector2 mapPos;
-			//public bool isCharted;
-
 			public int SampleCount;
-
 
 			public Planet(String planetString)
 			{
@@ -92,8 +83,8 @@ namespace IngameScript
 
 				if (planetData.Length < STRING_LENGTH)
 				{
-						radius = 0;
-						return;
+					radius = 0;
+					return;
 				}
 
 				if (planetData[1] != "")
@@ -113,69 +104,7 @@ namespace IngameScript
 
 				color = planetData[3];
 				SampleCount = ParseInt(planetData[4], 1);
-				/*
-				if (planetData[4] != "")
-				{
-					SetPoint(1, StringToVector3(planetData[4]));
-				}
-
-				if (planetData[5] != "")
-				{
-					SetPoint(2, StringToVector3(planetData[5]));
-				}
-
-				if (planetData[6] != "")
-				{
-					SetPoint(3, StringToVector3(planetData[6]));
-				}
-
-				if (planetData[7] != "")
-				{
-					SetPoint(4, StringToVector3(planetData[7]));
-				}*/
 			}
-
-			/*
-			public void SetPoint(int point, Vector3 vec3)
-			{
-				switch (point)
-				{
-					case 1:
-						point1 = vec3;
-						break;
-					case 2:
-						point2 = vec3;
-						break;
-					case 3:
-						point3 = vec3;
-						break;
-					case 4:
-						point4 = vec3;
-						break;
-				}
-			}
-
-			public Vector3 GetPoint(int point)
-			{
-				Vector3 pointN = new Vector3();
-
-				switch (point)
-				{
-					case 1:
-						pointN = point1;
-						break;
-					case 2:
-						pointN = point2;
-						break;
-					case 3:
-						pointN = point3;
-						break;
-					case 4:
-						pointN = point4;
-						break;
-				}
-				return pointN;
-			}*/
 
 			public override String ToString()
 			{
@@ -196,15 +125,6 @@ namespace IngameScript
 
 				planetData[3] = color;
 
-				/*
-				for (int c = 4; c < 8; c++)
-				{
-					if (GetPoint(c - 3) != Vector3.Zero)
-					{
-						planetData[c] = Vector3ToString(GetPoint(c - 3));
-					}
-				}*/
-
 				planetData[4] = SampleCount.ToString();
 
 				String planetString = planetData[0];
@@ -214,82 +134,6 @@ namespace IngameScript
 				}
 				return planetString;
 			}
-
-			/*
-			public void SetMajorAxes()
-			{
-				//USE RADIUS AND CENTER OF PLANET TO SET POINTS 1, 2 & 3 TO BE ALONG X,Y & Z AXES FROM PLANET CENTER
-				float xCenter = position.X;
-				float yCenter = position.Y;
-				float zCenter = position.Z;
-
-				Vector3 xMajor = new Vector3(xCenter + radius, yCenter, zCenter);
-				Vector3 yMajor = new Vector3(xCenter, yCenter + radius, zCenter);
-				Vector3 zMajor = new Vector3(xCenter, yCenter, zCenter + radius);
-
-				SetPoint(1, xMajor);
-				SetPoint(2, yMajor);
-				SetPoint(3, zMajor);
-			}
-
-			public void Calculate()
-			{
-				//GET TVALUES OF ALL POINTS THEN ADD TO ARRAY
-				double t1 = TValue(point1);
-				double t2 = TValue(point2);
-				double t3 = TValue(point3);
-				double t4 = TValue(point4);
-				double[] arrT = new double[] { t1, t2, t3, t4 };
-
-				//BUILD MATRIX T WITH POINTS 1,2,3 & 4, AND A COLUMN OF 1's
-				double[,] matrixT = new double[4, 4];
-				for (int c = 0; c < 3; c++)
-				{
-					matrixT[0, c] = point1.GetDim(c);
-				}
-				for (int d = 0; d < 3; d++)
-				{
-					matrixT[1, d] = point2.GetDim(d);
-				}
-				for (int e = 0; e < 3; e++)
-				{
-					matrixT[2, e] = point3.GetDim(e);
-				}
-				for (int f = 0; f < 3; f++)
-				{
-					matrixT[3, f] = point4.GetDim(f);
-				}
-				for (int g = 0; g < 4; g++)
-				{
-					matrixT[g, 3] = 1;
-				}
-
-				double[,] matrixD = new double[4, 4];
-				ReplaceColumn(matrixT, matrixD, arrT, 0);
-
-				double[,] matrixE = new double[4, 4];
-				ReplaceColumn(matrixT, matrixE, arrT, 1);
-
-				double[,] matrixF = new double[4, 4];
-				ReplaceColumn(matrixT, matrixF, arrT, 2);
-
-				double[,] matrixG = new double[4, 4];
-				ReplaceColumn(matrixT, matrixG, arrT, 3);
-
-				double detT = Det4(matrixT);
-				double detD = Det4(matrixD) / detT;
-				double detE = Det4(matrixE) / detT;
-				double detF = Det4(matrixF) / detT;
-				double detG = Det4(matrixG) / detT;
-
-				Vector3 newCenter = new Vector3(detD / -2, detE / -2, detF / -2);
-				position = newCenter;
-
-				double newRad = Math.Sqrt(detD * detD + detE * detE + detF * detF - 4 * detG) / 2;
-				radius = (float)newRad;
-
-				SetMajorAxes();
-			}*/
 		}
 
 
