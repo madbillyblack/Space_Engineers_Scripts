@@ -207,9 +207,11 @@ namespace IngameScript
 						y = -step;
 						break;
 					case "FORWARD":
+					case "FORWARDS":
 						z = step;
 						break;
 					case "BACKWARD":
+					case "BACKWARDS":
 						z = -step;
 						break;
 				}
@@ -246,9 +248,11 @@ namespace IngameScript
 						dY -= MOVE_STEP;
 						break;
 					case "FORWARD":
+					case "FORWARDS":
 						dZ += MOVE_STEP;
 						break;
 					case "BACKWARD":
+					case "BACKWARDS":
 						dZ -= MOVE_STEP;
 						break;
 					default:

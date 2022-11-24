@@ -152,13 +152,13 @@ namespace IngameScript
 				case "ORBIT"://MODE
 					ChangeMode("ORBIT", maps);
 					break;
-				case "DECREASE_RADIUS":
+				case "DECREASE": //RADIUS":
 					AdjustRadii(maps, false);
 					break;
-				case "INCREASE_RADIUS":
+				case "INCREASE": //RADIUS":
 					AdjustRadii(maps, true);
 					break;
-				case "CENTER_SHIP":
+				case "CENTER": //SHIP":
 					MapsToShip(maps);
 					break;
 				case "WAYPOINT":
@@ -196,7 +196,7 @@ namespace IngameScript
 				case "MAKE":
 					SetWaypointType(cmdArg, argData);
 					break;
-				case "PLOT_JUMP":
+				case "PLOT": //JUMP":
 					PlotJumpPoint(argData);
 					break;
 				case "BRIGHTEN":

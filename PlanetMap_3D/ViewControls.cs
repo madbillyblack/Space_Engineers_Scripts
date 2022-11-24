@@ -32,12 +32,12 @@ namespace IngameScript
 
 
 		// ZOOM MAPS //
-		void ZoomMaps(List<StarMap> maps, string arg)
+		void ZoomMaps(List<StarMap> maps, string direction)
 		{
 			if (NoMaps(maps))
 				return;
 
-			bool zoomIn = arg == "IN";
+			bool zoomIn = direction == "IN";
 
 			foreach (StarMap map in maps)
 				map.Zoom(zoomIn);

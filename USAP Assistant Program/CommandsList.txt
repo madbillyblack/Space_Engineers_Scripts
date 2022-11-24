@@ -1,0 +1,63 @@
+// INVENTORY //
+
+UNLOAD
+RELOAD
+REFUEL
+RESUPPLY
+
+SET_LOAD_COUNT <count>
+RESET_LOAD_COUNT
+
+
+// CONSTRUCTION PROFILES //
+
+SELECT_PROFILE <profile>
+UPDATE_PROFILES
+
+
+// TAG EDITOR //
+
+ADD_PREFIX <tag>
+ADD_SUFFIX <tag>
+
+DELETE_PREFIX <tag>
+DELETE_SUFFIX <tag>
+
+REPLACE_PREFIX <old tag> <new tag>
+REPLACE_SUFFIX <old tag> <new tag>
+
+SWAP_TO_PREFIX <tag>
+SWAP_TO_SUFFIX <tag>
+
+
+// CRUISE CONTROL //
+
+CRUISE_THRUSTERS_ON
+CRUISE_THRUSTERS_OFF
+TOGGLE_CRUISE_THRUSTERS
+
+THROTTLE_UP <velocity>
+THROTTLE_DOWN <velocity>
+
+// LANDING GEAR //
+
+GEAR_DOWN
+GEAR_UP
+TOGGLE_GEAR
+GEAR_TIMER 	// call from LG timer
+TIMER_LOCK	// simple version of Gear_Timer (non-cyclical)
+
+SWAP_GEAR_DIRECTION
+ON_RETRACT <behavior> // "AUTOLOCK", "TURNOFF", or default
+CLEAR_GEAR_DATA
+
+LOCK
+UNLOCK
+SWITCH_LOCK
+
+// MISC //
+
+TRIGGER_<Key>	// Key specified in Custom Data.  Default "DOOR".
+
+SET_GRID_ID
+REFRESH
