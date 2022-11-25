@@ -436,7 +436,7 @@ namespace IngameScript
         // ASSIGN MERGE BLOCK //
         void AssignMergeBlock(IMyShipMergeBlock mergeBlock)
         {
-            EnsureKey(mergeBlock, INI_HEAD, "Disable on  Extend", "False");
+            EnsureKey(mergeBlock, INI_HEAD, "Disable on Extend", "False");
             EnsureKey(mergeBlock, INI_HEAD, "Disable on Retract", "True");
             EnsureKey(mergeBlock, INI_HEAD, "Enable When Stopped", "True");
 
@@ -558,9 +558,9 @@ namespace IngameScript
             bool disableBlock;
 
             if (extending)
-                disableBlock = ParseBool(GetKey(mergeBlock, INI_HEAD, "Disable on  Extend", "False"));
+                disableBlock = ParseBool(GetKey(mergeBlock, INI_HEAD, "Disable on Extend", "False"));
             else
-                disableBlock = ParseBool(GetKey(mergeBlock, INI_HEAD, "Disable on  Retract", "True"));
+                disableBlock = ParseBool(GetKey(mergeBlock, INI_HEAD, "Disable on Retract", "True"));
 
             string action;
             if (disableBlock)
