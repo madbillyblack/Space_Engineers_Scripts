@@ -79,6 +79,9 @@ namespace IngameScript
                     case "UPDATE_PROFILES":
                         UpdateProfiles();
                         break;
+                    case "NEW_PROFILE":
+                        NewProfile(cmdArg);
+                        break;
                     case "SET_GRID_ID":
                         SetGridID(cmdArg);
                         break;

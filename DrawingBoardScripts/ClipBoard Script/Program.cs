@@ -22,32 +22,12 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
-        // This file contains your actual script.
-        //
-        // You can either keep all your code here, or you can create separate
-        // code files to make your program easier to navigate while coding.
-        //
-        // In order to add a new utility class, right-click on your project, 
-        // select 'New' then 'Add Item...'. Now find the 'Space Engineers'
-        // category under 'Visual C# Items' on the left hand side, and select
-        // 'Utility Class' in the main area. Name it in the box below, and
-        // press OK. This utility class will be merged in with your code when
-        // deploying your final script.
-        //
-        // You can also simply create a new utility class manually, you don't
-        // have to use the template if you don't want to. Just do so the first
-        // time to see what a utility class looks like.
-        // 
-        // Go to:
-        // https://github.com/malware-dev/MDK-SE/wiki/Quick-Introduction-to-Space-Engineers-Ingame-Scripts
-        //
-        // to learn more about ingame scripts.
-
         IMyTextSurface _surface;
         List<IMyCameraBlock> _cameras;
         string _castData;
         double _castRange;
         int _counter = 0;
+        IMyInventory _inventory;
 
         #region
         // PRORGRAM //
@@ -61,6 +41,18 @@ namespace IngameScript
 
             _castData = "";
             Runtime.UpdateFrequency = UpdateFrequency.Update10;
+
+            List<IMyTerminalBlock> inventoryBlocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName("Cargo", inventoryBlocks);
+
+            if(inventoryBlocks.Count > 0 && inventoryBlocks[0].HasInventory)
+            {
+                _inventory = inventoryBlocks[0].GetInventory(0);
+            }
+            else
+            {
+                _inventory = null;
+            }
         }
 
 
@@ -72,6 +64,24 @@ namespace IngameScript
         // MAIN //
         public void Main(string argument, UpdateType updateSource)
         {
+            _surface.WriteText("");
+            if (_inventory == null)
+                return;
+
+            List<MyInventoryItem> items = new List<MyInventoryItem>();
+            _inventory.GetItems(items);
+
+            if (items.Count < 1)
+            {
+                _surface.WriteText("<< EMPTY >>");
+                return;
+            }
+                
+            foreach(MyInventoryItem item in items)
+            {
+                _surface.WriteText(item.Type.SubtypeId.ToString() + "\n", true);
+            }
+            /*
             _counter++;
             // Clear surface from last run
             _surface.WriteText(_counter.ToString() + "\n");
@@ -114,6 +124,7 @@ namespace IngameScript
             }
 
             DisplayMessage(_castData);
+            */
         }
         #endregion
 
