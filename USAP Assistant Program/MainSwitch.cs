@@ -140,6 +140,9 @@ namespace IngameScript
                     case "ON_RETRACT":
                         SetRetractBehavior(cmdArg);
                         break;
+                    case "ON_EXTEND":
+                        SetExtendBehavior(cmdArg);
+                        break;
                     case "CLEAR_GEAR_DATA":
                         if (_landingGear != null)
                             _landingGear.ClearData();

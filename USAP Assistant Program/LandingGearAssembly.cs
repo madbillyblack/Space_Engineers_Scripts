@@ -590,6 +590,17 @@ namespace IngameScript
         }
 
 
+        // SET EXTEND BEHAVIOR //
+        void SetExtendBehavior(string behavior)
+        {
+            if (_landingGear == null || _landingGear.LandingPlates.Count < 1)
+                return;
+
+            foreach (IMyLandingGear landingPlate in _landingGear.LandingPlates)
+                SetKey(landingPlate, INI_HEAD, "On Extend", behavior);
+        }
+
+
         // SWAP VELOCITIES //
         static void SwapVelocities(IMyTerminalBlock block)
         {
