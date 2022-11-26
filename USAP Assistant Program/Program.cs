@@ -62,6 +62,7 @@ namespace IngameScript
         const string RAIL = "RAIL";
         const string MINI_RAIL = "MINI-RAIL";
         const string LOADOUT = "Loadout";
+        const string PROFILE_LIST = "Basic,Advanced,Armor";
         const string DEFAULT_PROFILE =  "BulletproofGlass:0\n" +
                                         "Computer:0\n" +
                                         "Construction:0\n" +
@@ -646,7 +647,7 @@ namespace IngameScript
             // Make sure that any construction cargos have a profile in custom data.
             if (_hasComponentCargo)
             {
-                _activeProfile = GetKey(Me, INI_HEAD, "Profiles", "###").Split(',')[0];
+                _activeProfile = GetKey(Me, INI_HEAD, "Profiles", PROFILE_LIST).Split(',')[0];
                 EnsureProfiles();
             }
 
@@ -735,7 +736,7 @@ namespace IngameScript
         // ENSURE PROFILES // Ensure that program block has construction profiles
         public void EnsureProfiles()
         {
-            string [] profiles = GetKey(Me, INI_HEAD, "Profiles", "Basic,Advanced,Armor").Split(',');
+            string [] profiles = GetKey(Me, INI_HEAD, "Profiles", PROFILE_LIST).Split(',');
 
             if (profiles.Length < 1)
                 return;
@@ -789,7 +790,7 @@ namespace IngameScript
         // GET ACTIVE PROFILE // - Returns Active Profile as 2D array
         public string [][] GetActiveProfile()
         {
-            string[] profiles = GetKey(Me, INI_HEAD, "Profiles", DEFAULT_PROFILE).Split(',');
+            string[] profiles = GetKey(Me, INI_HEAD, "Profiles", PROFILE_LIST).Split(',');
 
             if (profiles.Length > 0)
             {

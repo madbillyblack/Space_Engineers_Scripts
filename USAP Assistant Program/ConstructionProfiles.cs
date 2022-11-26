@@ -27,7 +27,7 @@ namespace IngameScript
         {
             if(string.IsNullOrEmpty(argument))
             {
-                _statusMessage += "NO PROFILE NAME SPECIFIED! Check command and try again!";
+                Echo("NO PROFILE NAME SPECIFIED! Check command and try again!");
             }
 
             string[] args = argument.Split(' ');
@@ -47,16 +47,20 @@ namespace IngameScript
 
                 if(cargoBlocks.Count > 1)
                 {
-                    _statusMessage += "More than one inventory of name \"" + inventoryName + "\" found!";
+                    Echo("More than one inventory of name \"" + inventoryName + "\" found!");
                     return;
                 }
                 else if(cargoBlocks.Count == 1 && cargoBlocks[0].HasInventory)
                 {
-                    profile = ProfileFromInventory(cargoBlocks[0].GetInventory(0));
+                    IMyTerminalBlock block = cargoBlocks[0];
+                    IMyInventory inventory = block.GetInventory(0);
+
+                    Echo("PROTOTYPE INVENTORY:\n* " + block.CustomName + "\n* Vol: " + (inventory.MaxVolume * 1000).ToString() + "L");
+                    profile = ProfileFromInventory(inventory);
                 }
                 else
                 {
-                    _statusMessage += "No inventory of name \"" + inventoryName + "\" found!";
+                    Echo("No inventory of name \"" + inventoryName + "\" found!");
                     return;
                 }
             }
@@ -66,6 +70,8 @@ namespace IngameScript
             }
 
             SetKey(Me, profileHeader, LOADOUT, profile);
+            AddProfileToList(profileName);
+            SelectProfile(profileName);
         }
 
 
@@ -95,67 +101,67 @@ namespace IngameScript
                     switch(type)
                     {
                         case "BulletproofGlass":
-                            bpGlass++;
+                            bpGlass = item.Amount.ToIntSafe();
                             break;
                         case "Computer":
-                            computer++;
+                            computer = item.Amount.ToIntSafe();
                             break;
                         case "Construction":
-                            construction++;
+                            construction = item.Amount.ToIntSafe();
                             break;
                         case "Detector":
-                            detector++;
+                            detector = item.Amount.ToIntSafe();
                             break;
                         case "Display":
-                            display++;
+                            display = item.Amount.ToIntSafe();
                             break;
                         case "Explosives":
-                            explosives++;
+                            explosives = item.Amount.ToIntSafe();
                             break;
                         case "Girder":
-                            girder++;
+                            girder = item.Amount.ToIntSafe();
                             break;
                         case "GravityGenerator":
-                            gravGen++;
+                            gravGen = item.Amount.ToIntSafe();
                             break;
                         case "InteriorPlate":
-                            interiorPlate++;
+                            interiorPlate = item.Amount.ToIntSafe();
                             break;
                         case "LargeTube":
-                            lgTube++;
+                            lgTube = item.Amount.ToIntSafe();
                             break;
                         case "Medical":
-                            medical++;
+                            medical = item.Amount.ToIntSafe();
                             break;
                         case "MetalGrid":
-                            metalGrid++;
+                            metalGrid = item.Amount.ToIntSafe();
                             break;
                         case "Motor":
-                            motor++;
+                            motor = item.Amount.ToIntSafe();
                             break;
                         case "PowerCell":
-                            powerCell++;
+                            powerCell = item.Amount.ToIntSafe();
                             break;
                         case "RadioCommunication":
-                            radio++;
+                            radio = item.Amount.ToIntSafe();
                             break;
                         case "Reactor":
-                            reactor++;
+                            reactor = item.Amount.ToIntSafe();
                             break;
                         case "SmallTube":
-                            smTube++;
+                            smTube = item.Amount.ToIntSafe();
                             break;
                         case "SolarCell":
-                            solar++;
+                            solar = item.Amount.ToIntSafe();
                             break;
                         case "SteelPlate":
-                            steelPlate++;
+                            steelPlate = item.Amount.ToIntSafe();
                             break;
                         case "Superconductor":
-                            superconductor++;
+                            superconductor = item.Amount.ToIntSafe();
                             break;
                         case "Thrust":
-                            thruster++;
+                            thruster = item.Amount.ToIntSafe();
                             break;
                     }
                 }
@@ -184,6 +190,14 @@ namespace IngameScript
                              "Thrust:" + (int)(thruster * ratio);
 
             return output;
+        }
+
+
+        // ADD PROFILE TO LIST //
+        void AddProfileToList(string profileName)
+        {
+            string profileList = GetKey(Me, INI_HEAD, "Profiles", PROFILE_LIST);
+            SetKey(Me, INI_HEAD, "Profiles", profileName + "," + profileList);
         }
     }
 }
