@@ -794,7 +794,7 @@ namespace IngameScript
 
             if (profiles.Length > 0)
             {
-                string activeProfile = "Profile: " + profiles[0];
+                string activeProfile = "Profile: " + profiles[0].Trim();
                 return StringTo2DArray(GetKey(Me, activeProfile, LOADOUT, DEFAULT_BASIC), '\n', ':');
             }
             else

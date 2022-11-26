@@ -30,17 +30,16 @@ namespace IngameScript
                 Echo("NO PROFILE NAME SPECIFIED! Check command and try again!");
             }
 
-            string[] args = argument.Split(' ');
-            string profileName = args[0];
+            string[] args = argument.Split(';');
+            string profileName = args[0].Trim();
             string profileHeader = "Profile: " + profileName;
             string inventoryName = "";
             string profile;
 
             // If an inventory name is supplied in the argument, assemble it from the remaining array entries.
-            if(args.Length > 1)
+            if(args.Length == 2)
             {
-                for (int i = 1; i < args.Length; i++)
-                    inventoryName += args[i] + " ";
+                inventoryName = args[1].Trim();
 
                 List<IMyTerminalBlock> cargoBlocks = new List<IMyTerminalBlock>();
                 GridTerminalSystem.SearchBlocksOfName(inventoryName.Trim(), cargoBlocks);
@@ -63,6 +62,11 @@ namespace IngameScript
                     Echo("No inventory of name \"" + inventoryName + "\" found!");
                     return;
                 }
+            }
+            else if(args.Length > 2)
+            {
+                Echo("Too Many Arguments in Command!");
+                return;
             }
             else
             {
