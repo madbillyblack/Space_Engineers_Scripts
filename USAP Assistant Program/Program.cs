@@ -53,6 +53,7 @@ namespace IngameScript
 
         const string INI_HEAD = "USAP";
         const string MAG_TAG = "[MAG";
+        const string TRIGGER_HEAD = "USAP Triggers";
 
         const string GATLING = "GATLING";
         const string MISSILE = "MISSILE";
@@ -348,27 +349,25 @@ namespace IngameScript
                 string triggerKey = "Trigger_" + args[1];
 
                 // Get a timer name/tag from the INI and try to activate the nearest timer with that name.
-                string timerName = GetKey(Me, INI_HEAD, triggerKey , "Timer Block");
-                Activate(timerName);
-                
+                if(Me.CustomData.Contains(triggerKey))
+                {
+                    string timerName = GetKey(Me, INI_HEAD, triggerKey, "");
+
+                    if (timerName == "")
+                        Echo("No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.");
+                    else
+                        Activate(timerName);
+                }
+                else
+                {
+                    Echo("No defined Trigger \"" + triggerKey + "\" found!\n  Please check case and spelling.");
+                }
+
+                // Leave function so default error isn't called.
                 return;
 			}
 
             _statusMessage = "UNRECOGNIZED COMMAND: " + arg;
-        }
-
-
-        // MANAGE CARGO //
-        void ManageCargo()
-        {
-            Unstock(_miningCargos, ORE_DEST, false);
-
-            Restock(_magazines, AMMO_SUPPLY);
-            Restock(_reactors, FUEL_SUPPLY);
-            Restock(_o2Generators, ICE_SUPPLY);
-
-            Unstock(_constructionCargos, COMP_SUPPLY, true);
-            Restock(_constructionCargos, COMP_SUPPLY);
         }
 
 
@@ -625,7 +624,7 @@ namespace IngameScript
 
 
             // Ensure Default Trigger Call Parameter
-            EnsureKey(Me, INI_HEAD, "Trigger_Door", "Door Timer");
+            EnsureKey(Me, TRIGGER_HEAD, "Trigger_Door", "Door Timer");
 
             // Create inventory lists
             _magazines = new List<IMyTerminalBlock>();
