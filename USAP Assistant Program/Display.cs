@@ -22,8 +22,12 @@ namespace IngameScript
 {
     partial class Program
     {
+        const string DISPLAY_HEAD = "USAP Display Screens";
+
         public class Display
         {
+
+
             IMyTextSurfaceProvider SurfaceProvider;
             IMyTextSurface Surface;
             bool ShowLoadCount;
@@ -50,7 +54,7 @@ namespace IngameScript
                 if (_cruiseThrusters.Count > 0)
                 {
                     ShowTargetSpeed = ParseBool(GetKey(block, iniHeader, "Show Target Speed", "True"));
-                    ShowCruiseThrust = ParseBool(GetKey(block, iniHeader, "Show Auto Throttle", "true"));
+                    ShowCruiseThrust = ParseBool(GetKey(block, iniHeader, "Show Throttle Level", "true"));
                 }
 
                 if (_constructionCargos.Count > 0)
@@ -116,7 +120,7 @@ namespace IngameScript
 
                 for(int i = 0; i < surfaceCount; i++)
                 {
-                    if (ParseBool(GetKey(block, INI_HEAD, "Show on screen " + i, defaultBool))) 
+                    if (ParseBool(GetKey(block, DISPLAY_HEAD, "Show on screen " + i, defaultBool))) 
                     {
                         Display display = new Display(block as IMyTextSurfaceProvider, i, "USAP Screen " + i);
                         _displays.Add(display);
