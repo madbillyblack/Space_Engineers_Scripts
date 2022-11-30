@@ -39,7 +39,7 @@ namespace IngameScript
            {3,""},
            {4,""},
            {5,""},
-           {6,""}
+           {6,"PAGE"}
         };
 
         readonly Dictionary<int, string> _labelB = new Dictionary<int, string>()
@@ -49,7 +49,7 @@ namespace IngameScript
            {3,""},
            {4,""},
            {5,""},
-           {6,""}
+           {6,"SCROLL"}
         };
 
         Dictionary<int, string> _labelC = new Dictionary<int, string>()

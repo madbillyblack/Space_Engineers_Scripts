@@ -77,7 +77,7 @@ namespace IngameScript
                 if (_dataDisplays.Count < 1)
                     return;
                 
-                string dataKey = GetMenuKey(DATA_KEY, "");
+                string dataKey = GetMenuKey(DATA_KEY, "0");
                 int dataIndex = ParseInt(dataKey, 0);
 
                 if (dataKey != "" && dataIndex < _dataDisplays.Count)

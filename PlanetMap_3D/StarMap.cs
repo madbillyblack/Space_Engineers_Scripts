@@ -548,11 +548,11 @@ namespace IngameScript
 					if (number < _mapList.Count)
 					{
 						mapsToEdit.Add(_mapList[number]);
-					}
+					}/*
 					else
 					{
 						AddMessage("screenID " + argValue + " outside range of Map List!");
-					}
+					}*/
 				}
 			}
 

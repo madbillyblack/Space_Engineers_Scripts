@@ -393,10 +393,10 @@ namespace IngameScript
 		// UPDATE WAYPOINT DATA PAGE //
 		void UpdateWaypointDataPage()
         {
+			_waypointDataPage = new List<string>();
+
 			if (_waypointList.Count < 1)
 				return;
-
-			_waypointDataPage = new List<string>();
 
 			foreach (Waypoint waypoint in _waypointList)
             {
