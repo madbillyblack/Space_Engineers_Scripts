@@ -34,7 +34,13 @@ namespace IngameScript
         const string LABEL_KEY = "Label Color";
         const string DATA_KEY = "Data Display Index";
         List<MapMenu> _mapMenus;
+
+        // Menu Page variables
+        const int MENU_PAGES = 6;
+        public static int _menuPageLimit;
+
         
+        // Button Illumination variables
         public static int _buttonCountDown;
         const int BUTTON_TIME = 3;
 
@@ -235,6 +241,10 @@ namespace IngameScript
         void AssignMenus()
         {
             _buttonCountDown = 0;
+            _menuPageLimit = MENU_PAGES;
+
+            if (_dataDisplays.Count < 1)
+                _menuPageLimit--;
 
             List<IMyShipController> controllers = new List<IMyShipController>();
             GridTerminalSystem.GetBlocksOfType<IMyShipController>(controllers);

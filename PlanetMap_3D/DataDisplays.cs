@@ -24,6 +24,7 @@ namespace IngameScript
     {
 		const string DATA_TAG = "[Map Data]";
 		const string DATA_HEADER = "Data Display";
+		const string DATA_SCREENS = "Data Display Screens";
 		const string DATA_PAGE = "Current Page";
 		const string DATA_SCROLL = "Scroll Level";
 		const string SCREEN_KEY = "Screen Index";
@@ -59,16 +60,24 @@ namespace IngameScript
 			public int IDNumber;
 			public IMyTerminalBlock Owner;
 			public IMyTextSurface Surface;
+			public string Header;
 			//string ActivePlanetName;
 			//string ActiveWaypointName;
 			
 			// Constructor //
-			public DataDisplay(IMyTerminalBlock block)
+			public DataDisplay(IMyTerminalBlock block, int screenNumber)
             {
 				Owner = block;
-				ScreenIndex = ParseInt(GetKey(block, DATA_HEADER, SCREEN_KEY, "0"), 0);
-				CurrentPage = ParseInt(GetKey(block, DATA_HEADER, DATA_PAGE, "0"), 0);
-				ScrollIndex = ParseInt(GetKey(block, DATA_HEADER, DATA_SCROLL, "0"), 0);
+				ScreenIndex = screenNumber;
+				
+				//ScreenIndex = ParseInt(GetKey(block, DATA_HEADER, SCREEN_KEY, "0"), 0);
+
+				Header = DATA_HEADER;
+				if ((block as IMyTextSurfaceProvider).SurfaceCount > 1)
+					Header += " - Screen " + ScreenIndex;
+
+				CurrentPage = ParseInt(GetKey(block, Header, DATA_PAGE, "0"), 0);
+				ScrollIndex = ParseInt(GetKey(block, Header, DATA_SCROLL, "0"), 0);
 
 				//ActivePlanetName = "";
 				//ActiveWaypointName = "";
@@ -110,10 +119,10 @@ namespace IngameScript
 				if (CurrentPage > PAGE_LIMIT)
 					CurrentPage = 0;
 
-				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
+				SetKey(Owner, Header, DATA_PAGE, CurrentPage.ToString());
 
 				ScrollIndex = 0;
-				SetKey(Owner, DATA_HEADER, DATA_SCROLL, "0");
+				SetKey(Owner, Header, DATA_SCROLL, "0");
 
 				DisplayPage();
 			}
@@ -125,10 +134,10 @@ namespace IngameScript
 				if (CurrentPage < 0)
 					CurrentPage = PAGE_LIMIT;
 
-				SetKey(Owner, DATA_HEADER, DATA_PAGE, CurrentPage.ToString());
+				SetKey(Owner, Header, DATA_PAGE, CurrentPage.ToString());
 
 				ScrollIndex = 0;
-				SetKey(Owner, DATA_HEADER, DATA_SCROLL, "0");
+				SetKey(Owner, Header, DATA_SCROLL, "0");
 
 				DisplayPage();
 			}
@@ -155,7 +164,7 @@ namespace IngameScript
 					if (ScrollIndex >= entries.Count)
 					{
 						ScrollIndex = entries.Count - 1;
-						SetKey(Owner, DATA_HEADER, DATA_SCROLL, ScrollIndex.ToString());
+						SetKey(Owner, Header, DATA_SCROLL, ScrollIndex.ToString());
 					}
 
 					for (int i = ScrollIndex; i < entries.Count; i++)
@@ -299,7 +308,7 @@ namespace IngameScript
 		void AssignDataDisplays()
         {
 			_dataDisplays = new List<DataDisplay>();
-			Echo("Assigning Data Displays");
+			//Echo("Assigning Data Displays");
 
 			// Get Tagged Display Blocks
 			List<IMyTerminalBlock> displayBlocks = new List<IMyTerminalBlock>();
@@ -315,6 +324,9 @@ namespace IngameScript
             {
 				if(OnGrid(block))
                 {
+					AddScreensFromData(block);
+
+					/*
 					DataDisplay display = new DataDisplay(block);
 
 					if(display.Surface != null)
@@ -322,12 +334,57 @@ namespace IngameScript
 						display.IDNumber = _dataDisplays.Count;
 						display.Surface.ContentType = ContentType.TEXT_AND_IMAGE;
 						_dataDisplays.Add(display);
-                    }
+                    }*/
                 }
             }
 
-			Echo("Data Displays: " + _dataDisplays.Count);
+			//Echo("Data Displays: " + _dataDisplays.Count);
         }
+
+
+		// ADD SCREENS FROM DATA //
+		void AddScreensFromData(IMyTerminalBlock block)
+        {
+			int screenCount = (block as IMyTextSurfaceProvider).SurfaceCount;
+
+			if (screenCount < 1)
+            {
+				AddMessage("Block \"" + block.CustomName + "\" contains no surfaces for Data Display!");
+				return;
+			}
+			else if (screenCount == 1)
+            {
+				AddDataDisplay(block, 0);
+            }
+			else
+            {
+				// Multi-screen INI Bool Selector
+				string defaultBool = "True";
+
+				for(int i = 0; i < screenCount; i++)
+                {
+					if (ParseBool(GetKey(block, DATA_SCREENS, "Show on Screens " + i, defaultBool)))
+						AddDataDisplay(block, i);
+
+					// Set default bool to FALSE for all but screen 0.
+					defaultBool = "False";
+                }
+            }
+        }
+
+
+		// ADD DATA DISPLAY //
+		void AddDataDisplay(IMyTerminalBlock block, int screenNumber)
+        {
+			DataDisplay display = new DataDisplay(block, screenNumber);
+
+			if (display.Surface != null)
+			{
+				display.IDNumber = _dataDisplays.Count;
+				display.Surface.ContentType = ContentType.TEXT_AND_IMAGE;
+				_dataDisplays.Add(display);
+			}
+		}
 
 
 		// INITIALIZE DATA //
