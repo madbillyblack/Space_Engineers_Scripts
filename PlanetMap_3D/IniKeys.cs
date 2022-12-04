@@ -76,7 +76,7 @@ namespace IngameScript
         void SetGridID(string arg)
         {
             string gridID;
-            if (arg != "")
+            if (arg != "" && arg != "0")
                 gridID = arg;
             else
                 gridID = Me.CubeGrid.EntityId.ToString();
