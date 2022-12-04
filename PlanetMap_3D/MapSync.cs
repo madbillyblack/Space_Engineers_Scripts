@@ -264,6 +264,7 @@ namespace IngameScript
 			if (display.CurrentPage != INPUT_PAGE)
 			{
 				AddMessage("Please navigate to GPS INPUT page before running LOG_BATCH command.");
+				return;
 			}
 
 			StringBuilder inputText = new StringBuilder();
@@ -284,13 +285,15 @@ namespace IngameScript
 				}
 			}
 
+			/*
 			string output = "";
 			foreach (string item in outputs)
 			{
 				output += item + "\n";
 			}
-
-			display.Surface.WriteText(output);
+			*/
+			
+			display.Surface.WriteText(display.BuildPageHeader(GPS_INPUT) + BELOW_LINE);
 		}
 	}
 }

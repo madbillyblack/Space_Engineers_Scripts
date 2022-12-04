@@ -32,7 +32,8 @@ namespace IngameScript
 		const string PLANET_TITLE = "PLANETS";
 		const string WAYPOINT_TITLE = "WAYPOINTS";
 		const string GPS_INPUT = "GPS INPUT";
-		
+		const string BELOW_LINE = "~Input Terminal Coords Below This Line~";
+
 		// DATA PAGE CONSTANTS
 		const int PAGE_LIMIT = 5;
 		const int SYSTEM_PAGE = 0;
@@ -98,7 +99,7 @@ namespace IngameScript
             {
 				//SetScroll(ScrollIndex++);	
 				ScrollIndex++;
-				DisplayPage();
+				DisplayPage(true);
 			}
 
 			// Scroll Up
@@ -107,7 +108,7 @@ namespace IngameScript
 				if(ScrollIndex > 0)
 					ScrollIndex--;
 
-				DisplayPage();
+				DisplayPage(true);
 
 				//SetScroll(ScrollIndex--);
             }
@@ -124,7 +125,7 @@ namespace IngameScript
 				ScrollIndex = 0;
 				SetKey(Owner, Header, DATA_SCROLL, "0");
 
-				DisplayPage();
+				DisplayPage(true);
 			}
 
 			// Previous Page //
@@ -139,11 +140,11 @@ namespace IngameScript
 				ScrollIndex = 0;
 				SetKey(Owner, Header, DATA_SCROLL, "0");
 
-				DisplayPage();
+				DisplayPage(true);
 			}
 
 			// WRITE PAGE HEADER //
-			string BuildPageHeader(string pageTitle)
+			public string BuildPageHeader(string pageTitle)
 			{
 				string displayNumber = "";
 
@@ -242,7 +243,7 @@ namespace IngameScript
 				string title = BuildPageHeader(GPS_INPUT);
 
 				if (!(output.StartsWith(title)))
-					output = title + "~Input Terminal Coords Below This Line~";
+					output = title + BELOW_LINE;
 
 				Surface.WriteText(output);
 			}
@@ -262,7 +263,7 @@ namespace IngameScript
 
 
 			// DISPLAY DATA // Write current data to individual data display depending on current page
-			public void DisplayPage()
+			public void DisplayPage(bool fromCommand)
 			{
 				switch (CurrentPage)
 				{
@@ -276,16 +277,21 @@ namespace IngameScript
 						DisplayWaypointData();
 						break;
 					case INPUT_PAGE:
-						DisplayGPSInput();
+						if(fromCommand)
+							DisplayGPSInput();
 						break;
 					case CLIPBOARD_PAGE:
-						DisplayClipboard();
+						if (fromCommand)
+								DisplayClipboard();
 						break;
 					case MAP_PAGE:
-						DisplayMapData();
+						if (fromCommand)
+							DisplayMapData();
 						break;
 				}
 			}
+
+
 			/*
 			// SET ACTIVE WAYPOINT //
 			public void SetActiveWaypoint(string waypointName)
@@ -479,7 +485,7 @@ namespace IngameScript
 				return;
 
 			foreach (DataDisplay display in _dataDisplays)
-				display.DisplayPage();
+				display.DisplayPage(false);
 		}
 	}
 }
