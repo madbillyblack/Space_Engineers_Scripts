@@ -163,10 +163,12 @@ namespace IngameScript
 			if (dataA == "")
 			{
 				newData = dataB;
+				downUp[1] = dataB.Split('\n').Length;
 			}
 			else if (dataB == "")
 			{
 				newData = dataA;
+				downUp[0] = dataA.Split('\n').Length;
 			}
 			else
 			{
