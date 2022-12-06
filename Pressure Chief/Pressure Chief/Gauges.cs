@@ -75,7 +75,14 @@ namespace IngameScript
                                 _buildMessage += "\nAssigning surface " + i + " of " + Block.CustomName + " to bulkhead [" + sectorA + "," + sectorB + "]";
 
                                 if (bulkhead != null)
-                                    bulkhead.Gauges.Add(new GaugeSurface(this, i, bulkhead.Sectors, true));
+                                {
+									List<Sector> sectors;
+									if (bulkhead.Sectors[0].Name == sectorA && bulkhead.Sectors[1].Name == sectorB)
+										sectors = bulkhead.Sectors;
+									else
+										sectors = new List<Sector>() { bulkhead.Sectors[1] , bulkhead.Sectors[0] };
+									bulkhead.Gauges.Add(new GaugeSurface(this, i, sectors, true));
+								}
                                 else
                                     AssignSingleSectorGauge(sectorA, i);
                             }
