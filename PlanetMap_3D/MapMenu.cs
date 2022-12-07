@@ -24,6 +24,7 @@ namespace IngameScript
     {
         const string MENU_HEAD = "Map Menu";
         const string MENU_TAG = "[Map Menu]";
+        const string MENU_ID = "Menu ID";
         const string MENU_COLOR = "Menu Color Settings";
         const string MAP_KEY = "Current Map";
         const string PAGE_KEY = "Current Page";
@@ -69,6 +70,8 @@ namespace IngameScript
             // Constructor //
             public MapMenu(IMyTerminalBlock block)
             {
+                EnsureKey(block, MENU_HEAD, MENU_ID, "");
+
                 Block = block;
                 ActiveButton = 0;
                 
@@ -115,6 +118,13 @@ namespace IngameScript
                 }
 
                 SetDataDisplay();
+            }
+
+            // Set ID //
+            public void SetID(int idNumber)
+            {
+                IDNumber = idNumber;
+                SetKey(Block, MENU_HEAD, MENU_ID, idNumber.ToString());
             }
 
             // Set Data Display //
@@ -299,7 +309,9 @@ namespace IngameScript
                         MapMenu menu = new MapMenu(menuBlock);
                         if (menu != null && menu.Surface != null)
                         {
-                            menu.IDNumber = _mapMenus.Count;
+                            SetMenuID(menu);
+
+                            //menu.IDNumber = _mapMenus.Count;
                             menu.InitializeSurface();
                             _mapMenus.Add(menu);
                         }
@@ -314,7 +326,7 @@ namespace IngameScript
             DrawMenus();
         }
 
-
+        /*
         // MENU FROM CONTROLLER // - Get Menu from provided block and populate menu parameters.
         MapMenu MenuFromController(IMyTerminalBlock block)
         {
@@ -345,13 +357,13 @@ namespace IngameScript
 
             menu.CurrentMapIndex = mapIndex;
 
-            /*
-            IMyTerminalBlock lcdBlock = GridTerminalSystem.GetBlockWithName(blockName);
-            if (lcdBlock == null)
-            {
-                lcdBlock = block;
-                blockName = block.CustomName;
-            }*/
+     
+            //IMyTerminalBlock lcdBlock = GridTerminalSystem.GetBlockWithName(blockName);
+            //if (lcdBlock == null)
+            //{
+            //    lcdBlock = block;
+            //    blockName = block.CustomName;
+            //}
 
             int surfaceCount = GetSurfaceCount(block);
 
@@ -366,27 +378,39 @@ namespace IngameScript
                 AddMessage("Menu Surface could not be retrieved from block " + block.CustomName);
                 return null;
             }
-        }
+        }*/
 
 
         // GET MENU //
         MapMenu GetMenu(string arg)
         {
+            if (_mapMenus.Count < 1)
+                return null;
+
+            int menuID;
+
             try
             {
-                int index;
-
                 if (arg == "")
-                    index = 0;
+                    menuID = 0;
                 else
-                    index = ParseInt(arg.Split(' ')[0], 0);
-
-                return _mapMenus[index];
+                    menuID = ParseInt(arg.Split(' ')[0], 0);
             }
             catch
             {
                 return null;
             }
+
+            if (menuID == 0)
+                return _mapMenus[0];
+
+            foreach(MapMenu menu in _mapMenus)
+            {
+                if (menu.IDNumber == menuID)
+                    return menu;
+            }
+
+            return null;
         }
 
 
@@ -466,6 +490,79 @@ namespace IngameScript
                     display = "null";
                 Echo(menu.Block.CustomName + "\n * Data Display: " + display + "\n");
             }
+        }
+
+
+        // SET MENU ID //
+        void SetMenuID(MapMenu menu)
+        {
+            string idString = GetKey(menu.Block, MENU_HEAD, MENU_ID, "");
+            int menuID;
+
+            if (idString == "") // If no previous ID written to custom data, assign and check other block data for duplicates.
+            {
+                menuID = _mapMenus.Count + 1;
+                menu.SetID(menuID);
+
+                while (DuplicatedIDInData(menu))
+                {
+                    menuID++;
+                    menu.SetID(menuID);
+                }      
+            }
+            else // Use recorded value, but check current list for duplicates
+            {
+                menuID = ParseInt(idString, 1);
+                menu.SetID(menuID);
+
+                while (DuplicateIDInList(menu))
+                {
+                    menuID++;
+                    menu.SetID(menuID);
+                } 
+            }
+        }
+
+
+        // DUPLICATE ID IN LIST // - Check assigned menus to make sure that menu ID number isn't already assigned.
+        bool DuplicateIDInList(MapMenu menu)
+        {
+            if (_mapMenus.Count < 1)
+                return false;
+
+            foreach(MapMenu assignedMenu in _mapMenus)
+            {
+                if (menu.IDNumber == assignedMenu.IDNumber)
+                    return true;
+            }
+
+            return false;
+        }
+
+
+        // DUPLICATE ID IN DATA //
+        bool DuplicatedIDInData(MapMenu menu)
+        {
+            List<IMyTerminalBlock> menuBlocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(MENU_TAG, menuBlocks);
+
+            if (menuBlocks.Count < 1)
+                return false;
+
+            foreach(IMyTerminalBlock block in menuBlocks)
+            {
+                string blockData = block.CustomData;
+                if(blockData.Contains(MENU_HEAD) && blockData.Contains(MENU_ID) && block != menu.Block)
+                {
+                    MyIni blockIni = GetIni(block);
+                    string idValue = blockIni.Get(MENU_HEAD, MENU_ID).ToString();
+
+                    if(idValue == menu.IDNumber.ToString())
+                        return true;
+                }               
+            }
+
+            return false;
         }
     }
 }
