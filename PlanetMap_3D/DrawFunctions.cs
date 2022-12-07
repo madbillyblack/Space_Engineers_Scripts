@@ -417,7 +417,7 @@ namespace IngameScript
 					DrawHashMarks(planet, diameter, lineColor, map);
 				}
 
-				if (map.ShowNames)
+				if (map.ShowNames && map.GpsState > 0)
 				{
 					// PLANET NAME
 					float fontMod = 1;
