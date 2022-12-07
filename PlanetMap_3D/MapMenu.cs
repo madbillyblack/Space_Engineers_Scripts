@@ -24,6 +24,7 @@ namespace IngameScript
     {
         const string MENU_HEAD = "Map Menu";
         const string MENU_TAG = "[Map Menu]";
+        const string MENU_COLOR = "Menu Color Settings";
         const string MAP_KEY = "Current Map";
         const string PAGE_KEY = "Current Page";
         const string ALIGNMENT_KEY = "Alignment";
@@ -32,7 +33,8 @@ namespace IngameScript
         const string TITLE_KEY = "Title Color";
         const string BUTTON_KEY = "Button Color";
         const string LABEL_KEY = "Label Color";
-        const string DATA_KEY = "Data Display Index";
+        const string DATA_KEY = "Current Data Display";
+        
         List<MapMenu> _mapMenus;
 
         // Menu Page variables
@@ -48,7 +50,7 @@ namespace IngameScript
         // MAP MENU //
         public class MapMenu
         {
-            public IMyShipController Controller;
+            public IMyTerminalBlock Block;
             public DataDisplay DataDisplay;
             public IMyTextSurface Surface;
             public int CurrentMapIndex;
@@ -65,16 +67,54 @@ namespace IngameScript
             public string Decals;
             
             // Constructor //
-            public MapMenu(IMyShipController controller)
+            public MapMenu(IMyTerminalBlock block)
             {
-                Controller = controller;
+                Block = block;
                 ActiveButton = 0;
+                
+                int surfaceCount = GetSurfaceCount(block);
+                int index;
 
+                // If multi screen add INI Parameter Screen Index, otherwise assume index = 0.
+                if (surfaceCount > 1)
+                    index = ParseInt(GetKey(block, MENU_HEAD, "Screen Index", "0"), 0);
+                else
+                    index = 0;
+                
                 Alignment = GetMenuKey(ALIGNMENT_KEY, "TOP").ToUpper();
                 Decals = GetMenuKey(DECAL_KEY, "").ToUpper();
 
-                SetDataDisplay();
+                // Set currently available menu parameters
+                CurrentPage = ParseInt(GetKey(block, MENU_HEAD, PAGE_KEY, "1"), 1);
+                BackgroundColor = ParseColor(GetKey(block, MENU_COLOR, BG_KEY, "0,0,0"));
+                TitleColor = ParseColor(GetKey(block, MENU_COLOR, TITLE_KEY, "160,160,0"));
+                LabelColor = ParseColor(GetKey(block, MENU_COLOR, LABEL_KEY, "160,160,160"));
+                ButtonColor = ParseColor(GetKey(block, MENU_COLOR, BUTTON_KEY, "0,160,160"));
 
+                int mapIndex;
+
+                if (_mapList.Count > 1)
+                {
+                    mapIndex = ParseInt(GetKey(block, MENU_HEAD, MAP_KEY, "0"), 0);
+                    if (mapIndex >= _mapList.Count)
+                        mapIndex = 0;
+                }
+                else
+                    mapIndex = 0;
+
+                CurrentMapIndex = mapIndex;
+
+                if (surfaceCount > 0 && index < surfaceCount)
+                {
+                    Surface = (block as IMyTextSurfaceProvider).GetSurface(index);
+                }
+                else
+                {
+                    AddMessage("Menu Surface could not be retrieved from block " + block.CustomName);
+                    Surface = null;
+                }
+
+                SetDataDisplay();
             }
 
             // Set Data Display //
@@ -121,7 +161,7 @@ namespace IngameScript
                 }
                     
                 DataDisplay = GetDataDisplay(index);
-                SetKey(Controller, MENU_HEAD, DATA_KEY, index.ToString());
+                SetKey(Block, MENU_HEAD, DATA_KEY, index.ToString());
             }
 
 
@@ -147,7 +187,7 @@ namespace IngameScript
                 }
                     
                 DataDisplay = GetDataDisplay(index);
-                SetKey(Controller, MENU_HEAD, DATA_KEY, index.ToString());
+                SetKey(Block, MENU_HEAD, DATA_KEY, index.ToString());
             }
 
 
@@ -176,7 +216,7 @@ namespace IngameScript
                 if (CurrentMapIndex >= _mapList.Count)
                     CurrentMapIndex = 0;
 
-                SetKey(Controller, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
+                SetKey(Block, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
             }
 
             // Previous Map //
@@ -190,13 +230,13 @@ namespace IngameScript
                 if (CurrentMapIndex < 0)
                     CurrentMapIndex = _mapList.Count - 1;
 
-                SetKey(Controller, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
+                SetKey(Block, MENU_HEAD, MAP_KEY, CurrentMapIndex.ToString());
             }
 
             // Get Menu Key //
             string GetMenuKey(string key, string defaultValue)
             {
-                return GetKey(Controller, MENU_HEAD, key, defaultValue);
+                return GetKey(Block, MENU_HEAD, key, defaultValue);
             }
 
             // Next Data Page //
@@ -246,17 +286,17 @@ namespace IngameScript
             if (_dataDisplays.Count < 1)
                 _menuPageLimit--;
 
-            List<IMyShipController> controllers = new List<IMyShipController>();
-            GridTerminalSystem.GetBlocksOfType<IMyShipController>(controllers);
+            List<IMyTerminalBlock> menuBlocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(MENU_TAG, menuBlocks);
 
-            if(controllers.Count > 0)
+            if(menuBlocks.Count > 0)
             {
-                foreach(IMyShipController controller in controllers)
+                foreach(IMyTerminalBlock menuBlock in menuBlocks)
                 {
                     // Check that controller has MENU_TAG and same Grid ID
-                    if(controller.CustomName.Contains(MENU_TAG) && GetKey(controller, SHARED, "Grid_ID", _gridID) == _gridID)
+                    if(GetKey(menuBlock, SHARED, "Grid_ID", _gridID) == _gridID)
                     {
-                        MapMenu menu = MenuFromController(controller);
+                        MapMenu menu = new MapMenu(menuBlock);
                         if (menu != null && menu.Surface != null)
                         {
                             menu.IDNumber = _mapMenus.Count;
@@ -265,7 +305,7 @@ namespace IngameScript
                         }
                         else
                         {
-                            AddMessage("MENU SURFACE ERROR! - Could not add Menu for controller \n\"" + controller.CustomName + "\"\n* Please check LCD Index in Custom Data for Controller.");
+                            AddMessage("MENU SURFACE ERROR! - Could not add Menu for controller \n\"" + menuBlock.CustomName + "\"\n* Please check LCD Index in Custom Data for Controller.");
                         }
                     }
                 }
@@ -276,13 +316,13 @@ namespace IngameScript
 
 
         // MENU FROM CONTROLLER // - Get Menu from provided block and populate menu parameters.
-        MapMenu MenuFromController(IMyShipController block)
+        MapMenu MenuFromController(IMyTerminalBlock block)
         {
             // Create Empty Menu
             MapMenu menu = new MapMenu(block);
 
             // Get name of block and index of screen where menu interface should be displayed
-            string blockName = GetKey(block, MENU_HEAD, "LCD Block", block.CustomName);
+            //string blockName = GetKey(block, MENU_HEAD, "LCD Block", block.CustomName);
             int index = ParseInt(GetKey(block, MENU_HEAD, "LCD Index", "0"), 0);
 
             // Set currently available menu parameters
@@ -305,24 +345,25 @@ namespace IngameScript
 
             menu.CurrentMapIndex = mapIndex;
 
+            /*
             IMyTerminalBlock lcdBlock = GridTerminalSystem.GetBlockWithName(blockName);
             if (lcdBlock == null)
             {
                 lcdBlock = block;
                 blockName = block.CustomName;
-            }
+            }*/
 
-            int surfaceCount = GetSurfaceCount(lcdBlock);
+            int surfaceCount = GetSurfaceCount(block);
 
             if (surfaceCount > 0 && index < surfaceCount)
             {
                 
-                menu.Surface = (lcdBlock as IMyTextSurfaceProvider).GetSurface(index);
+                menu.Surface = (block as IMyTextSurfaceProvider).GetSurface(index);
                 return menu;
             }
             else
             {
-                AddMessage("Menu Surface could not be retrieved from block " + blockName);
+                AddMessage("Menu Surface could not be retrieved from block " + block.CustomName);
                 return null;
             }
         }
@@ -373,7 +414,7 @@ namespace IngameScript
             else if (menu.CurrentPage < 1)
                 menu.CurrentPage = 6;
 
-            SetKey(menu.Controller, MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
+            SetKey(menu.Block, MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
 
             DrawMenu(menu);
         }
@@ -423,7 +464,7 @@ namespace IngameScript
                     display = menu.DataDisplay.IDNumber.ToString();
                 else
                     display = "null";
-                Echo(menu.Controller.CustomName + "\n * Data Display: " + display + "\n");
+                Echo(menu.Block.CustomName + "\n * Data Display: " + display + "\n");
             }
         }
     }
