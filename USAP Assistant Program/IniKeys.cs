@@ -23,6 +23,7 @@ namespace IngameScript
     partial class Program
     {
         const string SHARED = "Shared Data";
+        const string GRID_KEY = "Grid_ID";
         string _gridID;
 
         // ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
@@ -92,6 +93,19 @@ namespace IngameScript
             }
 
             Build();
+        }
+
+
+        // SAME GRID ID // - By default unassigned blocks will be given current Grid's ID.
+        bool SameGridID(IMyTerminalBlock block, bool useDefaultValue=true)
+        {
+            if (!useDefaultValue && !block.CustomData.Contains(SHARED))
+                return false;
+
+            if (GetKey(block, SHARED, GRID_KEY, _gridID) == _gridID)
+                return true;
+            else
+                return false;
         }
     }
 }
