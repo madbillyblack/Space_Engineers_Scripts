@@ -22,22 +22,35 @@ namespace IngameScript
 {
     partial class Program
     {
+        const string MENU_HEAD = "Context Menu";
         const string PAGE_HEAD = "Menu Page ";
         const string BUTTON_BLOCK = "Block ";
         const string BUTTON_ACTION = "Action ";
 
+        static Dictionary<int, Menu> _menus;
 
         // MENU //
         public class Menu
         {
+            public int IDNumber;
+            public Dictionary<int, MenuPage> Pages;
 
+            public Menu(){}
         }
 
 
         // MENU PAGE //
         public class MenuPage
         {
+            public int Number;
+            public string Name;
+            public Dictionary<int, MenuButton> Buttons;
 
+            public MenuPage(int number)
+            {
+                Buttons = new Dictionary<int, MenuButton>();
+                Number = number;
+            }
         }
 
 
@@ -58,7 +71,7 @@ namespace IngameScript
             public string CenterLabel;
             public string Action;
 
-            public MenuButton(IMyTerminalBlock menuBlock, int pageNumber, int buttonNumber)
+            public MenuButton(int pageNumber, int buttonNumber)
             {
                 Blocks = new List<IMyTerminalBlock>();
                 Number = buttonNumber;  
@@ -66,10 +79,48 @@ namespace IngameScript
         }
 
 
-        // INITIALIZE BUTTON //
-        void InitializeButton(IMyTerminalBlock menuBlock, int pageNumber, int buttonNumber)
+        // ASSIGN MENUS //
+        void AssignMenus()
         {
-            MenuButton button = new MenuButton(menuBlock, pageNumber, buttonNumber);
+            _menus = new Dictionary<int, Menu>();
+
+            //TODO
+        }
+
+
+        // INITIALIZE MENU //
+        Menu InitializeMenu(IMyTerminalBlock menuBlock)
+        {
+            Menu menu = new Menu();
+            int pageCount = ParseInt(GetKey(menuBlock, MENU_HEAD, "Page Count", "1"), 1);
+
+            for(int i = 1; i <= pageCount; i++)
+            {
+                menu.Pages[i] = InitializeMenuPage(menuBlock, i);
+            }
+
+            return menu;
+        }
+
+
+        // INITIALIZE MENU PAGE //
+        MenuPage InitializeMenuPage(IMyTerminalBlock menuBlock, int pageNumber)
+        {
+            MenuPage menuPage = new MenuPage(pageNumber);
+
+            for(int i = 1; i < 8; i++)
+            {
+                menuPage.Buttons[i] = InitializeButton(menuBlock, pageNumber, i);
+            }
+
+            return menuPage;
+        }
+
+
+        // INITIALIZE BUTTON //
+        MenuButton InitializeButton(IMyTerminalBlock menuBlock, int pageNumber, int buttonNumber)
+        {
+            MenuButton button = new MenuButton(pageNumber, buttonNumber);
 
             string blockString = GetKey(menuBlock, PAGE_HEAD + pageNumber, BUTTON_BLOCK + button.Number, "");
             string [] buttonData = blockString.Split(';');
@@ -118,11 +169,13 @@ namespace IngameScript
                         button.ToggleBlock = toggleBlock;
                 }
             }
-        
 
+            return button;
         }
 
 
+
+        // GET PROGRAM BLOCK //
         IMyProgrammableBlock GetProgramBlock(string blockName)
         {
             List<IMyProgrammableBlock> blocks = new List<IMyProgrammableBlock>();
