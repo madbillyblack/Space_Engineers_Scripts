@@ -41,6 +41,7 @@ namespace IngameScript
 
         const string DISPLAY_TAG = "USAP Display"; // Tag used to find blocks to use as LCD displays
 
+        const string MENU_TAG = "[MENU]"; // Tag use to assign constext menus to block
 
         // CONTROLLER CONSTANTS:
         const double TIME_STEP = 1.0 / 6.0;
@@ -681,6 +682,7 @@ namespace IngameScript
 
             AssignDisplays();
             PrintDisplays();
+            AssignMenus();
         }
 
 

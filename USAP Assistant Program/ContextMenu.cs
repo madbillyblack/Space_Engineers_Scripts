@@ -23,6 +23,7 @@ namespace IngameScript
     partial class Program
     {
         const string MENU_HEAD = "Context Menu";
+        const string ID_KEY = "Menu ID";
         const string PAGE_HEAD = "Menu Page ";
         const string BUTTON_BLOCK = "Block ";
         const string BUTTON_ACTION = "Action ";
@@ -33,9 +34,35 @@ namespace IngameScript
         public class Menu
         {
             public int IDNumber;
+            public int PageCount;
+            public int CurrentPage;
             public Dictionary<int, MenuPage> Pages;
 
-            public Menu(){}
+            public Menu(IMyTerminalBlock block)
+            {
+                Pages = new Dictionary<int, MenuPage>();
+
+                // Default value if no ID recorded in INI
+                int idKey = _menus.Count + 1;
+
+                // Read Parameters from Custom Data
+                IDNumber = ParseInt(GetKey(block, MENU_HEAD, ID_KEY, idKey.ToString()), idKey);
+                PageCount = ParseInt(GetKey(block, MENU_HEAD, "Page Count", "1"), 1);
+                CurrentPage = ParseInt(GetKey(block, MENU_HEAD, "Current Page", "1"), 1);
+
+                // Set to try if current ID is already in Dictionary
+                bool updateID = false;
+
+                while (_menus.ContainsKey(IDNumber))
+                {
+                    idKey++;
+                    IDNumber = idKey;
+                    updateID = true;
+                }
+
+                if (updateID)
+                    SetKey(block, MENU_HEAD, ID_KEY, IDNumber.ToString());
+            }
         }
 
 
@@ -84,17 +111,29 @@ namespace IngameScript
         {
             _menus = new Dictionary<int, Menu>();
 
-            //TODO
+            List<IMyTerminalBlock> menuBlocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName(MENU_TAG, menuBlocks);
+
+            if (menuBlocks.Count < 1)
+                return;
+
+            foreach(IMyTerminalBlock menuBlock in menuBlocks)
+            {
+                if(SameGridID(menuBlock) && (menuBlock as IMyTextSurfaceProvider).SurfaceCount > 0)
+                {
+                    Menu menu = InitializeMenu(menuBlock);
+                    _menus[menu.IDNumber] = menu;
+                }
+            }
         }
 
 
         // INITIALIZE MENU //
         Menu InitializeMenu(IMyTerminalBlock menuBlock)
         {
-            Menu menu = new Menu();
-            int pageCount = ParseInt(GetKey(menuBlock, MENU_HEAD, "Page Count", "1"), 1);
+            Menu menu = new Menu(menuBlock);
 
-            for(int i = 1; i <= pageCount; i++)
+            for(int i = 1; i <= menu.PageCount; i++)
             {
                 menu.Pages[i] = InitializeMenuPage(menuBlock, i);
             }
