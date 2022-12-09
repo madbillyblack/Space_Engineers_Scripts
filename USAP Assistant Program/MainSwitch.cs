@@ -168,6 +168,12 @@ namespace IngameScript
                     case "THROTTLE_DOWN":
                         ThrottleDown(cmdArg);
                         break;
+                    case "NEXT_MENU":
+                        NextMenuPage(cmdArg);
+                        break;
+                    case "PREVIOUS_MENU":
+                        PreviousMenuPage(cmdArg);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;

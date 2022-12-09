@@ -23,6 +23,8 @@ namespace IngameScript
     partial class Program
     {
         const string MENU_HEAD = "Context Menu";
+        const string PAGE_KEY = "Current Page";
+        const string PAGE_COUNT = "Page Count";
         const string ID_KEY = "Menu ID";
         const string PAGE_HEAD = "Menu Page ";
         const string BUTTON_BLOCK = "Block ";
@@ -32,6 +34,7 @@ namespace IngameScript
         const string TITLE_KEY = "Title Color";
         const string BUTTON_KEY = "Button Color";
         const string LABEL_KEY = "Label Color";
+        const int PAGE_LIMIT = 9;
 
         static Dictionary<int, Menu> _menus;
 
@@ -41,6 +44,7 @@ namespace IngameScript
             public int IDNumber;
             public int PageCount;
             public int CurrentPage;
+            public IMyTerminalBlock Block;
             public IMyTextSurface Surface;
             public RectangleF Viewport;
             public string Alignment;
@@ -59,9 +63,12 @@ namespace IngameScript
                 int idKey = _menus.Count + 1;
 
                 // Read Parameters from Custom Data
+                Block = block;
                 IDNumber = ParseInt(GetKey(block, MENU_HEAD, ID_KEY, idKey.ToString()), idKey);
-                PageCount = ParseInt(GetKey(block, MENU_HEAD, "Page Count", "1"), 1);
-                CurrentPage = ParseInt(GetKey(block, MENU_HEAD, "Current Page", "1"), 1);
+
+                SetPageCount();
+                SetCurrentPage();
+
                 Alignment = GetKey(block, MENU_HEAD, "Alignment", "BOTTOM");
 
                 // Set Menu Surface
@@ -90,6 +97,31 @@ namespace IngameScript
                 TitleColor = ParseColor(GetKey(block, MENU_COLOR, TITLE_KEY, "160,160,0"));
                 LabelColor = ParseColor(GetKey(block, MENU_COLOR, LABEL_KEY, "160,160,160"));
                 ButtonColor = ParseColor(GetKey(block, MENU_COLOR, BUTTON_KEY, "0,160,160"));
+            }
+
+            // SET PAGE COUNT //
+            void SetPageCount()
+            {
+                PageCount = ParseInt(GetKey(Block, MENU_HEAD, PAGE_COUNT, "1"), 1);
+
+                if (PageCount > PAGE_LIMIT)
+                {
+                    PageCount = PAGE_LIMIT;
+                    SetKey(Block, MENU_HEAD, PAGE_COUNT, PAGE_LIMIT.ToString());
+                }
+            }
+
+            // SET CURRENT PAGE //
+            void SetCurrentPage()
+            {
+                CurrentPage = ParseInt(GetKey(Block, MENU_HEAD, PAGE_KEY, "1"), 1);
+                
+
+                if(CurrentPage > PageCount || CurrentPage < 1)
+                {
+                    CurrentPage = 1;
+                    SetKey(Block, MENU_HEAD, PAGE_KEY, "1");
+                }
             }
         }
 
@@ -244,7 +276,6 @@ namespace IngameScript
         }
 
 
-
         // GET PROGRAM BLOCK //
         IMyProgrammableBlock GetProgramBlock(string blockName)
         {
@@ -261,6 +292,87 @@ namespace IngameScript
             }
 
             return null;
+        }
+
+
+        // NEXT MENU PAGE //
+        void NextMenuPage(string menuKey)
+        {
+            Menu menu = GetMenu(menuKey);
+
+            if(menu == null)
+            {
+                _statusMessage = "NO MENU FOUND!";
+                return;
+            }
+
+            menu.CurrentPage++;
+
+            if (menu.CurrentPage > menu.PageCount)
+                menu.CurrentPage = 1;
+
+            SetKey(menu.Block, MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
+
+            DrawMenu(menu);
+        }
+
+
+        // PREVIOUS MENU PAGE //
+        void PreviousMenuPage(string menuKey)
+        {
+            Menu menu = GetMenu(menuKey);
+
+            if (menu == null)
+            {
+                _statusMessage = "NO MENU FOUND!";
+                return;
+            }
+
+            menu.CurrentPage--;
+
+            if (menu.CurrentPage < 1)
+                menu.CurrentPage = menu.PageCount;
+
+            SetKey(menu.Block, MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
+
+            DrawMenu(menu);
+        }
+
+
+        // GET MENU //
+        Menu GetMenu(string menuKey)
+        {
+            if (_menus.Count < 1)
+                return null;
+
+            int key;
+
+            if (menuKey == "0" || menuKey == "")
+                key = 0;
+            else
+                key = ParseInt(menuKey, 0);
+
+            if (key == 0)
+                return GetFirstMenu();
+            else if (!_menus.ContainsKey(key))
+                return null;
+            else
+                return _menus[key];
+        }
+
+
+        // GET FIRST MENU //
+        Menu GetFirstMenu()
+        {
+            int index = int.MaxValue;
+
+            foreach (int key in _menus.Keys)
+            {
+                if (key < index)
+                    index = key;
+            }
+
+            return _menus[index];
         }
     }
 }
