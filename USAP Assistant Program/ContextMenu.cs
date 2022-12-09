@@ -43,6 +43,7 @@ namespace IngameScript
             public int CurrentPage;
             public IMyTextSurface Surface;
             public RectangleF Viewport;
+            public string Alignment;
             public Dictionary<int, MenuPage> Pages;
 
             public Color BackgroundColor;
@@ -61,6 +62,7 @@ namespace IngameScript
                 IDNumber = ParseInt(GetKey(block, MENU_HEAD, ID_KEY, idKey.ToString()), idKey);
                 PageCount = ParseInt(GetKey(block, MENU_HEAD, "Page Count", "1"), 1);
                 CurrentPage = ParseInt(GetKey(block, MENU_HEAD, "Current Page", "1"), 1);
+                Alignment = GetKey(block, MENU_HEAD, "Alignment", "BOTTOM");
 
                 // Set Menu Surface
                 int screenIndex = ParseInt(GetKey(block, MENU_HEAD, "Screen Index", "0"), 0);
@@ -149,6 +151,8 @@ namespace IngameScript
                 {
                     Menu menu = InitializeMenu(menuBlock);
                     _menus[menu.IDNumber] = menu;
+
+                    DrawMenu(menu);
                 }
             }
         }
@@ -172,6 +176,7 @@ namespace IngameScript
         MenuPage InitializeMenuPage(IMyTerminalBlock menuBlock, int pageNumber)
         {
             MenuPage menuPage = new MenuPage(pageNumber);
+            menuPage.Name = GetKey(menuBlock, PAGE_HEAD + pageNumber, "Title", "");
 
             for(int i = 1; i < 8; i++)
             {

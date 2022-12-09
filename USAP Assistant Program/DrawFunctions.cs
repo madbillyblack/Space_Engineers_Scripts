@@ -105,8 +105,98 @@ namespace IngameScript
 			if (buttonHeight > cellWidth)
 				buttonHeight = cellWidth - 4;
 
+			// Background
+			Vector2 position = center - new Vector2(width / 2, 0);
+			DrawTexture("SquareSimple", position, new Vector2(width, height), 0, bgColor);
+
+			// Set Starting Top Edge
+			Vector2 topLeft;
+			switch (menu.Alignment.ToUpper())
+			{
+				case "TOP":
+					topLeft = center - new Vector2(width / 2, height / 2);
+					break;
+				case "BOTTOM":
+					topLeft = center - new Vector2(width / 2, height / -2 + buttonHeight * 2);
+					break;
+				case "CENTER":
+				default:
+					topLeft = center - new Vector2(width / 2, buttonHeight);
+					break;
+			}
+
+			// Button Backgrounds
+			position = topLeft + new Vector2((cellWidth - buttonHeight) / 2, buttonHeight * 1.5f);
+			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
+
+			for (int i = 1; i < 8; i++)
+			{/*
+				Color color;
+
+				// Brighten button if active, otherwise darken
+				if (i == menu.ActiveButton)
+					color = buttonColor * 2;
+				else
+					color = buttonColor * 0.5f;
+
+				if (ShouldBeVisible(menu, i))
+					DrawTexture("SquareSimple", position, buttonScale, 0, color);
+				*/
+				DrawTexture("SquareSimple", position, buttonScale, 0, buttonColor);
+
+				position += new Vector2(cellWidth, 0);
+			}
+
+			// Menu Title
+			position = topLeft + new Vector2(10, 0);
+			string title = "MENU " + page;
+			string name = menu.Pages[page].Name;
+
+			if (name != "")
+				title += ": " + name;
+
+			DrawText(title, position, fontSize, TextAlignment.LEFT, titleColor);
+
+			// Menu ID
+			position = topLeft + new Vector2(width - 10, 0);
+			if (_menus.Count > 1)
+				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.RIGHT, labelColor);
+
+
 			// TODO
 
+
+			// from planetMap3D section between key icons and numbers
+			fontSize *= 1.5f;
+
+			// Key 1
+			//position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.45f);
+			position = topLeft + new Vector2(cellWidth / 2, buttonHeight * 1.35f);
+			DrawText("1", position, fontSize, TextAlignment.CENTER, bgColor);
+
+			// Key 2
+			position += new Vector2(cellWidth, 0);
+			DrawText("2", position, fontSize, TextAlignment.CENTER, bgColor);
+
+			// Key 3
+			position += new Vector2(cellWidth, 0);
+			DrawText("3", position, fontSize, TextAlignment.CENTER, bgColor);
+
+			// Key 4
+			position += new Vector2(cellWidth, 0);
+			DrawText("4", position, fontSize, TextAlignment.CENTER, bgColor);
+
+			// Key 5
+			position += new Vector2(cellWidth, 0);
+			DrawText("5", position, fontSize, TextAlignment.CENTER, bgColor);
+
+			// Key 6
+			position += new Vector2(cellWidth, 0);
+			DrawText("6", position, fontSize, TextAlignment.CENTER, bgColor);
+
+			// Key 7
+			position += new Vector2(cellWidth, 0);
+			DrawText("7", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			_frame.Dispose();
 		}
