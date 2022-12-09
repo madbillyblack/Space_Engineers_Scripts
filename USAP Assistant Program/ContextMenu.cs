@@ -27,6 +27,11 @@ namespace IngameScript
         const string PAGE_HEAD = "Menu Page ";
         const string BUTTON_BLOCK = "Block ";
         const string BUTTON_ACTION = "Action ";
+        const string MENU_COLOR = "Menu Color Settings";
+        const string BG_KEY = "Background Color";
+        const string TITLE_KEY = "Title Color";
+        const string BUTTON_KEY = "Button Color";
+        const string LABEL_KEY = "Label Color";
 
         static Dictionary<int, Menu> _menus;
 
@@ -36,7 +41,14 @@ namespace IngameScript
             public int IDNumber;
             public int PageCount;
             public int CurrentPage;
+            public IMyTextSurface Surface;
+            public RectangleF Viewport;
             public Dictionary<int, MenuPage> Pages;
+
+            public Color BackgroundColor;
+            public Color TitleColor;
+            public Color LabelColor;
+            public Color ButtonColor;
 
             public Menu(IMyTerminalBlock block)
             {
@@ -50,6 +62,14 @@ namespace IngameScript
                 PageCount = ParseInt(GetKey(block, MENU_HEAD, "Page Count", "1"), 1);
                 CurrentPage = ParseInt(GetKey(block, MENU_HEAD, "Current Page", "1"), 1);
 
+                // Set Menu Surface
+                int screenIndex = ParseInt(GetKey(block, MENU_HEAD, "Screen Index", "0"), 0);
+                Surface = SurfaceFromBlock(block as IMyTextSurfaceProvider, screenIndex);
+                PrepareTextSurfaceForSprites(Surface);
+
+                if (Surface != null)
+                    Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
+
                 // Set to try if current ID is already in Dictionary
                 bool updateID = false;
 
@@ -62,6 +82,12 @@ namespace IngameScript
 
                 if (updateID)
                     SetKey(block, MENU_HEAD, ID_KEY, IDNumber.ToString());
+
+                // Set currently available menu parameters
+                BackgroundColor = ParseColor(GetKey(block, MENU_COLOR, BG_KEY, "0,0,0"));
+                TitleColor = ParseColor(GetKey(block, MENU_COLOR, TITLE_KEY, "160,160,0"));
+                LabelColor = ParseColor(GetKey(block, MENU_COLOR, LABEL_KEY, "160,160,160"));
+                ButtonColor = ParseColor(GetKey(block, MENU_COLOR, BUTTON_KEY, "0,160,160"));
             }
         }
 
