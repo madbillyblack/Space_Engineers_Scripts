@@ -168,6 +168,27 @@ namespace IngameScript
                     case "THROTTLE_DOWN":
                         ThrottleDown(cmdArg);
                         break;
+                    case "BUTTON_1":
+                        ActivateButton(cmdArg, 1);
+                        break;
+                    case "BUTTON_2":
+                        ActivateButton(cmdArg, 2);
+                        break;
+                    case "BUTTON_3":
+                        ActivateButton(cmdArg, 3);
+                        break;
+                    case "BUTTON_4":
+                        ActivateButton(cmdArg, 4);
+                        break;
+                    case "BUTTON_5":
+                        ActivateButton(cmdArg, 5);
+                        break;
+                    case "BUTTON_6":
+                        ActivateButton(cmdArg, 6);
+                        break;
+                    case "BUTTON_7":
+                        ActivateButton(cmdArg, 7);
+                        break;
                     case "NEXT_MENU":
                         NextMenuPage(cmdArg);
                         break;

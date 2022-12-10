@@ -163,6 +163,45 @@ namespace IngameScript
                 Blocks = new List<IMyTerminalBlock>();
                 Number = buttonNumber;  
             }
+
+            // SET PROGRAM BLOCK //
+            public void SetProgramBlock(IMyProgrammableBlock programBlock)
+            {
+                ProgramBlock = programBlock;
+                IsProgramButton = !(programBlock == null);
+            }
+
+            // SET TOGGLE BLOCK //
+            public void SetToggleBlock(IMyTerminalBlock toggleBlock)
+            {
+                ToggleBlock = toggleBlock;
+                IsToggleButton = !(toggleBlock == null);
+            }
+
+
+            // ACTIVATE //
+            public void Activate()
+            {
+                if(IsProgramButton && ProgramBlock != null)
+                {
+                    ProgramBlock.TryRun(Action);
+                }
+                else if(Blocks.Count > 0)
+                {
+                    foreach(IMyTerminalBlock block in Blocks)
+                    {
+                        block.GetActionWithName(Action).Apply(block);
+                    }
+                }
+            }
+
+            // ACTIVATE ILLUMINATION //
+            public void ActivateIllumination()
+            {
+                if (IsToggleButton && ToggleBlock != null)
+                    Activated = ToggleBlock.IsWorking;
+
+            }
         }
 
 
@@ -243,21 +282,27 @@ namespace IngameScript
 
                 //Assign group blocks to button's block list.
                 group.GetBlocks(button.Blocks);
+
+                button.SetProgramBlock(null);
             }
             else if(blockString.ToUpper().StartsWith("P:"))
             {
                 string programName = buttonData[0].Substring(2).Trim();
-                button.ProgramBlock = GetProgramBlock(programName);
+                button.SetProgramBlock(GetProgramBlock(programName));
             }
             else
             {
                 string blockName = buttonData[0].Trim();
                 GridTerminalSystem.SearchBlocksOfName(blockName, button.Blocks);
+
+                button.SetProgramBlock(null);
             }
 
             // Set Button Action
             string actionString = GetKey(menuBlock, PAGE_HEAD + pageNumber, BUTTON_ACTION + button.Number, "");
             string[] actionData = actionString.Split(';');
+
+            button.Action = actionData[0];
 
             if (actionData.Length > 1)
             {
@@ -267,8 +312,10 @@ namespace IngameScript
                 {
                     IMyTerminalBlock toggleBlock = GridTerminalSystem.GetBlockWithName(entry.Substring(2));
 
-                    if(SameGridID(toggleBlock))
-                        button.ToggleBlock = toggleBlock;
+                    if (SameGridID(toggleBlock))
+                        button.SetToggleBlock(toggleBlock);
+                    else
+                        button.SetToggleBlock(null);
                 }
             }
 
@@ -300,11 +347,8 @@ namespace IngameScript
         {
             Menu menu = GetMenu(menuKey);
 
-            if(menu == null)
-            {
-                _statusMessage = "NO MENU FOUND!";
+            if (MenuNotFound(menu))
                 return;
-            }
 
             menu.CurrentPage++;
 
@@ -322,11 +366,8 @@ namespace IngameScript
         {
             Menu menu = GetMenu(menuKey);
 
-            if (menu == null)
-            {
-                _statusMessage = "NO MENU FOUND!";
+            if (MenuNotFound(menu))
                 return;
-            }
 
             menu.CurrentPage--;
 
@@ -373,6 +414,39 @@ namespace IngameScript
             }
 
             return _menus[index];
+        }
+
+
+        // ACTIVATE BUTTON //
+        void ActivateButton(string menuKey, int buttonNumber)
+        {
+            Menu menu = GetMenu(menuKey);
+
+            if (MenuNotFound(menu))
+                return;
+
+            MenuPage page = menu.Pages[menu.CurrentPage];
+            MenuButton button = page.Buttons[buttonNumber];
+
+            if(button.Action == "")
+            {
+                Echo("No action set for Menu:" + menu.IDNumber + " Button:" + button.Number);
+                return;
+            }
+
+            button.Activate();
+        }
+
+
+        bool MenuNotFound(Menu menu)
+        {
+            if(menu == null)
+            {
+                _statusMessage = "NO MENU FOUND!";
+                return true;
+            }
+
+            return false;
         }
     }
 }
