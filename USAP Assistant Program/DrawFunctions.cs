@@ -133,19 +133,9 @@ namespace IngameScript
 
 			for (int i = 1; i < 8; i++)
 			{
-				Color color;
 				MenuButton button = page.Buttons[i];
 
-				// Brighten button if active, otherwise darken
-				if (button.IsActive)
-					color = buttonColor * 2;
-				else
-					color = buttonColor * 0.5f;
-
-				//if (ShouldBeVisible(menu, i))
-					//DrawTexture("SquareSimple", position, buttonScale, 0, color);
-				
-				DrawTexture("SquareSimple", position, buttonScale, 0, color);
+				DrawButton(button, position, buttonScale, buttonColor, bgColor);
 
 				position += new Vector2(cellWidth, 0);
 			}
@@ -202,6 +192,24 @@ namespace IngameScript
 			DrawText("7", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			_frame.Dispose();
+		}
+
+
+		// DRAW BUTTON //
+		void DrawButton(MenuButton button, Vector2 position, Vector2 buttonScale, Color buttonColor, Color backgroundColor)
+        {
+			Color color;
+
+			// Brighten button if active, otherwise darken
+			if (button.IsActive)
+				color = buttonColor * 2;
+			else
+				color = buttonColor * 0.5f;
+
+			//if (ShouldBeVisible(menu, i))
+			//DrawTexture("SquareSimple", position, buttonScale, 0, color);
+
+			DrawTexture("SquareSimple", position, buttonScale, 0, color);
 		}
 
 		/* / DRAW MENU //

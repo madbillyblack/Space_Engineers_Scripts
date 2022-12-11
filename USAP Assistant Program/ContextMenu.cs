@@ -163,8 +163,8 @@ namespace IngameScript
             public bool IsToggleButton;
             public bool IsActive;
 
-            public string TopLabel;
-            public string CenterLabel;
+            public string BlockLabel;
+            public string [] ActionLabel;
             public string Action;
 
             public MenuButton(int buttonNumber)
@@ -179,6 +179,7 @@ namespace IngameScript
             {
                 ProgramBlock = programBlock;
                 IsProgramButton = !(programBlock == null);
+                ActionLabel = new string[] {"#",""};
             }
 
             // SET TOGGLE BLOCK //
@@ -191,6 +192,60 @@ namespace IngameScript
                     IsActive = toggleBlock.IsWorking;
             }
 
+            // SET BLOCK LABEL //
+            public void SetBlockLabel(string label)
+            {
+                string newLabel = label;
+
+                if(newLabel == "")
+                {
+                    if (IsProgramButton)
+                        newLabel = ProgramBlock.CustomName;
+                    else if (Blocks.Count > 0)
+                        newLabel = Blocks[0].CustomName;
+                }
+
+                if (newLabel.Length > CHAR_LIMIT)
+                    BlockLabel = newLabel.Substring(0, CHAR_LIMIT);
+                else
+                    BlockLabel = newLabel;
+            }
+
+            // SET ACTION LABEL //
+            public void SetActionLabel(string label)
+            {
+                // User can specify multi-line label with comma separator
+                if(label.Contains(','))
+                {
+                    string[] labels = label.Split(',');
+
+                    if (labels.Length > 1)
+                    {
+                        ActionLabel[0] = labels[0];
+                        ActionLabel[1] = labels[1];
+                    }
+                    else
+                    {
+                        ActionLabel[0] = label;
+                    }
+                }
+                else if(label.Length > CHAR_LIMIT)
+                {
+                    // Split Label up if longer than char limit
+                    int length = label.Length;
+
+                    ActionLabel[0] = label.Substring(0, CHAR_LIMIT);
+                    ActionLabel[1] = label.Substring(CHAR_LIMIT, length - CHAR_LIMIT);
+                }
+
+                for(int i = 0; i < 2; i++)
+                {
+                    string entry = ActionLabel[i];
+
+                    if (entry.Length > CHAR_LIMIT)
+                        ActionLabel[i] = entry.Substring(0, CHAR_LIMIT);
+                }       
+            }
 
             // ACTIVATE //
             public void Activate()
@@ -283,9 +338,9 @@ namespace IngameScript
             string [] buttonData = blockString.Split(';');
 
             if (buttonData.Length > 1)
-                button.TopLabel = buttonData[1];
+                button.SetBlockLabel(buttonData[1]);
             else
-                button.TopLabel = "";
+                button.SetBlockLabel("");
 
             if(blockString.ToUpper().StartsWith("G:"))
             {
@@ -329,11 +384,11 @@ namespace IngameScript
                 if (entry.StartsWith("T:"))
                 {
                     AssignToggleBlock(button, entry);
-                    button.CenterLabel = button.Action;
+                    button.SetActionLabel(button.Action);
                 }
                 else
                 {
-                    button.CenterLabel = entry;
+                    button.SetActionLabel(entry);
                 }
             }
 
