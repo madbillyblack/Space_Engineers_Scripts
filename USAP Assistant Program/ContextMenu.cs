@@ -195,7 +195,7 @@ namespace IngameScript
             // SET BLOCK LABEL //
             public void SetBlockLabel(string label)
             {
-                string newLabel = label;
+                string newLabel = label.ToUpper();
 
                 if(newLabel == "")
                 {
@@ -214,10 +214,16 @@ namespace IngameScript
             // SET ACTION LABEL //
             public void SetActionLabel(string label)
             {
-                // User can specify multi-line label with comma separator
-                if(label.Contains(','))
+                string newLabel = label.ToUpper();
+
+                if(newLabel.StartsWith("{"))
                 {
-                    string[] labels = label.Split(',');
+                    ActionLabel[0] = newLabel;
+                }
+                if(newLabel.Contains(' '))
+                {
+                    // User can specify multi-line label with comma separator
+                    string[] labels = newLabel.Split(' ');
 
                     if (labels.Length > 1)
                     {
@@ -226,23 +232,28 @@ namespace IngameScript
                     }
                     else
                     {
-                        ActionLabel[0] = label;
+                        ActionLabel[0] = newLabel;
                     }
                 }
-                else if(label.Length > CHAR_LIMIT)
+                else if(newLabel.Length > CHAR_LIMIT)
                 {
                     // Split Label up if longer than char limit
-                    int length = label.Length;
+                    int length = newLabel.Length;
 
-                    ActionLabel[0] = label.Substring(0, CHAR_LIMIT);
-                    ActionLabel[1] = label.Substring(CHAR_LIMIT, length - CHAR_LIMIT);
+                    ActionLabel[0] = newLabel.Substring(0, CHAR_LIMIT);
+                    ActionLabel[1] = newLabel.Substring(CHAR_LIMIT, length - CHAR_LIMIT);
                 }
+                else
+                {
+                    ActionLabel[0] = newLabel;
+                }
+
 
                 for(int i = 0; i < 2; i++)
                 {
                     string entry = ActionLabel[i];
 
-                    if (entry.Length > CHAR_LIMIT)
+                    if (entry.Length > CHAR_LIMIT && !entry.StartsWith("{"))
                         ActionLabel[i] = entry.Substring(0, CHAR_LIMIT);
                 }       
             }
@@ -272,6 +283,12 @@ namespace IngameScript
                     IsActive = ToggleBlock.IsWorking;
 
                 //TODO - Normal illumination
+            }
+
+            // IS UNASSIGNED //
+            public bool IsUnassigned()
+            {
+                return BlockLabel == "";
             }
         }
 

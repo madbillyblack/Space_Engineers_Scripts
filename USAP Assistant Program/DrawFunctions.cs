@@ -135,7 +135,7 @@ namespace IngameScript
 			{
 				MenuButton button = page.Buttons[i];
 
-				DrawButton(button, position, buttonScale, buttonColor, bgColor);
+				DrawButton(button, position, buttonScale, fontSize, buttonColor, bgColor, labelColor);
 
 				position += new Vector2(cellWidth, 0);
 			}
@@ -159,46 +159,23 @@ namespace IngameScript
 			// TODO
 
 
-			// from planetMap3D section between key icons and numbers
-			fontSize *= 1.5f;
 
-			// Key 1
-			//position = center + new Vector2(-3 * cellWidth, buttonHeight * 0.45f);
-			position = topLeft + new Vector2(cellWidth / 2, buttonHeight * 1.35f);
-			DrawText("1", position, fontSize, TextAlignment.CENTER, bgColor);
-
-			// Key 2
-			position += new Vector2(cellWidth, 0);
-			DrawText("2", position, fontSize, TextAlignment.CENTER, bgColor);
-
-			// Key 3
-			position += new Vector2(cellWidth, 0);
-			DrawText("3", position, fontSize, TextAlignment.CENTER, bgColor);
-
-			// Key 4
-			position += new Vector2(cellWidth, 0);
-			DrawText("4", position, fontSize, TextAlignment.CENTER, bgColor);
-
-			// Key 5
-			position += new Vector2(cellWidth, 0);
-			DrawText("5", position, fontSize, TextAlignment.CENTER, bgColor);
-
-			// Key 6
-			position += new Vector2(cellWidth, 0);
-			DrawText("6", position, fontSize, TextAlignment.CENTER, bgColor);
-
-			// Key 7
-			position += new Vector2(cellWidth, 0);
-			DrawText("7", position, fontSize, TextAlignment.CENTER, bgColor);
 
 			_frame.Dispose();
 		}
 
 
 		// DRAW BUTTON //
-		void DrawButton(MenuButton button, Vector2 position, Vector2 buttonScale, Color buttonColor, Color backgroundColor)
+		void DrawButton(MenuButton button, Vector2 startPosition, Vector2 buttonScale, float fontSize, Color buttonColor, Color backgroundColor, Color labelColor)
         {
+			if (button.IsUnassigned())
+				return;
+
 			Color color;
+			Vector2 position = startPosition;
+
+			float xScale = buttonScale.X;
+			float yScale = buttonScale.Y;
 
 			// Brighten button if active, otherwise darken
 			if (button.IsActive)
@@ -210,6 +187,51 @@ namespace IngameScript
 			//DrawTexture("SquareSimple", position, buttonScale, 0, color);
 
 			DrawTexture("SquareSimple", position, buttonScale, 0, color);
+
+			// Block Label
+			position += new Vector2(xScale / 2, - yScale * 0.8f);
+			DrawText(button.BlockLabel, position, fontSize * 0.67f, TextAlignment.CENTER, labelColor);
+
+			// Action Label
+			position += new Vector2(0, yScale * 0.45f);
+			DrawActionLabel(button, position, fontSize, backgroundColor, buttonColor);
+
+			// Number Label
+			position = startPosition + new Vector2(xScale / 2, 0);
+			DrawText(button.Number.ToString(), position, fontSize *1.5f, TextAlignment.CENTER, backgroundColor);
+		}
+
+
+		// DRAW ACTION LABEL //
+		void DrawActionLabel(MenuButton button, Vector2 position, float fontSize, Color labelColor, Color buttonColor)
+        {
+			string labelA = button.ActionLabel[0];
+			string labelB = button.ActionLabel[1];
+
+			switch(labelA.ToUpper())
+            {
+				default:
+					DrawActionText(labelA, labelB, position, fontSize * 0.67f, labelColor);
+					break;
+            }
+        }
+
+
+		// DRAW ACTION TEXT //
+		void DrawActionText(string upperText, string lowerText, Vector2 centerPostion, float fontSize, Color fontColor)
+        {
+			Vector2 position = centerPostion;
+
+			if(lowerText != "")
+            {
+				position += new Vector2(0, fontSize * 12);
+
+				DrawText(lowerText, position, fontSize, TextAlignment.CENTER, fontColor);
+
+				position -= new Vector2(0, fontSize * 24);
+            }
+
+			DrawText(upperText, position, fontSize, TextAlignment.CENTER, fontColor);
 		}
 
 		/* / DRAW MENU //
