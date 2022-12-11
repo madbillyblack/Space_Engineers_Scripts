@@ -274,10 +274,10 @@ namespace IngameScript
 
             if (_cruiseThrustersOn)// && ((updateSource & UpdateType.Update10) != -0))
             {
-                Echo("A");
+                
                 double velocity = GetForwardVelocity();
                 double error = _targetThrottle - velocity;
-                Echo("B");
+                
                 double control = _pid.Control(error);
                 ThrottleThrusters((float)control);
                 if (_runningNumber > RUN_CAP)
@@ -286,8 +286,9 @@ namespace IngameScript
                     SafetyCheck();
                     CheckGravity();
                 }
-                
             }
+
+            CheckLitButtons();
 
             PrintDisplays();
         }

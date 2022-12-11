@@ -36,8 +36,13 @@ namespace IngameScript
         const string LABEL_KEY = "Label Color";
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
+        const int ILLUMINATION_TIME = 3;
+        
 
         static Dictionary<int, Menu> _menus;
+        static bool _buttonsLit = false;
+        //static bool _menusAssigned = false;
+
 
         // MENU //
         public class Menu
@@ -58,6 +63,7 @@ namespace IngameScript
 
             public Menu(IMyTerminalBlock block)
             {
+                //_menusAssigned = true;
                 Pages = new Dictionary<int, MenuPage>();
 
                 // Default value if no ID recorded in INI
@@ -162,16 +168,24 @@ namespace IngameScript
             public bool IsProgramButton;
             public bool IsToggleButton;
             public bool IsActive;
+            public bool IsCameraButton;
 
             public string BlockLabel;
             public string [] ActionLabel;
             public string Action;
+
+            public int IlluminationTime;
 
             public MenuButton(int buttonNumber)
             {
                 Blocks = new List<IMyTerminalBlock>();
                 Number = buttonNumber;
                 IsActive = false;
+                IsCameraButton = false;
+                IsProgramButton = false;
+                ProgramBlock = null;
+                ActionLabel = new string[] { "#", "" };
+                IlluminationTime = 0;
             }
 
             // SET PROGRAM BLOCK //
@@ -179,7 +193,6 @@ namespace IngameScript
             {
                 ProgramBlock = programBlock;
                 IsProgramButton = !(programBlock == null);
-                ActionLabel = new string[] {"#",""};
             }
 
             // SET TOGGLE BLOCK //
@@ -220,7 +233,7 @@ namespace IngameScript
                 {
                     ActionLabel[0] = newLabel;
                 }
-                if(newLabel.Contains(' '))
+                else if(newLabel.Contains(' '))
                 {
                     // User can specify multi-line label with comma separator
                     string[] labels = newLabel.Split(' ');
@@ -269,7 +282,11 @@ namespace IngameScript
                 {
                     foreach(IMyTerminalBlock block in Blocks)
                     {
-                        block.GetActionWithName(Action).Apply(block);
+                        try
+                        {
+                            block.GetActionWithName(Action).Apply(block);
+                        }
+                        catch {}
                     }
                 }
 
@@ -280,15 +297,24 @@ namespace IngameScript
             void ActivateIllumination()
             {
                 if (IsToggleButton && ToggleBlock != null)
+                {
                     IsActive = ToggleBlock.IsWorking;
-
-                //TODO - Normal illumination
+                }
+                else
+                {
+                    IsActive = true;
+                    IlluminationTime = ILLUMINATION_TIME;
+                    _buttonsLit = true;
+                }
             }
 
             // IS UNASSIGNED //
             public bool IsUnassigned()
             {
-                return BlockLabel == "";
+                if (IsCameraButton || ProgramBlock != null || Blocks.Count > 0)
+                    return false;
+                else
+                    return true;
             }
         }
 
@@ -354,6 +380,8 @@ namespace IngameScript
             string blockString = GetKey(menuBlock, PAGE_HEAD + pageNumber, BUTTON_BLOCK + button.Number, "");
             string [] buttonData = blockString.Split(';');
 
+            string blockName = buttonData[0].Trim();
+
             if (buttonData.Length > 1)
                 button.SetBlockLabel(buttonData[1]);
             else
@@ -372,20 +400,29 @@ namespace IngameScript
 
                 //Assign group blocks to button's block list.
                 group.GetBlocks(button.Blocks);
-
-                button.SetProgramBlock(null);
             }
             else if(blockString.ToUpper().StartsWith("P:"))
             {
                 string programName = buttonData[0].Substring(2).Trim();
                 button.SetProgramBlock(GetProgramBlock(programName));
             }
+            else if(blockName.ToUpper() == "{CAMERA}")
+            {
+                button.IsCameraButton = true;
+            }
             else
             {
-                string blockName = buttonData[0].Trim();
-                GridTerminalSystem.SearchBlocksOfName(blockName, button.Blocks);
+                List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+                GridTerminalSystem.SearchBlocksOfName(blockName, blocks);
 
-                button.SetProgramBlock(null);
+                if(blocks.Count > 0)
+                {
+                    foreach (IMyTerminalBlock block in blocks)
+                    {
+                        if(SameGridID(block) && block.CustomName == blockName)
+                        button.Blocks.Add(block);
+                    }
+                }
             }
 
             // Set Button Action
@@ -407,6 +444,10 @@ namespace IngameScript
                 {
                     button.SetActionLabel(entry);
                 }
+            }
+            else
+            {
+                button.SetActionLabel(actionString);
             }
 
             if (actionData.Length > 2)
@@ -522,9 +563,17 @@ namespace IngameScript
             MenuButton button = page.Buttons[buttonNumber];
 
             Echo("Button " + button.Number);
+            if (button.ProgramBlock != null)
+                Echo("Program: " + button.ProgramBlock.CustomName);
+            else if (button.Blocks.Count > 0)
+                Echo("Block 1: " + button.Blocks[0].CustomName);
+            else
+                Echo("UNASSIGNED");
+
             Echo(" - Toggle: " + button.IsToggleButton);
             if (button.IsToggleButton)
                 Echo(" - Block: " + button.ToggleBlock.CustomName);
+
 
             if(button.Action == "")
             {
@@ -533,6 +582,11 @@ namespace IngameScript
             }
 
             button.Activate();
+
+            // Set update loop for normal button presses
+            if (!(button.IsToggleButton))
+                Runtime.UpdateFrequency = UpdateFrequency.Update10;
+
             DrawMenu(menu);
         }
 
@@ -562,6 +616,49 @@ namespace IngameScript
                 button.SetToggleBlock(toggleBlock);
             else
                 button.SetToggleBlock(null);
+        }
+
+
+        // CHECK LIT BUTTONS //
+        void CheckLitButtons()
+        {
+            if (!_buttonsLit)
+                return;
+
+            bool activeButtonsRemain = false;
+
+            foreach(int menuKey in _menus.Keys)
+            {
+                Menu menu = _menus[menuKey];
+
+                foreach(int pageKey in menu.Pages.Keys)
+                {
+                    MenuPage page = menu.Pages[pageKey];
+
+                    foreach(int buttonKey in page.Buttons.Keys)
+                    {
+                        MenuButton button = page.Buttons[buttonKey];
+
+                        if(button.IlluminationTime > 0)
+                        {
+                            button.IlluminationTime--;
+
+                            if (button.IlluminationTime > 0)
+                            {
+                                activeButtonsRemain = true;
+                            }
+                            else
+                            {
+                                button.IsActive = false;
+                                DrawMenu(menu);
+                            }    
+                        }
+                    }
+                }
+            }
+
+            if (!activeButtonsRemain && !_cruiseThrustersOn)
+                Runtime.UpdateFrequency = UpdateFrequency.None;
         }
     }
 }
