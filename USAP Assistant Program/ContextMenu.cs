@@ -35,6 +35,7 @@ namespace IngameScript
         const string BUTTON_KEY = "Button Color";
         const string LABEL_KEY = "Label Color";
         const int PAGE_LIMIT = 9;
+        const int CHAR_LIMIT = 7;
 
         static Dictionary<int, Menu> _menus;
 
@@ -99,6 +100,14 @@ namespace IngameScript
                 ButtonColor = ParseColor(GetKey(block, MENU_COLOR, BUTTON_KEY, "0,160,160"));
             }
 
+
+            // GET CURRENT PAGE //
+            public MenuPage GetCurrentPage()
+            {
+                return Pages[CurrentPage];
+            }
+
+
             // SET PAGE COUNT //
             void SetPageCount()
             {
@@ -152,16 +161,17 @@ namespace IngameScript
 
             public bool IsProgramButton;
             public bool IsToggleButton;
-            public bool Activated;
+            public bool IsActive;
 
             public string TopLabel;
             public string CenterLabel;
             public string Action;
 
-            public MenuButton(int pageNumber, int buttonNumber)
+            public MenuButton(int buttonNumber)
             {
                 Blocks = new List<IMyTerminalBlock>();
-                Number = buttonNumber;  
+                Number = buttonNumber;
+                IsActive = false;
             }
 
             // SET PROGRAM BLOCK //
@@ -176,6 +186,9 @@ namespace IngameScript
             {
                 ToggleBlock = toggleBlock;
                 IsToggleButton = !(toggleBlock == null);
+
+                if (IsToggleButton)
+                    IsActive = toggleBlock.IsWorking;
             }
 
 
@@ -193,14 +206,17 @@ namespace IngameScript
                         block.GetActionWithName(Action).Apply(block);
                     }
                 }
+
+                ActivateIllumination();
             }
 
             // ACTIVATE ILLUMINATION //
-            public void ActivateIllumination()
+            void ActivateIllumination()
             {
                 if (IsToggleButton && ToggleBlock != null)
-                    Activated = ToggleBlock.IsWorking;
+                    IsActive = ToggleBlock.IsWorking;
 
+                //TODO - Normal illumination
             }
         }
 
@@ -261,13 +277,15 @@ namespace IngameScript
         // INITIALIZE BUTTON //
         MenuButton InitializeButton(IMyTerminalBlock menuBlock, int pageNumber, int buttonNumber)
         {
-            MenuButton button = new MenuButton(pageNumber, buttonNumber);
+            MenuButton button = new MenuButton(buttonNumber);
 
             string blockString = GetKey(menuBlock, PAGE_HEAD + pageNumber, BUTTON_BLOCK + button.Number, "");
             string [] buttonData = blockString.Split(';');
 
             if (buttonData.Length > 1)
                 button.TopLabel = buttonData[1];
+            else
+                button.TopLabel = "";
 
             if(blockString.ToUpper().StartsWith("G:"))
             {
@@ -308,16 +326,19 @@ namespace IngameScript
             {
                 string entry = actionData[1].Trim();
 
-                if(entry.StartsWith("T:") && !entry.EndsWith("T:"))
+                if (entry.StartsWith("T:"))
                 {
-                    IMyTerminalBlock toggleBlock = GridTerminalSystem.GetBlockWithName(entry.Substring(2));
-
-                    if (SameGridID(toggleBlock))
-                        button.SetToggleBlock(toggleBlock);
-                    else
-                        button.SetToggleBlock(null);
+                    AssignToggleBlock(button, entry);
+                    button.CenterLabel = button.Action;
+                }
+                else
+                {
+                    button.CenterLabel = entry;
                 }
             }
+
+            if (actionData.Length > 2)
+                AssignToggleBlock(button, actionData[2].Trim());
 
             return button;
         }
@@ -428,6 +449,11 @@ namespace IngameScript
             MenuPage page = menu.Pages[menu.CurrentPage];
             MenuButton button = page.Buttons[buttonNumber];
 
+            Echo("Button " + button.Number);
+            Echo(" - Toggle: " + button.IsToggleButton);
+            if (button.IsToggleButton)
+                Echo(" - Block: " + button.ToggleBlock.CustomName);
+
             if(button.Action == "")
             {
                 Echo("No action set for Menu:" + menu.IDNumber + " Button:" + button.Number);
@@ -435,9 +461,11 @@ namespace IngameScript
             }
 
             button.Activate();
+            DrawMenu(menu);
         }
 
 
+        // MENU NOT FOUND //
         bool MenuNotFound(Menu menu)
         {
             if(menu == null)
@@ -447,6 +475,21 @@ namespace IngameScript
             }
 
             return false;
+        }
+
+
+        // ASSIGN TOGGLE BLOCK // t:
+        void AssignToggleBlock(MenuButton button, string toggleArg)
+        {
+            if(toggleArg.EndsWith("T:") || !toggleArg.StartsWith("T:"))
+                return;
+                
+            IMyTerminalBlock toggleBlock = GridTerminalSystem.GetBlockWithName(toggleArg.Substring(2));
+
+            if (SameGridID(toggleBlock))
+                button.SetToggleBlock(toggleBlock);
+            else
+                button.SetToggleBlock(null);
         }
     }
 }

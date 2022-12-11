@@ -83,6 +83,8 @@ namespace IngameScript
 		{
 			_frame = menu.Surface.DrawFrame();
 
+			MenuPage page = menu.GetCurrentPage();
+
 			Vector2 center = menu.Viewport.Center;
 			float height = menu.Viewport.Height;
 			float width = menu.Viewport.Width;
@@ -99,7 +101,7 @@ namespace IngameScript
 			Color labelColor = menu.LabelColor;
 			Color buttonColor = menu.ButtonColor;
 
-			int page = menu.CurrentPage;
+			//int page = menu.CurrentPage;
 			float cellWidth = (width / 7);
 			float buttonHeight = (height / 2);
 			if (buttonHeight > cellWidth)
@@ -130,27 +132,28 @@ namespace IngameScript
 			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
 			for (int i = 1; i < 8; i++)
-			{/*
+			{
 				Color color;
+				MenuButton button = page.Buttons[i];
 
 				// Brighten button if active, otherwise darken
-				if (i == menu.ActiveButton)
+				if (button.IsActive)
 					color = buttonColor * 2;
 				else
 					color = buttonColor * 0.5f;
 
-				if (ShouldBeVisible(menu, i))
-					DrawTexture("SquareSimple", position, buttonScale, 0, color);
-				*/
-				DrawTexture("SquareSimple", position, buttonScale, 0, buttonColor);
+				//if (ShouldBeVisible(menu, i))
+					//DrawTexture("SquareSimple", position, buttonScale, 0, color);
+				
+				DrawTexture("SquareSimple", position, buttonScale, 0, color);
 
 				position += new Vector2(cellWidth, 0);
 			}
 
 			// Menu Title
 			position = topLeft + new Vector2(10, 0);
-			string title = "MENU " + page;
-			string name = menu.Pages[page].Name;
+			string title = "MENU " + page.Number;
+			string name = page.Name;
 
 			if (name != "")
 				title += ": " + name;
