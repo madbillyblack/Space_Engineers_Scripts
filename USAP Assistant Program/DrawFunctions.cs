@@ -194,29 +194,12 @@ namespace IngameScript
 
 			// Action Label
 			position += new Vector2(0, yScale * 0.45f);
-			DrawActionLabel(button, position, fontSize, backgroundColor, buttonColor);
+			DrawActionLabel(button, position, buttonScale, fontSize, backgroundColor, buttonColor);
 
 			// Number Label
 			position = startPosition + new Vector2(xScale / 2, 0);
 			DrawText(button.Number.ToString(), position, fontSize *1.5f, TextAlignment.CENTER, backgroundColor);
 		}
-
-
-		// DRAW ACTION LABEL //
-		void DrawActionLabel(MenuButton button, Vector2 position, float fontSize, Color labelColor, Color buttonColor)
-        {
-			Echo("A");
-			string labelA = button.ActionLabel[0];
-			Echo("B");
-			string labelB = button.ActionLabel[1];
-			Echo("C");
-			switch (labelA.ToUpper())
-            {
-				default:
-					DrawActionText(labelA, labelB, position, fontSize * 0.67f, labelColor);
-					break;
-            }
-        }
 
 
 		// DRAW ACTION TEXT //

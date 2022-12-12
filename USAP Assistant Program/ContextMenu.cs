@@ -34,6 +34,7 @@ namespace IngameScript
         const string TITLE_KEY = "Title Color";
         const string BUTTON_KEY = "Button Color";
         const string LABEL_KEY = "Label Color";
+        const string PLACE_HOLDER = "{AUX}";
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
         const int ILLUMINATION_TIME = 3;
@@ -168,7 +169,7 @@ namespace IngameScript
             public bool IsProgramButton;
             public bool IsToggleButton;
             public bool IsActive;
-            public bool IsCameraButton;
+            public bool IsPlaceHolder;
 
             public string BlockLabel;
             public string [] ActionLabel;
@@ -181,7 +182,7 @@ namespace IngameScript
                 Blocks = new List<IMyTerminalBlock>();
                 Number = buttonNumber;
                 IsActive = false;
-                IsCameraButton = false;
+                IsPlaceHolder = false;
                 IsProgramButton = false;
                 ProgramBlock = null;
                 ActionLabel = new string[] { "#", "" };
@@ -311,7 +312,7 @@ namespace IngameScript
             // IS UNASSIGNED //
             public bool IsUnassigned()
             {
-                if (IsCameraButton || ProgramBlock != null || Blocks.Count > 0)
+                if (IsPlaceHolder || ProgramBlock != null || Blocks.Count > 0)
                     return false;
                 else
                     return true;
@@ -406,9 +407,9 @@ namespace IngameScript
                 string programName = buttonData[0].Substring(2).Trim();
                 button.SetProgramBlock(GetProgramBlock(programName));
             }
-            else if(blockName.ToUpper() == "{CAMERA}")
+            else if(blockName.ToUpper() == PLACE_HOLDER)
             {
-                button.IsCameraButton = true;
+                button.IsPlaceHolder = true;
             }
             else
             {
