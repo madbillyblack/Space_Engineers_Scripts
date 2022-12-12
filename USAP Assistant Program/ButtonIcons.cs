@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program
     {
 		// DRAW ACTION LABEL //
-		void DrawActionLabel(MenuButton button, Vector2 position, Vector2 scale, float fontSize, Color iconColor, Color buttonColor)
+		void DrawActionLabel(MenuButton button, Vector2 position, float scale, float fontSize, Color iconColor, Color buttonColor)
 		{
 			string labelA = button.ActionLabel[0];
 			string labelB = button.ActionLabel[1];
@@ -88,92 +88,117 @@ namespace IngameScript
 
 
 		// DRAW CAMERA ICON //
-		void DrawCamera(Vector2 position, Vector2 scale, Color color)
+		void DrawCamera(Vector2 position, float scale, Color color)
         {
-			//TODO
+			Vector2 pos = position + new Vector2(-scale * 0.2f, scale * 0.125f);
 
+			// Camera Body
+			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.33f, scale *0.25f), 0, color);
+
+			pos += new Vector2(scale / 5, 0);
+
+			// Camera Lens
+			DrawTexture("Triangle", pos, new Vector2(scale * 0.25f, scale * 0.25f), (float)Math.PI * 1.5f, color);
         }
 
 
 		// DRAW THRUSTER //
-		void DrawThruster(string symbol, Vector2 position, Vector2 scale, float fontsize, Color iconColor, Color textColor)
+		void DrawThruster(string symbol, Vector2 position, float scale, float fontsize, Color iconColor, Color textColor)
         {
-			//TODO
+			Vector2 pos = position + new Vector2(-scale * 0.167f ,scale *0.2f);
+
+			// Thruster Bell
+			DrawTexture("SemiCircle", pos, new Vector2(scale *0.33f, scale *0.6f), 0, iconColor);
+
+			pos += new Vector2(scale * 0.167f, scale * -0.025f);
+			DrawText("|||||", pos, fontsize * 0.75f, TextAlignment.CENTER, iconColor);
+
+			if (symbol == "")
+				return;
+
+			// +/- symbol
+			float symbolScale = fontsize;
+
+			if (symbol == "+")
+				fontsize *= 0.9f;
+
+			pos -= new Vector2(0, scale * 0.33f);
+			DrawText(symbol, pos, symbolScale, TextAlignment.CENTER, textColor);
         }
 
 
 		// DRAW LIGHT //
-		void DrawLight(Vector2 position, Vector2 scale, Color color)
+		void DrawLight(Vector2 position, float scale, Color color)
 		{
 			//TODO
 		}
 
 
 		// DRAW LANDING GEAR //
-		void DrawLandingGear(Vector2 position, Vector2 scale, Color iconColor, Color buttonColor)
+		void DrawLandingGear(Vector2 position, float scale, Color iconColor, Color buttonColor)
 		{
 			//TODO
 		}
 
 
 		// DRAW MISSILE //
-		void DrawMissile(Vector2 position, Vector2 scale, Color color)
+		void DrawMissile(Vector2 position, float scale, Color color)
         {
 			//TODO
         }
 
 
 		// DRAW GUN //
-		void DrawGun(Vector2 position, Vector2 scale, Color color)
+		void DrawGun(Vector2 position, float scale, Color color)
         {
 			//TODO
         }
 
 
 		// DRAW CANNON //
-		void DrawCannon(Vector2 position, Vector2 scale, Color color)
+		void DrawCannon(Vector2 position, float scale, Color color)
         {
 			//TODO
         }
 
 
 		// DRAW DOCK //
-		void DrawDock(string type, Vector2 position, Vector2 scale, Color iconColor, Color buttonColor)
+		void DrawDock(string type, Vector2 position, float scale, Color iconColor, Color buttonColor)
         {
 			//TODO
         }
 
 
 		// DRAW SEAPARATION //
-		void DrawSeparation(Vector2 position, Vector2 scale, Color color)
+		void DrawSeparation(Vector2 position, float scale, Color color)
         {
 			//TODO
         }
 
 
 		// DRAW GAS //
-		void DrawGas(string gasType, Vector2 position, Vector2 scale, Color iconColor, Color textColor)
+		void DrawGas(string gasType, Vector2 position, float scale, Color iconColor, Color textColor)
         {
 			//TODO
         }
 
 
 		// DRAW TURRET //
-		void DrawTurret(Vector2 position, Vector2 scale, Color color)
+		void DrawTurret(Vector2 position, float scale, Color color)
         {
 			//TODO
         }
 
 
 		// DRAW MISSILE TURRET //
-		void DrawMissileTurret(Vector2 position, Vector2 scale, Color color)
+		void DrawMissileTurret(Vector2 position, float scale, Color color)
         {
 			//TODO
         }
 
 
 		// DRAW JETTISON //
-		void DrawJettison(Vector2 position, Vector2 scale, Color color)
+		void DrawJettison(Vector2 position, float scale, Color color)
         {
 			//TODO
         }

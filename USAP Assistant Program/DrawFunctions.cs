@@ -194,7 +194,7 @@ namespace IngameScript
 
 			// Action Label
 			position += new Vector2(0, yScale * 0.45f);
-			DrawActionLabel(button, position, buttonScale, fontSize, backgroundColor, buttonColor);
+			DrawActionLabel(button, position, xScale, fontSize, backgroundColor, color);
 
 			// Number Label
 			position = startPosition + new Vector2(xScale / 2, 0);
