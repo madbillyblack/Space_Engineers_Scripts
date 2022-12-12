@@ -51,7 +51,6 @@ namespace IngameScript
         const double INVERSE_GAIN = 3; // Inverse factor used for Cruise control. Lower for faster repsonce. Higher for more stability.
 
         //DEFINITIONS:
-
         const string INI_HEAD = "USAP";
         const string MAG_TAG = "[MAG";
         const string TRIGGER_HEAD = "USAP Triggers";
@@ -159,6 +158,8 @@ namespace IngameScript
 
         const int RUN_CAP = 10;
         string _statusMessage;
+
+        const float PI = (float)Math.PI;
 
         static int _loadCount;
         static string _currentPower;

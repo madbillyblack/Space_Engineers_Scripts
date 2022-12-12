@@ -42,7 +42,7 @@ namespace IngameScript
 					DrawThruster("-", position, scale, fontSize, iconColor, buttonColor);
 					break;
 				case "{LIGHT}":
-					DrawLight(position, scale, iconColor);
+					DrawLight(position, scale, fontSize, iconColor);
 					break;
 				case "{LG}":
 					DrawLandingGear(position, scale, iconColor, buttonColor);
@@ -98,7 +98,7 @@ namespace IngameScript
 			pos += new Vector2(scale / 5, 0);
 
 			// Camera Lens
-			DrawTexture("Triangle", pos, new Vector2(scale * 0.25f, scale * 0.25f), (float)Math.PI * 1.5f, color);
+			DrawTexture("Triangle", pos, new Vector2(scale * 0.25f, scale * 0.25f), PI * 1.5f, color);
         }
 
 
@@ -120,7 +120,7 @@ namespace IngameScript
 			float symbolScale = fontsize;
 
 			if (symbol == "+")
-				fontsize *= 0.9f;
+				symbolScale *= 0.9f;
 
 			pos -= new Vector2(0, scale * 0.33f);
 			DrawText(symbol, pos, symbolScale, TextAlignment.CENTER, textColor);
@@ -128,9 +128,19 @@ namespace IngameScript
 
 
 		// DRAW LIGHT //
-		void DrawLight(Vector2 position, float scale, Color color)
+		void DrawLight(Vector2 position, float scale, float fontSize, Color color)
 		{
-			//TODO
+			Vector2 pos = position - new Vector2(scale * 0.167f, scale * -0.15f);
+
+			DrawTexture("SemiCircle", pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 1.5f, color);
+
+			pos += new Vector2(scale * 0.167f, scale * -0.167f);
+
+			DrawText("=", pos, fontSize, TextAlignment.LEFT, color);
+
+			pos -= new Vector2(0, fontSize * 12);
+
+			DrawText("=", pos, fontSize, TextAlignment.LEFT, color);
 		}
 
 
