@@ -62,7 +62,7 @@ namespace IngameScript
 					DrawMissile(position, scale, iconColor, buttonColor);
 					break;
 				case "{GUN}":
-					DrawGun(position, scale, iconColor);
+					DrawGun(position, scale, fontSize, iconColor);
 					break;
 				case "{CANNON}":
 					DrawCannon(position, scale, iconColor);
@@ -247,12 +247,27 @@ namespace IngameScript
 
 
 		// DRAW GUN //
-		void DrawGun(Vector2 position, float scale, Color color)
+		void DrawGun(Vector2 position, float scale, float fontSize, Color color)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * -0.35f, scale * 0.0625f);
+			Vector2 barrelSize = new Vector2 (scale * 0.25f, scale * 0.01f);
 
+			// Barrels
+			DrawTexture("SquareSimple", pos, barrelSize, 0, color);
+			pos += new Vector2(0, scale * 0.125f);
+			DrawTexture("SquareSimple", pos, barrelSize, 0, color);
+			pos -= new Vector2(0, scale * 0.0625f);
+			DrawTexture("SquareSimple", pos, barrelSize, 0, color);
 
+			// Muzzle
+			pos += new Vector2(barrelSize.X, 0);
+			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.125f, scale * 0.18f), 0, color);
+
+			// Bullets
+			pos += new Vector2(scale * 0.15f, scale * -0.25f);
+			DrawText("---", pos, fontSize, TextAlignment.LEFT, color);
+		}
+			
 		// DRAW CANNON //
 		void DrawCannon(Vector2 position, float scale, Color color)
         {
