@@ -61,8 +61,8 @@ namespace IngameScript
 				case "{MISSILE}":
 					DrawMissile(position, scale, iconColor, buttonColor);
 					break;
-				case "{GUN}":
-					DrawGun(position, scale, fontSize, iconColor);
+				case "{GATLING}":
+					DrawGatling(position, scale, fontSize, iconColor);
 					break;
 				case "{CANNON}":
 					DrawCannon(position, scale, iconColor);
@@ -247,7 +247,7 @@ namespace IngameScript
 
 
 		// DRAW GUN //
-		void DrawGun(Vector2 position, float scale, float fontSize, Color color)
+		void DrawGatling(Vector2 position, float scale, float fontSize, Color color)
         {
 			Vector2 pos = position + new Vector2(scale * -0.35f, scale * 0.0625f);
 			Vector2 barrelSize = new Vector2 (scale * 0.25f, scale * 0.01f);
@@ -271,8 +271,19 @@ namespace IngameScript
 		// DRAW CANNON //
 		void DrawCannon(Vector2 position, float scale, Color color)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * -0.33f, scale * 0.125f);
+
+			// Barrel
+			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.5f, scale * 0.125f), 0, color);
+
+			// Body
+			pos += new Vector2(scale * 0.125f, 0);
+			DrawTexture("Triangle", pos, new Vector2(scale * 0.2f, scale * 0.5f), PI * 0.5f, color);
+
+			// Shell
+			pos += new Vector2(scale * 0.425f, 0);
+			DrawTexture("SemiCircle", pos, new Vector2(scale * 0.075f, scale * 0.25f), PI * 0.5f, color);
+		}
 
 
 		// DRAW DOCK //
