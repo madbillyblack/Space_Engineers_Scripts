@@ -59,7 +59,7 @@ namespace IngameScript
 					DrawLandingGear(position, scale, iconColor, buttonColor, "UP");
 					break;
 				case "{MISSILE}":
-					DrawMissile(position, scale, iconColor);
+					DrawMissile(position, scale, iconColor, buttonColor);
 					break;
 				case "{GUN}":
 					DrawGun(position, scale, iconColor);
@@ -220,10 +220,30 @@ namespace IngameScript
 
 
 		// DRAW MISSILE //
-		void DrawMissile(Vector2 position, float scale, Color color)
+		void DrawMissile(Vector2 position, float scale, Color iconColor, Color bgColor)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * -0.35f, scale * 0.125f);
+
+			// Body
+			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.6f, scale * 0.125f), 0, iconColor);
+
+			// Back Fin
+			DrawTexture("Triangle", pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, iconColor);
+
+			// Forward Fin
+			pos += new Vector2(scale * 0.33f, 0);
+			DrawTexture("Triangle", pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, iconColor);
+
+			// Tip
+			pos += new Vector2(scale * 0.22f, 0);
+			DrawTexture("SemiCircle", pos, new Vector2(scale * 0.125f, scale * 0.167f), PI * 0.5f, iconColor);
+
+			// Fin Mask
+			pos = position + new Vector2(scale * -0.5f, scale * 0.05f);
+			DrawTexture("SquareHollow", pos, new Vector2(scale, scale * 0.33f), PI, bgColor);
+			pos += new Vector2(0, scale * 0.167f);
+			DrawTexture("SquareHollow", pos, new Vector2(scale, scale * 0.33f), 0, bgColor);
+		}
 
 
 		// DRAW GUN //
