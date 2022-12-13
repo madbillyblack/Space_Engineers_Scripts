@@ -177,7 +177,6 @@ namespace IngameScript
         double _Kp;
         bool _gravityDisengage; // If True, AutoThrottle will disengage when leaving gravity well
         int _safetyElevation;
-        static bool _firstRun;
 
         public IMyTerminalBlock _refBlock;
 
@@ -195,8 +194,6 @@ namespace IngameScript
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
         {
-            _firstRun = true;
-
             if (Storage.Length > 0)
             {
                 string[] storageData = Storage.Split(';');
@@ -251,14 +248,6 @@ namespace IngameScript
         // MAIN // -------------------------------------------------------------------------------------------------------------------------------------
         public void Main(string argument, UpdateType updateSource)
         {
-            // Redraw all menus to compensate for load game errors
-            if(_firstRun)
-            {
-                _firstRun = false;
-                DrawAllMenus();
-            }
-
-
             _unloaded = false;
 
             Echo("... " + _runningNumber);
