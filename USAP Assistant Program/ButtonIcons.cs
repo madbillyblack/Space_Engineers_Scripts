@@ -44,8 +44,14 @@ namespace IngameScript
 				case "{LIGHT}":
 					DrawLight(position, scale, fontSize, iconColor);
 					break;
-				case "{LG}":
+				case "{GEAR}":
 					DrawLandingGear(position, scale, iconColor, buttonColor);
+					break;
+				case "{GEAR_DOWN}":
+					DrawLandingGear(position, scale, iconColor, buttonColor, "DOWN");
+					break;
+				case "{GEAR_UP}":
+					DrawLandingGear(position, scale, iconColor, buttonColor, "UP");
 					break;
 				case "{MISSILE}":
 					DrawMissile(position, scale, iconColor);
@@ -145,9 +151,36 @@ namespace IngameScript
 
 
 		// DRAW LANDING GEAR //
-		void DrawLandingGear(Vector2 position, float scale, Color iconColor, Color buttonColor)
+		void DrawLandingGear(Vector2 position, float scale, Color iconColor, Color buttonColor, string direction = "")
 		{
-			//TODO
+			Vector2 pos = position - new Vector2(scale * 0.375f, 0);
+			
+			//Bay
+			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.75f, scale * 0.1f), 0, iconColor);
+
+			// Strut
+			pos += new Vector2(0, scale * 0.125f);
+			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.375f, scale * 0.05f), PI * 0.167f, iconColor);
+
+			// Wheel
+			pos = position + new Vector2(-scale * 0.125f, scale * 0.25f);
+			DrawTexture("Circle", pos, new Vector2(scale * 0.25f, scale * 0.25f), 0, iconColor);
+
+			// Hubcap
+			pos += new Vector2(scale * 0.0625f, 0);
+			DrawTexture("Circle", pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, buttonColor);
+
+			// Up Arrow
+			pos += new Vector2(scale * 0.25f, scale * -0.1f);
+			if(direction != "DOWN")
+			DrawTexture("Triangle", pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, iconColor);
+
+			// Down Arrow
+			if(direction != "UP")
+            {
+				pos += new Vector2(0, scale * 0.175f);
+				DrawTexture("Triangle", pos, new Vector2(scale * 0.125f, scale * -0.125f), 0, iconColor);
+			}
 		}
 
 

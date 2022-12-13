@@ -155,12 +155,6 @@ namespace IngameScript
 			if (_menus.Count > 1)
 				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.RIGHT, labelColor);
 
-
-			// TODO
-
-
-
-
 			_frame.Dispose();
 		}
 
@@ -218,5 +212,16 @@ namespace IngameScript
 
 			DrawText(upperText, position, fontSize, TextAlignment.CENTER, fontColor);
 		}
+
+
+		// DRAW ALL MENUS //
+		void DrawAllMenus()
+        {
+			if (_menus.Count < 1)
+				return;
+
+			foreach (int key in _menus.Keys)
+				DrawMenu(_menus[key]);
+        }
 	}
 }

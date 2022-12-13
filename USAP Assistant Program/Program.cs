@@ -160,6 +160,7 @@ namespace IngameScript
         string _statusMessage;
 
         const float PI = (float)Math.PI;
+        static IMyProgrammableBlock _Me;
 
         static int _loadCount;
         static string _currentPower;
@@ -176,7 +177,7 @@ namespace IngameScript
         double _Kp;
         bool _gravityDisengage; // If True, AutoThrottle will disengage when leaving gravity well
         int _safetyElevation;
-
+        static bool _firstRun;
 
         public IMyTerminalBlock _refBlock;
 
@@ -194,6 +195,8 @@ namespace IngameScript
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
         {
+            _firstRun = true;
+
             if (Storage.Length > 0)
             {
                 string[] storageData = Storage.Split(';');
@@ -248,6 +251,14 @@ namespace IngameScript
         // MAIN // -------------------------------------------------------------------------------------------------------------------------------------
         public void Main(string argument, UpdateType updateSource)
         {
+            // Redraw all menus to compensate for load game errors
+            if(_firstRun)
+            {
+                _firstRun = false;
+                DrawAllMenus();
+            }
+
+
             _unloaded = false;
 
             Echo("... " + _runningNumber);
@@ -604,6 +615,9 @@ namespace IngameScript
         // BUILD //
         public void Build()
         {
+            // Set static instance of this program block
+            _Me = Me;
+
             _statusMessage = "";
             _gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
             //_unloadPossible = false;
@@ -685,6 +699,7 @@ namespace IngameScript
             AssignDisplays();
             PrintDisplays();
             AssignMenus();
+            //DrawAllMenus();
         }
 
 
