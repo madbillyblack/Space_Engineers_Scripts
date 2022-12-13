@@ -27,6 +27,11 @@ namespace IngameScript
 		{
 			string labelA = button.ActionLabel[0];
 			string labelB = button.ActionLabel[1];
+
+			// Variables for PlanetMap3D icons
+			float arrowScale = scale * 0.33f;
+			Vector2 arrowPos = position + new Vector2(0, scale * 0.132f);
+
 			switch (labelA.ToUpper())
 			{
 				case "{CAMERA}":
@@ -83,8 +88,38 @@ namespace IngameScript
 				case "{M_TURRET}":
 					DrawMissileTurret(position, scale, iconColor);
 					break;
-				case "JETTISON":
+				case "{JETTISON}":
 					DrawJettison(position, scale, iconColor);
+					break;
+				case "{<}":
+					DrawTriangle(arrowPos, arrowScale, iconColor, "LEFT");
+					break;
+				case "{>}":
+					DrawTriangle(arrowPos, arrowScale, iconColor, "RIGHT");
+					break;
+				case "{^}":
+					DrawTriangle(arrowPos, arrowScale, iconColor, "UP");
+					break;
+				case "{V}":
+					DrawTriangle(arrowPos, arrowScale, iconColor, "DOWN");
+					break;
+				case "{<<}":
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "LEFT");
+					break;
+				case "{>>}":
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "RIGHT");
+					break;
+				case "{^^}":
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "UP");
+					break;
+				case "{VV}":
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "DOWN");
+					break;
+				case "{TOGGLE}":
+					DrawToggle(arrowPos, arrowScale, iconColor);
+					break;
+				case "{CYCLE}":
+					DrawCycle(arrowPos, arrowScale, iconColor);
 					break;
 				default:
 					DrawActionText(labelA, labelB, position, fontSize * 0.67f, iconColor);
@@ -245,5 +280,109 @@ namespace IngameScript
         {
 			//TODO
         }
+
+		// DRAW TRIANGLE //
+		void DrawTriangle(Vector2 position, float scale, Color color, string direction)
+		{
+			float rotation;
+			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
+			Vector2 offset;
+
+			switch (direction.ToUpper())
+			{
+				case "RIGHT":
+					rotation = 0.5f;
+					offset = new Vector2(scale * 0.33f, 0);
+					break;
+				case "DOWN":
+					rotation = 1;
+					offset = new Vector2(scale / 2, scale * -0.1f);
+					break;
+				case "LEFT":
+					rotation = 1.5f;
+					offset = new Vector2(scale * 0.67f, 0);
+					break;
+				case "UP":
+				default:
+					rotation = 0;
+					offset = new Vector2(scale / 2, scale * 0.1f);
+					break;
+			}
+
+			DrawTexture("Triangle", position - offset, new Vector2(scale, scale), PI * rotation, color);
+		}
+
+
+		// DRAW DOUBLE TRIANGLE //
+		void DrawDoubleTriangle(Vector2 position, float scale, Color color, string direction)
+		{
+			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
+			float rotation;
+			float length = scale * 0.33f;
+			Vector2 offset1;
+			Vector2 offset2;
+
+			switch (direction.ToUpper())
+			{
+				case "RIGHT":
+					rotation = 0.5f;
+					offset1 = new Vector2(scale * 0.33f, 0);
+					offset2 = new Vector2(length, 0);
+					break;
+				case "DOWN":
+					rotation = 1;
+					offset1 = new Vector2(scale * 0.25f, scale * -0.25f);
+					offset2 = new Vector2(0, -length);
+					break;
+				case "LEFT":
+					rotation = 1.5f;
+					offset1 = new Vector2(scale * 0.167f, 0);
+					offset2 = new Vector2(-length, 0);
+					break;
+				case "UP":
+				default:
+					rotation = 0;
+					offset1 = new Vector2(scale *0.25f, scale * 0.125f);
+					offset2 = new Vector2(0, length);
+					break;
+			}
+
+			rotation *= PI;
+			position -= offset1;
+
+			Vector2 triangleSize = new Vector2(scale, scale) * 0.5f;
+
+			DrawTexture("Triangle", position, triangleSize, rotation, color);
+
+			position += offset2;
+
+			DrawTexture("Triangle", position, triangleSize, rotation, color);
+		}
+
+
+		// DRAW TOGGLE //
+		void DrawToggle(Vector2 position, float scale, Color color)
+		{
+			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
+			Vector2 blockScale = new Vector2(scale, scale);
+			position -= new Vector2(scale * 0.5f, 0);
+			DrawTexture("SemiCircle", position, blockScale, PI * 1.5f, color);
+			DrawTexture("CircleHollow", position, blockScale, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
+		}
+
+
+		// DRAW CYCLE //
+		void DrawCycle(Vector2 position, float scale, Color color)
+		{
+			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
+			Vector2 blockScale = new Vector2(scale, scale);
+			position -= new Vector2(scale / 2, 0);
+			DrawTexture("CircleHollow", position, blockScale, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
+			DrawTexture("CircleHollow", position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
+			DrawTexture("Triangle", position + new Vector2(scale * 0.67f, -scale * 0.25f), blockScale * 0.5f, PI * 0.75f, color);
+		}
 	}
 }
