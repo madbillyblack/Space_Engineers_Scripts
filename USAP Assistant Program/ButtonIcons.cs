@@ -370,8 +370,20 @@ namespace IngameScript
 		// DRAW GAS //
 		void DrawGas(string gasType, Vector2 position, float scale, Color iconColor, Color textColor)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * -0.2f, scale * 0.175f);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.4f, scale * 0.4f), 0, iconColor);
+
+			// Element
+			pos += new Vector2(scale * 0.15f, scale * -0.225f);
+			if(gasType == "H2")
+				DrawText("H", pos, scale * 0.0125f, TextAlignment.CENTER, textColor);
+			else if (gasType == "O2")
+				DrawText("O", pos, scale * 0.0125f, TextAlignment.CENTER, textColor);
+
+			// 2
+			pos += new Vector2(scale * 0.15f, scale * 0.167f);
+			DrawText("2", pos, scale * 0.00625f, TextAlignment.CENTER, textColor);
+		}
 
 
 		// DRAW TURRET //
