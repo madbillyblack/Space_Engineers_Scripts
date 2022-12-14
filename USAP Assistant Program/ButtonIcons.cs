@@ -389,8 +389,13 @@ namespace IngameScript
 		// DRAW TURRET //
 		void DrawTurret(Vector2 position, float scale, Color color)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * -0.25f, scale * 0.33f);
+
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.4f, scale * 0.4f), 0, color);
+
+			pos += new Vector2(scale * 0.125f, scale * -0.15f);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.4f, scale * 0.05f), PI * -0.0625f, color);
+		}
 
 
 		// DRAW MISSILE TURRET //
