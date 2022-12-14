@@ -22,6 +22,18 @@ namespace IngameScript
 {
     partial class Program
     {
+		const string SQUARE = "SquareSimple";
+		const string BOX = "SquareHollow";
+		const string SEMI = "SemiCircle";
+		const string CIRCLE = "Circle";
+		const string TRIANGLE = "Triangle";
+		const string RING = "CircleHollow";
+		const string UP = "UP";
+		const string DOWN = "DOWN";
+		const string LEFT = "LEFT";
+		const string RIGHT = "RIGHT";
+
+
 		// DRAW ACTION LABEL //
 		void DrawActionLabel(MenuButton button, Vector2 position, float scale, float fontSize, Color iconColor, Color buttonColor)
 		{
@@ -53,10 +65,10 @@ namespace IngameScript
 					DrawLandingGear(position, scale, iconColor, buttonColor);
 					break;
 				case "{GEAR_DOWN}":
-					DrawLandingGear(position, scale, iconColor, buttonColor, "DOWN");
+					DrawLandingGear(position, scale, iconColor, buttonColor, DOWN);
 					break;
 				case "{GEAR_UP}":
-					DrawLandingGear(position, scale, iconColor, buttonColor, "UP");
+					DrawLandingGear(position, scale, iconColor, buttonColor, UP);
 					break;
 				case "{MISSILE}":
 					DrawMissile(position, scale, iconColor, buttonColor);
@@ -68,10 +80,10 @@ namespace IngameScript
 					DrawCannon(position, scale, iconColor);
 					break;
 				case "{DOCK A}":
-					DrawDock("A", position, scale, iconColor, buttonColor);
+					DrawDock("A", position, scale, iconColor);
 					break;
 				case "{DOCK B}":
-					DrawDock("B", position, scale, iconColor, buttonColor);
+					DrawDock("B", position, scale, iconColor);
 					break;
 				case "{UNDOCK}":
 					DrawSeparation(position, scale, iconColor);
@@ -92,28 +104,28 @@ namespace IngameScript
 					DrawJettison(position, scale, iconColor);
 					break;
 				case "{<}":
-					DrawTriangle(arrowPos, arrowScale, iconColor, "LEFT");
+					DrawTriangle(arrowPos, arrowScale, iconColor, LEFT);
 					break;
 				case "{>}":
-					DrawTriangle(arrowPos, arrowScale, iconColor, "RIGHT");
+					DrawTriangle(arrowPos, arrowScale, iconColor, RIGHT);
 					break;
 				case "{^}":
-					DrawTriangle(arrowPos, arrowScale, iconColor, "UP");
+					DrawTriangle(arrowPos, arrowScale, iconColor, UP);
 					break;
 				case "{V}":
-					DrawTriangle(arrowPos, arrowScale, iconColor, "DOWN");
+					DrawTriangle(arrowPos, arrowScale, iconColor, DOWN);
 					break;
 				case "{<<}":
-					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "LEFT");
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, LEFT);
 					break;
 				case "{>>}":
-					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "RIGHT");
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, RIGHT);
 					break;
 				case "{^^}":
-					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "UP");
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, UP);
 					break;
 				case "{VV}":
-					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, "DOWN");
+					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, DOWN);
 					break;
 				case "{TOGGLE}":
 					DrawToggle(arrowPos, arrowScale, iconColor);
@@ -134,12 +146,12 @@ namespace IngameScript
 			Vector2 pos = position + new Vector2(-scale * 0.2f, scale * 0.125f);
 
 			// Camera Body
-			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.33f, scale *0.25f), 0, color);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.33f, scale *0.25f), 0, color);
 
 			pos += new Vector2(scale / 5, 0);
 
 			// Camera Lens
-			DrawTexture("Triangle", pos, new Vector2(scale * 0.25f, scale * 0.25f), PI * 1.5f, color);
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.25f, scale * 0.25f), PI * 1.5f, color);
         }
 
 
@@ -149,7 +161,7 @@ namespace IngameScript
 			Vector2 pos = position + new Vector2(-scale * 0.167f ,scale *0.2f);
 
 			// Thruster Bell
-			DrawTexture("SemiCircle", pos, new Vector2(scale *0.33f, scale *0.6f), 0, iconColor);
+			DrawTexture(SEMI, pos, new Vector2(scale *0.33f, scale *0.6f), 0, iconColor);
 
 			pos += new Vector2(scale * 0.167f, scale * -0.025f);
 			DrawText("|||||", pos, fontsize * 0.75f, TextAlignment.CENTER, iconColor);
@@ -173,7 +185,7 @@ namespace IngameScript
 		{
 			Vector2 pos = position - new Vector2(scale * 0.167f, scale * -0.15f);
 
-			DrawTexture("SemiCircle", pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 1.5f, color);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 1.5f, color);
 
 			pos += new Vector2(scale * 0.167f, scale * -0.167f);
 
@@ -191,30 +203,30 @@ namespace IngameScript
 			Vector2 pos = position - new Vector2(scale * 0.375f, 0);
 			
 			//Bay
-			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.75f, scale * 0.1f), 0, iconColor);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.75f, scale * 0.1f), 0, iconColor);
 
 			// Strut
 			pos += new Vector2(0, scale * 0.125f);
-			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.375f, scale * 0.05f), PI * 0.167f, iconColor);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.375f, scale * 0.05f), PI * 0.167f, iconColor);
 
 			// Wheel
 			pos = position + new Vector2(-scale * 0.125f, scale * 0.25f);
-			DrawTexture("Circle", pos, new Vector2(scale * 0.25f, scale * 0.25f), 0, iconColor);
+			DrawTexture(CIRCLE, pos, new Vector2(scale * 0.25f, scale * 0.25f), 0, iconColor);
 
 			// Hubcap
 			pos += new Vector2(scale * 0.0625f, 0);
-			DrawTexture("Circle", pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, buttonColor);
+			DrawTexture(CIRCLE, pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, buttonColor);
 
 			// Up Arrow
 			pos += new Vector2(scale * 0.25f, scale * -0.1f);
-			if(direction != "DOWN")
-			DrawTexture("Triangle", pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, iconColor);
+			if(direction != DOWN)
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, iconColor);
 
 			// Down Arrow
-			if(direction != "UP")
+			if(direction != UP)
             {
 				pos += new Vector2(0, scale * 0.175f);
-				DrawTexture("Triangle", pos, new Vector2(scale * 0.125f, scale * -0.125f), 0, iconColor);
+				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * -0.125f), 0, iconColor);
 			}
 		}
 
@@ -225,43 +237,43 @@ namespace IngameScript
 			Vector2 pos = position + new Vector2(scale * -0.35f, scale * 0.125f);
 
 			// Body
-			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.6f, scale * 0.125f), 0, iconColor);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.6f, scale * 0.125f), 0, iconColor);
 
 			// Back Fin
-			DrawTexture("Triangle", pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, iconColor);
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, iconColor);
 
 			// Forward Fin
 			pos += new Vector2(scale * 0.33f, 0);
-			DrawTexture("Triangle", pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, iconColor);
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, iconColor);
 
 			// Tip
 			pos += new Vector2(scale * 0.22f, 0);
-			DrawTexture("SemiCircle", pos, new Vector2(scale * 0.125f, scale * 0.167f), PI * 0.5f, iconColor);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.125f, scale * 0.167f), PI * 0.5f, iconColor);
 
 			// Fin Mask
 			pos = position + new Vector2(scale * -0.5f, scale * 0.05f);
-			DrawTexture("SquareHollow", pos, new Vector2(scale, scale * 0.33f), PI, bgColor);
+			DrawTexture(BOX, pos, new Vector2(scale, scale * 0.33f), PI, bgColor);
 			pos += new Vector2(0, scale * 0.167f);
-			DrawTexture("SquareHollow", pos, new Vector2(scale, scale * 0.33f), 0, bgColor);
+			DrawTexture(BOX, pos, new Vector2(scale, scale * 0.33f), 0, bgColor);
 		}
 
 
-		// DRAW GUN //
+		// DRAW GATLING //
 		void DrawGatling(Vector2 position, float scale, float fontSize, Color color)
         {
 			Vector2 pos = position + new Vector2(scale * -0.35f, scale * 0.0625f);
 			Vector2 barrelSize = new Vector2 (scale * 0.25f, scale * 0.01f);
 
 			// Barrels
-			DrawTexture("SquareSimple", pos, barrelSize, 0, color);
+			DrawTexture(SQUARE, pos, barrelSize, 0, color);
 			pos += new Vector2(0, scale * 0.125f);
-			DrawTexture("SquareSimple", pos, barrelSize, 0, color);
+			DrawTexture(SQUARE, pos, barrelSize, 0, color);
 			pos -= new Vector2(0, scale * 0.0625f);
-			DrawTexture("SquareSimple", pos, barrelSize, 0, color);
+			DrawTexture(SQUARE, pos, barrelSize, 0, color);
 
 			// Muzzle
 			pos += new Vector2(barrelSize.X, 0);
-			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.125f, scale * 0.18f), 0, color);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.125f, scale * 0.18f), 0, color);
 
 			// Bullets
 			pos += new Vector2(scale * 0.15f, scale * -0.25f);
@@ -274,23 +286,59 @@ namespace IngameScript
 			Vector2 pos = position + new Vector2(scale * -0.33f, scale * 0.125f);
 
 			// Barrel
-			DrawTexture("SquareSimple", pos, new Vector2(scale * 0.5f, scale * 0.125f), 0, color);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.5f, scale * 0.125f), 0, color);
 
 			// Body
 			pos += new Vector2(scale * 0.125f, 0);
-			DrawTexture("Triangle", pos, new Vector2(scale * 0.2f, scale * 0.5f), PI * 0.5f, color);
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.2f, scale * 0.5f), PI * 0.5f, color);
 
 			// Shell
 			pos += new Vector2(scale * 0.425f, 0);
-			DrawTexture("SemiCircle", pos, new Vector2(scale * 0.075f, scale * 0.25f), PI * 0.5f, color);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.075f, scale * 0.25f), PI * 0.5f, color);
 		}
 
 
 		// DRAW DOCK //
-		void DrawDock(string type, Vector2 position, float scale, Color iconColor, Color buttonColor)
+		void DrawDock(string type, Vector2 position, float scale, Color color)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * -0.33f, scale * 0.167f);
+
+			// Left collar
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.2f, scale * 0.2f), 0, color);
+
+			// Left base
+			pos -= new Vector2(scale * 0.167f, 0);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, color);
+
+			// Right collar
+			pos = position + new Vector2(scale * 0.13f, scale * 0.167f);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.2f, scale * 0.2f), 0, color);
+
+			// Right Base
+			pos += new Vector2(scale * 0.037f, 0);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 1.5f, color);
+
+			if(type == "A")
+            {
+				// Right Seal
+				pos = position + new Vector2(scale * 0.067f, scale * 0.167f);
+				DrawTexture(SQUARE, pos, new Vector2(scale * 0.025f, scale * 0.167f), 0, color);
+
+				// Left Seal
+				pos -= new Vector2(scale * 0.159f, 0);
+				DrawTexture(SQUARE, pos, new Vector2(scale * 0.025f, scale * 0.167f), 0, color);
+			}
+			else if (type == "B")
+            {
+				// Upper Link
+				pos = position + new Vector2(scale * -0.0835f, scale * 0.125f);
+				DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.05f), 0, color);
+
+				// Lower Link
+				pos += new Vector2(0, scale * 0.105f);
+				DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.05f), 0, color);
+			}
+		}
 
 
 		// DRAW SEAPARATION //
@@ -336,26 +384,26 @@ namespace IngameScript
 
 			switch (direction.ToUpper())
 			{
-				case "RIGHT":
+				case RIGHT:
 					rotation = 0.5f;
 					offset = new Vector2(scale * 0.33f, 0);
 					break;
-				case "DOWN":
+				case DOWN:
 					rotation = 1;
 					offset = new Vector2(scale / 2, scale * -0.1f);
 					break;
-				case "LEFT":
+				case LEFT:
 					rotation = 1.5f;
 					offset = new Vector2(scale * 0.67f, 0);
 					break;
-				case "UP":
+				case UP:
 				default:
 					rotation = 0;
 					offset = new Vector2(scale / 2, scale * 0.1f);
 					break;
 			}
 
-			DrawTexture("Triangle", position - offset, new Vector2(scale, scale), PI * rotation, color);
+			DrawTexture(TRIANGLE, position - offset, new Vector2(scale, scale), PI * rotation, color);
 		}
 
 
@@ -370,22 +418,22 @@ namespace IngameScript
 
 			switch (direction.ToUpper())
 			{
-				case "RIGHT":
+				case RIGHT:
 					rotation = 0.5f;
 					offset1 = new Vector2(scale * 0.33f, 0);
 					offset2 = new Vector2(length, 0);
 					break;
-				case "DOWN":
+				case DOWN:
 					rotation = 1;
 					offset1 = new Vector2(scale * 0.25f, scale * -0.25f);
 					offset2 = new Vector2(0, -length);
 					break;
-				case "LEFT":
+				case LEFT:
 					rotation = 1.5f;
 					offset1 = new Vector2(scale * 0.167f, 0);
 					offset2 = new Vector2(-length, 0);
 					break;
-				case "UP":
+				case UP:
 				default:
 					rotation = 0;
 					offset1 = new Vector2(scale *0.25f, scale * 0.125f);
@@ -398,11 +446,11 @@ namespace IngameScript
 
 			Vector2 triangleSize = new Vector2(scale, scale) * 0.5f;
 
-			DrawTexture("Triangle", position, triangleSize, rotation, color);
+			DrawTexture(TRIANGLE, position, triangleSize, rotation, color);
 
 			position += offset2;
 
-			DrawTexture("Triangle", position, triangleSize, rotation, color);
+			DrawTexture(TRIANGLE, position, triangleSize, rotation, color);
 		}
 
 
@@ -412,10 +460,10 @@ namespace IngameScript
 			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
 			Vector2 blockScale = new Vector2(scale, scale);
 			position -= new Vector2(scale * 0.5f, 0);
-			DrawTexture("SemiCircle", position, blockScale, PI * 1.5f, color);
-			DrawTexture("CircleHollow", position, blockScale, 0, color);
-			DrawTexture("CircleHollow", position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
-			DrawTexture("CircleHollow", position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
+			DrawTexture(SEMI, position, blockScale, PI * 1.5f, color);
+			DrawTexture(RING, position, blockScale, 0, color);
+			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
+			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
 		}
 
 
@@ -425,10 +473,10 @@ namespace IngameScript
 			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
 			Vector2 blockScale = new Vector2(scale, scale);
 			position -= new Vector2(scale / 2, 0);
-			DrawTexture("CircleHollow", position, blockScale, 0, color);
-			DrawTexture("CircleHollow", position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
-			DrawTexture("CircleHollow", position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
-			DrawTexture("Triangle", position + new Vector2(scale * 0.67f, -scale * 0.25f), blockScale * 0.5f, PI * 0.75f, color);
+			DrawTexture(RING, position, blockScale, 0, color);
+			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
+			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
+			DrawTexture(TRIANGLE, position + new Vector2(scale * 0.67f, -scale * 0.25f), blockScale * 0.5f, PI * 0.75f, color);
 		}
 	}
 }

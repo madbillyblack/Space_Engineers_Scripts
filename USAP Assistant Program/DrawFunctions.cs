@@ -109,7 +109,7 @@ namespace IngameScript
 
 			// Background
 			Vector2 position = center - new Vector2(width / 2, 0);
-			DrawTexture("SquareSimple", position, new Vector2(width, height), 0, bgColor);
+			DrawTexture(SQUARE, position, new Vector2(width, height), 0, bgColor);
 
 			// Set Starting Top Edge
 			Vector2 topLeft;
@@ -178,9 +178,9 @@ namespace IngameScript
 				color = buttonColor * 0.5f;
 
 			//if (ShouldBeVisible(menu, i))
-			//DrawTexture("SquareSimple", position, buttonScale, 0, color);
+			//DrawTexture(SQUARE, position, buttonScale, 0, color);
 
-			DrawTexture("SquareSimple", position, buttonScale, 0, color);
+			DrawTexture(SQUARE, position, buttonScale, 0, color);
 
 			// Block Label
 			position += new Vector2(xScale / 2, - yScale * 0.8f);
