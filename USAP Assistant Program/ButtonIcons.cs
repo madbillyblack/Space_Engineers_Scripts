@@ -344,8 +344,27 @@ namespace IngameScript
 		// DRAW SEAPARATION //
 		void DrawSeparation(Vector2 position, float scale, Color color)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * -0.33f, scale * 0.167f);
+
+			// Left
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 1.5f, color);
+
+			// Right
+			pos += new Vector2(scale * 0.33f, 0);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 0.5f, color);
+
+			// Upper Line
+			pos = position + new Vector2(scale * -0.125f, scale * 0.08f);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.25f, scale * 0.03f), 0, color);
+
+			// Middle Line
+			pos += new Vector2(0, scale * 0.09f);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.25f, scale * 0.03f), 0, color);
+
+			// Lower Line
+			pos += new Vector2(0, scale * 0.08f);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.25f, scale * 0.03f), 0, color);
+		}
 
 
 		// DRAW GAS //
