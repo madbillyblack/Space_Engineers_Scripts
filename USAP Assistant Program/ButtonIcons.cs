@@ -401,8 +401,14 @@ namespace IngameScript
 		// DRAW MISSILE TURRET //
 		void DrawMissileTurret(Vector2 position, float scale, Color color)
         {
-			//TODO
-        }
+			Vector2 pos = position + new Vector2(scale * - 0.05f, scale * 0.06f);
+
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.125f, scale * 0.5f), PI * -0.625f, color);
+
+			pos += new Vector2(scale * -0.05f, scale * 0.08f);
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.25f, scale * 0.4f), 0, color);
+
+		}
 
 
 		// DRAW JETTISON //
@@ -410,6 +416,7 @@ namespace IngameScript
         {
 			//TODO
         }
+
 
 		// DRAW TRIANGLE //
 		void DrawTriangle(Vector2 position, float scale, Color color, string direction)
