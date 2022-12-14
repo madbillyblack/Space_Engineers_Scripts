@@ -200,7 +200,7 @@ namespace IngameScript
 		// DRAW LANDING GEAR //
 		void DrawLandingGear(Vector2 position, float scale, Color iconColor, Color buttonColor, string direction = "")
 		{
-			Vector2 pos = position - new Vector2(scale * 0.375f, 0);
+			Vector2 pos = position - new Vector2(scale * 0.375f, scale * -0.025f);
 			
 			//Bay
 			DrawTexture(SQUARE, pos, new Vector2(scale * 0.75f, scale * 0.1f), 0, iconColor);
@@ -403,7 +403,8 @@ namespace IngameScript
         {
 			Vector2 pos = position + new Vector2(scale * - 0.05f, scale * 0.06f);
 
-			DrawTexture(SQUARE, pos, new Vector2(scale * 0.125f, scale * 0.5f), PI * -0.625f, color);
+			// Barrel
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.125f, scale * 0.5f), PI * -0.5625f, color);
 
 			pos += new Vector2(scale * -0.05f, scale * 0.08f);
 			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.25f, scale * 0.4f), 0, color);
@@ -414,8 +415,21 @@ namespace IngameScript
 		// DRAW JETTISON //
 		void DrawJettison(Vector2 position, float scale, Color color)
         {
-			//TODO
-        }
+			Vector2 pos = position - new Vector2(scale * 0.33f, scale * -0.025f);
+			Vector2 size = new Vector2(scale * 0.2f, scale * 0.2f);
+
+			//Bay
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.67f, scale * 0.1f), 0, color);
+
+			pos += new Vector2(scale * 0.125f, scale * 0.05f);
+			DrawTexture(CIRCLE, pos, size, 0, color);
+
+			pos += new Vector2(scale * 0.2f, scale * 0.125f);
+			DrawTexture(CIRCLE, pos, size, 0, color);
+
+			pos += new Vector2(scale * -0.2f, scale * 0.125f);
+			DrawTexture(CIRCLE, pos, size, 0, color);
+		}
 
 
 		// DRAW TRIANGLE //
