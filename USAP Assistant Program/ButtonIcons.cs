@@ -421,13 +421,13 @@ namespace IngameScript
 			//Bay
 			DrawTexture(SQUARE, pos, new Vector2(scale * 0.67f, scale * 0.1f), 0, color);
 
-			pos += new Vector2(scale * 0.125f, scale * 0.05f);
+			pos += new Vector2(scale * 0.14f, scale * 0.05f);
 			DrawTexture(CIRCLE, pos, size, 0, color);
 
-			pos += new Vector2(scale * 0.2f, scale * 0.125f);
+			pos += new Vector2(scale * 0.2f, scale * 0.133f);
 			DrawTexture(CIRCLE, pos, size, 0, color);
 
-			pos += new Vector2(scale * -0.2f, scale * 0.125f);
+			pos += new Vector2(scale * -0.2f, scale * 0.133f);
 			DrawTexture(CIRCLE, pos, size, 0, color);
 		}
 

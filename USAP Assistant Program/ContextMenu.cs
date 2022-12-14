@@ -42,6 +42,7 @@ namespace IngameScript
 
         static Dictionary<int, Menu> _menus;
         static bool _buttonsLit = false;
+        string _nextCommand;
         //static bool _menusAssigned = false;
 
 
@@ -272,30 +273,8 @@ namespace IngameScript
                 }       
             }
 
-            // ACTIVATE //
-            public void Activate()
-            {
-                if(IsProgramButton && ProgramBlock != null)
-                {
-                    ProgramBlock.TryRun(Action);
-                }
-                else if(Blocks.Count > 0)
-                {
-                    foreach(IMyTerminalBlock block in Blocks)
-                    {
-                        try
-                        {
-                            block.GetActionWithName(Action).Apply(block);
-                        }
-                        catch {}
-                    }
-                }
-
-                ActivateIllumination();
-            }
-
             // ACTIVATE ILLUMINATION //
-            void ActivateIllumination()
+            public void ActivateIllumination()
             {
                 if (IsToggleButton && ToggleBlock != null)
                 {
@@ -324,6 +303,7 @@ namespace IngameScript
         void AssignMenus()
         {
             _menus = new Dictionary<int, Menu>();
+            _nextCommand = "";
 
             List<IMyTerminalBlock> menuBlocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName(MENU_TAG, menuBlocks);
@@ -552,8 +532,8 @@ namespace IngameScript
         }
 
 
-        // ACTIVATE BUTTON //
-        void ActivateButton(string menuKey, int buttonNumber)
+        // PRESS BUTTON //
+        void PressButton(string menuKey, int buttonNumber)
         {
             Menu menu = GetMenu(menuKey);
 
@@ -582,13 +562,39 @@ namespace IngameScript
                 return;
             }
 
-            button.Activate();
+            ActivateButton(button);
 
             // Set update loop for normal button presses
             if (!(button.IsToggleButton))
                 Runtime.UpdateFrequency = UpdateFrequency.Update10;
 
             DrawMenu(menu);
+        }
+
+
+        // ACTIVATE BUTTON //
+        public void ActivateButton(MenuButton button)
+        {
+            if (button.IsProgramButton && button.ProgramBlock != null)
+            {
+                if (button.ProgramBlock == Me)
+                    RunNext(button.Action);
+                else
+                    button.ProgramBlock.TryRun(button.Action);
+            }
+            else if (button.Blocks.Count > 0)
+            {
+                foreach (IMyTerminalBlock block in button.Blocks)
+                {
+                    try
+                    {
+                        block.GetActionWithName(button.Action).Apply(block);
+                    }
+                    catch { }
+                }
+            }
+
+            button.ActivateIllumination();
         }
 
 
@@ -626,6 +632,14 @@ namespace IngameScript
             if (!_buttonsLit)
                 return;
 
+            //Run previously stored command
+            if(_nextCommand != "")
+            {
+                MainSwitch(_nextCommand);
+                _nextCommand = "";
+            }
+
+
             bool activeButtonsRemain = false;
 
             foreach(int menuKey in _menus.Keys)
@@ -658,8 +672,23 @@ namespace IngameScript
                 }
             }
 
+            _buttonsLit = activeButtonsRemain;
+
             if (!activeButtonsRemain && !_cruiseThrustersOn)
                 Runtime.UpdateFrequency = UpdateFrequency.None;
+        }
+
+
+        // RUN NEXT // - set an argument to be run by this program on the next activation
+        void RunNext(string arg)
+        {
+            // Don't allow user to call menu button commands
+            if (arg.ToUpper().StartsWith("BUTTON"))
+                return;
+
+            _buttonsLit = true;
+            _nextCommand = arg;
+            Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
     }
 }
