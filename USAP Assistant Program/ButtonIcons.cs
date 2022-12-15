@@ -103,6 +103,15 @@ namespace IngameScript
 				case "{JETTISON}":
 					DrawJettison(position, scale, iconColor);
 					break;
+				case "{DRILL}":
+					DrawDrill(position, scale, iconColor);
+					break;
+				case "{WELDER}":
+					DrawWelder(position, scale, iconColor);
+					break;
+				case "{GRINDER}":
+					DrawGrinder(position, scale, iconColor);
+					break;
 				case "{<}":
 					DrawTriangle(arrowPos, arrowScale, iconColor, LEFT);
 					break;
@@ -432,6 +441,27 @@ namespace IngameScript
 		}
 
 
+		// DRAW DRILL //
+		void DrawDrill(Vector2 position, float scale, Color color)
+        {
+
+        }
+
+
+		// DRAW WELDER //
+		void DrawWelder(Vector2 position, float scale, Color color)
+        {
+
+        }
+
+
+		// DRAW GRINDER //
+		void DrawGrinder(Vector2 position, float scale, Color color)
+        {
+
+        }
+
+
 		// DRAW TRIANGLE //
 		void DrawTriangle(Vector2 position, float scale, Color color, string direction)
 		{
@@ -534,6 +564,94 @@ namespace IngameScript
 			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
 			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
 			DrawTexture(TRIANGLE, position + new Vector2(scale * 0.67f, -scale * 0.25f), blockScale * 0.5f, PI * 0.75f, color);
+		}
+
+
+		// DRAW DECALS //
+		public void DrawDecals(Menu menu, Vector2 startPosition, float heightScale, string alignment, string decalType)
+		{
+			Echo(alignment);
+			
+
+			Vector2 position;
+			if (alignment == "TOP")
+				position = startPosition + new Vector2(0, menu.Viewport.Height / 2 + heightScale);
+			else
+				position = startPosition - new Vector2(0, menu.Viewport.Height / 2 - heightScale);
+
+			string texture;
+			switch (menu.Decals)
+			{
+				case "BLUEPRINT":
+				case "BLUEPRINTS":
+					texture = GetBlueprintDecal(menu);
+					break;
+				case "GRAPH":
+				case "GRAPHS":
+					texture = GetGraphDecal(menu);
+					break;
+				default:
+					return;
+			}
+			float widthMod;
+			if (menu.Viewport.Width <= 500)
+				widthMod = 1.5f;
+			else
+				widthMod = 1;
+
+			DrawTexture(texture, position, new Vector2(menu.Viewport.Height * widthMod, menu.Viewport.Height - heightScale * 2), 0, Color.White);
+		}
+
+
+		// Get Graph Decal // - Selects a graph decal based on menu's current page
+		public string GetGraphDecal(Menu menu)
+		{
+			string output;
+			int decalID = menu.CurrentPage % 3;
+
+			switch (decalID)
+			{
+				case 0:
+					output = "LCD_Economy_Graph_2";
+					break;
+				case 1:
+					output = "LCD_Economy_Graph_3";
+					break;
+				case 2:
+					output = "LCD_Economy_Graph_5";
+					break;
+				default:
+					output = "OutOfOrder";
+					break;
+			}
+
+			return output;
+		}
+
+
+		// Get Blueprint Decal // - Selects a blueprint decal based on menu's current page
+		public string GetBlueprintDecal(Menu menu)
+		{
+			string output;
+			int decalID = menu.CurrentPage % 3;
+
+			switch (decalID)
+			{
+				case 0:
+					output = "LCD_Economy_SC_Blueprint";
+					break;
+				case 1:
+					output = "LCD_Economy_Blueprint_2";
+					break;
+				case 2:
+					output = "LCD_Economy_Blueprint_3";
+					break;
+				default:
+					output = "OutOfOrder";
+					break;
+			}
+
+			return output;
 		}
 	}
 }

@@ -151,6 +151,9 @@ namespace IngameScript
         // CANCEL SCAN //
         void CancelScan()
         {
+            if (!_scannerActive)
+                return;
+
             AddMessage("PLANET SCAN CANCELLED.");
             _scannerActive = false;
             _scanPlanet = "";

@@ -140,6 +140,11 @@ namespace IngameScript
 				position += new Vector2(cellWidth, 0);
 			}
 
+			if (menu.Decals != "")
+			{
+				DrawDecals(menu, topLeft, buttonHeight, menu.Alignment, menu.Decals);
+			}
+
 			// Menu Title
 			position = topLeft + new Vector2(10, 0);
 			string title = "MENU " + page.Number;

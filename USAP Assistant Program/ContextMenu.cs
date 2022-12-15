@@ -56,6 +56,7 @@ namespace IngameScript
             public IMyTextSurface Surface;
             public RectangleF Viewport;
             public string Alignment;
+            public string Decals;
             public Dictionary<int, MenuPage> Pages;
 
             public Color BackgroundColor;
@@ -84,6 +85,9 @@ namespace IngameScript
                 int screenIndex = ParseInt(GetKey(block, MENU_HEAD, "Screen Index", "0"), 0);
                 Surface = SurfaceFromBlock(block as IMyTextSurfaceProvider, screenIndex);
                 PrepareTextSurfaceForSprites(Surface);
+
+                // Decals
+                Decals = GetKey(block, MENU_HEAD, "Decals", "").ToUpper();
 
                 if (Surface != null)
                     Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
