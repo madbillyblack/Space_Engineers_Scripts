@@ -234,9 +234,19 @@ namespace IngameScript
 				case "SCAN": // PLANET
 					ScanPlanet(argData);
 					break;
+				case "RESCAN": // PLANET
+				case "RE-SCAN":
+					ScanPlanet(argData, true);
+					break;
 				case "LOAD": // VANILLA PLANETS
 					if (cmdArg.Contains("VANILLA") || cmdArg.Contains("PLANETS"))
 						LoadVanillaPlanets();
+					break;
+				case "CANCEL": //SCAN
+					CancelScan();
+					break;
+				case "CLEAR": //MESSAGES
+					_messages.Clear();
 					break;
 				default:
 					AddMessage("UNRECOGNIZED COMMAND!");

@@ -26,12 +26,12 @@ namespace IngameScript
         const string SCAN_TAG = "[Scan Cam]";
         const float DV_SCAN = 10;
         const string RANGE_KEY = "Scan Range";
+        const string BORDER_LINE = "----------------------------------------------";
     
         IMyCameraBlock _scanCamera;
         static bool _scannerActive;
         float _scanRange; // In meters
         string _scanPlanet; // Name of planet that's being scanned
-        
 
 
 
@@ -78,8 +78,8 @@ namespace IngameScript
                 flasher = " - SCANNING -";
             else
                 flasher = "";
-
-            Echo("PLANET SCANNER" + flasher);
+            
+            Echo(BORDER_LINE +"\nPLANET SCANNER" + flasher);
 
             if(_scanCamera == null)
             {
@@ -113,26 +113,26 @@ namespace IngameScript
                 else
                     countdown = "  - Ready in: " + time.ToString(@"hh\:mm\:ss");//should print time in format "00:00:00"
 
-                Echo(countdown + "\n");
+                Echo(countdown + "\n" + BORDER_LINE + "\n");
             }
         }
 
 
         // SCAN PLANET //
-        void ScanPlanet(string planetName)
+        void ScanPlanet(string planetName, bool resetPlanet = false)
         {
             if(_scanCamera == null)
             {
                 AddMessage("No Scan Camera Specified!");
                 return;
             }
-            else if(string.IsNullOrEmpty(planetName))
+            else if(planetName == "" || planetName == "0")
             {
                 AddMessage("No PLANET NAME specified for SCAN!");
             }
             else if(_scannerActive)
             {
-                CastRay(planetName);
+                CastRay(resetPlanet);
             }
             else
             {
@@ -148,8 +148,19 @@ namespace IngameScript
         }
 
 
+        // CANCEL SCAN //
+        void CancelScan()
+        {
+            AddMessage("PLANET SCAN CANCELLED.");
+            _scannerActive = false;
+            _scanPlanet = "";
+            _scanCamera.EnableRaycast = false;
+            _activePlanet = "";
+        }
+
+
         // CAST RAY //
-        void CastRay(string planetName)
+        void CastRay(bool resetPlanet)
         {
             MyDetectedEntityInfo planetInfo = _scanCamera.Raycast(_scanRange, 0, 0);
 
@@ -173,7 +184,7 @@ namespace IngameScript
 
 
             if (_scanPlanet == _activePlanet)
-                UpdatePlanetFromCast(planetInfo, center, (float) radius);
+                UpdatePlanetFromCast(planetInfo, center, (float) radius, resetPlanet);
             else
                 NewPlanetFromCast(planetInfo, center, (float)radius);
 
@@ -194,7 +205,7 @@ namespace IngameScript
 
 
         // UPDATE PLANET FROM CAST //
-        void UpdatePlanetFromCast(MyDetectedEntityInfo planetInfo, Vector3D center, float radius)
+        void UpdatePlanetFromCast(MyDetectedEntityInfo planetInfo, Vector3D center, float radius, bool resetPlanet)
         {
             Planet planet = GetPlanet(_activePlanet);
             if(planet == null)
@@ -208,10 +219,20 @@ namespace IngameScript
                 planet.SampleCount = 1;
 
             float oldRadius = planet.radius;
-            float newRadius = ((oldRadius * planet.SampleCount) + radius) / (planet.SampleCount + 1);
+            float newRadius;
 
-            // Count new sample point
-            planet.SampleCount++;
+            if (resetPlanet)
+            {
+                newRadius = radius;
+                planet.SampleCount = 1;
+            }
+            else
+            {
+                newRadius = ((oldRadius * planet.SampleCount) + radius) / (planet.SampleCount + 1);
+                // Count new sample point
+                planet.SampleCount++;
+            }
+                
 
             float difference = (newRadius - oldRadius)/1000;
             

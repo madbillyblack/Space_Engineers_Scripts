@@ -1022,6 +1022,7 @@ namespace IngameScript
 				_messages.RemoveAt(0);
         }
 
+
 		
 		// ECHO MESSAGES //
 		void EchoMessages()

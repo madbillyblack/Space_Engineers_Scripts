@@ -318,9 +318,11 @@ namespace IngameScript
                     Menu menu = InitializeMenu(menuBlock);
                     _menus[menu.IDNumber] = menu;
 
-                    DrawMenu(menu);
+                    //DrawMenu(menu);
                 }
             }
+
+            DrawAllMenus();
         }
 
 
