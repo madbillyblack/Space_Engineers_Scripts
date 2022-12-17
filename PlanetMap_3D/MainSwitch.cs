@@ -32,7 +32,7 @@ namespace IngameScript
 				cmdArg = cmds[1];
 
 			// Account for single instance commands with underscores
-			if (cmdArg == "RADIUS" || cmdArg == "SHIP" || cmdArg == "JUMP")
+			if (cmdArg == "RADIUS" || cmdArg == "SHIP")//|| cmdArg == "JUMP")
 				command = args[0];
 
 			string argData = "";
@@ -169,6 +169,8 @@ namespace IngameScript
 					break;
 				case "EXPORT"://WAYPOINT
 					_clipboard = LogToClipboard(argData);
+					UpdateDisplays(true);
+					AddMessage("Export: " + _clipboard);
 					break;
 				case "PROJECT":
 					ProjectPoint(cmdArg, argData);

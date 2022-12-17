@@ -479,13 +479,13 @@ namespace IngameScript
 
 
 		// UPDATE DISPLAYS // Write current data to all Data Displays
-		void UpdateDisplays()
+		void UpdateDisplays(bool fromCommand = false)
         {
 			if (_dataDisplays.Count < 1)
 				return;
 
 			foreach (DataDisplay display in _dataDisplays)
-				display.DisplayPage(false);
+				display.DisplayPage(fromCommand);
 		}
 	}
 }
