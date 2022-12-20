@@ -63,6 +63,7 @@ namespace IngameScript
             public Color TitleColor;
             public Color LabelColor;
             public Color ButtonColor;
+            MyIni Ini;
 
             public Menu(IMyTerminalBlock block)
             {
@@ -74,20 +75,21 @@ namespace IngameScript
 
                 // Read Parameters from Custom Data
                 Block = block;
-                IDNumber = ParseInt(GetKey(block, MENU_HEAD, ID_KEY, idKey.ToString()), idKey);
+                Ini = GetIni(block);
+                IDNumber = ParseInt(GetKey(MENU_HEAD, ID_KEY, idKey.ToString()), idKey);
 
                 SetPageCount();
                 SetCurrentPage();
 
-                Alignment = GetKey(block, MENU_HEAD, "Alignment", "BOTTOM");
+                Alignment = GetKey(MENU_HEAD, "Alignment", "BOTTOM");
 
                 // Set Menu Surface
-                int screenIndex = ParseInt(GetKey(block, MENU_HEAD, "Screen Index", "0"), 0);
+                int screenIndex = ParseInt(GetKey(MENU_HEAD, "Screen Index", "0"), 0);
                 Surface = SurfaceFromBlock(block as IMyTextSurfaceProvider, screenIndex);
                 PrepareTextSurfaceForSprites(Surface);
 
                 // Decals
-                Decals = GetKey(block, MENU_HEAD, "Decals", "").ToUpper();
+                Decals = GetKey(MENU_HEAD, "Decals", "").ToUpper();
 
                 if (Surface != null)
                     Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
@@ -103,13 +105,13 @@ namespace IngameScript
                 }
 
                 if (updateID)
-                    SetKey(block, MENU_HEAD, ID_KEY, IDNumber.ToString());
+                    SetKey(MENU_HEAD, ID_KEY, IDNumber.ToString());
 
                 // Set currently available menu parameters
-                BackgroundColor = ParseColor(GetKey(block, MENU_COLOR, BG_KEY, "0,0,0"));
-                TitleColor = ParseColor(GetKey(block, MENU_COLOR, TITLE_KEY, "160,160,0"));
-                LabelColor = ParseColor(GetKey(block, MENU_COLOR, LABEL_KEY, "160,160,160"));
-                ButtonColor = ParseColor(GetKey(block, MENU_COLOR, BUTTON_KEY, "0,160,160"));
+                BackgroundColor = ParseColor(GetKey(MENU_COLOR, BG_KEY, "0,0,0"));
+                TitleColor = ParseColor(GetKey(MENU_COLOR, TITLE_KEY, "160,160,0"));
+                LabelColor = ParseColor(GetKey(MENU_COLOR, LABEL_KEY, "160,160,160"));
+                ButtonColor = ParseColor(GetKey(MENU_COLOR, BUTTON_KEY, "0,160,160"));
             }
 
 
@@ -123,26 +125,47 @@ namespace IngameScript
             // SET PAGE COUNT //
             void SetPageCount()
             {
-                PageCount = ParseInt(GetKey(Block, MENU_HEAD, PAGE_COUNT, "1"), 1);
+                PageCount = ParseInt(GetKey(MENU_HEAD, PAGE_COUNT, "1"), 1);
 
                 if (PageCount > PAGE_LIMIT)
                 {
                     PageCount = PAGE_LIMIT;
-                    SetKey(Block, MENU_HEAD, PAGE_COUNT, PAGE_LIMIT.ToString());
+                    SetKey(MENU_HEAD, PAGE_COUNT, PAGE_LIMIT.ToString());
                 }
             }
 
             // SET CURRENT PAGE //
             void SetCurrentPage()
             {
-                CurrentPage = ParseInt(GetKey(Block, MENU_HEAD, PAGE_KEY, "1"), 1);
+                CurrentPage = ParseInt(GetKey(MENU_HEAD, PAGE_KEY, "1"), 1);
                 
 
                 if(CurrentPage > PageCount || CurrentPage < 1)
                 {
                     CurrentPage = 1;
-                    SetKey(Block, MENU_HEAD, PAGE_KEY, "1");
+                    SetKey(MENU_HEAD, PAGE_KEY, "1");
                 }
+            }
+
+            //ENSURE KEY
+            void EnsureKey(string header, string key, string defaultVal)
+            {
+                if (!Ini.ContainsKey(header, key))
+                    SetKey(header, key, defaultVal);
+            }
+
+            // GET KEY
+            public string GetKey(string header, string key, string defaultVal)
+            {
+                EnsureKey(header, key, defaultVal);
+                return Ini.Get(header, key).ToString();
+            }
+
+            // SET KEY
+            public void SetKey(string header, string key, string arg)
+            {
+                Ini.Set(header, key, arg);
+                Block.CustomData = Ini.ToString();
             }
         }
 
@@ -337,7 +360,7 @@ namespace IngameScript
 
             for(int i = 1; i <= menu.PageCount; i++)
             {
-                menu.Pages[i] = InitializeMenuPage(menuBlock, i);
+                menu.Pages[i] = InitializeMenuPage(menu, i);
             }
 
             return menu;
@@ -345,14 +368,14 @@ namespace IngameScript
 
 
         // INITIALIZE MENU PAGE //
-        MenuPage InitializeMenuPage(IMyTerminalBlock menuBlock, int pageNumber)
+        MenuPage InitializeMenuPage(Menu menu, int pageNumber)
         {
             MenuPage menuPage = new MenuPage(pageNumber);
-            menuPage.Name = GetKey(menuBlock, PAGE_HEAD + pageNumber, "Title", "");
+            menuPage.Name = menu.GetKey(PAGE_HEAD + pageNumber, "Title", "");
 
             for(int i = 1; i < 8; i++)
             {
-                menuPage.Buttons[i] = InitializeButton(menuBlock, pageNumber, i);
+                menuPage.Buttons[i] = InitializeButton(menu, pageNumber, i);
             }
 
             return menuPage;
@@ -360,11 +383,12 @@ namespace IngameScript
 
 
         // INITIALIZE BUTTON //
-        MenuButton InitializeButton(IMyTerminalBlock menuBlock, int pageNumber, int buttonNumber)
+        MenuButton InitializeButton(Menu menu, int pageNumber, int buttonNumber)
         {
             MenuButton button = new MenuButton(buttonNumber);
 
-            string blockString = GetKey(menuBlock, PAGE_HEAD + pageNumber, BUTTON_BLOCK + button.Number, "");
+            string blockString = menu.GetKey(PAGE_HEAD + pageNumber, BUTTON_BLOCK + button.Number, "");
+            //string blockLabel = GetKey
             string [] buttonData = blockString.Split(';');
 
             string blockName = buttonData[0].Trim();
@@ -413,7 +437,7 @@ namespace IngameScript
             }
 
             // Set Button Action
-            string actionString = GetKey(menuBlock, PAGE_HEAD + pageNumber, BUTTON_ACTION + button.Number, "");
+            string actionString = menu.GetKey(PAGE_HEAD + pageNumber, BUTTON_ACTION + button.Number, "");
             string[] actionData = actionString.Split(';');
 
             button.Action = actionData[0];
@@ -476,7 +500,7 @@ namespace IngameScript
             if (menu.CurrentPage > menu.PageCount)
                 menu.CurrentPage = 1;
 
-            SetKey(menu.Block, MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
+            menu.SetKey(MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
 
             DrawMenu(menu);
         }
@@ -495,7 +519,7 @@ namespace IngameScript
             if (menu.CurrentPage < 1)
                 menu.CurrentPage = menu.PageCount;
 
-            SetKey(menu.Block, MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
+            menu.SetKey(MENU_HEAD, PAGE_KEY, menu.CurrentPage.ToString());
 
             DrawMenu(menu);
         }
