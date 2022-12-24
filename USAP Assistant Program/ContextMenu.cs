@@ -387,34 +387,41 @@ namespace IngameScript
         {
             MenuButton button = new MenuButton(buttonNumber);
 
-            string blockString = menu.GetKey(PAGE_HEAD + pageNumber, BUTTON_BLOCK + button.Number, "");
-            //string blockLabel = GetKey
-            string [] buttonData = blockString.Split(';');
+            string header = PAGE_HEAD + pageNumber;
+            string blockKey = BUTTON_BLOCK + button.Number;
+            string actionKey = BUTTON_ACTION + button.Number;
+            
+            string blockString = menu.GetKey(header, blockKey, ""); // Block #
+            string blockLabelString = menu.GetKey(header, blockKey + " Label", ""); // Block # Label
+            button.Action = menu.GetKey(header, actionKey, ""); // Action #
+            string actionLabelString = menu.GetKey(header, actionKey + " Label", ""); // Action # Label
 
-            string blockName = buttonData[0].Trim();
 
-            if (buttonData.Length > 1)
-                button.SetBlockLabel(buttonData[1]);
-            else
-                button.SetBlockLabel("");
+            string[] buttonData = GetBlockDataFromKey(blockString);
 
-            if(blockString.ToUpper().StartsWith("G:"))
+            //Echo("Menu: " + pageNumber + " - Button: " + buttonNumber);
+            string blockName = buttonData[0];
+            string prefix = buttonData[1];
+            string toggleName = buttonData[2];
+            //Echo("Toggle Name: [" + toggleName + "]");
+
+
+            // Set Block Group, Program Block or Blocks
+            if(prefix.ToUpper().Contains("G"))
             {
-                string groupName = buttonData[0].Substring(2).Trim();
-
-                IMyBlockGroup group = GridTerminalSystem.GetBlockGroupWithName(groupName);
+                IMyBlockGroup group = GridTerminalSystem.GetBlockGroupWithName(blockName);
 
                 if (group == null)
                 {
-                    _statusMessage += "NO GROUP WITH NAME \"" + groupName + "\" FOUND!\n";
+                    _statusMessage += "NO GROUP WITH NAME \"" + blockName + "\" FOUND!\n";
                 }
 
                 //Assign group blocks to button's block list.
                 group.GetBlocks(button.Blocks);
             }
-            else if(blockString.ToUpper().StartsWith("P:"))
+            else if(prefix.ToUpper().Contains("P"))
             {
-                string programName = buttonData[0].Substring(2).Trim();
+                string programName = blockName;
                 button.SetProgramBlock(GetProgramBlock(programName));
             }
             else if(blockName.ToUpper() == PLACE_HOLDER)
@@ -436,19 +443,26 @@ namespace IngameScript
                 }
             }
 
-            // Set Button Action
-            string actionString = menu.GetKey(PAGE_HEAD + pageNumber, BUTTON_ACTION + button.Number, "");
-            string[] actionData = actionString.Split(';');
+            button.SetBlockLabel(blockLabelString);
 
-            button.Action = actionData[0];
+            if (prefix.Contains("T"))
+                AssignToggleBlock(button, toggleName);
+            else
+                button.ToggleBlock = null;
 
+            if (actionLabelString != "")
+                button.SetActionLabel(actionLabelString);
+            else
+                button.SetActionLabel(button.Action);
+
+            /*
             if (actionData.Length > 1)
             {
                 string entry = actionData[1].Trim();
 
                 if (entry.StartsWith("T:"))
                 {
-                    AssignToggleBlock(button, entry);
+                    
                     button.SetActionLabel(button.Action);
                 }
                 else
@@ -459,10 +473,7 @@ namespace IngameScript
             else
             {
                 button.SetActionLabel(actionString);
-            }
-
-            if (actionData.Length > 2)
-                AssignToggleBlock(button, actionData[2].Trim());
+            }*/
 
             return button;
         }
@@ -644,15 +655,26 @@ namespace IngameScript
         // ASSIGN TOGGLE BLOCK // t:
         void AssignToggleBlock(MenuButton button, string toggleArg)
         {
-            if(toggleArg.EndsWith("T:") || !toggleArg.StartsWith("T:"))
-                return;
-                
-            IMyTerminalBlock toggleBlock = GridTerminalSystem.GetBlockWithName(toggleArg.Substring(2));
-
-            if (SameGridID(toggleBlock))
-                button.SetToggleBlock(toggleBlock);
+            Echo("Button " + button.Number + " Toggle: " + toggleArg);
+            //if(toggleArg.EndsWith("T:") || !toggleArg.StartsWith("T:"))
+               // return;
+            if(toggleArg == "")
+            {
+                if (button.IsProgramButton)
+                    button.SetToggleBlock(button.ProgramBlock);
+                else
+                    button.SetToggleBlock(button.Blocks[0]);
+            }
             else
-                button.SetToggleBlock(null);
+            {
+                IMyTerminalBlock toggleBlock = GridTerminalSystem.GetBlockWithName(toggleArg);
+
+                if (toggleBlock != null && SameGridID(toggleBlock))
+                    button.SetToggleBlock(toggleBlock);
+                else
+                    button.SetToggleBlock(null);
+            }
+
         }
 
 
@@ -719,6 +741,58 @@ namespace IngameScript
             _buttonsLit = true;
             _nextCommand = arg;
             Runtime.UpdateFrequency = UpdateFrequency.Update10;
+        }
+
+
+        // GET BUTTON BLOCK NAME // -  Gets Block Data from INI Key { BlockName, Group/Program/Toggle, Alternate Toggle Block Name }
+        string [] GetBlockDataFromKey(string arg)
+        {
+            string[] dataOut = new string[] {"","",""};
+
+            // Split at colon to detect prefix
+            string[] rawData = arg.Split(':');
+
+            // Middle assignment variable
+            string processedData = "";
+
+            if(rawData.Length > 1)
+            {
+                string prefix = rawData[0].ToUpper();
+
+                if(prefix.Contains("T") || prefix.Contains("G") || prefix.Contains("P"))
+                {
+                    processedData = rawData[1];
+                    dataOut[1] = prefix;
+
+                    // Rebuild string if their are more collons
+                    if(rawData.Length > 2)
+                    {
+                        for (int i = 2; i < rawData.Length; i++)
+                        {
+                            processedData += ":" + rawData[i];
+                        }
+                    }
+                }
+            }
+            else
+            {
+                processedData = arg;
+            }
+
+            //Echo("ALERT: " + processedData);
+
+            if (processedData.Contains("{") && processedData.Contains("}"))
+            {
+                dataOut[2] = GetBracedInfo(processedData);
+                //Echo("HEY YOU GUYS: " + dataOut[2]);
+                dataOut[0] = processedData.Substring(0, processedData.IndexOf("{")).Trim();
+            }
+            else
+            {
+                dataOut[0] = processedData.Trim();
+            }
+
+            return dataOut;
         }
     }
 }

@@ -129,11 +129,17 @@ namespace IngameScript
                         break;
                     case "GEAR_TIMER": // Lets timer cycle gear based on corrent state
                         if (_landingGear != null)
+                        {
                             _landingGear.TimerCall();
+                            DrawAllMenus();
+                        }
                         break;
                     case "TIMER_LOCK": // Basic timer call that ends gear movement
                         if (_landingGear != null)
+                        {
                             _landingGear.TimerLock();
+                            DrawAllMenus();
+                        }
                         break;
                     case "SWAP_GEAR_DIRECTION":
                     case "SWAP_GEAR_DIRECTIONS":
@@ -194,6 +200,9 @@ namespace IngameScript
                         break;
                     case "PREVIOUS_MENU":
                         PreviousMenuPage(cmdArg);
+                        break;
+                    case "DRAW_MENUS":
+                        DrawAllMenus();
                         break;
                     default:
                         TriggerCall(argument);

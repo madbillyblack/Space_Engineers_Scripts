@@ -72,5 +72,26 @@ namespace IngameScript
 
             return new Color(red, green, blue);
         }
+
+
+        // GET BRACED INFO //
+        static string GetBracedInfo(string arg)
+        {
+            string info = "";
+
+            if (arg.Contains("{") && arg.Contains("}"))
+            {
+                int open = arg.IndexOf('{');
+                int close = arg.IndexOf('}') - 1;
+
+
+                if (open < close)
+                {
+                    info = arg.Substring(open + 1, close - open).Trim();
+                }
+            }
+
+            return info;
+        }
     }
 }
