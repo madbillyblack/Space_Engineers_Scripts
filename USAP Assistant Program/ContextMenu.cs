@@ -26,9 +26,11 @@ namespace IngameScript
         const string PAGE_KEY = "Current Page";
         const string PAGE_COUNT = "Page Count";
         const string ID_KEY = "Menu ID";
-        const string PAGE_HEAD = "Menu Page ";
-        const string BUTTON_BLOCK = "Block ";
-        const string BUTTON_ACTION = "Action ";
+        const string PAGE_HEAD = "MENU PAGE ";
+        const string BUTTON_BLOCK = "Block";
+        const string BLOCK_LABEL = "Block Label";
+        const string BUTTON_ACTION = "Action";
+        const string ACTION_LABEL = "Action Label";
         const string MENU_COLOR = "Menu Color Settings";
         const string BG_KEY = "Background Color";
         const string TITLE_KEY = "Title Color";
@@ -171,13 +173,14 @@ namespace IngameScript
             // SET COMMENT
             public void SetComment(string header, string comment)
             {
-                //string oldComment = Ini.GetSectionComment(header);
-                Ini.SetSectionComment(header, comment);
+                if (Ini.ContainsSection(header))
+                    Ini.SetSectionComment(header, comment);
             }
 
             public void SetComment(string header, string key, string comment)
             {
-                Ini.SetComment(header, key, comment);
+                if (Ini.ContainsSection(header) && Ini.ContainsKey(header, key))
+                    Ini.SetComment(header, key, comment);
             }
 
             public void UpdateCustomData()
@@ -389,11 +392,11 @@ namespace IngameScript
         MenuPage InitializeMenuPage(Menu menu, int pageNumber)
         {
             MenuPage menuPage = new MenuPage(pageNumber);
-            string header = PAGE_HEAD + pageNumber;
+            string header = DASHES + PAGE_HEAD + pageNumber + DASHES;
 
             menuPage.Name = menu.GetKey(header, "Title", "");
-            menu.SetComment(header, DASHES);
-            menu.SetComment(header, "Title", DASHES);
+            //menu.SetComment(header, SLASHES);
+            //menu.SetComment(header, "Title", SLASHES);
 
             for(int i = 1; i < 8; i++)
             {
@@ -409,14 +412,15 @@ namespace IngameScript
         {
             MenuButton button = new MenuButton(buttonNumber);
 
-            string header = PAGE_HEAD + pageNumber;
-            string blockKey = BUTTON_BLOCK + button.Number;
-            string actionKey = BUTTON_ACTION + button.Number;
+            string header = "Button " + buttonNumber + " (page " + pageNumber + ")";
+            //string blockKey = BUTTON_BLOCK + button.Number;
+            //string actionKey = BUTTON_ACTION + button.Number;
             
-            string blockString = menu.GetKey(header, blockKey, ""); // Block #
-            string blockLabelString = menu.GetKey(header, blockKey + " Label", ""); // Block # Label
-            button.Action = menu.GetKey(header, actionKey, ""); // Action #
-            string actionLabelString = menu.GetKey(header, actionKey + " Label", ""); // Action # Label
+            string blockString = menu.GetKey(header, BUTTON_BLOCK, ""); // Block #
+            string blockLabelString = menu.GetKey(header, BLOCK_LABEL, ""); // Block # Label
+
+            button.Action = menu.GetKey(header, BUTTON_ACTION, ""); // Action #
+            string actionLabelString = menu.GetKey(header, ACTION_LABEL, ""); // Action # Label
 
 
             string[] buttonData = GetBlockDataFromKey(blockString);
