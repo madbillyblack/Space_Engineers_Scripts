@@ -66,7 +66,7 @@ namespace IngameScript
             public Color LabelColor;
             public Color ButtonColor;
 
-            public float BlinkCycle;
+            public int BlinkCycle;
             MyIni Ini;
 
             public Menu(IMyTerminalBlock block)
@@ -97,7 +97,8 @@ namespace IngameScript
                 Decals = GetKey(MENU_HEAD, "Decals", "").ToUpper();
 
                 // Blink Cycle
-                BlinkCycle = ParseFloat(GetKey(MENU_HEAD, "Blink Cycle", "1.5"), 1.5f);
+                float cycleLength = ParseFloat(GetKey(MENU_HEAD, "Blink Cycle", "1.5"), 1.5f);
+                BlinkCycle = (int)(cycleLength * 6);
 
                 if (Surface != null)
                     Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
@@ -224,12 +225,13 @@ namespace IngameScript
             public bool IsToggleButton;
             public bool IsActive;
             public bool IsPlaceHolder;
+            public bool IsBlinkButton;
 
             public string BlockLabel;
             public string [] ActionLabel;
             public string Action;
             public int BlinkDuration; // in cycles
-
+            
             public int IlluminationTime;
 
             public MenuButton(int buttonNumber)
@@ -239,15 +241,18 @@ namespace IngameScript
                 IsActive = false;
                 IsPlaceHolder = false;
                 IsProgramButton = false;
+                IsBlinkButton = false;
                 ProgramBlock = null;
                 ActionLabel = new string[] { "#", "" };
+                BlinkDuration = 0;
                 IlluminationTime = 0;
             }
 
-            // IS BLINK BUTTON
-            public bool IsBlinkButton()
+            // Set Blink Duration
+            public void SetBlinkDuration(float timeInSeconds)
             {
-                return BlinkDuration > 0;
+                BlinkDuration = (int)(timeInSeconds * 6);
+                IsBlinkButton = BlinkDuration > 0;
             }
 
             // SET PROGRAM BLOCK //
@@ -336,7 +341,13 @@ namespace IngameScript
             // ACTIVATE ILLUMINATION //
             public void ActivateIllumination()
             {
-                if (IsToggleButton && ToggleBlock != null)
+                if(IsBlinkButton)
+                {
+                    IsActive = true;
+                    IlluminationTime = BlinkDuration;
+                    _buttonsLit = true;
+                }
+                else if (IsToggleButton && ToggleBlock != null)
                 {
                     IsActive = ToggleBlock.IsWorking;
                 }
@@ -435,9 +446,8 @@ namespace IngameScript
             button.Action = menu.GetKey(header, BUTTON_ACTION, ""); // Action #
             string actionLabelString = menu.GetKey(header, ACTION_LABEL, ""); // Action # Label
 
-            float rawBlink = ParseFloat(menu.GetKey(header, "Blink Length", "0"), 0);
-            button.BlinkDuration = (int)(rawBlink * 6);
-            //Echo("Button " + menu.IDNumber + ":" + pageNumber + ":" + button.Number + "\n * Seconds:" + rawBlink + "\n * Ticks: " + button.BlinkDuration);
+            button.SetBlinkDuration(ParseFloat(menu.GetKey(header, "Blink Length", "0"), 0));
+            //Echo("Blink: " + button.IsBlinkButton + ": " + button.BlinkDuration);
 
             string[] buttonData = GetBlockDataFromKey(blockString);
 
@@ -634,7 +644,7 @@ namespace IngameScript
             else
                 Echo("UNASSIGNED");
 
-            Echo(" - Toggle: " + button.IsToggleButton);
+            //Echo(" - Toggle: " + button.IsToggleButton);
             if (button.IsToggleButton)
                 Echo(" - Block: " + button.ToggleBlock.CustomName);
 
@@ -648,7 +658,7 @@ namespace IngameScript
             ActivateButton(button);
 
             // Set update loop for normal button presses
-            if (!(button.IsToggleButton))
+            if (!(button.IsToggleButton) || button.IsBlinkButton)
                 Runtime.UpdateFrequency = UpdateFrequency.Update10;
 
             DrawMenu(menu);
@@ -697,7 +707,7 @@ namespace IngameScript
         // ASSIGN TOGGLE BLOCK // t:
         void AssignToggleBlock(MenuButton button, string toggleArg)
         {
-            Echo("Button " + button.Number + " Toggle: " + toggleArg);
+            //Echo("Button " + button.Number + " Toggle: " + toggleArg);
             //if(toggleArg.EndsWith("T:") || !toggleArg.StartsWith("T:"))
                // return;
             if(toggleArg == "")
@@ -748,20 +758,10 @@ namespace IngameScript
                     {
                         MenuButton button = page.Buttons[buttonKey];
 
-                        if(button.IlluminationTime > 0)
-                        {
-                            button.IlluminationTime--;
-
-                            if (button.IlluminationTime > 0)
-                            {
-                                activeButtonsRemain = true;
-                            }
-                            else
-                            {
-                                button.IsActive = false;
-                                DrawMenu(menu);
-                            }    
-                        }
+                        if (button.IsBlinkButton)
+                            activeButtonsRemain = activeButtonsRemain || CheckBlinkButton(menu, button);
+                        else
+                            activeButtonsRemain = activeButtonsRemain || CheckNormalButton(menu, button);
                     }
                 }
             }
@@ -770,6 +770,65 @@ namespace IngameScript
 
             if (!activeButtonsRemain && !_cruiseThrustersOn)
                 Runtime.UpdateFrequency = UpdateFrequency.None;
+        }
+
+        // CHECK NORMAL BUTTON - Decriment button light time. Return true if time remaining.
+        bool CheckNormalButton(Menu menu, MenuButton button)
+        {
+            if(button.IlluminationTime < 1)
+                return false;
+
+            button.IlluminationTime--;
+
+            if (button.IlluminationTime > 0)
+            {
+                 return true;
+            }
+            else
+            {
+                button.IsActive = false;
+                DrawMenu(menu);
+                return false;
+            }
+        }
+
+
+        // CHECK BLINK BUTTON - Decrement button light time. Check set current light. Return true if time still remains.
+        bool CheckBlinkButton(Menu menu, MenuButton button)
+        {
+            if (button.IlluminationTime < 1)
+                return false;
+            
+            button.IlluminationTime--;
+
+            if (button.IlluminationTime > 0)
+            {
+                UpdateBlink(menu, button);
+                return true;
+            }
+            else
+            {
+                if (button.IsToggleButton)
+                    button.IsActive = button.ToggleBlock.IsWorking;
+                else
+                    button.IsActive = false;
+
+                DrawMenu(menu);
+                return false;
+            }
+        }
+
+
+        // UPDATE BLINK
+        void UpdateBlink(Menu menu, MenuButton button)
+        {
+            int remainder = button.IlluminationTime % menu.BlinkCycle;
+
+            if (remainder == 0)
+            {
+                button.IsActive = !button.IsActive;
+                DrawMenu(menu);
+            }
         }
 
 
