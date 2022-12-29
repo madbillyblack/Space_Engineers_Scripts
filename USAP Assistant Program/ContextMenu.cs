@@ -65,6 +65,8 @@ namespace IngameScript
             public Color TitleColor;
             public Color LabelColor;
             public Color ButtonColor;
+
+            public float BlinkCycle;
             MyIni Ini;
 
             public Menu(IMyTerminalBlock block)
@@ -80,18 +82,22 @@ namespace IngameScript
                 Ini = GetIni(block);
                 IDNumber = ParseInt(GetKey(MENU_HEAD, ID_KEY, idKey.ToString()), idKey);
 
-                SetPageCount();
-                SetCurrentPage();
-
-                Alignment = GetKey(MENU_HEAD, "Alignment", "BOTTOM");
-
                 // Set Menu Surface
                 int screenIndex = ParseInt(GetKey(MENU_HEAD, "Screen Index", "0"), 0);
                 Surface = SurfaceFromBlock(block as IMyTextSurfaceProvider, screenIndex);
                 PrepareTextSurfaceForSprites(Surface);
 
+                SetPageCount();
+                SetCurrentPage();
+
+                // Vertical Alignment
+                Alignment = GetKey(MENU_HEAD, "Alignment", "BOTTOM");
+
                 // Decals
                 Decals = GetKey(MENU_HEAD, "Decals", "").ToUpper();
+
+                // Blink Cycle
+                BlinkCycle = ParseFloat(GetKey(MENU_HEAD, "Blink Cycle", "1.5"), 1.5f);
 
                 if (Surface != null)
                     Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
@@ -222,6 +228,7 @@ namespace IngameScript
             public string BlockLabel;
             public string [] ActionLabel;
             public string Action;
+            public int BlinkDuration; // in cycles
 
             public int IlluminationTime;
 
@@ -235,6 +242,12 @@ namespace IngameScript
                 ProgramBlock = null;
                 ActionLabel = new string[] { "#", "" };
                 IlluminationTime = 0;
+            }
+
+            // IS BLINK BUTTON
+            public bool IsBlinkButton()
+            {
+                return BlinkDuration > 0;
             }
 
             // SET PROGRAM BLOCK //
@@ -422,6 +435,9 @@ namespace IngameScript
             button.Action = menu.GetKey(header, BUTTON_ACTION, ""); // Action #
             string actionLabelString = menu.GetKey(header, ACTION_LABEL, ""); // Action # Label
 
+            float rawBlink = ParseFloat(menu.GetKey(header, "Blink Length", "0"), 0);
+            button.BlinkDuration = (int)(rawBlink * 6);
+            //Echo("Button " + menu.IDNumber + ":" + pageNumber + ":" + button.Number + "\n * Seconds:" + rawBlink + "\n * Ticks: " + button.BlinkDuration);
 
             string[] buttonData = GetBlockDataFromKey(blockString);
 
