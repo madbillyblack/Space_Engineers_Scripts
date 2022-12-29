@@ -43,6 +43,8 @@ namespace IngameScript
 
         const string MENU_TAG = "[MENU]"; // Tag use to assign constext menus to block
 
+        const string DASHES = "---------------------------------------------------";
+
         // CONTROLLER CONSTANTS:
         const double TIME_STEP = 1.0 / 6.0;
         const double KP = 0.25; // Default KP value

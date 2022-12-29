@@ -165,6 +165,23 @@ namespace IngameScript
             public void SetKey(string header, string key, string arg)
             {
                 Ini.Set(header, key, arg);
+                UpdateCustomData();
+            }
+
+            // SET COMMENT
+            public void SetComment(string header, string comment)
+            {
+                //string oldComment = Ini.GetSectionComment(header);
+                Ini.SetSectionComment(header, comment);
+            }
+
+            public void SetComment(string header, string key, string comment)
+            {
+                Ini.SetComment(header, key, comment);
+            }
+
+            public void UpdateCustomData()
+            {
                 Block.CustomData = Ini.ToString();
             }
         }
@@ -363,6 +380,7 @@ namespace IngameScript
                 menu.Pages[i] = InitializeMenuPage(menu, i);
             }
 
+            menu.UpdateCustomData();
             return menu;
         }
 
@@ -371,7 +389,11 @@ namespace IngameScript
         MenuPage InitializeMenuPage(Menu menu, int pageNumber)
         {
             MenuPage menuPage = new MenuPage(pageNumber);
-            menuPage.Name = menu.GetKey(PAGE_HEAD + pageNumber, "Title", "");
+            string header = PAGE_HEAD + pageNumber;
+
+            menuPage.Name = menu.GetKey(header, "Title", "");
+            menu.SetComment(header, DASHES);
+            menu.SetComment(header, "Title", DASHES);
 
             for(int i = 1; i < 8; i++)
             {
