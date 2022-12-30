@@ -65,72 +65,99 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             _surface.WriteText("");
+
+            PrintBlockTypes();
+
+
+
+
+
+            /*
             if (_inventory == null)
                 return;
 
-            List<MyInventoryItem> items = new List<MyInventoryItem>();
-            _inventory.GetItems(items);
+                        List<MyInventoryItem> items = new List<MyInventoryItem>();
+                        _inventory.GetItems(items);
 
-            if (items.Count < 1)
-            {
-                _surface.WriteText("<< EMPTY >>");
-                return;
-            }
-                
-            foreach(MyInventoryItem item in items)
-            {
-                _surface.WriteText(item.Type.SubtypeId.ToString() + "\n", true);
-            }
-            /*
-            _counter++;
-            // Clear surface from last run
-            _surface.WriteText(_counter.ToString() + "\n");
+                        if (items.Count < 1)
+                        {
+                            _surface.WriteText("<< EMPTY >>");
+                            return;
+                        }
 
-            //PrintSpriteList();
+                        foreach(MyInventoryItem item in items)
+                        {
+                            _surface.WriteText(item.Type.SubtypeId.ToString() + "\n", true);
+                        }
 
-            if (_cameras.Count < 1)
-            { 
-                DisplayMessage("NO CAMERAS FOUND!");
-                return;
-            }
+                        _counter++;
+                        // Clear surface from last run
+                        _surface.WriteText(_counter.ToString() + "\n");
 
-            IMyCameraBlock camera = _cameras[0];
-            camera.EnableRaycast = true;
+                        //PrintSpriteList();
 
-            DisplayMessage(camera.CustomName);
+                        if (_cameras.Count < 1)
+                        { 
+                            DisplayMessage("NO CAMERAS FOUND!");
+                            return;
+                        }
+
+                        IMyCameraBlock camera = _cameras[0];
+                        camera.EnableRaycast = true;
+
+                        DisplayMessage(camera.CustomName);
 
 
-            double range = camera.RaycastDistanceLimit;
-            string rangeString;
-            if (range < 0)
-            {
-                rangeString = "INF";
-                _castRange = camera.AvailableScanRange;
-            }
-                
-            else
-            {
-                rangeString = range.ToString("N1");
-                _castRange = range;
-            }
-                
-            DisplayMessage("  Range: " + camera.AvailableScanRange.ToString("N1"));
-            DisplayMessage(" Time: " + camera.RaycastTimeMultiplier);
-            
+                        double range = camera.RaycastDistanceLimit;
+                        string rangeString;
+                        if (range < 0)
+                        {
+                            rangeString = "INF";
+                            _castRange = camera.AvailableScanRange;
+                        }
 
-            if(argument.ToUpper() == "CAST")
-            {
-                CastRay(camera);
-            }
+                        else
+                        {
+                            rangeString = range.ToString("N1");
+                            _castRange = range;
+                        }
 
-            DisplayMessage(_castData);
-            */
+                        DisplayMessage("  Range: " + camera.AvailableScanRange.ToString("N1"));
+                        DisplayMessage(" Time: " + camera.RaycastTimeMultiplier);
+
+
+                        if(argument.ToUpper() == "CAST")
+                        {
+                            CastRay(camera);
+                        }
+
+                        DisplayMessage(_castData);
+                        */
         }
         #endregion
 
 
 
         #region
+        // PRINT BLOCK TYPES //
+        void PrintBlockTypes()
+        {
+            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
+
+            string output = "";
+
+            foreach(IMyTerminalBlock block in blocks)
+            {
+                output += block.CustomName + "\n" + block.GetType().ToString() + "\n\n";
+            }
+
+            _surface.WriteText(output);
+        }
+
+
+
+
         // CAST RAY //
         void CastRay(IMyCameraBlock camera)
         {

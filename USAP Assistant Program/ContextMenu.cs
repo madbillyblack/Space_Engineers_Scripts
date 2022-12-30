@@ -39,11 +39,14 @@ namespace IngameScript
         const string PLACE_HOLDER = "{AUX}";
 
         const string NORMAL = "NORMAL";
-        const string STATOR = "STATOR";
-        const string PISTON = "PISTON";
+        const string ACTUATOR = "ACTUATOR";
         const string VENT = "VENT";
         const string DOOR = "DOOR";
         const string SENSOR = "SENSOR";
+        const string TANK = "TANK";
+        const string MAG_PLATE = "MAG_PLATE";
+        const string EJECTOR = "EJECTOR";
+        const string BATTERY = "BATTERY";
 
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
@@ -381,7 +384,7 @@ namespace IngameScript
         public class ToggleBlock
         {
             public IMyTerminalBlock Block;
-            public string Type;
+            public string ToggleType;
             public bool IsInverted;
             public float ToggleValue;
 
@@ -390,9 +393,10 @@ namespace IngameScript
                 Block = block;
                 IsInverted = false;
 
-                string data = toggleData.ToUpper();
+                string data = toggleData.ToUpper().Trim();
+                string blockType = Block.GetType().ToString().Split('.')[3];
 
-                switch(data)
+                switch (data)
                 {
                     case "":
                         MakeNormal();
@@ -402,18 +406,34 @@ namespace IngameScript
                         break;
                     case "PRESSURIZED":
                     case "DEPRESSURIZED":
-                        MakeVent(data);
+                        MakeVent(data, blockType);
                         break;
                     case "OPEN":
                     case "CLOSED":
-                        MakeDoor(data);
+                        MakeDoor(data, blockType);
                         break;
                     case "DETECTED":
                     case "NOT DETECTED":
-                        MakeSensor(data);
+                        MakeSensor(data, blockType);
+                        break;
+                    case "LOCKED":
+                    case "UNLOCKED":
+                        MakeMagPlate(data, blockType);
+                        break;
+                    case "RECHARGE":
+                    case "CHARGED":
+                        MakeBattery(data, blockType);
+                        break;
+                    case "THROW OUT":
+                    case "COLLECT ALL":
+                        MakeEjector(data, blockType);
+                        break;
+                    case "STOCKPILE":
+                    case "FULL":
+                        MakeTank(data, blockType);
                         break;
                     default:
-                        MakeActuator(data);
+                        MakeActuator(data, blockType);
                         break;
 
                 }
@@ -422,43 +442,153 @@ namespace IngameScript
 
             }
 
+            // MAKE NORMAL
             void MakeNormal(bool invert = false)
             {
-                Type = NORMAL;
+                ToggleType = NORMAL;
                 IsInverted = invert;
             }
 
-
-            void MakeActuator(string data)
+            // MAKE ACTUATOR
+            void MakeActuator(string data, string blockType)
             {
+                ToggleType = ACTUATOR;
 
+                if(blockType != "MyExtendedPistonBase" && blockType != "MyMotorStator" && blockType != "MyMotorAdvancedStator")
+                {
+                    MakeNormal();
+                    return;
+                }
+                if(data.StartsWith(">") && data.Length > 1)
+                {
+                    ToggleValue = ParseFloat(data.Substring(1), 0);
+                }
+                else if(data.StartsWith("<") && data.Length > 1)
+                {
+                    ToggleValue = ParseFloat(data.Substring(1), 0);
+                    IsInverted = true;
+                }
+                else
+                {
+                    MakeNormal();
+                }
             }
 
-            void MakeVent(string data)
+            // MAKE VENT
+            void MakeVent(string data, string blockType)
             {
+                if(blockType != "MyAirVent")
+                {
+                    MakeNormal();
+                    return;
+                }
 
+                ToggleType = VENT;
+
+                if (data == "DEPRESSURIZED")
+                    IsInverted = true;
             }
 
-            void MakeDoor(string data)
+            // MAKE DOOR
+            void MakeDoor(string data, string blockType)
             {
+                if(blockType != "MyDoor" && blockType != "MyAirtightHangarDoor" && blockType != "MyAirtightSlideDoor")
+                {
+                    MakeNormal();
+                    return;
+                }
 
+                ToggleType = DOOR;
+
+                if (data == "CLOSED")
+                    IsInverted = true;
             }
 
-            void MakeSensor(string data)
+            // MAKE SENSOR
+            void MakeSensor(string data, string blockType)
             {
+                if(blockType != "MySensorBlock")
+                {
+                    MakeNormal();
+                    return;
+                }
 
+                ToggleType = SENSOR;
+
+                if (data == "NOT DETECTED")
+                    IsInverted = true;
+            }
+
+            // MAKE EJECTOR
+            void MakeEjector(string data, string blockType)
+            {
+                if(blockType != "MyShipConnector")
+                {
+                    MakeNormal();
+                    return;
+                }
+
+                ToggleType = EJECTOR;
+
+                if (data == "COLLECT ALL")
+                    IsInverted = true;
+            }
+
+            // MAKE MAG PLATE
+            void MakeMagPlate(string data, string blockType)
+            {
+                if (blockType != "MyLandingGear")
+                {
+                    MakeNormal();
+                    return;
+                }
+
+                ToggleType = MAG_PLATE;
+
+                if (data == "UNLOCKED")
+                    IsInverted = true;
+            }
+
+            // MAKE BATTERY
+            void MakeBattery(string data, string blockType)
+            {
+                if (blockType != "MyBatteryBlock" && blockType != "MyJumpDrive")
+                {
+                    MakeNormal();
+                    return;
+                }
+
+                ToggleType = BATTERY;
+
+                if (data == "CHARGED") // Treat Charged Batter/Jump Drive as Inverted case
+                    IsInverted = true;
+            }
+
+            // MAKE TANK
+            void MakeTank(string data, string blockType)
+            {
+                if (blockType != "MyGasTank")
+                {
+                    MakeNormal();
+                    return;
+                }
+
+                ToggleType = TANK;
+
+                if (data == "FULL") // Treat full tank as inverted case
+                    IsInverted = true;
             }
 
             public bool IsActive()
             {
                 bool active;
 
-                switch (Type)
+                switch (ToggleType)
                 {
                     case NORMAL:
                         active = Block.IsWorking;
                         break;
-
+                        //TODO
                     default:
                         active = false;
                         break;                
@@ -522,8 +652,6 @@ namespace IngameScript
             string header = DASHES + PAGE_HEAD + pageNumber + DASHES;
 
             menuPage.Name = menu.GetKey(header, "Title", "");
-            //menu.SetComment(header, SLASHES);
-            //menu.SetComment(header, "Title", SLASHES);
 
             for(int i = 1; i < 8; i++)
             {
@@ -609,26 +737,6 @@ namespace IngameScript
                 button.SetActionLabel(actionLabelString);
             else
                 button.SetActionLabel(button.Action);
-
-            /*
-            if (actionData.Length > 1)
-            {
-                string entry = actionData[1].Trim();
-
-                if (entry.StartsWith("T:"))
-                {
-                    
-                    button.SetActionLabel(button.Action);
-                }
-                else
-                {
-                    button.SetActionLabel(entry);
-                }
-            }
-            else
-            {
-                button.SetActionLabel(actionString);
-            }*/
 
             return button;
         }
