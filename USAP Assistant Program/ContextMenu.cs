@@ -37,6 +37,14 @@ namespace IngameScript
         const string BUTTON_KEY = "Button Color";
         const string LABEL_KEY = "Label Color";
         const string PLACE_HOLDER = "{AUX}";
+
+        const string NORMAL = "NORMAL";
+        const string STATOR = "STATOR";
+        const string PISTON = "PISTON";
+        const string VENT = "VENT";
+        const string DOOR = "DOOR";
+        const string SENSOR = "SENSOR";
+
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
         const int ILLUMINATION_TIME = 3;
@@ -368,6 +376,101 @@ namespace IngameScript
                     return true;
             }
         }
+
+
+        public class ToggleBlock
+        {
+            public IMyTerminalBlock Block;
+            public string Type;
+            public bool IsInverted;
+            public float ToggleValue;
+
+            public ToggleBlock (IMyTerminalBlock block, string toggleData)
+            {
+                Block = block;
+                IsInverted = false;
+
+                string data = toggleData.ToUpper();
+
+                switch(data)
+                {
+                    case "":
+                        MakeNormal();
+                        break;
+                    case "OFF":
+                        MakeNormal(true);
+                        break;
+                    case "PRESSURIZED":
+                    case "DEPRESSURIZED":
+                        MakeVent(data);
+                        break;
+                    case "OPEN":
+                    case "CLOSED":
+                        MakeDoor(data);
+                        break;
+                    case "DETECTED":
+                    case "NOT DETECTED":
+                        MakeSensor(data);
+                        break;
+                    default:
+                        MakeActuator(data);
+                        break;
+
+                }
+
+                
+
+            }
+
+            void MakeNormal(bool invert = false)
+            {
+                Type = NORMAL;
+                IsInverted = invert;
+            }
+
+
+            void MakeActuator(string data)
+            {
+
+            }
+
+            void MakeVent(string data)
+            {
+
+            }
+
+            void MakeDoor(string data)
+            {
+
+            }
+
+            void MakeSensor(string data)
+            {
+
+            }
+
+            public bool IsActive()
+            {
+                bool active;
+
+                switch (Type)
+                {
+                    case NORMAL:
+                        active = Block.IsWorking;
+                        break;
+
+                    default:
+                        active = false;
+                        break;                
+                }
+
+                if (IsInverted)
+                    active = !active;
+
+                return active;
+            }
+        }
+
 
 
         // ASSIGN MENUS //
@@ -707,9 +810,6 @@ namespace IngameScript
         // ASSIGN TOGGLE BLOCK // t:
         void AssignToggleBlock(MenuButton button, string toggleArg)
         {
-            //Echo("Button " + button.Number + " Toggle: " + toggleArg);
-            //if(toggleArg.EndsWith("T:") || !toggleArg.StartsWith("T:"))
-               // return;
             if(toggleArg == "")
             {
                 if (button.IsProgramButton)
