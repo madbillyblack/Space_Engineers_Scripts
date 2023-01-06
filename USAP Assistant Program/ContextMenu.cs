@@ -52,7 +52,7 @@ namespace IngameScript
         const int CHAR_LIMIT = 7;
         const int ILLUMINATION_TIME = 3;
 
-        const float THRESHHOLD = 0.9f;
+        const float THRESHHOLD = 0.95f;
         
 
         static Dictionary<int, Menu> _menus;
@@ -421,7 +421,7 @@ namespace IngameScript
                         MakeSensor(data);
                         break;
                     case "LOCKED":
-                    case "UNLOCKED":
+                    case "AUTOLOCK":
                         MakeMagPlate(data);
                         break;
                     case "RECHARGE":
@@ -572,33 +572,8 @@ namespace IngameScript
             // SENSOR STATE
             bool SensorState()
             {
-                bool state = false;
+                bool state = (Block as IMySensorBlock).IsActive;
                 
-                if((Block as IMySensorBlock).IsActive)
-                {
-                    IMySensorBlock sensor = Block as IMySensorBlock;
-                    MyDetectedEntityInfo entity = sensor.LastDetectedEntity;
-
-                    switch (entity.Type)
-                    {
-                        case MyDetectedEntityType.Asteroid:
-                        case MyDetectedEntityType.Planet:
-                            if (sensor.DetectAsteroids)
-                                state = true;
-                            break;
-                        case MyDetectedEntityType.CharacterHuman:
-                        case MyDetectedEntityType.CharacterOther:
-                        case MyDetectedEntityType.LargeGrid:
-                        case MyDetectedEntityType.SmallGrid:
-                            state = DetectEntity(sensor, entity);
-                            break;
-                        case MyDetectedEntityType.FloatingObject:
-                            if (sensor.DetectFloatingObjects)
-                                state = true;
-                            break;
-                    }
-                }
-
                 if (IsInverted)
                     state = !state;
 
@@ -619,8 +594,6 @@ namespace IngameScript
                 return (friendly || owner || enemy || neutral);
             }
 
-
-
             // MAKE EJECTOR
             void MakeEjector(string data)
             {
@@ -636,6 +609,19 @@ namespace IngameScript
                     IsInverted = true;
             }
 
+
+            // EJECTOR STATE
+            bool EjectorState()
+            {
+                IMyShipConnector ejector = Block as IMyShipConnector;
+
+                if (IsInverted)
+                    return ejector.CollectAll;
+                else
+                    return ejector.ThrowOut;
+            }
+
+
             // MAKE MAG PLATE
             void MakeMagPlate(string data)
             {
@@ -647,8 +633,19 @@ namespace IngameScript
 
                 ToggleType = MAG_PLATE;
 
-                if (data == "UNLOCKED")
+                if (data == "AUTOLOCK")
                     IsInverted = true;
+            }
+
+            // MAG PLATE STATE
+            bool MagPlateState()
+            {
+                IMyLandingGear magPlate = Block as IMyLandingGear;
+
+                if (IsInverted)
+                    return magPlate.AutoLock;
+                else
+                    return magPlate.IsLocked;
             }
 
             // MAKE BATTERY
@@ -666,6 +663,42 @@ namespace IngameScript
                     IsInverted = true;
             }
 
+            // BATTERY STATE
+            bool BatteryState()
+            {
+                if(BlockType == "MyBatteryBlock")
+                {
+                    IMyBatteryBlock battery = Block as IMyBatteryBlock;
+
+                    if (IsInverted)
+                    {
+                        float charge = battery.CurrentStoredPower / battery.MaxStoredPower;
+                        return  charge > THRESHHOLD;
+                    }
+                    else
+                    {
+                        return battery.IsCharging;
+                    }
+                        
+                }
+                else if(BlockType == "MyJumpDrive")
+                {
+                    IMyJumpDrive jumpDrive = Block as IMyJumpDrive;
+
+                    if(IsInverted)
+                    {
+                        float jump = jumpDrive.CurrentStoredPower / jumpDrive.MaxStoredPower;
+                        return jump > THRESHHOLD;
+                    }
+                    else
+                    {
+                        return jumpDrive.Recharge;
+                    }
+                }
+
+                return false;
+            }
+
             // MAKE TANK
             void MakeTank(string data)
             {
@@ -680,6 +713,18 @@ namespace IngameScript
                 if (data == "FULL") // Treat full tank as inverted case
                     IsInverted = true;
             }
+
+            // TANK STATE
+            bool TankState()
+            {
+                IMyGasTank tank = Block as IMyGasTank;
+
+                if (IsInverted) // Light if full
+                    return tank.FilledRatio > THRESHHOLD;
+                else
+                    return tank.Stockpile;
+            }
+
 
             public bool IsActive()
             {
@@ -700,22 +745,22 @@ namespace IngameScript
                         active = DoorState();
                         break;
                     case SENSOR:
-                        //TODO
+                        active = SensorState();
                         break;
                     case TANK:
-                        //TODO
+                        active = TankState();
                         break;
                     case MAG_PLATE:
-                        //TODO
+                        active = MagPlateState();
                         break;
                     case EJECTOR:
-                        //TODO
+                        active = EjectorState();
                         break;
                     case BATTERY:
-                        //TODO
+                        active = BatteryState ();
                         break;
                     default:
-                        active = false;
+                        active = IsInverted;
                         break;                
                 }
 
@@ -725,8 +770,6 @@ namespace IngameScript
                 return active;
             }
         }
-
-        
 
 
         // ASSIGN MENUS //

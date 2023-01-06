@@ -28,6 +28,9 @@ namespace IngameScript
         double _castRange;
         int _counter = 0;
         IMyInventory _inventory;
+        List<IMyTerminalBlock> _blocks;
+
+        IMySensorBlock _sensor;
 
         #region
         // PRORGRAM //
@@ -44,6 +47,18 @@ namespace IngameScript
 
             List<IMyTerminalBlock> inventoryBlocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName("Cargo", inventoryBlocks);
+
+            _blocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(_blocks);
+
+            List<IMySensorBlock> sensors = new List<IMySensorBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMySensorBlock>(sensors);
+
+            if (sensors.Count > 0)
+                _sensor = sensors[0];
+            else
+                _sensor = null;
+
 
             if(inventoryBlocks.Count > 0 && inventoryBlocks[0].HasInventory)
             {
@@ -66,7 +81,9 @@ namespace IngameScript
         {
             _surface.WriteText("");
 
-            PrintBlockTypes();
+            //PrintBlockTypes();
+            //PrintEntityIDs();
+            PrintDetected();
 
 
 
@@ -142,12 +159,9 @@ namespace IngameScript
         // PRINT BLOCK TYPES //
         void PrintBlockTypes()
         {
-            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks);
-
             string output = "";
 
-            foreach(IMyTerminalBlock block in blocks)
+            foreach(IMyTerminalBlock block in _blocks)
             {
                 output += block.CustomName + "\n" + block.GetType().ToString() + "\n\n";
             }
@@ -207,6 +221,32 @@ namespace IngameScript
         {
             Echo(message);
             _surface.WriteText(message + "\n", true);
+        }
+
+        void PrintEntityIDs()
+        {
+            string output = "";
+
+            foreach (IMyTerminalBlock block in _blocks)
+            {
+                output += block.CustomName + "\n" + block.CubeGrid.EntityId.ToString() + "\n\n";
+            }
+
+            _surface.WriteText(output);
+        }
+
+        void PrintDetected()
+        {
+            string output;
+
+            if (_sensor == null)
+                output = "No Sensor Block Found!";
+            else if (_sensor.IsActive)
+                output = "DETECTED";
+            else
+                output = "Undetected";
+
+            _surface.WriteText(output);                
         }
         #endregion
     }
