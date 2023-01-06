@@ -51,6 +51,8 @@ namespace IngameScript
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
         const int ILLUMINATION_TIME = 3;
+
+        const float THRESHHOLD = 0.9f;
         
 
         static Dictionary<int, Menu> _menus;
@@ -385,16 +387,18 @@ namespace IngameScript
         {
             public IMyTerminalBlock Block;
             public string ToggleType;
+            public string BlockType;
             public bool IsInverted;
             public float ToggleValue;
 
-            public ToggleBlock (IMyTerminalBlock block, string toggleData)
+            public ToggleBlock (IMyTerminalBlock block, string toggleData, float toggleValue)
             {
                 Block = block;
                 IsInverted = false;
+                ToggleValue = toggleValue;
 
                 string data = toggleData.ToUpper().Trim();
-                string blockType = Block.GetType().ToString().Split('.')[3];
+                BlockType = Block.GetType().ToString().Split('.')[3];
 
                 switch (data)
                 {
@@ -406,34 +410,34 @@ namespace IngameScript
                         break;
                     case "PRESSURIZED":
                     case "DEPRESSURIZED":
-                        MakeVent(data, blockType);
+                        MakeVent(data);
                         break;
                     case "OPEN":
                     case "CLOSED":
-                        MakeDoor(data, blockType);
+                        MakeDoor(data);
                         break;
                     case "DETECTED":
                     case "NOT DETECTED":
-                        MakeSensor(data, blockType);
+                        MakeSensor(data);
                         break;
                     case "LOCKED":
                     case "UNLOCKED":
-                        MakeMagPlate(data, blockType);
+                        MakeMagPlate(data);
                         break;
                     case "RECHARGE":
                     case "CHARGED":
-                        MakeBattery(data, blockType);
+                        MakeBattery(data);
                         break;
                     case "THROW OUT":
                     case "COLLECT ALL":
-                        MakeEjector(data, blockType);
+                        MakeEjector(data);
                         break;
                     case "STOCKPILE":
                     case "FULL":
-                        MakeTank(data, blockType);
+                        MakeTank(data);
                         break;
                     default:
-                        MakeActuator(data, blockType);
+                        MakeActuator(data);
                         break;
 
                 }
@@ -450,11 +454,11 @@ namespace IngameScript
             }
 
             // MAKE ACTUATOR
-            void MakeActuator(string data, string blockType)
+            void MakeActuator(string data)
             {
                 ToggleType = ACTUATOR;
 
-                if(blockType != "MyExtendedPistonBase" && blockType != "MyMotorStator" && blockType != "MyMotorAdvancedStator")
+                if(BlockType != "MyExtendedPistonBase" && BlockType != "MyMotorStator" && BlockType != "MyMotorAdvancedStator")
                 {
                     MakeNormal();
                     return;
@@ -474,10 +478,34 @@ namespace IngameScript
                 }
             }
 
-            // MAKE VENT
-            void MakeVent(string data, string blockType)
+
+            // ACTUATOR STATE //
+            bool ActuatorState()
             {
-                if(blockType != "MyAirVent")
+                bool state =  false;
+
+                if(IsInverted)
+                {
+                    if (BlockType == "MyMotorStator" || BlockType == "MyMotorAdvancedStator")
+                        state = (Block as IMyMotorStator).Angle >= ToggleValue;
+                    else if (BlockType == "MyExtendedPistonBase")
+                        state = (Block as IMyPistonBase).CurrentPosition >= ToggleValue;
+                }
+                else
+                {
+                    if (BlockType == "MyMotorStator" || BlockType == "MyMotorAdvancedStator")
+                        state = (Block as IMyMotorStator).Angle <= ToggleValue;
+                    else if (BlockType == "MyExtendedPistonBase")
+                        state = (Block as IMyPistonBase).CurrentPosition <= ToggleValue;
+                }
+
+                return state;
+            }
+
+            // MAKE VENT
+            void MakeVent(string data)
+            {
+                if(BlockType != "MyAirVent")
                 {
                     MakeNormal();
                     return;
@@ -489,10 +517,21 @@ namespace IngameScript
                     IsInverted = true;
             }
 
-            // MAKE DOOR
-            void MakeDoor(string data, string blockType)
+            // VENT STATE
+            bool VentState()
             {
-                if(blockType != "MyDoor" && blockType != "MyAirtightHangarDoor" && blockType != "MyAirtightSlideDoor")
+                bool state = (Block as IMyAirVent).GetOxygenLevel() >= THRESHHOLD;
+
+                if (IsInverted)
+                    state = !state;
+
+                return state;
+            }
+
+            // MAKE DOOR
+            void MakeDoor(string data)
+            {
+                if(BlockType != "MyDoor" && BlockType != "MyAirtightHangarDoor" && BlockType != "MyAirtightSlideDoor")
                 {
                     MakeNormal();
                     return;
@@ -504,10 +543,21 @@ namespace IngameScript
                     IsInverted = true;
             }
 
-            // MAKE SENSOR
-            void MakeSensor(string data, string blockType)
+            // DOOR STATUS
+            bool DoorState()
             {
-                if(blockType != "MySensorBlock")
+                bool state = (Block as IMyDoor).OpenRatio > 0;
+
+                if (IsInverted)
+                    state = !state;
+
+                return state;
+            }
+
+            // MAKE SENSOR
+            void MakeSensor(string data)
+            {
+                if(BlockType != "MySensorBlock")
                 {
                     MakeNormal();
                     return;
@@ -519,10 +569,62 @@ namespace IngameScript
                     IsInverted = true;
             }
 
-            // MAKE EJECTOR
-            void MakeEjector(string data, string blockType)
+            // SENSOR STATE
+            bool SensorState()
             {
-                if(blockType != "MyShipConnector")
+                bool state = false;
+                
+                if((Block as IMySensorBlock).IsActive)
+                {
+                    IMySensorBlock sensor = Block as IMySensorBlock;
+                    MyDetectedEntityInfo entity = sensor.LastDetectedEntity;
+
+                    switch (entity.Type)
+                    {
+                        case MyDetectedEntityType.Asteroid:
+                        case MyDetectedEntityType.Planet:
+                            if (sensor.DetectAsteroids)
+                                state = true;
+                            break;
+                        case MyDetectedEntityType.CharacterHuman:
+                        case MyDetectedEntityType.CharacterOther:
+                        case MyDetectedEntityType.LargeGrid:
+                        case MyDetectedEntityType.SmallGrid:
+                            state = DetectEntity(sensor, entity);
+                            break;
+                        case MyDetectedEntityType.FloatingObject:
+                            if (sensor.DetectFloatingObjects)
+                                state = true;
+                            break;
+                    }
+                }
+
+                if (IsInverted)
+                    state = !state;
+
+                return state;
+            }
+
+            // DETECT GRID - Returns if detected grid matches sensor options.
+            bool DetectEntity(IMySensorBlock sensor, MyDetectedEntityInfo entity)
+            {
+                MyRelationsBetweenPlayerAndBlock relation = entity.Relationship;
+
+                bool friendly = relation == MyRelationsBetweenPlayerAndBlock.Friends && sensor.DetectFriendly;
+                bool owner = relation == MyRelationsBetweenPlayerAndBlock.Owner && sensor.DetectOwner;
+                bool enemy = relation == MyRelationsBetweenPlayerAndBlock.Enemies && sensor.DetectEnemy;
+                bool neutral = (relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && sensor.DetectNeutral;
+                //bool subGrid = 
+
+                return (friendly || owner || enemy || neutral);
+            }
+
+
+
+            // MAKE EJECTOR
+            void MakeEjector(string data)
+            {
+                if(BlockType != "MyShipConnector")
                 {
                     MakeNormal();
                     return;
@@ -535,9 +637,9 @@ namespace IngameScript
             }
 
             // MAKE MAG PLATE
-            void MakeMagPlate(string data, string blockType)
+            void MakeMagPlate(string data)
             {
-                if (blockType != "MyLandingGear")
+                if (BlockType != "MyLandingGear")
                 {
                     MakeNormal();
                     return;
@@ -550,9 +652,9 @@ namespace IngameScript
             }
 
             // MAKE BATTERY
-            void MakeBattery(string data, string blockType)
+            void MakeBattery(string data)
             {
-                if (blockType != "MyBatteryBlock" && blockType != "MyJumpDrive")
+                if (BlockType != "MyBatteryBlock" && BlockType != "MyJumpDrive")
                 {
                     MakeNormal();
                     return;
@@ -565,9 +667,9 @@ namespace IngameScript
             }
 
             // MAKE TANK
-            void MakeTank(string data, string blockType)
+            void MakeTank(string data)
             {
-                if (blockType != "MyGasTank")
+                if (BlockType != "MyGasTank")
                 {
                     MakeNormal();
                     return;
@@ -588,7 +690,30 @@ namespace IngameScript
                     case NORMAL:
                         active = Block.IsWorking;
                         break;
+                    case ACTUATOR:
+                        active = ActuatorState();
+                        break;
+                    case VENT:
+                        active = VentState();
+                        break;
+                    case DOOR:
+                        active = DoorState();
+                        break;
+                    case SENSOR:
                         //TODO
+                        break;
+                    case TANK:
+                        //TODO
+                        break;
+                    case MAG_PLATE:
+                        //TODO
+                        break;
+                    case EJECTOR:
+                        //TODO
+                        break;
+                    case BATTERY:
+                        //TODO
+                        break;
                     default:
                         active = false;
                         break;                
@@ -601,6 +726,7 @@ namespace IngameScript
             }
         }
 
+        
 
 
         // ASSIGN MENUS //
