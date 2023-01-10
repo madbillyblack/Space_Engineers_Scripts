@@ -103,7 +103,7 @@ namespace IngameScript
             _cruiseThrustersOn = true;
 
             _pid = new PID(_Kp, KI, KD, TIME_STEP);
-            Runtime.UpdateFrequency = UpdateFrequency.Update10;
+            //Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
 
@@ -114,7 +114,7 @@ namespace IngameScript
             _cruiseThrustersOn = false;
             _runningNumber = 0;
             UpdateThrustDisplay(0);
-            Runtime.UpdateFrequency = UpdateFrequency.None;
+            //Runtime.UpdateFrequency = UpdateFrequency.None;
         }
 
 
@@ -137,6 +137,97 @@ namespace IngameScript
         public double GetForwardVelocity()
         {
             return Vector3D.Dot(_cockpit.WorldMatrix.Forward, _cockpit.GetShipVelocities().LinearVelocity);
+        }
+
+
+        // THROTTLE THRUSTERS //
+        void ThrottleThrusters(float input)
+        {
+            if (_cruiseThrusters.Count < 1)
+                return;
+
+            foreach (IMyThrust thruster in _cruiseThrusters)
+            {
+                thruster.ThrustOverridePercentage = input;
+            }
+
+            UpdateThrustDisplay(_cruiseThrusters[0].ThrustOverridePercentage);
+        }
+
+
+        // CHECK GRAVITY //
+        void CheckGravity()
+        {
+            if (_gravityDisengage && _cockpit.GetNaturalGravity().Length() < 0.04)
+            {
+                CruiseThrustersOff();
+                _statusMessage += "GRAVITY WELL VACATED\nThrusters Disengaged\n";
+            }
+        }
+
+
+        // SAFETY CHECK //
+        void SafetyCheck()
+        {
+            double altitude;
+            if (_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out altitude))
+            {
+                if (altitude < _safetyElevation)
+                {
+                    double speed = _cockpit.GetShipVelocities().LinearVelocity.Length();
+
+                    if (speed > 0)
+                    {
+                        Vector3D gravity = _cockpit.GetNaturalGravity();
+
+                        //Get cosine of angle between heading and gravity vector
+                        double cos = Vector3D.Dot(_cockpit.WorldMatrix.Forward, gravity) / gravity.Length();
+
+                        if (cos > 0.707) // If angle is within 45 degrees of gravity vector, disengage cruise thrusters
+                        {
+                            CruiseThrustersOff();
+                            _statusMessage += "SAFETY THRUSTER DISENGAGE!\n";
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // ASSIGN THRUSTERS //
+        void AssignThrusters()
+        {
+            _cruiseThrusters = new List<IMyThrust>();
+            _cruiseTag = GetKey(Me, INI_HEAD, "Cruise Thrusters", "");
+
+            if (_cruiseTag == "")
+                return;
+
+            IMyBlockGroup cruiseGroup = GridTerminalSystem.GetBlockGroupWithName(_cruiseTag);
+
+            if (cruiseGroup == null)
+            {
+                _statusMessage += "NO GROUP WITH NAME \"" + _cruiseTag + "\" FOUND!\n";
+                return;
+            }
+
+            cruiseGroup.GetBlocksOfType<IMyThrust>(_cruiseThrusters);
+            _statusMessage += "CRUISE THRUSTERS: " + _cruiseTag + "\nThruster Count: " + _cruiseThrusters.Count + "\n";
+            //AssignThrustDisplay();
+        }
+
+
+        // UPDATE THRUST DISPLAY //
+        void UpdateThrustDisplay(float power)
+        {
+            if (!_cruiseThrustersOn)
+            {
+                _currentPower = "OFF";
+                return;
+            }
+
+            int value = (int)(power * 100);
+            _currentPower = value + "%";
         }
     }
 }

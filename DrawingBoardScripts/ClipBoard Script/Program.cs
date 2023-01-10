@@ -29,6 +29,7 @@ namespace IngameScript
         int _counter = 0;
         IMyInventory _inventory;
         List<IMyTerminalBlock> _blocks;
+        MyIni _ini;
 
         IMySensorBlock _sensor;
 
@@ -36,6 +37,7 @@ namespace IngameScript
         // PRORGRAM //
         public Program()
         {
+            _ini = GetIni(Me);
             _surface = Me.GetSurface(0);
             _surface.ContentType = ContentType.TEXT_AND_IMAGE;
 
@@ -83,8 +85,9 @@ namespace IngameScript
 
             //PrintBlockTypes();
             //PrintEntityIDs();
-            PrintDetected();
-
+            //PrintDetected();
+            //PrintFubar();
+            PrintSubTypes();
 
 
 
@@ -169,6 +172,18 @@ namespace IngameScript
             _surface.WriteText(output);
         }
 
+        // PRINT SUB TYPES //
+        void PrintSubTypes()
+        {
+            string output = "";
+
+            foreach (IMyTerminalBlock block in _blocks)
+            {
+                output += block.CustomName + "\n" + block.BlockDefinition.SubtypeName + "\n\n";
+            }
+
+            _surface.WriteText(output);
+        }
 
 
 
@@ -249,5 +264,12 @@ namespace IngameScript
             _surface.WriteText(output);                
         }
         #endregion
+
+        void PrintFubar()
+        {
+            string fubar = _ini.Get("FUBAR", "SNAFU").ToString();
+
+            _surface.WriteText("SITREP: " + fubar);
+        }
     }
 }

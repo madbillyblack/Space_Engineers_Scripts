@@ -757,7 +757,7 @@ namespace IngameScript
                         active = EjectorState();
                         break;
                     case BATTERY:
-                        active = BatteryState ();
+                        active = BatteryState();
                         break;
                     default:
                         active = IsInverted;
@@ -1036,11 +1036,11 @@ namespace IngameScript
             }
 
             ActivateButton(button);
-
+            /*
             // Set update loop for normal button presses
             if (!(button.IsToggleButton) || button.IsBlinkButton)
                 Runtime.UpdateFrequency = UpdateFrequency.Update10;
-
+            */
             DrawMenu(menu);
         }
 
@@ -1145,8 +1145,10 @@ namespace IngameScript
 
             _buttonsLit = activeButtonsRemain;
 
+            /*
             if (!activeButtonsRemain && !_cruiseThrustersOn)
                 Runtime.UpdateFrequency = UpdateFrequency.None;
+            */
         }
 
         // CHECK NORMAL BUTTON - Decriment button light time. Return true if time remaining.
@@ -1218,7 +1220,7 @@ namespace IngameScript
 
             _buttonsLit = true;
             _nextCommand = arg;
-            Runtime.UpdateFrequency = UpdateFrequency.Update10;
+            //Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
 
