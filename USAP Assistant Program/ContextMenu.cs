@@ -31,6 +31,7 @@ namespace IngameScript
         const string BLOCK_LABEL = "Block Label";
         const string BUTTON_ACTION = "Action";
         const string ACTION_LABEL = "Action Label";
+        const string TOGGLE_KEY = "Toggle Block";
         const string MENU_COLOR = "Menu Color Settings";
         const string BG_KEY = "Background Color";
         const string TITLE_KEY = "Title Color";
@@ -232,7 +233,7 @@ namespace IngameScript
 
             public List<IMyTerminalBlock> Blocks;
             public IMyProgrammableBlock ProgramBlock;
-            public IMyTerminalBlock ToggleBlock;
+            public ToggleBlock ToggleBlock;
 
             public bool IsProgramButton;
             public bool IsToggleButton;
@@ -276,13 +277,13 @@ namespace IngameScript
             }
 
             // SET TOGGLE BLOCK //
-            public void SetToggleBlock(IMyTerminalBlock toggleBlock)
+            public void SetToggleBlock(ToggleBlock toggleBlock)
             {
                 ToggleBlock = toggleBlock;
                 IsToggleButton = !(toggleBlock == null);
 
                 if (IsToggleButton)
-                    IsActive = toggleBlock.IsWorking;
+                    IsActive = toggleBlock.IsActive();
             }
 
             // SET BLOCK LABEL //
@@ -362,7 +363,7 @@ namespace IngameScript
                 }
                 else if (IsToggleButton && ToggleBlock != null)
                 {
-                    IsActive = ToggleBlock.IsWorking;
+                    IsActive = ToggleBlock.IsActive();
                 }
                 else
                 {
@@ -391,11 +392,11 @@ namespace IngameScript
             public bool IsInverted;
             public float ToggleValue;
 
-            public ToggleBlock (IMyTerminalBlock block, string toggleData, float toggleValue)
+            public ToggleBlock (IMyTerminalBlock block, string toggleData)
             {
                 Block = block;
                 IsInverted = false;
-                ToggleValue = toggleValue;
+                //ToggleValue = toggleValue;
 
                 string data = toggleData.ToUpper().Trim();
                 BlockType = Block.GetType().ToString().Split('.')[3];
@@ -580,19 +581,6 @@ namespace IngameScript
                 return state;
             }
 
-            // DETECT GRID - Returns if detected grid matches sensor options.
-            bool DetectEntity(IMySensorBlock sensor, MyDetectedEntityInfo entity)
-            {
-                MyRelationsBetweenPlayerAndBlock relation = entity.Relationship;
-
-                bool friendly = relation == MyRelationsBetweenPlayerAndBlock.Friends && sensor.DetectFriendly;
-                bool owner = relation == MyRelationsBetweenPlayerAndBlock.Owner && sensor.DetectOwner;
-                bool enemy = relation == MyRelationsBetweenPlayerAndBlock.Enemies && sensor.DetectEnemy;
-                bool neutral = (relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && sensor.DetectNeutral;
-                //bool subGrid = 
-
-                return (friendly || owner || enemy || neutral);
-            }
 
             // MAKE EJECTOR
             void MakeEjector(string data)
@@ -846,6 +834,8 @@ namespace IngameScript
             button.Action = menu.GetKey(header, BUTTON_ACTION, ""); // Action #
             string actionLabelString = menu.GetKey(header, ACTION_LABEL, ""); // Action # Label
 
+            AssignToggleBlock(button, menu.GetKey(header, TOGGLE_KEY, "")); // Toggle Block (if any)
+
             button.SetBlinkDuration(ParseFloat(menu.GetKey(header, "Blink Length", "0"), 0));
             //Echo("Blink: " + button.IsBlinkButton + ": " + button.BlinkDuration);
 
@@ -896,11 +886,11 @@ namespace IngameScript
             }
 
             button.SetBlockLabel(blockLabelString);
-
+/*
             if (prefix.Contains("T"))
                 AssignToggleBlock(button, toggleName);
             else
-                button.ToggleBlock = null;
+                button.ToggleBlock = null;*/
 
             if (actionLabelString != "")
                 button.SetActionLabel(actionLabelString);
@@ -1026,7 +1016,7 @@ namespace IngameScript
 
             //Echo(" - Toggle: " + button.IsToggleButton);
             if (button.IsToggleButton)
-                Echo(" - Block: " + button.ToggleBlock.CustomName);
+                Echo(" - Block: " + button.ToggleBlock.Block.CustomName);
 
 
             if(button.Action == "")
@@ -1087,6 +1077,32 @@ namespace IngameScript
         // ASSIGN TOGGLE BLOCK // t:
         void AssignToggleBlock(MenuButton button, string toggleArg)
         {
+            if (toggleArg == "")
+            {
+                button.ToggleBlock = null;
+                return;
+            }
+
+            string [] toggleData = toggleArg.Split(';');
+            string blockName = toggleData[0].Trim();
+            IMyTerminalBlock toggleBlock = GridTerminalSystem.GetBlockWithName(blockName);
+
+            if (toggleBlock == null)
+            {
+                _statusMessage += "WARNING: No toggle block with name " + blockName + " found!\n";
+                return;
+            }
+
+            string argData;
+
+            if (toggleData.Length > 1)
+                argData = toggleData[1].Trim();
+            else
+                argData = "";
+
+            button.ToggleBlock = new ToggleBlock(toggleBlock, argData);
+
+            /*
             if(toggleArg == "")
             {
                 if (button.IsProgramButton)
@@ -1102,7 +1118,7 @@ namespace IngameScript
                     button.SetToggleBlock(toggleBlock);
                 else
                     button.SetToggleBlock(null);
-            }
+            }*/
 
         }
 
@@ -1188,7 +1204,7 @@ namespace IngameScript
             else
             {
                 if (button.IsToggleButton)
-                    button.IsActive = button.ToggleBlock.IsWorking;
+                    button.IsActive = button.ToggleBlock.IsActive();
                 else
                     button.IsActive = false;
 
