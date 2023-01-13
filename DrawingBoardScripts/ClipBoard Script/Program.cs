@@ -83,11 +83,11 @@ namespace IngameScript
         {
             _surface.WriteText("");
 
-            //PrintBlockTypes();
+            PrintBlockTypes();
             //PrintEntityIDs();
             //PrintDetected();
             //PrintFubar();
-            PrintSubTypes();
+            //PrintSubTypes();
 
 
 

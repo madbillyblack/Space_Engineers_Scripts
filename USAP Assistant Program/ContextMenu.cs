@@ -54,6 +54,7 @@ namespace IngameScript
         const int ILLUMINATION_TIME = 3;
 
         const float THRESHHOLD = 0.95f;
+        const float DV_BLINK = 0.5f; // Default length of single blink cycle (in sec)
         
 
         static Dictionary<int, Menu> _menus;
@@ -111,7 +112,7 @@ namespace IngameScript
                 Decals = GetKey(MENU_HEAD, "Decals", "").ToUpper();
 
                 // Blink Cycle
-                float cycleLength = ParseFloat(GetKey(MENU_HEAD, "Blink Cycle", "1.5"), 1.5f);
+                float cycleLength = ParseFloat(GetKey(MENU_HEAD, "Blink Cycle", DV_BLINK.ToString()), DV_BLINK);
                 BlinkCycle = (int)(cycleLength * 6);
 
                 if (Surface != null)
@@ -399,7 +400,10 @@ namespace IngameScript
                 //ToggleValue = toggleValue;
 
                 string data = toggleData.ToUpper().Trim();
-                BlockType = Block.GetType().ToString().Split('.')[3];
+                string[] blockData = Block.GetType().ToString().Split('.');
+                BlockType = blockData[blockData.Length - 1].Trim();
+
+                _statusMessage += block.CustomName + ": " + BlockType + ".\n";
 
                 switch (data)
                 {
@@ -442,9 +446,6 @@ namespace IngameScript
                         break;
 
                 }
-
-                
-
             }
 
             // MAKE NORMAL
@@ -488,16 +489,16 @@ namespace IngameScript
                 if(IsInverted)
                 {
                     if (BlockType == "MyMotorStator" || BlockType == "MyMotorAdvancedStator")
-                        state = (Block as IMyMotorStator).Angle >= ToggleValue;
+                        state = ToDegrees((Block as IMyMotorStator).Angle) <= ToggleValue;
                     else if (BlockType == "MyExtendedPistonBase")
-                        state = (Block as IMyPistonBase).CurrentPosition >= ToggleValue;
+                        state = (Block as IMyPistonBase).CurrentPosition <= ToggleValue;
                 }
                 else
                 {
                     if (BlockType == "MyMotorStator" || BlockType == "MyMotorAdvancedStator")
-                        state = (Block as IMyMotorStator).Angle <= ToggleValue;
+                        state = ToDegrees((Block as IMyMotorStator).Angle) >= ToggleValue;
                     else if (BlockType == "MyExtendedPistonBase")
-                        state = (Block as IMyPistonBase).CurrentPosition <= ToggleValue;
+                        state = (Block as IMyPistonBase).CurrentPosition >= ToggleValue;
                 }
 
                 return state;
@@ -1079,7 +1080,7 @@ namespace IngameScript
         {
             if (toggleArg == "")
             {
-                button.ToggleBlock = null;
+                button.SetToggleBlock(null);
                 return;
             }
 
@@ -1089,6 +1090,7 @@ namespace IngameScript
 
             if (toggleBlock == null)
             {
+                button.SetToggleBlock(null);
                 _statusMessage += "WARNING: No toggle block with name " + blockName + " found!\n";
                 return;
             }
@@ -1100,7 +1102,7 @@ namespace IngameScript
             else
                 argData = "";
 
-            button.ToggleBlock = new ToggleBlock(toggleBlock, argData);
+            button.SetToggleBlock(new ToggleBlock(toggleBlock, argData));
 
             /*
             if(toggleArg == "")
@@ -1289,6 +1291,48 @@ namespace IngameScript
             }
 
             return dataOut;
+        }
+
+
+        // MENU DEBUG //
+        void MenuDebug()
+        {
+            if (_menus.Count < 1)
+                return;
+
+            Menu menu = GetFirstMenu();
+            MenuPage page = menu.Pages[menu.CurrentPage];
+
+            Echo("MENU " + menu.IDNumber + "\n  Page " + menu.CurrentPage + ": " + page.Name + "\n  Buttons:");
+
+            foreach(int key in page.Buttons.Keys)
+            {
+                MenuButton button = page.Buttons[key];
+
+                IMyTerminalBlock block;
+
+                if (button.IsProgramButton)
+                    block = button.ProgramBlock as IMyTerminalBlock;
+                else if (button.Blocks.Count > 0)
+                    block = button.Blocks[0];
+                else
+                    block = null;
+
+                if (block != null)
+                {
+                    Echo("   " + button.Number + ": " + button.BlockLabel);
+
+                    if(button.IsToggleButton)
+                    {
+                        ToggleBlock toggle = button.ToggleBlock;
+                        Echo("   TOGGLE: " + toggle.ToggleType);
+                    }
+                }     
+            }
+
+            
+            
+
         }
     }
 }

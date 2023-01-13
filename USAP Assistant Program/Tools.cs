@@ -93,5 +93,21 @@ namespace IngameScript
 
             return info;
         }
+
+
+        // TO RADIANS //  Converts Degree Value to Radians
+        static double ToRadians(int angle)
+        {
+            double radianValue = (double)angle * Math.PI / 180;
+            return radianValue;
+        }
+
+
+        // TO DEGREES //
+        static float ToDegrees(float angle)
+        {
+            float degreeValue = angle * 180 / (float)Math.PI;
+            return degreeValue;
+        }
     }
 }

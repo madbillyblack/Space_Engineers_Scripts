@@ -160,7 +160,7 @@ namespace IngameScript
         const string FUEL = "Uranium";
 
         const int RUN_CAP = 10;
-        string _statusMessage;
+        static string _statusMessage;
 
         const float PI = (float)Math.PI;
         static IMyProgrammableBlock _Me;
@@ -266,6 +266,9 @@ namespace IngameScript
             
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
+
+            MenuDebug();
+
 
             // If cargo successfully unloaded, increment load count.
             if (_unloaded)
