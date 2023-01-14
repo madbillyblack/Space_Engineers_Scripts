@@ -1,0 +1,40 @@
+TOGGLE STRING
+Block name followed by optional argument (separated with ';')
+
+	Normal (+) / Inverted (-)
+
+	NORMAL
+	+ ""
+	- "OFF"
+
+	VENT
+	+ "PRESSURIZED"
+	- "DEPRESSURIZED"
+
+	DOOR
+	+ "OPEN"
+	- "CLOSED"
+
+	SENSOR
+	+ "DETECTED"
+	- "NOT DETECTED"
+
+	LANDING GEAR / CONNECTOR
+	+ "LOCKED"
+	- "AUTOLOCK"
+
+ 	BATTERY / JUMP DRIVE
+	+ "RECHARGE"
+	- "CHARGED"
+
+	EJECTOR / CONNECTOR
+	+ "THROW OUT"
+	- "COLLECT ALL"
+
+	GAS TANK
+	+ "STOCKPILE"
+	- "FULL"
+
+	ACTUATOR
+	+ ">{value}"
+	- "<{value}"

@@ -633,7 +633,7 @@ namespace IngameScript
             // MAKE MAG PLATE
             void MakeMagPlate(string data)
             {
-                if (BlockType != "MyLandingGear")
+                if (BlockType != "MyLandingGear" && BlockType != "MyShipConnector")
                 {
                     MakeNormal();
                     return;
@@ -642,18 +642,32 @@ namespace IngameScript
                 ToggleType = MAG_PLATE;
 
                 if (data == "AUTOLOCK")
-                    IsInverted = true;
+                {
+                    if (BlockType == "MyShipConnector")
+                        _statusMessage += "Warning: \"AUTOLOCK\" is not a valid parameter for Connector Blocks!";
+                    else
+                        IsInverted = true;
+                }   
             }
 
             // MAG PLATE STATE
             bool MagPlateState()
             {
-                IMyLandingGear magPlate = Block as IMyLandingGear;
-
-                if (IsInverted)
-                    return magPlate.AutoLock;
+                if (BlockType == "MyShipConnector")
+                {
+                    IMyShipConnector connector = Block as IMyShipConnector;
+                    return connector.Status == MyShipConnectorStatus.Connected;                        
+                }
                 else
-                    return magPlate.IsLocked;
+                {
+                    IMyLandingGear magPlate = Block as IMyLandingGear;
+
+
+                    if (IsInverted)
+                        return magPlate.AutoLock;
+                    else
+                        return magPlate.IsLocked;
+                }
             }
 
             // MAKE BATTERY
