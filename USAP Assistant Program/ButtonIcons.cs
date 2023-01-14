@@ -474,8 +474,21 @@ namespace IngameScript
 		// DRAW GRINDER //
 		void DrawGrinder(Vector2 position, float scale, Color color)
         {
+			Vector2 pos = position + new Vector2(0, scale * 0.125f);
+			float width = scale * 0.25f;
+			float height = scale * 0.33f;
+			float angle = 0;
 
-        }
+			Vector2 size = new Vector2(-width, height);
+
+			DrawTexture(TRIANGLE, pos, size, angle, color);
+
+			angle += PI * 0.333f;
+			pos += new Vector2(width * (float)Math.Cos(angle), -height * (float)Math.Sin(angle));
+			DrawTexture(TRIANGLE, pos, size, angle, Color.Red);
+
+
+		}
 
 		// DRAW POWER //
 		void DrawPower(Vector2 position, float scale, Color color)

@@ -1085,6 +1085,7 @@ namespace IngameScript
             MenuPage page = menu.Pages[menu.CurrentPage];
             MenuButton button = page.Buttons[buttonNumber];
 
+            /*
             Echo("Button " + button.Number);
             if (button.ProgramBlock != null)
                 Echo("Program: " + button.ProgramBlock.CustomName);
@@ -1094,6 +1095,7 @@ namespace IngameScript
                 Echo("UNASSIGNED");
 
             //Echo(" - Toggle: " + button.IsToggleButton);
+            
             if (button.IsToggleButton)
                 Echo(" - Block: " + button.ToggleBlock.Block.CustomName);
 
@@ -1103,8 +1105,8 @@ namespace IngameScript
                 Echo("No action set for Menu:" + menu.IDNumber + " Button:" + button.Number);
                 return;
             }
-
-            ActivateButton(button);
+            */
+            ActivateButton(menu, button);
             /*
             // Set update loop for normal button presses
             if (!(button.IsToggleButton) || button.IsBlinkButton)
@@ -1115,7 +1117,7 @@ namespace IngameScript
 
 
         // ACTIVATE BUTTON //
-        public void ActivateButton(MenuButton button)
+        public void ActivateButton(Menu menu, MenuButton button)
         {
             if (button.IsProgramButton && button.ProgramBlock != null)
             {
@@ -1132,7 +1134,10 @@ namespace IngameScript
                     {
                         block.GetActionWithName(button.Action).Apply(block);
                     }
-                    catch { }
+                    catch
+                    {
+                        _statusMessage += block.CustomName + " cannot perform action \"" + button.Action + "\"!\n"; 
+                    }
                 }
             }
 
@@ -1386,9 +1391,10 @@ namespace IngameScript
                 else
                     block = null;
 
-                if (block != null && !button.IsUnassigned())
+                if (block != null || button.IsPlaceHolder)
                 {
                     Echo("   " + button.Number + ": " + button.BlockLabel);
+                    Echo("Blink: " + button.IsBlinkButton.ToString());
 
                     if(button.IsToggleButton)
                     {
