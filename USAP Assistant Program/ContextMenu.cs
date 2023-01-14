@@ -877,19 +877,14 @@ namespace IngameScript
             AssignToggleBlock(button, menu.GetKey(header, TOGGLE_KEY, "")); // Toggle Block (if any)
 
             button.SetBlinkDuration(ParseFloat(menu.GetKey(header, "Blink Length", "0"), 0));
-            //Echo("Blink: " + button.IsBlinkButton + ": " + button.BlinkDuration);
 
+            // Get Block Name and Prefix from string
             string[] buttonData = GetBlockDataFromKey(blockString);
-
-            //Echo("Menu: " + pageNumber + " - Button: " + buttonNumber);
             string blockName = buttonData[0];
             string prefix = buttonData[1];
-            string toggleName = buttonData[2];
-            //Echo("Toggle Name: [" + toggleName + "]");
-
 
             // Set Block Group, Program Block or Blocks
-            if(prefix.ToUpper().Contains("G"))
+            if (prefix.ToUpper() == "G")
             {
                 IMyBlockGroup group = GridTerminalSystem.GetBlockGroupWithName(blockName);
 
@@ -901,7 +896,7 @@ namespace IngameScript
                 //Assign group blocks to button's block list.
                 group.GetBlocks(button.Blocks);
             }
-            else if(prefix.ToUpper().Contains("P"))
+            else if(prefix.ToUpper() == "P")
             {
                 string programName = blockName;
                 button.SetProgramBlock(GetProgramBlock(programName));
@@ -1346,52 +1341,24 @@ namespace IngameScript
         // GET BUTTON BLOCK NAME // -  Gets Block Data from INI Key { BlockName, Group/Program/Toggle, Alternate Toggle Block Name }
         string [] GetBlockDataFromKey(string arg)
         {
-            string[] dataOut = new string[] {"","",""};
-
             // Split at colon to detect prefix
             string[] rawData = arg.Split(':');
 
-            // Middle assignment variable
-            string processedData = "";
+            string name;
+            string prefix;
 
             if(rawData.Length > 1)
             {
-                string prefix = rawData[0].ToUpper();
-
-                if(prefix.Contains("T") || prefix.Contains("G") || prefix.Contains("P"))
-                {
-                    processedData = rawData[1];
-                    dataOut[1] = prefix;
-
-                    // Rebuild string if their are more collons
-                    if(rawData.Length > 2)
-                    {
-                        for (int i = 2; i < rawData.Length; i++)
-                        {
-                            processedData += ":" + rawData[i];
-                        }
-                    }
-                }
+                prefix = rawData[0];
+                name = rawData[1];   
             }
             else
             {
-                processedData = arg;
+                prefix = "";
+                name = arg;
             }
 
-            //Echo("ALERT: " + processedData);
-
-            if (processedData.Contains("{") && processedData.Contains("}"))
-            {
-                dataOut[2] = GetBracedInfo(processedData);
-                //Echo("HEY YOU GUYS: " + dataOut[2]);
-                dataOut[0] = processedData.Substring(0, processedData.IndexOf("{")).Trim();
-            }
-            else
-            {
-                dataOut[0] = processedData.Trim();
-            }
-
-            return dataOut;
+            return new string[] {name, prefix};
         }
 
 
@@ -1419,7 +1386,7 @@ namespace IngameScript
                 else
                     block = null;
 
-                if (block != null)
+                if (block != null && !button.IsUnassigned())
                 {
                     Echo("   " + button.Number + ": " + button.BlockLabel);
 

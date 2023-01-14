@@ -267,7 +267,7 @@ namespace IngameScript
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
 
-            //MenuDebug();
+            MenuDebug();
 
 
             // If cargo successfully unloaded, increment load count.

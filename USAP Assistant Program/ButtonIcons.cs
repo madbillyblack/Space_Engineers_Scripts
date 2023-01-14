@@ -104,7 +104,7 @@ namespace IngameScript
 					DrawJettison(position, scale, iconColor);
 					break;
 				case "{DRILL}":
-					DrawDrill(position, scale, iconColor);
+					DrawDrill(position, scale, iconColor, buttonColor);
 					break;
 				case "{WELDER}":
 					DrawWelder(position, scale, iconColor);
@@ -445,9 +445,11 @@ namespace IngameScript
 
 
 		// DRAW DRILL //
-		void DrawDrill(Vector2 position, float scale, Color color)
+		void DrawDrill(Vector2 position, float scale, Color iconColor, Color bgColor)
         {
+			Vector2 pos = position + new Vector2(scale * -0.25f, scale * 0.125f);
 
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.5f, scale * 0.67f), PI * 0.5f, iconColor);
         }
 
 
