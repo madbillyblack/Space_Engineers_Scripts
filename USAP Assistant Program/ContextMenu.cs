@@ -699,7 +699,7 @@ namespace IngameScript
                     }
                     else
                     {
-                        return battery.IsCharging;
+                        return battery.ChargeMode == ChargeMode.Recharge;
                     }
                         
                 }

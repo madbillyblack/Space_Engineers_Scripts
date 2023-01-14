@@ -112,6 +112,9 @@ namespace IngameScript
 				case "{GRINDER}":
 					DrawGrinder(position, scale, iconColor);
 					break;
+				case "{POWER}":
+					DrawPower(position, scale, iconColor);
+					break;
 				case "{<}":
 					DrawTriangle(arrowPos, arrowScale, iconColor, LEFT);
 					break;
@@ -460,6 +463,20 @@ namespace IngameScript
         {
 
         }
+
+		// DRAW POWER //
+		void DrawPower(Vector2 position, float scale, Color color)
+        {
+			Vector2 pos = position + new Vector2(scale * -0.125f, scale * 0.05f);
+			Vector2 size = new Vector2(scale * 0.125f, scale * 0.33f);
+
+			DrawTexture(TRIANGLE, pos, size, PI * -0.25f, color);
+
+			pos += new Vector2(scale * 0.125f, scale * 0.25f);
+
+			DrawTexture(TRIANGLE, pos, size, PI * 0.75f, color);
+
+		}
 
 
 		// DRAW TRIANGLE //
