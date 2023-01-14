@@ -58,9 +58,11 @@ namespace IngameScript
         
 
         static Dictionary<int, Menu> _menus;
-        static bool _buttonsLit = false;
+        //static bool _buttonsLit = false;
         string _nextCommand;
         //static bool _menusAssigned = false;
+
+        int _currentMenuKey; // Key for current menu to be drawn
 
 
         // MENU //
@@ -138,13 +140,11 @@ namespace IngameScript
                 ButtonColor = ParseColor(GetKey(MENU_COLOR, BUTTON_KEY, "0,160,160"));
             }
 
-
             // GET CURRENT PAGE //
             public MenuPage GetCurrentPage()
             {
                 return Pages[CurrentPage];
             }
-
 
             // SET PAGE COUNT //
             void SetPageCount()
@@ -205,9 +205,28 @@ namespace IngameScript
                     Ini.SetComment(header, key, comment);
             }
 
+            // UPDATE CUSTOM DATA
             public void UpdateCustomData()
             {
                 Block.CustomData = Ini.ToString();
+            }
+
+
+            // REDRAW NEEDED
+            public bool RedrawNeeded()
+            {
+                MenuPage page = Pages[CurrentPage];
+                bool redraw = false;
+
+                foreach (int key in page.Buttons.Keys)
+                {
+                    MenuButton button = page.Buttons[key];
+
+                    if (button.IsToggleButton && button.IsActive != button.ToggleBlock.IsActive())
+                        redraw = true;
+                }
+
+                return redraw;
             }
         }
 
@@ -360,7 +379,7 @@ namespace IngameScript
                 {
                     IsActive = true;
                     IlluminationTime = BlinkDuration;
-                    _buttonsLit = true;
+                    //_buttonsLit = true;
                 }
                 else if (IsToggleButton && ToggleBlock != null)
                 {
@@ -370,7 +389,7 @@ namespace IngameScript
                 {
                     IsActive = true;
                     IlluminationTime = ILLUMINATION_TIME;
-                    _buttonsLit = true;
+                    //_buttonsLit = true;
                 }
             }
 
@@ -771,7 +790,11 @@ namespace IngameScript
             GridTerminalSystem.SearchBlocksOfName(MENU_TAG, menuBlocks);
 
             if (menuBlocks.Count < 1)
+            {
+                _currentMenuKey = 0;
                 return;
+            }
+                
 
             foreach(IMyTerminalBlock menuBlock in menuBlocks)
             {
@@ -783,6 +806,8 @@ namespace IngameScript
                     //DrawMenu(menu);
                 }
             }
+
+            _currentMenuKey = GetFirstMenuKey();
 
             DrawAllMenus();
         }
@@ -924,7 +949,7 @@ namespace IngameScript
         // NEXT MENU PAGE //
         void NextMenuPage(string menuKey)
         {
-            Menu menu = GetMenu(menuKey);
+            Menu menu = GetMenuByString(menuKey);
 
             if (MenuNotFound(menu))
                 return;
@@ -943,7 +968,7 @@ namespace IngameScript
         // PREVIOUS MENU PAGE //
         void PreviousMenuPage(string menuKey)
         {
-            Menu menu = GetMenu(menuKey);
+            Menu menu = GetMenuByString(menuKey);
 
             if (MenuNotFound(menu))
                 return;
@@ -960,7 +985,20 @@ namespace IngameScript
 
 
         // GET MENU //
-        Menu GetMenu(string menuKey)
+        Menu GetMenuByInt(int menuKey)
+        {
+            if (_menus.Count < 1)
+                return null;
+
+            if (menuKey == 0)
+                return GetFirstMenu();
+            else if (!_menus.ContainsKey(menuKey))
+                return null;
+            else
+                return _menus[menuKey];
+        }
+
+        Menu GetMenuByString(string menuKey)
         {
             if (_menus.Count < 1)
                 return null;
@@ -972,34 +1010,65 @@ namespace IngameScript
             else
                 key = ParseInt(menuKey, 0);
 
-            if (key == 0)
-                return GetFirstMenu();
-            else if (!_menus.ContainsKey(key))
-                return null;
-            else
-                return _menus[key];
+            return GetMenuByInt(key);
         }
+
+
 
 
         // GET FIRST MENU //
         Menu GetFirstMenu()
         {
-            int index = int.MaxValue;
+            if (_menus.Count < 1)
+                return null;
 
-            foreach (int key in _menus.Keys)
-            {
-                if (key < index)
-                    index = key;
-            }
+            int index = GetFirstMenuKey();
 
             return _menus[index];
+        }
+
+
+        // GET FIRST MENU KEY //
+        int GetFirstMenuKey()
+        {
+            if (_menus.Count > 0)
+                return _menus.Keys.Min();
+            else
+                return 0;
+        }
+
+
+        // NEXT MENU KEY //
+        void IncrementMenuKey()
+        {
+            if (_menus.Count < 2)
+                return;
+
+            int[] keys = _menus.Keys.ToArray();
+            int length = keys.Length;
+            int nextKey;
+
+            for(int i = 0; i < length; i++)
+            {
+                if(keys[i] == _currentMenuKey)
+                {
+                    nextKey = i + 1;
+
+                    if (nextKey >= length)
+                        nextKey = GetFirstMenuKey();
+
+                    _currentMenuKey = nextKey;
+
+                    return;
+                }
+            }
         }
 
 
         // PRESS BUTTON //
         void PressButton(string menuKey, int buttonNumber)
         {
-            Menu menu = GetMenu(menuKey);
+            Menu menu = GetMenuByString(menuKey);
 
             if (MenuNotFound(menu))
                 return;
@@ -1128,8 +1197,9 @@ namespace IngameScript
         // CHECK LIT BUTTONS //
         void CheckLitButtons()
         {
+            /*
             if (!_buttonsLit)
-                return;
+                return;*/
 
             //Run previously stored command
             if(_nextCommand != "")
@@ -1138,14 +1208,12 @@ namespace IngameScript
                 _nextCommand = "";
             }
 
-
-            bool activeButtonsRemain = false;
-
             foreach(int menuKey in _menus.Keys)
             {
                 Menu menu = _menus[menuKey];
+                bool redrawNeeded = false;
 
-                foreach(int pageKey in menu.Pages.Keys)
+                foreach (int pageKey in menu.Pages.Keys)
                 {
                     MenuPage page = menu.Pages[pageKey];
 
@@ -1153,55 +1221,73 @@ namespace IngameScript
                     {
                         MenuButton button = page.Buttons[buttonKey];
 
-                        if (button.IsBlinkButton)
-                            activeButtonsRemain = activeButtonsRemain || CheckBlinkButton(menu, button);
+                        if (button.IsBlinkButton && button.IlluminationTime > 0)
+                            redrawNeeded = redrawNeeded || CheckBlinkButton(menu, button);
+                        else if(button.IsToggleButton)
+                            redrawNeeded = redrawNeeded || CheckToggleButton(menu, button);
                         else
-                            activeButtonsRemain = activeButtonsRemain || CheckNormalButton(menu, button);
+                            redrawNeeded = redrawNeeded || CheckNormalButton(menu, button);
                     }
                 }
+
+                if (redrawNeeded)
+                    DrawMenu(menu);
             }
 
-            _buttonsLit = activeButtonsRemain;
+            /*
+            _buttonsLit = redrawNeeded;
 
             /*
-            if (!activeButtonsRemain && !_cruiseThrustersOn)
+            if (!redrawNeeded && !_cruiseThrustersOn)
                 Runtime.UpdateFrequency = UpdateFrequency.None;
             */
         }
 
-        // CHECK NORMAL BUTTON - Decriment button light time. Return true if time remaining.
+
+        // CHECK NORMAL BUTTON - Decriment button light time. Return true if button needs to be redrawn.
         bool CheckNormalButton(Menu menu, MenuButton button)
         {
-            if(button.IlluminationTime < 1)
+            if (button.IlluminationTime < 1)
                 return false;
 
             button.IlluminationTime--;
 
-            if (button.IlluminationTime > 0)
+            if (button.IlluminationTime < 1)
             {
-                 return true;
+                button.IsActive = false;
+                return true;
             }
             else
             {
-                button.IsActive = false;
-                DrawMenu(menu);
                 return false;
             }
         }
 
 
-        // CHECK BLINK BUTTON - Decrement button light time. Check set current light. Return true if time still remains.
+        // CHECK TOGGLE BUTTON // - Make sure button status matches toggle block status. Return true if redraw needed
+        bool CheckToggleButton(Menu menu, MenuButton button)
+        {
+            if(button.IsActive != button.ToggleBlock.IsActive())
+            {
+                button.IsActive = button.ToggleBlock.IsActive();
+                return true;
+            }
+
+            return false;
+        }
+
+
+        // CHECK BLINK BUTTON - Decrement button light time. Check set current light. Return true redraw needed.
         bool CheckBlinkButton(Menu menu, MenuButton button)
         {
             if (button.IlluminationTime < 1)
                 return false;
-            
+
             button.IlluminationTime--;
 
             if (button.IlluminationTime > 0)
             {
-                UpdateBlink(menu, button);
-                return true;
+                return UpdateBlink(menu, button);
             }
             else
             {
@@ -1210,22 +1296,23 @@ namespace IngameScript
                 else
                     button.IsActive = false;
 
-                DrawMenu(menu);
-                return false;
+                return true;
             }
         }
 
 
         // UPDATE BLINK
-        void UpdateBlink(Menu menu, MenuButton button)
+        bool UpdateBlink(Menu menu, MenuButton button)
         {
             int remainder = button.IlluminationTime % menu.BlinkCycle;
 
             if (remainder == 0)
             {
                 button.IsActive = !button.IsActive;
-                DrawMenu(menu);
+                return true;
             }
+
+            return false;
         }
 
 
@@ -1236,7 +1323,7 @@ namespace IngameScript
             if (arg.ToUpper().StartsWith("BUTTON"))
                 return;
 
-            _buttonsLit = true;
+            //_buttonsLit = true;
             _nextCommand = arg;
             //Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
@@ -1329,10 +1416,19 @@ namespace IngameScript
                     }
                 }     
             }
+        }
 
-            
-            
 
+        // DRAW CURRENT MENU //
+        void DrawCurrentMenu()
+        {
+            Menu menu = GetMenuByInt(_currentMenuKey);
+
+            if (menu == null)
+                return;
+
+            DrawMenu(menu);
+            IncrementMenuKey();
         }
     }
 }
