@@ -447,10 +447,21 @@ namespace IngameScript
 		// DRAW DRILL //
 		void DrawDrill(Vector2 position, float scale, Color iconColor, Color bgColor)
         {
-			Vector2 pos = position + new Vector2(scale * -0.25f, scale * 0.125f);
+			Vector2 pos = position + new Vector2(scale  * -0.125f, scale * 0.167f);
 
-			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.5f, scale * 0.67f), PI * 0.5f, iconColor);
-        }
+			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.33f, scale * 0.5f), PI * 0.5f, iconColor);
+
+			float threadAngle = 1.8326f; // in Radians
+
+			pos -= new Vector2(scale * 0.125f, scale * -0.015f);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.25f, scale * 0.02f), threadAngle, bgColor);
+
+			pos += new Vector2(scale * 0.15f, 0);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.015f), threadAngle, bgColor);
+
+			pos += new Vector2(scale * 0.133f, 0);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.1f, scale * 0.015f), threadAngle, bgColor);
+		}
 
 
 		// DRAW WELDER //
