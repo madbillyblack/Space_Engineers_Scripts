@@ -107,7 +107,7 @@ namespace IngameScript
 					DrawDrill(position, scale, iconColor, buttonColor);
 					break;
 				case "{WELDER}":
-					DrawWelder(position, scale, iconColor);
+					DrawWelder(position, scale, fontSize, iconColor);
 					break;
 				case "{GRINDER}":
 					DrawGrinder(position, scale, iconColor, buttonColor);
@@ -465,10 +465,28 @@ namespace IngameScript
 
 
 		// DRAW WELDER //
-		void DrawWelder(Vector2 position, float scale, Color color)
+		void DrawWelder(Vector2 position, float scale, float fontSize, Color color)
         {
+			// Body
+			Vector2 pos = position + new Vector2(scale * - 0.33f, scale * 0.167f);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.25f), PI * 0.5f, color);
 
-        }
+			// Arms
+			Vector2 armSize = new Vector2(scale * 0.25f, scale * 0.05f);
+			float armAngle = PI * 0.167f;
+
+			pos += new Vector2(scale * 0.2f, scale * -0.125f);
+			DrawTexture(SQUARE, pos, armSize, armAngle, color);
+			
+			pos += new Vector2(0, scale * 0.25f);
+			DrawTexture(SQUARE, pos, armSize, -armAngle, color);
+
+			// Spark
+			float size = fontSize * 1.5f;
+
+			pos = position + new Vector2(scale * 0.1f, scale * -0.033f);
+			DrawText("*", pos, size, TextAlignment.LEFT, color);
+		}
 
 
 		// DRAW GRINDER //
