@@ -113,7 +113,13 @@ namespace IngameScript
 					DrawGrinder(position, scale, iconColor, buttonColor);
 					break;
 				case "{POWER}":
-					DrawPower(position, scale, iconColor);
+					DrawBolt(position, scale, iconColor);
+					break;
+				case "{BATTERY}":
+					DrawPower(SQUARE, position, scale, iconColor, buttonColor);
+					break;
+				case "{REACTOR}":
+					DrawPower(CIRCLE, position, scale, iconColor, buttonColor);
 					break;
 				case "{<}":
 					DrawTriangle(arrowPos, arrowScale, iconColor, LEFT);
@@ -511,7 +517,20 @@ namespace IngameScript
 		}
 
 		// DRAW POWER //
-		void DrawPower(Vector2 position, float scale, Color color)
+		void DrawPower(string shape, Vector2 position, float scale, Color color, Color bgColor)
+        {
+			Vector2 pos = position + new Vector2(scale * -0.25f, scale * 0.167f);
+
+			DrawTexture(shape, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, color);
+
+			pos += new Vector2(scale * 0.25f, scale * -0.125f);
+
+			DrawBolt(pos, scale * 0.75f, bgColor);
+		}
+
+
+		// DRAW BOLT // - Draws Electricity Bolt icon
+		void DrawBolt(Vector2 position, float scale, Color color)
         {
 			Vector2 pos = position + new Vector2(scale * -0.125f, scale * 0.05f);
 			Vector2 size = new Vector2(scale * 0.125f, scale * 0.33f);
@@ -521,7 +540,6 @@ namespace IngameScript
 			pos += new Vector2(scale * 0.125f, scale * 0.25f);
 
 			DrawTexture(TRIANGLE, pos, size, PI * 0.75f, color);
-
 		}
 
 
