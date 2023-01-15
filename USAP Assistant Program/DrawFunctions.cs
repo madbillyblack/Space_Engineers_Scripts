@@ -158,7 +158,7 @@ namespace IngameScript
 			// Menu ID
 			position = topLeft + new Vector2(width - 10, 0);
 			if (_menus.Count > 1)
-				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.RIGHT, labelColor);
+				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.RIGHT, titleColor);
 
 			_frame.Dispose();
 		}
@@ -198,24 +198,6 @@ namespace IngameScript
 			// Number Label
 			position = startPosition + new Vector2(xScale * 0.5f, xScale * 0.45f);
 			DrawText(button.Number.ToString(), position, fontSize *1.125f, TextAlignment.CENTER, labelColor);
-		}
-
-
-		// DRAW ACTION TEXT //
-		void DrawActionText(string upperText, string lowerText, Vector2 centerPostion, float fontSize, Color fontColor)
-        {
-			Vector2 position = centerPostion;
-
-			if(lowerText != "")
-            {
-				position += new Vector2(0, fontSize * 12);
-
-				DrawText(lowerText, position, fontSize, TextAlignment.CENTER, fontColor);
-
-				position -= new Vector2(0, fontSize * 24);
-            }
-
-			DrawText(upperText, position, fontSize, TextAlignment.CENTER, fontColor);
 		}
 
 

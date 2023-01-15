@@ -267,7 +267,7 @@ namespace IngameScript
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
 
-            MenuDebug();
+            //MenuDebug();
 
 
             // If cargo successfully unloaded, increment load count.
@@ -323,6 +323,7 @@ namespace IngameScript
                 if (timer.CustomName.Contains(trigger))
                     triggerTimers.Add(timer);
 			}
+
             if (triggerTimers.Count < 1)
 			{
                 _statusMessage = "No Timers of name " + trigger + " found.";
@@ -344,7 +345,7 @@ namespace IngameScript
             }
 
             timerToTrigger.GetActionWithName("TriggerNow").Apply(timerToTrigger);
-            Echo("Activate: " + timerToTrigger.CustomName);
+            _statusMessage += "Activating: " + timerToTrigger.CustomName +"\n";
         }
 
 
@@ -366,16 +367,16 @@ namespace IngameScript
                 // Get a timer name/tag from the INI and try to activate the nearest timer with that name.
                 if(Me.CustomData.Contains(triggerKey))
                 {
-                    string timerName = GetKey(Me, INI_HEAD, triggerKey, "");
+                    string timerName = GetKey(Me, TRIGGER_HEAD, triggerKey, "");
 
                     if (timerName == "")
-                        Echo("No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.");
+                        _statusMessage += "No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.\n";
                     else
                         Activate(timerName);
                 }
                 else
                 {
-                    Echo("No defined Trigger \"" + triggerKey + "\" found!\n  Please check case and spelling.");
+                    _statusMessage += "No defined Trigger \"" + triggerKey + "\" found!\n  Please check case and spelling.\n";
                 }
 
                 // Leave function so default error isn't called.

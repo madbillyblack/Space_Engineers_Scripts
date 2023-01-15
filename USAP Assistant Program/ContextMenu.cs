@@ -422,7 +422,7 @@ namespace IngameScript
                 string[] blockData = Block.GetType().ToString().Split('.');
                 BlockType = blockData[blockData.Length - 1].Trim();
 
-                _statusMessage += block.CustomName + ": " + BlockType + ".\n";
+                //_statusMessage += block.CustomName + ": " + BlockType + ".\n";
 
                 switch (data)
                 {
@@ -508,14 +508,14 @@ namespace IngameScript
                 if(IsInverted)
                 {
                     if (BlockType == "MyMotorStator" || BlockType == "MyMotorAdvancedStator")
-                        state = ToDegrees((Block as IMyMotorStator).Angle) <= ToggleValue;
+                        state = ToHalfCircle(ToDegrees((Block as IMyMotorStator).Angle)) <= ToggleValue;
                     else if (BlockType == "MyExtendedPistonBase")
                         state = (Block as IMyPistonBase).CurrentPosition <= ToggleValue;
                 }
                 else
                 {
                     if (BlockType == "MyMotorStator" || BlockType == "MyMotorAdvancedStator")
-                        state = ToDegrees((Block as IMyMotorStator).Angle) >= ToggleValue;
+                        state = ToHalfCircle(ToDegrees((Block as IMyMotorStator).Angle)) >= ToggleValue;
                     else if (BlockType == "MyExtendedPistonBase")
                         state = (Block as IMyPistonBase).CurrentPosition >= ToggleValue;
                 }
@@ -1393,13 +1393,13 @@ namespace IngameScript
 
                 if (block != null || button.IsPlaceHolder)
                 {
-                    Echo("   " + button.Number + ": " + button.BlockLabel);
-                    Echo("Blink: " + button.IsBlinkButton.ToString());
+                    //Echo("   " + button.Number + ": " + button.BlockLabel);
+                    //Echo("Blink: " + button.IsBlinkButton.ToString());
 
                     if(button.IsToggleButton)
                     {
                         ToggleBlock toggle = button.ToggleBlock;
-                        Echo("   TOGGLE: " + toggle.ToggleType);
+                        //Echo("   TOGGLE: " + toggle.ToggleType);
                     }
                 }     
             }

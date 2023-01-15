@@ -83,7 +83,7 @@ namespace IngameScript
             if (value > 0)
             {
                 _targetThrottle -= value;
-                if (_targetThrottle < 0)
+                if (_targetThrottle <= 0)
                 {
                     _targetThrottle = 0;
                     CruiseThrustersOff();

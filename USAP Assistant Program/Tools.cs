@@ -109,5 +109,16 @@ namespace IngameScript
             float degreeValue = angle * 180 / (float)Math.PI;
             return degreeValue;
         }
+
+
+        static float ToHalfCircle(float degrees)
+        {
+            if (degrees >= -180 && degrees <= 180)
+                return degrees;
+            else if (degrees > 180)
+                return degrees - 360;
+            else
+                return degrees + 360;
+        }
     }
 }

@@ -33,6 +33,7 @@ namespace IngameScript
 		const string LEFT = "LEFT";
 		const string RIGHT = "RIGHT";
 
+		readonly Vector2 _shadowOffset = new Vector2(1,1);
 
 		// DRAW ACTION LABEL //
 		void DrawActionLabel(MenuButton button, Vector2 position, float scale, float fontSize, Color iconColor, Color buttonColor)
@@ -158,7 +159,7 @@ namespace IngameScript
 					DrawCycle(arrowPos, arrowScale * 0.67f, iconColor);
 					break;
 				default:
-					DrawActionText(labelA, labelB, position, fontSize * 0.67f, iconColor);
+					DrawActionText(labelA, labelB, position, fontSize * 0.5f, iconColor);
 					break;
 			}
 		}
@@ -738,6 +739,30 @@ namespace IngameScript
 			}
 
 			return output;
+		}
+
+
+		// DRAW ACTION TEXT //
+		void DrawActionText(string upperText, string lowerText, Vector2 position, float fontSize, Color fontColor)
+		{
+			Vector2 pos = position - new Vector2(0, fontSize * 15);
+
+			if (lowerText != "")
+			{
+				pos += new Vector2(0, fontSize * 12);
+
+				DrawText(lowerText, pos, fontSize, TextAlignment.CENTER, fontColor);
+				
+				pos += _shadowOffset;
+				DrawText(lowerText, pos, fontSize, TextAlignment.CENTER, fontColor);
+
+				pos -= new Vector2(0, fontSize * 24);
+			}
+
+			DrawText(upperText, pos, fontSize, TextAlignment.CENTER, fontColor);
+
+			pos -= _shadowOffset;
+			DrawText(upperText, pos, fontSize, TextAlignment.CENTER, fontColor);
 		}
 	}
 }
