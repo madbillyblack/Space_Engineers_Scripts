@@ -103,12 +103,12 @@ namespace IngameScript
 
 			//int page = menu.CurrentPage;
 			float cellWidth = (width / 7);
-			float buttonHeight = (height / 2);
+			float buttonHeight = (height * 0.5f);
 			if (buttonHeight > cellWidth)
 				buttonHeight = cellWidth - 4;
 
 			// Background
-			Vector2 position = center - new Vector2(width / 2, 0);
+			Vector2 position = center - new Vector2(width * 0.5f, 0);
 			DrawTexture(SQUARE, position, new Vector2(width, height), 0, bgColor);
 
 			// Set Starting Top Edge
@@ -116,19 +116,19 @@ namespace IngameScript
 			switch (menu.Alignment.ToUpper())
 			{
 				case "TOP":
-					topLeft = center - new Vector2(width / 2, height / 2);
+					topLeft = center - new Vector2(width * 0.5f, height * 0.5f);
 					break;
 				case "BOTTOM":
-					topLeft = center - new Vector2(width / 2, height / -2 + buttonHeight * 2);
+					topLeft = center - new Vector2(width * 0.5f, height * -0.5f + buttonHeight * 2);
 					break;
 				case "CENTER":
 				default:
-					topLeft = center - new Vector2(width / 2, buttonHeight);
+					topLeft = center - new Vector2(width * 0.5f, buttonHeight);
 					break;
 			}
 
 			// Button Backgrounds
-			position = topLeft + new Vector2((cellWidth - buttonHeight) / 2, buttonHeight * 1.5f);
+			position = topLeft + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.175f);
 			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
 			for (int i = 1; i < 8; i++)
@@ -188,7 +188,7 @@ namespace IngameScript
 			DrawTexture(SQUARE, position, buttonScale, 0, color);
 
 			// Block Label
-			position += new Vector2(xScale / 2, - yScale * 0.8f);
+			position += new Vector2(xScale * 0.5f, - yScale * 0.8f);
 			DrawText(button.BlockLabel, position, fontSize * 0.67f, TextAlignment.CENTER, labelColor);
 
 			// Action Label
@@ -196,8 +196,8 @@ namespace IngameScript
 			DrawActionLabel(button, position, xScale, fontSize, backgroundColor, color);
 
 			// Number Label
-			position = startPosition + new Vector2(xScale / 2, 0);
-			DrawText(button.Number.ToString(), position, fontSize *1.5f, TextAlignment.CENTER, backgroundColor);
+			position = startPosition + new Vector2(xScale * 0.5f, xScale * 0.45f);
+			DrawText(button.Number.ToString(), position, fontSize *1.125f, TextAlignment.CENTER, labelColor);
 		}
 
 
