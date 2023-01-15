@@ -110,7 +110,7 @@ namespace IngameScript
 					DrawWelder(position, scale, iconColor);
 					break;
 				case "{GRINDER}":
-					DrawGrinder(position, scale, iconColor);
+					DrawGrinder(position, scale, iconColor, buttonColor);
 					break;
 				case "{POWER}":
 					DrawPower(position, scale, iconColor);
@@ -472,22 +472,24 @@ namespace IngameScript
 
 
 		// DRAW GRINDER //
-		void DrawGrinder(Vector2 position, float scale, Color color)
+		void DrawGrinder(Vector2 position, float scale, Color iconColor, Color bgColor)
         {
-			Vector2 pos = position + new Vector2(0, scale * 0.125f);
-			float width = scale * 0.25f;
-			float height = scale * 0.33f;
+			Vector2 pos = position + new Vector2(-scale * 0.0625f, scale * 0.167f);
+			Vector2 size = new Vector2(scale * 0.167f, scale * 0.33f);
+			Vector2 offset = new Vector2(size.X * -0.5f, size.Y * -0.4f);
+
+			//DrawTexture(TRIANGLE, pos, size, PI * -0.25f, color);
 			float angle = 0;
 
-			Vector2 size = new Vector2(-width, height);
+			DrawRotatedTriangle(pos, offset, size, angle, iconColor);
 
-			DrawTexture(TRIANGLE, pos, size, angle, color);
+			for(int i = 0; i < 5; i++)
+            {
+				angle += PI * 0.333f;
+				DrawRotatedTriangle(pos, offset, size, angle, iconColor);
+			}
 
-			angle += PI * 0.333f;
-			pos += new Vector2(width * (float)Math.Cos(angle), -height * (float)Math.Sin(angle));
-			DrawTexture(TRIANGLE, pos, size, angle, Color.Red);
-
-
+			DrawTexture(CIRCLE, pos, new Vector2(scale * 0.167f, scale * 0.167f), 0, bgColor);
 		}
 
 		// DRAW POWER //

@@ -228,5 +228,30 @@ namespace IngameScript
 			foreach (int key in _menus.Keys)
 				DrawMenu(_menus[key]);
         }
+
+
+		// DRAW ROTATED TRIANGLE //
+		void DrawRotatedTriangle(Vector2 position, Vector2 offset, Vector2 scale, float rotation, Color color)
+        {
+			//ref circle
+			//DrawTexture(CIRCLE, position - new Vector2(10, 0), new Vector2(20, 20), 0, Color.Red);
+
+			Vector2 pos = position + RotateVector2(offset, rotation);
+
+			DrawTexture(TRIANGLE, pos, scale, rotation, color);
+        }
+
+
+		// ROTATE VECTOR2 // - Rotates input vector by angle in radians
+		Vector2 RotateVector2(Vector2 vectorIn, float angle)
+        {
+			float x = vectorIn.X;
+			float y = vectorIn.Y;
+
+			double xOut = x * Math.Cos(angle) - y * Math.Sin(angle);
+			double yOut = x * Math.Sin(angle) + y * Math.Cos(angle);
+
+			return new Vector2((float) xOut, (float) yOut);
+        }
 	}
 }
