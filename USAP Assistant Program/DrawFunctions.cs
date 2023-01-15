@@ -192,8 +192,8 @@ namespace IngameScript
 			DrawText(button.BlockLabel, position, fontSize * 0.67f, TextAlignment.CENTER, labelColor);
 
 			// Action Label
-			position += new Vector2(0, yScale * 0.45f);
-			DrawActionLabel(button, position, xScale, fontSize, backgroundColor, color);
+			position += new Vector2(0, yScale * 0.6f);
+			DrawActionLabel(button, position, xScale * 1.25f, fontSize, backgroundColor, color);
 
 			// Number Label
 			position = startPosition + new Vector2(xScale * 0.5f, xScale * 0.45f);

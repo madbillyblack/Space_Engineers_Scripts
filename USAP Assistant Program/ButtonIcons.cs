@@ -62,13 +62,13 @@ namespace IngameScript
 					DrawLight(position, scale, fontSize, iconColor);
 					break;
 				case "{GEAR}":
-					DrawLandingGear(position, scale, iconColor, buttonColor);
+					DrawLandingGear(position, scale * 0.9f, iconColor, buttonColor);
 					break;
 				case "{GEAR_DOWN}":
-					DrawLandingGear(position, scale, iconColor, buttonColor, DOWN);
+					DrawLandingGear(position, scale * 0.9f, iconColor, buttonColor, DOWN);
 					break;
 				case "{GEAR_UP}":
-					DrawLandingGear(position, scale, iconColor, buttonColor, UP);
+					DrawLandingGear(position, scale * 0.9f, iconColor, buttonColor, UP);
 					break;
 				case "{MISSILE}":
 					DrawMissile(position, scale, iconColor, buttonColor);
@@ -77,7 +77,7 @@ namespace IngameScript
 					DrawGatling(position, scale, fontSize, iconColor);
 					break;
 				case "{CANNON}":
-					DrawCannon(position, scale, iconColor);
+					DrawCannon(position, scale * 0.9f, iconColor);
 					break;
 				case "{DOCK A}":
 					DrawDock("A", position, scale, iconColor);
@@ -89,10 +89,16 @@ namespace IngameScript
 					DrawSeparation(position, scale, iconColor);
 					break;
 				case "{H2}":
-					DrawGas("H2", position, scale, iconColor, buttonColor);
+					DrawGas("H2", SQUARE, position, scale, iconColor, buttonColor);
 					break;
 				case "{O2}":
-					DrawGas("O2", position, scale, iconColor, buttonColor);
+					DrawGas("O2", SQUARE, position, scale, iconColor, buttonColor);
+					break;
+				case "{H2_TANK}":
+					DrawGas("H2", CIRCLE, position, scale, iconColor, buttonColor);
+					break;
+				case "{O2_TANK}":
+					DrawGas("O2", CIRCLE, position, scale, iconColor, buttonColor);
 					break;
 				case "{TURRET}":
 					DrawTurret(position, scale, iconColor);
@@ -101,7 +107,7 @@ namespace IngameScript
 					DrawMissileTurret(position, scale, iconColor);
 					break;
 				case "{JETTISON}":
-					DrawJettison(position, scale, iconColor);
+					DrawJettison(position, scale * 0.9f, iconColor);
 					break;
 				case "{DRILL}":
 					DrawDrill(position, scale, iconColor, buttonColor);
@@ -269,10 +275,10 @@ namespace IngameScript
 			DrawTexture(SEMI, pos, new Vector2(scale * 0.125f, scale * 0.167f), PI * 0.5f, iconColor);
 
 			// Fin Mask
-			pos = position + new Vector2(scale * -0.5f, scale * 0.05f);
-			DrawTexture(BOX, pos, new Vector2(scale, scale * 0.33f), PI, bgColor);
+			pos = position + new Vector2(scale * -0.4f, scale * 0.05f);
+			DrawTexture(BOX, pos, new Vector2(scale * 0.8f, scale * 0.33f), PI, bgColor);
 			pos += new Vector2(0, scale * 0.167f);
-			DrawTexture(BOX, pos, new Vector2(scale, scale * 0.33f), 0, bgColor);
+			DrawTexture(BOX, pos, new Vector2(scale * 0.8f, scale * 0.33f), 0, bgColor);
 		}
 
 
@@ -386,13 +392,13 @@ namespace IngameScript
 
 
 		// DRAW GAS //
-		void DrawGas(string gasType, Vector2 position, float scale, Color iconColor, Color textColor)
+		void DrawGas(string gasType, string shape, Vector2 position, float scale, Color iconColor, Color textColor)
         {
-			Vector2 pos = position + new Vector2(scale * -0.2f, scale * 0.175f);
-			DrawTexture(SQUARE, pos, new Vector2(scale * 0.4f, scale * 0.4f), 0, iconColor);
+			Vector2 pos = position + new Vector2(scale * -0.25f, scale * 0.175f);
+			DrawTexture(shape, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, iconColor);
 
 			// Element
-			pos += new Vector2(scale * 0.15f, scale * -0.225f);
+			pos += new Vector2(scale * 0.2f, scale * -0.225f);
 			if(gasType == "H2")
 				DrawText("H", pos, scale * 0.0125f, TextAlignment.CENTER, textColor);
 			else if (gasType == "O2")
