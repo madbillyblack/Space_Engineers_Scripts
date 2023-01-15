@@ -152,10 +152,10 @@ namespace IngameScript
 					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, DOWN);
 					break;
 				case "{TOGGLE}":
-					DrawToggle(arrowPos, arrowScale * 0.5f, iconColor);
+					DrawToggle(arrowPos, arrowScale * 0.67f, iconColor);
 					break;
 				case "{CYCLE}":
-					DrawCycle(arrowPos, arrowScale * 0.5f, iconColor);
+					DrawCycle(arrowPos, arrowScale * 0.67f, iconColor);
 					break;
 				default:
 					DrawActionText(labelA, labelB, position, fontSize * 0.67f, iconColor);
@@ -167,7 +167,7 @@ namespace IngameScript
 		// DRAW CAMERA ICON //
 		void DrawCamera(Vector2 position, float scale, Color color)
         {
-			Vector2 pos = position + new Vector2(-scale * 0.2f, scale * 0.125f);
+			Vector2 pos = position + new Vector2(-scale * 0.2f, 0);// scale * 0.125f);
 
 			// Camera Body
 			DrawTexture(SQUARE, pos, new Vector2(scale * 0.33f, scale *0.25f), 0, color);
@@ -224,7 +224,7 @@ namespace IngameScript
 		// DRAW LANDING GEAR //
 		void DrawLandingGear(Vector2 position, float scale, Color iconColor, Color buttonColor, string direction = "")
 		{
-			Vector2 pos = position - new Vector2(scale * 0.375f, 0);// scale * -0.025f);
+			Vector2 pos = position - new Vector2(scale * 0.375f, scale * 0.15f);
 
 			//Bay
 			DrawTexture(SQUARE, pos, new Vector2(scale * 0.75f, scale * 0.1f), 0, iconColor);
@@ -234,7 +234,7 @@ namespace IngameScript
 			DrawTexture(SQUARE, pos, new Vector2(scale * 0.375f, scale * 0.05f), PI * 0.167f, iconColor);
 
 			// Wheel
-			pos = position + new Vector2(-scale * 0.125f, scale * 0.25f);
+			pos = position + new Vector2(-scale * 0.125f, scale * 0.05f);
 			DrawTexture(CIRCLE, pos, new Vector2(scale * 0.25f, scale * 0.25f), 0, iconColor);
 
 			// Hubcap
@@ -438,7 +438,7 @@ namespace IngameScript
 		// DRAW JETTISON //
 		void DrawJettison(Vector2 position, float scale, Color color)
         {
-			Vector2 pos = position - new Vector2(scale * 0.33f, 0);// scale * -0.025f);
+			Vector2 pos = position - new Vector2(scale * 0.33f, scale * 0.15f);
 			Vector2 size = new Vector2(scale * 0.2f, scale * 0.2f);
 
 			//Bay
@@ -528,7 +528,7 @@ namespace IngameScript
 
 			DrawTexture(shape, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, color);
 
-			pos += new Vector2(scale * 0.25f, scale * -0.125f);
+			pos += new Vector2(scale * 0.25f, 0);// scale * -0.125f);
 
 			DrawBolt(pos, scale * 0.75f, bgColor);
 		}
@@ -537,7 +537,7 @@ namespace IngameScript
 		// DRAW BOLT // - Draws Electricity Bolt icon
 		void DrawBolt(Vector2 position, float scale, Color color)
         {
-			Vector2 pos = position + new Vector2(scale * -0.125f, scale * 0.05f);
+			Vector2 pos = position - new Vector2(scale * 0.125f, scale * 0.125f);
 			Vector2 size = new Vector2(scale * 0.125f, scale * 0.33f);
 
 			DrawTexture(TRIANGLE, pos, size, PI * -0.25f, color);
@@ -632,7 +632,7 @@ namespace IngameScript
 		{
 			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
 			Vector2 blockScale = new Vector2(scale, scale);
-			position -= new Vector2(scale * 0.5f, 0);
+			position -= new Vector2(scale * 0.5f, scale * 0.3f);
 			DrawTexture(SEMI, position, blockScale, PI * 1.5f, color);
 			DrawTexture(RING, position, blockScale, 0, color);
 			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
@@ -645,7 +645,7 @@ namespace IngameScript
 		{
 			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
 			Vector2 blockScale = new Vector2(scale, scale);
-			position -= new Vector2(scale / 2, 0);
+			position -= new Vector2(scale * 0.5f, scale * 0.3f);
 			DrawTexture(RING, position, blockScale, 0, color);
 			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
 			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
