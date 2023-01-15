@@ -552,7 +552,7 @@ namespace IngameScript
 		void DrawTriangle(Vector2 position, float scale, Color color, string direction)
 		{
 			float rotation;
-			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
+			Vector2 pos = position - new Vector2(0, scale * 0.4f);
 			Vector2 offset;
 
 			switch (direction.ToUpper())
@@ -576,14 +576,14 @@ namespace IngameScript
 					break;
 			}
 
-			DrawTexture(TRIANGLE, position - offset, new Vector2(scale, scale), PI * rotation, color);
+			DrawTexture(TRIANGLE, pos - offset, new Vector2(scale, scale), PI * rotation, color);
 		}
 
 
 		// DRAW DOUBLE TRIANGLE //
 		void DrawDoubleTriangle(Vector2 position, float scale, Color color, string direction)
 		{
-			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
+			Vector2 pos = position - new Vector2(0, scale * 0.2f);
 			float rotation;
 			float length = scale * 0.33f;
 			Vector2 offset1;
@@ -598,7 +598,7 @@ namespace IngameScript
 					break;
 				case DOWN:
 					rotation = 1;
-					offset1 = new Vector2(scale * 0.25f, scale * -0.275f);
+					offset1 = new Vector2(scale * 0.25f, scale * -0.25f);
 					offset2 = new Vector2(0, -length);
 					break;
 				case LEFT:
@@ -609,21 +609,21 @@ namespace IngameScript
 				case UP:
 				default:
 					rotation = 0;
-					offset1 = new Vector2(scale *0.25f, scale * 0.167f);
+					offset1 = new Vector2(scale *0.25f, scale * 0.2f);
 					offset2 = new Vector2(0, length);
 					break;
 			}
 
 			rotation *= PI;
-			position -= offset1;
+			pos -= offset1;
 
 			Vector2 triangleSize = new Vector2(scale, scale) * 0.5f;
 
-			DrawTexture(TRIANGLE, position, triangleSize, rotation, color);
+			DrawTexture(TRIANGLE, pos, triangleSize, rotation, color);
 
-			position += offset2;
+			pos += offset2;
 
-			DrawTexture(TRIANGLE, position, triangleSize, rotation, color);
+			DrawTexture(TRIANGLE, pos, triangleSize, rotation, color);
 		}
 
 
