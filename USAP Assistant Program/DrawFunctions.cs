@@ -96,20 +96,33 @@ namespace IngameScript
 			if (bigScreen)
 				fontSize *= 1.5f;
 
-			Color bgColor = menu.BackgroundColor;
+			bool widescreen = width >= height * 3;
+
+
+			
 			Color titleColor = menu.TitleColor;
-			Color labelColor = menu.LabelColor;
-			Color buttonColor = menu.ButtonColor;
 
 			//int page = menu.CurrentPage;
-			float cellWidth = (width / 7);
-			float buttonHeight = (height * 0.5f);
+			float cellWidth;
+			float buttonHeight;
+
+			if(widescreen)
+            {
+				cellWidth = width * 0.142857f;
+				buttonHeight = height * 0.5f;
+			}
+			else
+            {
+				cellWidth = (width * 0.25f);
+				buttonHeight = (height * 0.225f);
+			}
+
 			if (buttonHeight > cellWidth)
 				buttonHeight = cellWidth - 4;
 
 			// Background
 			Vector2 position = center - new Vector2(width * 0.5f, 0);
-			DrawTexture(SQUARE, position, new Vector2(width, height), 0, bgColor);
+			DrawTexture(SQUARE, position, new Vector2(width, height), 0, menu.BackgroundColor);
 
 			// Set Starting Top Edge
 			Vector2 topLeft;
@@ -119,31 +132,28 @@ namespace IngameScript
 					topLeft = center - new Vector2(width * 0.5f, height * 0.5f);
 					break;
 				case "BOTTOM":
-					topLeft = center - new Vector2(width * 0.5f, height * -0.5f + buttonHeight * 2);
+					if(widescreen)
+						topLeft = center - new Vector2(width * 0.5f, height * -0.5f + buttonHeight * 2);
+					else
+						topLeft = center - new Vector2(width * 0.5f, height * -0.5f + buttonHeight * 4);
 					break;
 				case "CENTER":
 				default:
-					topLeft = center - new Vector2(width * 0.5f, buttonHeight);
+					if(widescreen)
+						topLeft = center - new Vector2(width * 0.5f, buttonHeight);
+					else
+						topLeft = center - new Vector2(width * 0.5f, buttonHeight * 2);
 					break;
 			}
 
-			// Button Backgrounds
-			position = topLeft + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.175f);
-			Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
-			for (int i = 1; i < 8; i++)
-			{
-				MenuButton button = page.Buttons[i];
 
-				DrawButton(button, position, buttonScale, fontSize, buttonColor, bgColor, labelColor);
-
-				position += new Vector2(cellWidth, 0);
-			}
-
+			/*
 			if (menu.Decals != "")
 			{
 				DrawDecals(menu, topLeft, buttonHeight, menu.Alignment, menu.Decals);
 			}
+			*/
 
 			// Menu Title
 			position = topLeft + new Vector2(10, 0);
@@ -160,12 +170,75 @@ namespace IngameScript
 			if (_menus.Count > 1)
 				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.RIGHT, titleColor);
 
+			// Buttons
+			if (widescreen)
+				DrawSingleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, fontSize);
+			else
+				DrawDoubleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, fontSize);
+
 			_frame.Dispose();
 		}
 
 
+		// DRAW SINGLE BUTTON ROW //
+		void DrawSingleButtonRow(Menu menu, MenuPage page, Vector2 position, float cellWidth, float buttonHeight, float fontSize)
+        {
+			Color labelColor = menu.LabelColor;
+			Color buttonColor = menu.ButtonColor;
+			Color bgColor = menu.BackgroundColor;
+
+			// Button Backgrounds
+			Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.175f);
+			//Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
+
+			for (int i = 1; i < 8; i++)
+			{
+				MenuButton button = page.Buttons[i];
+
+				DrawButton(button, pos, buttonHeight, fontSize, buttonColor, bgColor, labelColor);
+
+				pos += new Vector2(cellWidth, 0);
+			}
+		}
+
+
+		// DRAW DOUBLE BUTTON ROW //
+		void DrawDoubleButtonRow(Menu menu, MenuPage page, Vector2 position, float cellWidth, float buttonHeight, float fontSize)
+        {
+			Color labelColor = menu.LabelColor;
+			Color buttonColor = menu.ButtonColor;
+			Color bgColor = menu.BackgroundColor;
+
+			// Button Backgrounds
+			Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.33f);
+			//Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
+
+			for (int i = 1; i < 5; i++)
+			{
+				MenuButton button = page.Buttons[i];
+
+				DrawButton(button, pos, buttonHeight, fontSize, buttonColor, bgColor, labelColor);
+
+				pos += new Vector2(cellWidth, 0);
+			}
+
+			pos = position + new Vector2(cellWidth - buttonHeight * 0.5f, buttonHeight * 3);
+
+
+			for (int j = 5; j < 8; j++)
+			{
+				MenuButton button = page.Buttons[j];
+
+				DrawButton(button, pos, buttonHeight, fontSize, buttonColor, bgColor, labelColor);
+
+				pos += new Vector2(cellWidth, 0);
+			}
+		}
+
+
+
 		// DRAW BUTTON //
-		void DrawButton(MenuButton button, Vector2 startPosition, Vector2 buttonScale, float fontSize, Color buttonColor, Color backgroundColor, Color labelColor)
+		void DrawButton(MenuButton button, Vector2 startPosition, float scale, float fontSize, Color buttonColor, Color backgroundColor, Color labelColor)
         {
 			if (button.IsUnassigned())
 				return;
@@ -173,8 +246,8 @@ namespace IngameScript
 			Color color;
 			Vector2 position = startPosition;
 
-			float xScale = buttonScale.X;
-			float yScale = buttonScale.Y;
+			//float xScale = buttonScale.X;
+			//float yScale = buttonScale.Y;
 
 			// Brighten button if active, otherwise darken
 			if (button.IsActive)
@@ -185,18 +258,18 @@ namespace IngameScript
 			//if (ShouldBeVisible(menu, i))
 			//DrawTexture(SQUARE, position, buttonScale, 0, color);
 
-			DrawTexture(SQUARE, position, buttonScale, 0, color);
+			DrawTexture(SQUARE, position, new Vector2(scale, scale), 0, color);
 
 			// Block Label
-			position += new Vector2(xScale * 0.5f, - yScale * 0.8f);
+			position += new Vector2(scale * 0.5f, - scale * 0.8f);
 			DrawText(button.BlockLabel, position, fontSize * 0.67f, TextAlignment.CENTER, labelColor);
 
 			// Action Label
-			position = startPosition + new Vector2(xScale * 0.5f, 0);
-			DrawActionLabel(button, position, xScale * 1.25f, fontSize * 1.25f, backgroundColor, color);
+			position = startPosition + new Vector2(scale * 0.5f, 0);
+			DrawActionLabel(button, position, scale * 1.25f, fontSize * 1.25f, backgroundColor, color);
 
 			// Number Label
-			position = startPosition + new Vector2(xScale * 0.5f, xScale * 0.45f);
+			position = startPosition + new Vector2(scale * 0.5f, scale * 0.45f);
 			DrawText(button.Number.ToString(), position, fontSize *1.125f, TextAlignment.CENTER, labelColor);
 		}
 
