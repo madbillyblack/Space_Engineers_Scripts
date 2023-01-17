@@ -1,0 +1,56 @@
+Small Reactor
+Sandbox.Game.Entities.MyReactor
+
+Battery
+Sandbox.Game.Entities.MyBatteryBlock
+
+Programmable Block
+Sandbox.Game.Entities.Blocks.MyProgrammableBlock
+
+Small Cargo Container
+Sandbox.Game.Entities.MyCargoContainer
+
+Gatling Turret
+SpaceEngineers.Game.Weapons.Guns.MyLargeGatlingTurret
+
+Console Block [COMPASS]
+Entities.Blocks.MySpaceProjector
+
+Cockpit [Reference]
+Sandbox.Game.Entities.MyCockpit
+
+Console Block [COMPASS] 2
+Entities.Blocks.MySpaceProjector
+
+Missile Turret
+SpaceEngineers.Game.Weapons.Guns.MyLargeMissileTurret
+
+Interior Turret
+SpaceEngineers.Game.Weapons.Guns.MyLargeInteriorTurret
+
+Assault Cannon Turret
+SpaceEngineers.Game.Weapons.Guns.MyLargeMissileTurret
+
+Artillery Turret
+SpaceEngineers.Game.Weapons.Guns.MyLargeMissileTurret
+
+Searchlight
+SpaceEngineers.Game.Entities.Blocks.MySearchlight
+
+Custom Turret Controller
+SpaceEngineers.Game.Entities.Blocks.MyTurretControlBlock
+
+Remote Control
+Sandbox.Game.Entities.MyRemoteControl
+
+Camera
+Sandbox.Game.Entities.MyCameraBlock
+
+// CONTROL TYPES //
+MyLargeGatlingTurret
+MyLargeMissileTurret
+MyLargeInteriorTurret
+MySearchlight
+MyTurretControlBlock
+MyRemoteControl
+MyCameraBlock

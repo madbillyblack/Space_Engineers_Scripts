@@ -64,13 +64,13 @@ namespace IngameScript
                         Unstock(_constructionCargos, COMP_SUPPLY, true);
                         Restock(_constructionCargos, COMP_SUPPLY);
                         break;
-                    case "CRUISE_THRUSTERS_ON":
+                    case "CRUISE_ON":
                         CruiseThrustersOn();
                         break;
-                    case "CRUISE_THRUSTERS_OFF":
+                    case "CRUISE_OFF":
                         CruiseThrustersOff();
                         break;
-                    case "TOGGLE_CRUISE_THRUSTERS":
+                    case "TOGGLE_CRUISE":
                         ToggleCruiseThrusters();
                         break;
                     case "SELECT_PROFILE":
