@@ -30,6 +30,7 @@ namespace IngameScript
         const string BUTTON_BLOCK = "Block";
         const string BLOCK_LABEL = "Block Label";
         const string BUTTON_ACTION = "Action";
+        const string MAX_BUTTONS = "Max Button Count";
         const string ACTION_LABEL = "Action Label";
         const string TOGGLE_KEY = "Toggle Block";
         const string MENU_COLOR = "Menu Color Settings";
@@ -51,6 +52,7 @@ namespace IngameScript
 
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
+        const int BUTTON_LIMIT = 9;
         const int ILLUMINATION_TIME = 3;
 
         const float THRESHHOLD = 0.95f;
@@ -71,11 +73,12 @@ namespace IngameScript
             public int IDNumber;
             public int PageCount;
             public int CurrentPage;
+            public int MaxButtons;
             public IMyTerminalBlock Block;
             public IMyTextSurface Surface;
             public RectangleF Viewport;
             public string Alignment;
-            public string Decals;
+            //public string Decals;
             public Dictionary<int, MenuPage> Pages;
 
             public Color BackgroundColor;
@@ -107,11 +110,19 @@ namespace IngameScript
                 SetPageCount();
                 SetCurrentPage();
 
+                MaxButtons = ParseInt(GetKey(MENU_HEAD, MAX_BUTTONS, "8"), 8);
+
+                // Ensure a valid MaxButton Value was supplied.
+                if (MaxButtons < 1)
+                    MaxButtons = 1;
+                else if (MaxButtons > BUTTON_LIMIT)
+                    MaxButtons = BUTTON_LIMIT;
+
                 // Vertical Alignment
                 Alignment = GetKey(MENU_HEAD, "Alignment", "BOTTOM");
 
                 // Decals
-                Decals = GetKey(MENU_HEAD, "Decals", "").ToUpper();
+                //Decals = GetKey(MENU_HEAD, "Decals", "").ToUpper();
 
                 // Blink Cycle
                 float cycleLength = ParseFloat(GetKey(MENU_HEAD, "Blink Cycle", DV_BLINK.ToString()), DV_BLINK);
@@ -850,7 +861,7 @@ namespace IngameScript
 
             menuPage.Name = menu.GetKey(header, "Title", "");
 
-            for(int i = 1; i < 8; i++)
+            for(int i = 1; i < menu.MaxButtons + 1; i++)
             {
                 menuPage.Buttons[i] = InitializeButton(menu, pageNumber, i);
             }

@@ -97,25 +97,28 @@ namespace IngameScript
 				fontSize *= 1.5f;
 
 			bool widescreen = width >= height * 3;
-
-
 			
 			Color titleColor = menu.TitleColor;
 
 			//int page = menu.CurrentPage;
+			int rowCount;
 			float cellWidth;
 			float buttonHeight;
 
 			if(widescreen)
             {
-				cellWidth = width * 0.142857f;
+				rowCount = menu.MaxButtons;
+				//cellWidth = width * 0.142857f;
 				buttonHeight = height * 0.5f;
 			}
 			else
             {
-				cellWidth = (width * 0.25f);
+				rowCount = (int) Math.Ceiling(menu.MaxButtons * 0.5);
+				//cellWidth = (width * 0.25f);
 				buttonHeight = (height * 0.225f);
 			}
+
+			cellWidth = width / rowCount;
 
 			if (buttonHeight > cellWidth)
 				buttonHeight = cellWidth - 4;
@@ -174,7 +177,7 @@ namespace IngameScript
 			if (widescreen)
 				DrawSingleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, fontSize);
 			else
-				DrawDoubleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, fontSize);
+				DrawDoubleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, rowCount, fontSize);
 
 			_frame.Dispose();
 		}
@@ -191,7 +194,7 @@ namespace IngameScript
 			Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.175f);
 			//Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
-			for (int i = 1; i < 8; i++)
+			for (int i = 1; i < menu.MaxButtons + 1; i++)
 			{
 				MenuButton button = page.Buttons[i];
 
@@ -203,7 +206,7 @@ namespace IngameScript
 
 
 		// DRAW DOUBLE BUTTON ROW //
-		void DrawDoubleButtonRow(Menu menu, MenuPage page, Vector2 position, float cellWidth, float buttonHeight, float fontSize)
+		void DrawDoubleButtonRow(Menu menu, MenuPage page, Vector2 position, float cellWidth, float buttonHeight, int rowCount, float fontSize)
         {
 			Color labelColor = menu.LabelColor;
 			Color buttonColor = menu.ButtonColor;
@@ -213,7 +216,7 @@ namespace IngameScript
 			Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.33f);
 			//Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
-			for (int i = 1; i < 5; i++)
+			for (int i = 1; i < rowCount + 1; i++)
 			{
 				MenuButton button = page.Buttons[i];
 
@@ -222,10 +225,15 @@ namespace IngameScript
 				pos += new Vector2(cellWidth, 0);
 			}
 
-			pos = position + new Vector2(cellWidth - buttonHeight * 0.5f, buttonHeight * 3);
+			pos = position + new Vector2(0, buttonHeight * 3.33f);
 
+			// check if the button count is even, offset bottom row if so.
+			if (menu.MaxButtons % 2 > 0)
+				pos += new Vector2(cellWidth - buttonHeight * 0.5f, 0);
+			else
+				pos += new Vector2((cellWidth - buttonHeight) * 0.5f, 0); // Parentheses matter!
 
-			for (int j = 5; j < 8; j++)
+			for (int j = rowCount + 1; j < menu.MaxButtons + 1; j++)
 			{
 				MenuButton button = page.Buttons[j];
 
@@ -246,17 +254,11 @@ namespace IngameScript
 			Color color;
 			Vector2 position = startPosition;
 
-			//float xScale = buttonScale.X;
-			//float yScale = buttonScale.Y;
-
 			// Brighten button if active, otherwise darken
 			if (button.IsActive)
 				color = buttonColor * 2;
 			else
 				color = buttonColor * 0.5f;
-
-			//if (ShouldBeVisible(menu, i))
-			//DrawTexture(SQUARE, position, buttonScale, 0, color);
 
 			DrawTexture(SQUARE, position, new Vector2(scale, scale), 0, color);
 

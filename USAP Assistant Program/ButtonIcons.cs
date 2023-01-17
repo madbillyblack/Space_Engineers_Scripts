@@ -200,7 +200,7 @@ namespace IngameScript
 			if (symbol == "+")
 				symbolScale *= 0.9f;
 
-			pos -= new Vector2(0, scale * 0.33f);
+			pos -= new Vector2(0, symbolScale * 25);
 			DrawText(symbol, pos, symbolScale, TextAlignment.CENTER, textColor);
         }
 
@@ -653,94 +653,94 @@ namespace IngameScript
 			DrawTexture(TRIANGLE, position + new Vector2(scale * 0.67f, -scale * 0.25f), blockScale * 0.5f, PI * 0.75f, color);
 		}
 
-
-		// DRAW DECALS //
-		public void DrawDecals(Menu menu, Vector2 startPosition, float heightScale, string alignment, string decalType)
-		{
-			Echo(alignment);
-			
-
-			Vector2 position;
-			if (alignment == "TOP")
-				position = startPosition + new Vector2(0, menu.Viewport.Height / 2 + heightScale);
-			else
-				position = startPosition - new Vector2(0, menu.Viewport.Height / 2 - heightScale);
-
-			string texture;
-			switch (menu.Decals)
-			{
-				case "BLUEPRINT":
-				case "BLUEPRINTS":
-					texture = GetBlueprintDecal(menu);
-					break;
-				case "GRAPH":
-				case "GRAPHS":
-					texture = GetGraphDecal(menu);
-					break;
-				default:
-					return;
-			}
-			float widthMod;
-			if (menu.Viewport.Width <= 500)
-				widthMod = 1.5f;
-			else
-				widthMod = 1;
-
-			DrawTexture(texture, position, new Vector2(menu.Viewport.Height * widthMod, menu.Viewport.Height - heightScale * 2), 0, Color.White);
-		}
+		/*
+				// DRAW DECALS //
+				public void DrawDecals(Menu menu, Vector2 startPosition, float heightScale, string alignment, string decalType)
+				{
+					Echo(alignment);
 
 
-		// Get Graph Decal // - Selects a graph decal based on menu's current page
-		public string GetGraphDecal(Menu menu)
-		{
-			string output;
-			int decalID = menu.CurrentPage % 3;
+					Vector2 position;
+					if (alignment == "TOP")
+						position = startPosition + new Vector2(0, menu.Viewport.Height / 2 + heightScale);
+					else
+						position = startPosition - new Vector2(0, menu.Viewport.Height / 2 - heightScale);
 
-			switch (decalID)
-			{
-				case 0:
-					output = "LCD_Economy_Graph_2";
-					break;
-				case 1:
-					output = "LCD_Economy_Graph_3";
-					break;
-				case 2:
-					output = "LCD_Economy_Graph_5";
-					break;
-				default:
-					output = "OutOfOrder";
-					break;
-			}
+					string texture;
+					switch (menu.Decals)
+					{
+						case "BLUEPRINT":
+						case "BLUEPRINTS":
+							texture = GetBlueprintDecal(menu);
+							break;
+						case "GRAPH":
+						case "GRAPHS":
+							texture = GetGraphDecal(menu);
+							break;
+						default:
+							return;
+					}
+					float widthMod;
+					if (menu.Viewport.Width <= 500)
+						widthMod = 1.5f;
+					else
+						widthMod = 1;
 
-			return output;
-		}
+					DrawTexture(texture, position, new Vector2(menu.Viewport.Height * widthMod, menu.Viewport.Height - heightScale * 2), 0, Color.White);
+				}
 
 
-		// Get Blueprint Decal // - Selects a blueprint decal based on menu's current page
-		public string GetBlueprintDecal(Menu menu)
-		{
-			string output;
-			int decalID = menu.CurrentPage % 3;
+				// Get Graph Decal // - Selects a graph decal based on menu's current page
+				public string GetGraphDecal(Menu menu)
+				{
+					string output;
+					int decalID = menu.CurrentPage % 3;
 
-			switch (decalID)
-			{
-				case 0:
-					output = "LCD_Economy_SC_Blueprint";
-					break;
-				case 1:
-					output = "LCD_Economy_Blueprint_2";
-					break;
-				case 2:
-					output = "LCD_Economy_Blueprint_3";
-					break;
-				default:
-					output = "OutOfOrder";
-					break;
-			}
+					switch (decalID)
+					{
+						case 0:
+							output = "LCD_Economy_Graph_2";
+							break;
+						case 1:
+							output = "LCD_Economy_Graph_3";
+							break;
+						case 2:
+							output = "LCD_Economy_Graph_5";
+							break;
+						default:
+							output = "OutOfOrder";
+							break;
+					}
 
-			return output;
-		}
+					return output;
+				}
 
+
+				// Get Blueprint Decal // - Selects a blueprint decal based on menu's current page
+				public string GetBlueprintDecal(Menu menu)
+				{
+					string output;
+					int decalID = menu.CurrentPage % 3;
+
+					switch (decalID)
+					{
+						case 0:
+							output = "LCD_Economy_SC_Blueprint";
+							break;
+						case 1:
+							output = "LCD_Economy_Blueprint_2";
+							break;
+						case 2:
+							output = "LCD_Economy_Blueprint_3";
+							break;
+						default:
+							output = "OutOfOrder";
+							break;
+					}
+
+					return output;
+				}
+		*/
 
 		// DRAW ACTION TEXT //
 		void DrawActionText(string upperText, string lowerText, Vector2 position, float fontSize, Color fontColor)
