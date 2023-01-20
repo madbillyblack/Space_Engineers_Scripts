@@ -128,6 +128,18 @@ namespace IngameScript
 				case "{REACTOR}":
 					DrawPower(CIRCLE, position, scale, iconColor, buttonColor);
 					break;
+				case "{TARGET}":
+					DrawTarget(position, scale, iconColor);
+					break;
+				case "{TARGET_A}":
+					DrawTargetShape(TRIANGLE, position, scale * 0.8f, iconColor, buttonColor);
+					break;
+				case "{TARGET_B}":
+					DrawTargetShape(SQUARE, position, scale * 0.8f, iconColor, buttonColor);
+					break;
+				case "{TARGET_C}":
+					DrawTargetShape(CIRCLE, position, scale * 0.9f, iconColor, buttonColor);
+					break;
 				case "{<}":
 					DrawTriangle(arrowPos, arrowScale * 0.5f, iconColor, LEFT);
 					break;
@@ -675,6 +687,54 @@ namespace IngameScript
 
 			pos -= _shadowOffset;
 			DrawText(upperText, pos, fontSize, TextAlignment.CENTER, fontColor);
+		}
+
+
+		// DRAW TARGET //
+		void DrawTarget(Vector2 position, float scale, Color color)
+		{
+			Vector2 pos = position - new Vector2(scale * 0.25f, 0);
+
+			DrawTexture(RING, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, color);
+			pos += _shadowOffset;
+			DrawTexture(RING, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, color);
+
+			pos = position - new Vector2(scale * 0.3333f, 0);
+
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.6667f, scale * 0.02f), 0, color);
+
+			pos = position - new Vector2(scale * 0.01f, 0);
+
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.02f, scale * 0.6667f), 0, color);
+		}
+
+
+		// DRAW TARGET TYPE // - Draws crosshair icon with rectangle, triangle, or circle
+		void DrawTargetShape(string shape, Vector2 position, float scale, Color color, Color bgColor)
+		{
+			Vector2 pos = position - new Vector2(scale * 0.33f, 0);
+
+			float vertMod;
+			if (shape == CIRCLE)
+				vertMod = 1;
+			else
+				vertMod = 1.33f;
+
+			float size = scale * 0.67f;
+
+			DrawTexture(shape, pos, new Vector2(size, size * vertMod), 0, color);
+
+			pos = position;
+
+			float targetMod = 1.25f;
+
+			if (shape == TRIANGLE)
+			{
+				targetMod = 1;
+				pos += new Vector2(0, scale * 0.2f);
+			}
+
+			DrawTarget(pos, size * targetMod, bgColor);
 		}
 	}
 }

@@ -547,5 +547,51 @@ namespace IngameScript
 			pos -= _shadowOffset;
 			DrawText(upperText, pos, fontSize, TextAlignment.CENTER, fontColor);
 		}
+
+
+		void DrawTarget(Vector2 position, float scale, Color color)
+        {
+			Vector2 pos = position - new Vector2(scale * 0.25f, 0);
+
+			DrawTexture(RING, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, color);
+			pos += _shadowOffset;
+			DrawTexture(RING, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, color);
+
+			pos = position - new Vector2(scale * 0.3333f, 0);
+
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.6667f, scale * 0.01f), 0, color);
+
+			pos = position - new Vector2(scale * 0.005f, 0);
+
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.01f, scale * 0.6667f), 0, color);
+		}
+
+
+		void DrawTargetType(string shape, Vector2 position, float scale, Color color, Color bgColor)
+        {
+			Vector2 pos = position - new Vector2(scale * 0.33f, 0);
+			
+			float vertMod;
+			if (shape == CIRCLE)
+				vertMod = 1;
+			else
+				vertMod = 1.33f;
+
+			float size = scale * 0.67f;
+
+			DrawTexture(shape, pos, new Vector2(size, size * vertMod), 0, color);
+
+			pos = position;
+
+			float targetMod = 1.25f;
+
+			if (shape == TRIANGLE)
+            {
+				targetMod = 1;
+				pos += new Vector2(0, scale * 0.2f);
+			}
+			
+			DrawTarget(pos, size * targetMod, bgColor);
+		}
 	}
 }

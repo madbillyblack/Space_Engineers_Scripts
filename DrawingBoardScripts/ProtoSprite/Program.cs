@@ -105,11 +105,12 @@ namespace IngameScript
             DrawTexture(SQUARE, center - new Vector2(width * 0.5f, 0), new Vector2(scale, scale), 0, _buttonColor);
 
             //DrawThruster("+", center, scale, FONTSIZE, _bgColor, _buttonColor);
-            DrawMissile(center, scale, _bgColor, _buttonColor);
+            //DrawMissile(center, scale, _bgColor, _buttonColor);
 
+            //DrawTarget(center, scale, _bgColor);
+            DrawTargetType(CIRCLE, center, scale, _bgColor, _buttonColor);
 
             DrawTexture(RING, center - new Vector2(50, 0), new Vector2(100, 100), 0, Color.Red);
-
 
 
             Echo("... Thruster");

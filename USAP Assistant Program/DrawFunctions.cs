@@ -219,7 +219,14 @@ namespace IngameScript
 				pos += new Vector2(cellWidth, 0);
 			}
 
-			pos = position + new Vector2(0, buttonHeight * 3.33f);
+			float heightMod;
+
+			if (menu.Viewport.Width == menu.Viewport.Height)
+				heightMod = 3.1f;
+			else
+				heightMod = 3.3f;
+
+			pos = position + new Vector2(0, buttonHeight * heightMod);
 
 			// check if the button count is even, offset bottom row if so.
 			if (menu.MaxButtons % 2 > 0)
