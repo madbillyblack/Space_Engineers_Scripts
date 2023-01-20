@@ -1,0 +1,196 @@
+LARGE GRID
+///////////////////////////////////////////////////////////////////
+
+Programmable Block
+0. 512 x 320
+1. 512 x 204.8
+
+Helm
+0. 1024 x 341.3333
+1. 1024 x 409.6
+
+Cockpit 2
+0. 256 x 177.2308
+1. 256 x 192
+2. 256 x 192
+3. 256 x 146.2857
+4. 256 x 199.1111
+5. 256 x 199.1111
+
+Industrial Cockpit
+0. 256 x 153.6
+1. 256 x 179.2
+2. 256 x 179.2
+3. 256 x 153.6
+4. 256 x 153.6
+5. 204.8 x 256
+
+Control Seat
+0. 512 x 307.2
+1. 256 x 170.6667
+2. 256 x 170.6667
+3. 192 x 256
+4. 256 x 192
+
+Flight Seat
+0. 512 x 113.7778
+
+Control Station
+0. 512 x 307.2
+
+ATM
+0. 512 x 320
+1. 512 x 204.8
+2. 102.4 x 128
+
+Dispenser
+0. 1024 x 614.4
+
+Vending Machine
+0. 1024 x 614.4
+
+Store
+0. 512 x 320
+1. 512 x 204.8
+
+Contracts
+0. 512 x 320
+1. 512 x 204.8
+
+Medical Room
+0. 512 x 512
+1. 512 x 512
+
+Medical Station
+0. 512 x 307.2
+1. 512 x 307.2
+
+Survival Kit
+0. 512 x 512
+1. 512 x 512
+
+Sci-Fi Four-Button Panel
+0. 128 x 85.33334
+1. 128 x 85.33334
+2. 128 x 85.33334
+3. 128 x 85.33334
+
+Sci-Fi One-Button Terminal
+0. 256 x 192
+
+Transparent LCD
+0. 512 x 512
+
+LCD Panel
+0. 512 x 512
+
+Wide LCD Panel
+0. 1024 x 512
+
+Text Panel
+0. 512 x 307.2
+
+Corner LCD Top
+0. 512 x 73.14286
+
+Corner LCD Bottom
+0. 512 x 73.14286
+
+Corner LCD Flat Top
+0. 512 x 73.14286
+
+Corner LCD Flat Bottom
+0. 512 x 73.14286
+
+Sci-Fi LCD Panel 5x5
+0. 512 x 512
+
+Sci-Fi LCD Panel 3x3
+0. 512 x 512
+
+Sci-Fi LCD Panel 5x3
+0. 512 x 307.2
+
+Custom Turret Controller
+0. 512 x 365.7143
+1. 162.9091 x 256
+2. 160 x 256
+3. 160 x 256
+
+SMALL GRID
+///////////////////////////////////////////////////////////////////////////
+Programmable Block
+0. 256 x 256
+1. 256 x 93.09091
+
+Transparent LCD
+0. 512 x 512
+
+LCD Panel
+0. 512 x 512
+
+Wide LCD Panel
+0. 1024 x 512
+
+Text Panel
+0. 512 x 512
+
+Corner LCD Flat Bottom
+0. 512 x 204.8
+
+Corner LCD Flat Top
+0. 512 x 204.8
+
+Corner LCD Bottom
+0. 512 x 162.9091
+
+Corner LCD Top
+0. 512 x 162.9091
+
+Custom Turret Controller
+0. 256 x 204.8
+
+Control Seat
+0. 512 x 307.2
+
+Buggy Cockpit
+0. 256 x 153.6
+1. 256 x 153.6
+2. 256 x 153.6
+
+Rover Cockpit
+0. 256 x 153.6
+1. 256 x 153.6
+2. 256 x 153.6
+3. 256 x 192
+4. 256 x 192
+
+Helm
+0. 1024 x 341.3333
+1. 1024 x 409.6
+
+Industrial Cockpit
+0. 256 x 182.8571
+1. 256 x 170.6667
+2. 256 x 182.8571
+3. 256 x 128
+4. 106.6667 x 128
+
+Fighter Cockpit
+0. 256 x 153.6
+1. 128 x 85.33334
+2. 128 x 85.33334
+3. 256 x 109.7143
+4. 204.8 x 256
+5. 102.4 x 128
+
+Cockpit
+0. 256 x 256
+1. 256 x 192
+2. 256 x 192
+3. 256 x 139.6364
+
+Survival Kit
+0. 512 x 512
+1. 512 x 512
+

@@ -83,11 +83,12 @@ namespace IngameScript
         {
             _surface.WriteText("");
 
-            PrintBlockTypes();
+            //PrintBlockTypes();
             //PrintEntityIDs();
             //PrintDetected();
             //PrintFubar();
             //PrintSubTypes();
+            PrintScreenSize();
 
 
 
@@ -270,6 +271,45 @@ namespace IngameScript
             string fubar = _ini.Get("FUBAR", "SNAFU").ToString();
 
             _surface.WriteText("SITREP: " + fubar);
+        }
+
+        void PrintScreenSize()
+        {
+            string output = "";
+            foreach (IMyTerminalBlock block in _blocks)
+            {
+                int screenCount;
+                IMyTextSurfaceProvider screenBlock;
+
+                try
+                {
+                    screenBlock = block as IMyTextSurfaceProvider;
+                    screenCount = screenBlock.SurfaceCount;
+                }
+                catch
+                {
+                    screenCount = 0;
+                    screenBlock = null;
+                }
+
+                if (screenCount > 0)
+                {
+                    output += block.CustomName + "\n";
+
+                    for (int i = 0; i < screenCount; i++)
+                    {
+                        IMyTextSurface surface = screenBlock.GetSurface(i);
+                        RectangleF viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f, surface.SurfaceSize);
+
+                        output += i + ". " + viewport.Width + " x " + viewport.Height + "\n";
+                    }
+
+                    output += "\n";
+                }
+            }
+
+            Echo(output);
+            _surface.WriteText(output);
         }
     }
 }

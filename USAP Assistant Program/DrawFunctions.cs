@@ -96,6 +96,9 @@ namespace IngameScript
 			if (bigScreen)
 				fontSize *= 1.5f;
 
+			if (height == width)
+				fontSize *= 2;
+
 			bool widescreen = width >= height * 3;
 			
 			Color titleColor = menu.TitleColor;
@@ -148,15 +151,6 @@ namespace IngameScript
 						topLeft = center - new Vector2(width * 0.5f, buttonHeight * 2);
 					break;
 			}
-
-
-
-			/*
-			if (menu.Decals != "")
-			{
-				DrawDecals(menu, topLeft, buttonHeight, menu.Alignment, menu.Decals);
-			}
-			*/
 
 			// Menu Title
 			position = topLeft + new Vector2(10, 0);
