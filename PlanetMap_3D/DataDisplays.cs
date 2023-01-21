@@ -478,6 +478,50 @@ namespace IngameScript
         }
 
 
+		// DATA DISPLAY FROM STRING //
+		DataDisplay DataDisplayFromString(string dataID)
+        {
+			int index;
+
+			if (dataID == "")
+				index = 0;
+			else
+				index = ParseInt(dataID, int.MaxValue);
+
+			return GetDataDisplay(index);
+		}
+
+
+		// NEXT DATA PAGE //
+		void NextDataPage(string dataID, bool next = true)
+        {
+			DataDisplay display = DataDisplayFromString(dataID);
+
+			if (display == null)
+				return;
+
+			if (next)
+				display.NextPage();
+			else
+				display.PreviousPage();
+        }
+
+
+		// SCROLL DATA //
+		void ScrollData(string direction, string dataID)
+        {
+			DataDisplay display = DataDisplayFromString(dataID);
+
+			if (display == null)
+				return;
+
+			if (direction.ToUpper() == "UP")
+				display.ScrollUp();
+			else
+				display.ScrollDown();
+		}
+
+
 		// UPDATE DISPLAYS // Write current data to all Data Displays
 		void UpdateDisplays(bool fromCommand = false)
         {

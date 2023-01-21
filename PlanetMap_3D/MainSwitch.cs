@@ -244,6 +244,9 @@ namespace IngameScript
 					if (cmdArg.Contains("VANILLA") || cmdArg.Contains("PLANETS"))
 						LoadVanillaPlanets();
 					break;
+				case "SCROLL":
+					ScrollData(cmdArg, argData);
+					break;
 				case "CANCEL": //SCAN
 					CancelScan();
 					break;
@@ -279,10 +282,10 @@ namespace IngameScript
 					break;
 				case "MODE":
 					CycleModeForList(maps, state);
-					break;/*
+					break;
 				case "PAGE":
-					NextPage(state);
-					break;*/
+					NextDataPage(data, state);
+					break;
 				case "MENU":
 					NextMenu(data, state);
 					break;
