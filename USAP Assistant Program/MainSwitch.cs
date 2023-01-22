@@ -189,6 +189,12 @@ namespace IngameScript
                     case "BUTTON_7":
                         PressButton(cmdArg, 7);
                         break;
+                    case "BUTTON_8":
+                        PressButton(cmdArg, 8);
+                        break;
+                    case "BUTTON_9":
+                        PressButton(cmdArg, 9);
+                        break;
                     case "NEXT_MENU":
                         NextMenuPage(cmdArg);
                         break;

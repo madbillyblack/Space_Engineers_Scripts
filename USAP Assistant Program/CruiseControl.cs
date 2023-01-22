@@ -22,6 +22,8 @@ namespace IngameScript
 {
     partial class Program
     {
+        const float CRUISE_STEP = 10;
+
         float _totalThrust;
         static float _targetThrottle;
         double _thrustWeightRatio;
@@ -58,7 +60,12 @@ namespace IngameScript
         // THROTTLE UP //
         void ThrottleUp(string arg)
         {
-            float value = ParseFloat(arg, -1);
+            float value;
+
+            if (arg == "")
+                value = CRUISE_STEP;
+            else
+                value = ParseFloat(arg, -1);
 
             if (value > 0)
             {
@@ -78,7 +85,12 @@ namespace IngameScript
         // THROTTLE DOWN //
         void ThrottleDown(string arg)
         {
-            float value = ParseFloat(arg, -1);
+            float value;
+
+            if (arg == "")
+                value = CRUISE_STEP;
+            else
+                value = ParseFloat(arg, -1);
 
             if (value > 0)
             {
