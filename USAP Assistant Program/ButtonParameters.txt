@@ -35,7 +35,7 @@ Block name followed by optional argument (separated with ';')
 	+ "STOCKPILE"
 	- "FULL"
 
-	ACTUATOR
+	ACTUATOR/THRUSTER
 	+ ">{value}"
 	- "<{value}"
 
