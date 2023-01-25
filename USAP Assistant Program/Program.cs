@@ -659,6 +659,9 @@ namespace IngameScript
             else
                 CruiseThrustersOff();
 
+            AssignMultiTimers();
+
+
             AssignDisplays();
             PrintDisplays();
             AssignMenus();
