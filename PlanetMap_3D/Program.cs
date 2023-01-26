@@ -331,13 +331,15 @@ namespace IngameScript
 			Waypoint waypoint = GetWaypoint(waypointName);
 
 			if (waypoint != null)
-			{
-				AddMessage("Waypoint " + waypointName + " already exists! Please choose different name.");
-				return;
+            {
+				AddMessage("Waypoint " + waypointName + " updated.");
 			}
-
-			waypoint = new Waypoint();
-			waypoint.name = waypointName;
+			else
+            {
+				waypoint = new Waypoint();
+				waypoint.name = waypointName;
+			}
+				
 			waypoint.position = position;
 			waypoint.marker = markerType;
 			waypoint.isActive = true;

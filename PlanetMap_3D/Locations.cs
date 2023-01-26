@@ -210,8 +210,9 @@ namespace IngameScript
 				map.PlanetIndex = 0;
 			}
 
-			SelectPlanet(_planetList[map.PlanetIndex], map);
-        }
+			//SelectPlanet(_planetList[map.PlanetIndex], map);
+			map.SetActivePlanet(_planetList[map.PlanetIndex]);
+		}
 
 
 
@@ -309,10 +310,8 @@ namespace IngameScript
 			}
 
 			Waypoint waypoint = _waypointList[map.WaypointIndex];
-			map.Center = waypoint.position;
-			map.ActiveWaypoint = waypoint;
-			map.ActiveWaypointName = waypoint.name;
-			map.UpdateBasicParameters();
+			map.SetActiveWaypoint(waypoint);
+			//map.UpdateBasicParameters();
 			//MapToParameters(map);
 		}
 
@@ -329,7 +328,7 @@ namespace IngameScript
 
 
 
-
+		/*
 		// SELECT PLANET //
 		void SelectPlanet(Planet planet, StarMap map)
 		{
@@ -350,9 +349,9 @@ namespace IngameScript
 				map.FocalLength /= 2;
 			}
 
-			map.UpdateBasicParameters();
+			map.UpdateData();//UpdateBasicParameters();
 		}
-
+		*/
 
 		// GET DISTANCE //
 		float GetDistance(Location location)

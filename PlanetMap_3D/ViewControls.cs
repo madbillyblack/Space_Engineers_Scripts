@@ -206,7 +206,8 @@ namespace IngameScript
 					return;
 				}
 
-				SelectPlanet(_nearestPlanet, map);
+				//SelectPlanet(_nearestPlanet, map);
+				map.SetActivePlanet(_nearestPlanet);
 			}
 
 			Vector3 planetPos = map.ActivePlanet.position;

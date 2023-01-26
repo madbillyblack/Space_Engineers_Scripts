@@ -38,6 +38,7 @@ namespace IngameScript
 		const string PLANET_KEY = "Selected Planet";
 		const string WAYPOINT_KEY = "Selected Waypoint";
 		const string BRIGHTNESS_KEY = "Brightness";
+		const string FOCAL_KEY = "Focal Length";
 
 		const string ORIGIN = "(0,0,0)";
 		const string DV_MOTION = "0,0,0,0"; // Default string for Motion Vector: dX,dY,dZ,dAz
@@ -76,10 +77,14 @@ namespace IngameScript
 			public Planet ActivePlanet;
 			public Waypoint ActiveWaypoint;
 
+			MyIni Ini;
+
 			// Constructor
 			public StarMap(IMyTerminalBlock block, int screenIndex, string header)
 			{
 				Block = block;
+				Ini = GetIni(Block);
+
 				Header = header;
 				PlanetIndex = 0;
 				WaypointIndex = -1;
@@ -257,7 +262,7 @@ namespace IngameScript
 						break;
 				}
 
-				UpdateMotionParameters();
+				UpdateData();//UpdateMotionParameters();
 			}
 
 			// SPIN //
@@ -270,7 +275,7 @@ namespace IngameScript
 
 				dAz += deltaAz;
 
-				UpdateMotionParameters();
+				UpdateData();//UpdateMotionParameters();
 			}
 
 			// Zoom // - Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
@@ -342,7 +347,7 @@ namespace IngameScript
 				dZ = 0;
 				dAz = 0;
 
-				UpdateMotionParameters();
+				UpdateData();//UpdateMotionParameters();
 			}
 
 			// GPS State To Mode //
@@ -402,7 +407,7 @@ namespace IngameScript
 				Azimuth = 0;
 				Altitude = DV_ALTITUDE;
 
-				UpdateBasicParameters();
+				UpdateData();//UpdateBasicParameters();
 			}
 
 			// Brighten //
@@ -426,69 +431,120 @@ namespace IngameScript
 				SetMapKey(BRIGHTNESS_KEY, BrightnessMod.ToString());
 			}
 
+			// CYCLE ACTIVE WAYPOINT TYPE
+			public void CycleActiveWaypointType()
+			{
+				if (ActiveWaypoint == null || Center != ActiveWaypoint.position)
+				{
+					AddMessage("Please Align Map " + Number + " to desired waypoint before cycling waypoint type.");
+					return;
+				}
+
+				ActiveWaypoint.CycleType();
+			}
+
+			/*
 			// Update Motion Parameters //
 			void UpdateMotionParameters()
             {
 				// Interface directly with Ini to reduce complexity
-				MyIni ini = GetIni(Block);
+				//MyIni ini = GetIni(Block);
 
 				// Write Motion Parameters to 4D String Vector
 				string motionVector = dX.ToString() + ',' + dY.ToString() + ',' + dZ.ToString() + ',' + dAz.ToString();
-				ini.Set(Header, MOTION_KEY, motionVector);
+				Ini.Set(Header, MOTION_KEY, motionVector);
 
 				// Update Center and Azimuth for when map is stopped.
-				ini.Set(Header, CENTER_KEY, Vector3ToString(Center));
-				ini.Set(Header, AZ_KEY, Azimuth.ToString());
+				Ini.Set(Header, CENTER_KEY, Vector3ToString(Center));
+				Ini.Set(Header, AZ_KEY, Azimuth.ToString());
 
-				Block.CustomData = ini.ToString();
+				Block.CustomData = Ini.ToString();
             }
-
-			
-			public void CycleActiveWaypointType()
-            {
-				if(ActiveWaypoint == null || Center != ActiveWaypoint.position)
-                {
-					AddMessage("Please Align Map " + Number + " to desired waypoint before cycling waypoint type.");
-					return;
-                }
-
-				ActiveWaypoint.CycleType();
-            }
-			
-			
+			*/
 			// Update Basic Parameters //
 			public void UpdateBasicParameters()
             {
-				MyIni ini = GetIni(Block);
+				//MyIni ini = GetIni(Block);
 
-				ini.Set(Header, MODE_KEY, Mode);
-				ini.Set(Header, CENTER_KEY, Vector3ToString(Center));
-				ini.Set(Header, AZ_KEY, Azimuth.ToString());
-				ini.Set(Header, ALT_KEY, Altitude.ToString());
-				ini.Set(Header, ZOOM_KEY, FocalLength.ToString());
-				ini.Set(Header, RADIUS_KEY, RotationalRadius.ToString());
-				ini.Set(Header, INFO_KEY, ShowInfo.ToString());
-				ini.Set(Header, GPS_KEY, GpsMode);
-				ini.Set(Header, SHIP_KEY, ShowShip.ToString());
-				ini.Set(Header, PLANET_KEY, ActivePlanetName);
-				ini.Set(Header, WAYPOINT_KEY, ActiveWaypointName);
-				ini.Set(Header, BRIGHTNESS_KEY, BrightnessMod.ToString());
+				Ini.Set(Header, MODE_KEY, Mode);
+				Ini.Set(Header, CENTER_KEY, Vector3ToString(Center));
+				Ini.Set(Header, AZ_KEY, Azimuth.ToString());
+				Ini.Set(Header, ALT_KEY, Altitude.ToString());
+				Ini.Set(Header, ZOOM_KEY, FocalLength.ToString());
+				Ini.Set(Header, RADIUS_KEY, RotationalRadius.ToString());
+				Ini.Set(Header, INFO_KEY, ShowInfo.ToString());
+				Ini.Set(Header, GPS_KEY, GpsMode);
+				Ini.Set(Header, SHIP_KEY, ShowShip.ToString());
+				Ini.Set(Header, PLANET_KEY, ActivePlanetName);
+				Ini.Set(Header, WAYPOINT_KEY, ActiveWaypointName);
+				Ini.Set(Header, BRIGHTNESS_KEY, BrightnessMod.ToString());
+				Ini.Set(Header, FOCAL_KEY, FocalLength.ToString());
 
-				Block.CustomData = ini.ToString();
+				Block.CustomData = Ini.ToString();
 			}
+
+			public void UpdateData()
+            {
+				Block.CustomData = Ini.ToString();
+            }
 
 			public void SetMapKey(string key, string value)
             {
-				SetKey(Block, Header, key, value);
+				Ini.Set(Header, key, value);
+				UpdateData();
             }
 
-			public string GetMapKey(string key, string value)
+			public string GetMapKey(string key, string defaultValue)
             {
-				return GetKey(Block, Header, key, value);
+				EnsureMapKey(key, defaultValue);
+				return Ini.Get(Header, key).ToString();
             }
 
 
+			// ENSURE KEY 
+			void EnsureMapKey(string key, string defaultVal)
+			{
+	
+				if (!Ini.ContainsKey(Header, key))
+					SetMapKey(key, defaultVal);
+			}
 
+
+			// SET ACTIVE PLANET //
+			public void SetActivePlanet(Planet planet)
+            {
+				ActivePlanet = planet;
+				ActivePlanetName = planet.name;
+				Ini.Set(Header, PLANET_KEY, ActivePlanetName);
+
+				Center = planet.position;
+
+				if (planet.radius < 27000)
+				{
+					FocalLength *= 4;
+				}
+				else if (planet.radius < 40000)
+				{
+					FocalLength *= 3;
+					FocalLength /= 2;
+				}
+
+				UpdateBasicParameters();
+			}
+
+
+			// SET ACTIVE WAYPOINT //
+			public void SetActiveWaypoint(Waypoint waypoint)
+            {
+				ActiveWaypoint = waypoint;
+				ActiveWaypointName = waypoint.name;
+				Ini.Set(Header, WAYPOINT_KEY, ActiveWaypointName);
+
+				Center = waypoint.position;
+				ActiveWaypoint = waypoint;
+				ActiveWaypointName = waypoint.name;
+				UpdateBasicParameters();
+			}
 		}
 
 		// NON CLASS FUNCTIONS // -----------------------------------------------------------------------------------------------------------------------------------------------------
