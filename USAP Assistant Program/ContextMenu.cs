@@ -51,7 +51,7 @@ namespace IngameScript
 
         static Dictionary<int, Menu> _menus;
         //static bool _buttonsLit = false;
-        string _nextCommand;
+        static string _nextCommand;
         //static bool _menusAssigned = false;
 
         int _currentMenuKey; // Key for current menu to be drawn
@@ -944,7 +944,7 @@ namespace IngameScript
 
 
         // RUN NEXT // - set an argument to be run by this program on the next activation
-        void RunNext(string arg)
+        static void RunNext(string arg)
         {
             // Don't allow user to call menu button commands
             if (arg.ToUpper().StartsWith("BUTTON"))

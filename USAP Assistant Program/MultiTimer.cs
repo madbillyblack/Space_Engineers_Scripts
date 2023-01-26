@@ -124,6 +124,32 @@ namespace IngameScript
                 Init(action, programBlock);
             }
 
+            // ACTIVATE
+            public void Activate()
+            {
+                if(ProgramBlock != null)
+                {
+                    if (ProgramBlock == _Me)
+                        RunNext(Action);
+                    else
+                        ProgramBlock.TryRun(Action);
+                }
+                else if(Blocks.Count > 0)
+                {
+                    foreach (IMyTerminalBlock block in Blocks)
+                    {
+                        try
+                        {
+                            block.GetActionWithName(Action).Apply(block);
+                        }
+                        catch
+                        {
+                            _statusMessage += block.CustomName + " cannot perform action \"" + Action + "\"!\n";
+                        }
+                    }
+                }
+            }
+
             // INIT
             void Init(string action, IMyProgrammableBlock programBlock = null)
             {
@@ -149,7 +175,7 @@ namespace IngameScript
 
             foreach(IMyTimerBlock timer in timers)
             {
-                if(timer.CustomName.ToUpper().Contains(MULTI_TAG))
+                if(timer.CustomName.ToUpper().Contains(MULTI_TAG) && SameGridID(timer))
                 {
                     MultiTimer multiTimer = new MultiTimer(timer);
                     AssignPhases(multiTimer);

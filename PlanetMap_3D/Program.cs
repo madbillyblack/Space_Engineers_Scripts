@@ -49,7 +49,6 @@ namespace IngameScript
 		const int DV_ALTITUDE = -15; //Default Altitude (angle)
 		const int BRIGHTNESS_LIMIT = 4;
 
-
 		// THERE IS NO REASON TO ALTER ANYTHING BELOW THIS LINE! //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -294,7 +293,7 @@ namespace IngameScript
 			string[] waypointData = clipboard.Split(':');
 			if (waypointData.Length < 6)
 			{
-				AddMessage("Does not match GPS format:/nGPS:<name>:X:Y:Z:<color>:");
+				//AddMessage("Does not match GPS format:/nGPS:<name>:X:Y:Z:<color>:");
 				return;
 			}
 

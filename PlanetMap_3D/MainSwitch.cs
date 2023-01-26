@@ -247,6 +247,9 @@ namespace IngameScript
 				case "SCROLL":
 					ScrollData(cmdArg, argData);
 					break;
+				case "IMPORT":
+					ImportCommand(cmdArg);
+					break;
 				case "CANCEL": //SCAN
 					CancelScan();
 					break;
@@ -291,6 +294,24 @@ namespace IngameScript
 					break;
 			}
 		}
+
+
+		// IMPORT COMMAND //
+		void ImportCommand(string type)
+        {
+			string typeSingle;
+
+			if (type == "")
+				typeSingle = "WAYPOINT";
+			else if (type.ToUpper().EndsWith("S"))
+				typeSingle = type.ToUpper().Substring(0, type.Length - 1);
+			else
+				typeSingle = type.ToUpper();
+
+			AddMessage("Importing Coordinates of type: " + typeSingle);
+
+			ImportFromLCDs(typeSingle);
+        }
 
 
 		// BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////

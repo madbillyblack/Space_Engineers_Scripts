@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program
     {
 		const string SYNC_TAG = "[Map Sync]"; //Tag used to indicate master sync computer.
-
+		const string IMPORT_TAG = "[IMPORT]";
 
 		// SYNC // Switch function for all sync commands
 		void sync(string cmdArg, string argData)
@@ -267,33 +267,38 @@ namespace IngameScript
 				return;
 			}
 
+			ImportCoordinates(display.Surface);
+
+			display.Surface.WriteText(display.BuildPageHeader(GPS_INPUT) + BELOW_LINE);
+		}
+
+
+		// IMPORT FROM LCDS //
+		void ImportFromLCDs(string type)
+        {
+			List<IMyTextPanel> lcds = new List<IMyTextPanel>();
+			GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(lcds);
+
+			if (lcds.Count < 1)
+				return;
+
+			foreach (IMyTextPanel lcd in lcds)
+				if (lcd.CustomName.ToUpper().Contains(IMPORT_TAG))
+					ImportCoordinates(lcd, type);
+        }
+
+
+		void ImportCoordinates(IMyTextSurface surface, string type="WAYPOINT")
+        {
 			StringBuilder inputText = new StringBuilder();
-			display.Surface.ReadText(inputText, false);
+			surface.ReadText(inputText, false);
 			string[] inputs = inputText.ToString().Split('\n');
 
 			List<string> outputs = new List<string>();
 
 			foreach (string entry in inputs)
-			{
-				if (entry.StartsWith("GPS:"))
-				{
-					ClipboardToLog("WAYPOINT", entry);
-				}
-				else
-				{
-					outputs.Add(entry);
-				}
-			}
-
-			/*
-			string output = "";
-			foreach (string item in outputs)
-			{
-				output += item + "\n";
-			}
-			*/
-			
-			display.Surface.WriteText(display.BuildPageHeader(GPS_INPUT) + BELOW_LINE);
+				if (entry.Contains("GPS:"))
+					ClipboardToLog(type, entry);
 		}
 	}
 }
