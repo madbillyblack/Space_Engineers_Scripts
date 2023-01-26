@@ -39,9 +39,6 @@ namespace IngameScript
 		const string WAYPOINT_KEY = "Selected Waypoint";
 		const string BRIGHTNESS_KEY = "Brightness";
 
-
-		
-
 		const string ORIGIN = "(0,0,0)";
 		const string DV_MOTION = "0,0,0,0"; // Default string for Motion Vector: dX,dY,dZ,dAz
 		static List<StarMap> _mapList;
@@ -446,6 +443,19 @@ namespace IngameScript
 				Block.CustomData = ini.ToString();
             }
 
+			
+			public void CycleActiveWaypointType()
+            {
+				if(ActiveWaypoint == null || Center != ActiveWaypoint.position)
+                {
+					AddMessage("Please Align Map " + Number + " to desired waypoint before cycling waypoint type.");
+					return;
+                }
+
+				ActiveWaypoint.CycleType();
+            }
+			
+			
 			// Update Basic Parameters //
 			public void UpdateBasicParameters()
             {
@@ -476,6 +486,9 @@ namespace IngameScript
             {
 				return GetKey(Block, Header, key, value);
             }
+
+
+
 		}
 
 		// NON CLASS FUNCTIONS // -----------------------------------------------------------------------------------------------------------------------------------------------------

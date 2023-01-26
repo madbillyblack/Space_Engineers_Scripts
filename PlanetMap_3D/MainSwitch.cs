@@ -125,8 +125,11 @@ namespace IngameScript
 						Show(maps, cmdArg, 3);
 					}
 					break;
-				case "CYCLE"://GPS
-					cycleGPSForList(maps);
+				case "CYCLE":
+					if (cmdArg == "GPS")
+						cycleGPSForList(maps);
+					else if (cmdArg.Contains("TYPE"))
+						maps[0].CycleActiveWaypointType();
 					break;
 				case "NEXT":
 					nextLast(maps, cmdArg, argData,true);

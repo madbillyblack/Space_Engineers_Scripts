@@ -596,24 +596,24 @@ namespace IngameScript
 					String markerShape = "";
 					switch (waypoint.marker.ToUpper())
 					{
-						case "STATION":
+						case STATION:
 							markerShape = "CircleHollow";
 							break;
-						case "BASE":
+						case BASE:
 							markerShape = "SemiCircle";
 							markerScale *= 1.25f;
 							//startPosition += new Vector2(0,iconSize);
 							break;
-						case "LANDMARK":
+						case LANDMARK:
 							markerShape = "Triangle";
 							markerColor = new Color(48, 48, 48);
 							break;
-						case "HAZARD":
+						case HAZARD:
 							markerShape = "SquareTapered";
 							markerColor = Color.Red;
 							rotationMod = (float)Math.PI / 4;
 							break;
-						case "ASTEROID":
+						case ASTEROID:
 							markerShape = "SquareTapered";
 							markerColor = new Color(48, 32, 32);
 							markerScale *= 0.9f;
@@ -648,20 +648,20 @@ namespace IngameScript
 						// Draw secondary features for special markers
 						switch (waypoint.marker.ToUpper())
 						{
-							case "STATION":
+							case STATION:
 								position += new Vector2(iconSize / 2 - iconSize / 20, 0);
 								DrawTexture("SquareSimple", position, new Vector2(iconSize / 10, iconSize), rotationMod, markerColor);
 								break;
-							case "HAZARD":
+							case HAZARD:
 								position += new Vector2(iconSize / 2 - iconSize / 20, -iconSize * 0.85f);
 								DrawText("!", position, fontSize * 1.2f * gpsScale, TextAlignment.CENTER, Color.White);
 								break;
-							case "BASE":
+							case BASE:
 								position += new Vector2(iconSize / 6, -iconSize / 12);
 								DrawTexture("SemiCircle", position, new Vector2(iconSize * 1.15f, iconSize * 1.15f), rotationMod, new Color(0, 64, 64) * map.BrightnessMod);
 								startPosition -= new Vector2(0, iconSize * 0.4f);
 								break;
-							case "ASTEROID":
+							case ASTEROID:
 								position += new Vector2(iconSize / 2 - iconSize / 20, 0);
 								DrawTexture("SquareTapered", position, markerScale, rotationMod, new Color(32, 32, 32) * map.BrightnessMod);
 								position -= new Vector2(iconSize - iconSize / 10, 0);

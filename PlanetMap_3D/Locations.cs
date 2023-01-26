@@ -33,7 +33,13 @@ namespace IngameScript
 		const string PERTAM = "PERTAM;(-3967231.50,-32231.50,-767231.50);30066.50;BROWN;1";
 
 		const int STRING_LENGTH = 5; // Length of Planet Data String
-		
+
+		const string WAYPOINT = "WAYPOINT";
+		const string BASE = "BASE";
+		const string STATION = "STATION";
+		const string HAZARD = "HAZARD";
+		const string LANDMARK = "LANDMARK";
+		const string ASTEROID = "ASTEROID";
 
 		static List<Planet> _planetList;
 		static List<Planet> _unchartedList;
@@ -63,6 +69,33 @@ namespace IngameScript
 			{
 				transformedCoords = new List<Vector3>();
 			}
+
+			public void CycleType()
+            {
+				switch(marker)
+                {
+					case WAYPOINT:
+						marker = ASTEROID;
+						break;
+					case ASTEROID:
+						marker = BASE;
+						break;
+					case BASE:
+						marker = STATION;
+						break;
+					case STATION:
+						marker = HAZARD;
+						break;
+					case HAZARD:
+						marker = LANDMARK;
+						break;
+					case LANDMARK:
+					default:
+						marker = WAYPOINT;
+						break;
+						
+                }
+            }
 		}
 
 
