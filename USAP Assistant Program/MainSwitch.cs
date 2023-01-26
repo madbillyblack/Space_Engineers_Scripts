@@ -204,6 +204,9 @@ namespace IngameScript
                     case "DRAW_MENUS":
                         DrawAllMenus();
                         break;
+                    case "MULTITIMER":
+                        CallMultiTimer(cmdArg);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;

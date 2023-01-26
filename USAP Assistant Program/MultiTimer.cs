@@ -22,10 +22,12 @@ namespace IngameScript
 {
     partial class Program
     {
-        const string MULTI_TAG = "[MULTI:";
+        const string MULTI_TAG = "[MT:";
         const string MULTI_HEADER = DASHES + " USAP: Multi-Timer " + DASHES;
         const string PHASE_HEADER = "Timer Phase ";
         const string PHASE_KEY = "Phase Count";
+        const string CURRENT_KEY = "Current Phase";
+        const string ERROR = "ERROR";
         Dictionary<string, MultiTimer> _multiTimers;
 
         // MULTI TIMER //
@@ -34,7 +36,18 @@ namespace IngameScript
             public IMyTimerBlock Block;
             public string Tag;
             public int PhaseCount;
-            public Dictionary<string, Phase> Phases;
+            public Dictionary<int, Phase> Phases;
+
+            int currentPhase;
+            public int CurrentPhase
+            {
+                get { return currentPhase; }
+                set
+                {
+                    currentPhase = value;
+                    SetKey(MULTI_HEADER, CURRENT_KEY, currentPhase.ToString());
+                }
+            }
 
             MyIni Ini;
 
@@ -42,8 +55,13 @@ namespace IngameScript
             {
                 Block = timer;
                 Ini = GetIni(Block as IMyTerminalBlock);
+                TagFromBlockName();
 
                 PhaseCount = ParseInt(GetKey(MULTI_HEADER, PHASE_KEY, "2"), 2);
+                currentPhase = ParseInt(GetKey(MULTI_HEADER, CURRENT_KEY, "0"), 0);
+
+                if (currentPhase >= PhaseCount)
+                    currentPhase = 0;
             }
 
             //ENSURE KEY
@@ -72,6 +90,59 @@ namespace IngameScript
             {
                 Block.CustomData = Ini.ToString();
             }
+
+            // INCRIMENT PHASE
+            void IncrementPhase()
+            {
+                CurrentPhase++;
+
+                if (CurrentPhase >= PhaseCount)
+                    CurrentPhase = 0;
+            }
+
+            // TIMER CALL
+            public void TimerCall()
+            {
+                Phase phase = Phases[CurrentPhase];
+                phase.Activate();
+
+                bool goToNext = phase.StartNext;
+                
+                IncrementPhase();
+
+                if(goToNext)
+                {
+                    Block.TriggerDelay = Phases[CurrentPhase].Duration;
+                    Block.StartCountdown();
+                }
+            }
+
+
+            void TagFromBlockName()
+            {
+                string fragment = MULTI_TAG.Substring(1);//Tag without opening backet.
+
+                string[] firstPass = Block.CustomName.Split('[');
+                {
+                    for(int i = 1; i < firstPass.Length; i++)
+                    {
+                        string[] secondPass = firstPass[i].Split(']');
+                        
+                        for(int c = 0; c < secondPass.Length; c++)
+                        {
+                            if(secondPass[c].Contains(fragment))
+                            {
+                                string[] thirdPass = secondPass[c].Split(':');
+
+                                if (thirdPass.Length > 1)
+                                    Tag = thirdPass[1].Trim().ToUpper();
+                                else
+                                    Tag = ERROR;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
 
@@ -81,10 +152,11 @@ namespace IngameScript
             public int Number;
             public int ActionCount;
             public float Duration;
+            public bool StartNext;
             public List<ActionBlock> Actions;
             public string Header;
 
-            public Phase(MultiTimer timer, int number)
+            public Phase(MultiTimer timer, int number, bool defaultNext)
             {
                 Actions = new List<ActionBlock>();
 
@@ -93,8 +165,19 @@ namespace IngameScript
 
                 Duration = ParseFloat(timer.GetKey(Header, "Duration", timer.Block.TriggerDelay.ToString("0.##")), timer.Block.TriggerDelay);
                 ActionCount = ParseInt(timer.GetKey(Header, "Action Count", "1"), 1);
+                StartNext = ParseBool(timer.GetKey(Header, "Start Next Phase", defaultNext.ToString()));
             }
 
+            
+            // ACTIVATE
+            public void Activate()
+            {
+                if (Actions.Count < 1)
+                    return;
+
+                foreach (ActionBlock action in Actions)
+                    action.Activate();
+            }
         }
 
 
@@ -178,9 +261,12 @@ namespace IngameScript
                 if(timer.CustomName.ToUpper().Contains(MULTI_TAG) && SameGridID(timer))
                 {
                     MultiTimer multiTimer = new MultiTimer(timer);
-                    AssignPhases(multiTimer);
 
-                    _multiTimers.Add(multiTimer.Tag, multiTimer); // Use Tag parameter as dictionary key.
+                    if(multiTimer.Tag != ERROR)
+                    {
+                        AssignPhases(multiTimer);
+                        _multiTimers.Add(multiTimer.Tag, multiTimer); // Use Tag parameter as dictionary key.
+                    }
                 }
             }
         }
@@ -193,10 +279,12 @@ namespace IngameScript
 
             for(int i = 0; i < count; i++)
             {
-                Phase phase = new Phase(timer, i);
+                bool defaultNext = i < count - 1;
+
+                Phase phase = new Phase(timer, i, defaultNext);
                 AssignActions(timer, phase);
 
-                timer.Phases.Add(i.ToString(), phase);
+                timer.Phases.Add(i, phase);
             }
         }
 
@@ -275,6 +363,35 @@ namespace IngameScript
                 return null;
 
             return new ActionBlock(block, action);
+        }
+
+
+        // GET MULTI TIMER //
+        MultiTimer GetMultiTimer(string tag)
+        {
+            string key = tag.Trim().ToUpper();
+
+            if (_multiTimers.ContainsKey(key))
+            {
+                return _multiTimers[key];
+            }
+
+            return null;
+        }
+
+
+        // CALL MULTI TIMER //
+        void CallMultiTimer(string tag)
+        {
+            MultiTimer timer = GetMultiTimer(tag);
+
+            if(timer == null)
+            {
+                _statusMessage += "No Timer with tag \"" + tag + "\" found!";
+                return;
+            }
+
+            timer.TimerCall();
         }
     }
 }
