@@ -268,7 +268,7 @@ namespace IngameScript
             Echo("Displays: " + _displays.Count);
 
             //MenuDebug();
-            MultiTimerDebug();
+            //MultiTimerDebug();
 
             // If cargo successfully unloaded, increment load count.
             if (_unloaded)
@@ -300,8 +300,6 @@ namespace IngameScript
                     CheckGravity();
                 }
             }
-
-            CheckLitButtons();
 
             PrintDisplays();
         }
@@ -664,8 +662,6 @@ namespace IngameScript
 
             AssignDisplays();
             PrintDisplays();
-            AssignMenus();
-            //DrawAllMenus();
         }
 
 

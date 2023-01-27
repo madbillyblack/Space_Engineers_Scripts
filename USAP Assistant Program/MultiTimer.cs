@@ -29,6 +29,7 @@ namespace IngameScript
         const string CURRENT_KEY = "Current Phase";
         const string ERROR = "ERROR";
         Dictionary<string, MultiTimer> _multiTimers;
+        static string _nextCommand;
 
         // MULTI TIMER //
         public class MultiTimer
@@ -421,15 +422,15 @@ namespace IngameScript
                 MultiTimer timer = _multiTimers[tag];
 
                 multiString += "\n * " + tag + "\n   - Phases: " + timer.PhaseCount;
-                Echo("A");
+                
                 foreach (int key in timer.Phases.Keys)
                 {
                     Phase phase = timer.Phases[key];
                     multiString += "\n    Phase " + phase.Number;
-                    Echo("B");
+                    
                     foreach (ActionBlock actionBlock in phase.Actions)
                     {
-                        Echo("C");
+                        
                         if (actionBlock.Blocks.Count > 0)
                             foreach (IMyTerminalBlock block in actionBlock.Blocks)
                                 multiString += "\n      " + block.CustomName + ":" + actionBlock.Action;
@@ -437,11 +438,15 @@ namespace IngameScript
                             multiString += "\n      " + actionBlock.ProgramBlock.CustomName + ":" + actionBlock.Action;
                     }
                 }
-
-
             }
 
             Echo(multiString);
+        }
+
+        // RUN NEXT // - set an argument to be run by this program on the next activation
+        static void RunNext(string arg)
+        {
+            _nextCommand = arg;
         }
     }
 }

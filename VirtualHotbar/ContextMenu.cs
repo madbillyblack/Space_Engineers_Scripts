@@ -826,14 +826,14 @@ namespace IngameScript
         {
             /*
             if (!_buttonsLit)
-                return;*/
+                return;
 
             //Run previously stored command
             if(_nextCommand != "")
             {
                 MainSwitch(_nextCommand);
                 _nextCommand = "";
-            }
+            }*/
 
             foreach(int menuKey in _menus.Keys)
             {

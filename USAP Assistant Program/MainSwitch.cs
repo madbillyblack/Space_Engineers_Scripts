@@ -168,42 +168,6 @@ namespace IngameScript
                     case "THROTTLE_DOWN":
                         ThrottleDown(cmdArg);
                         break;
-                    case "BUTTON_1":
-                        PressButton(cmdArg, 1);
-                        break;
-                    case "BUTTON_2":
-                        PressButton(cmdArg, 2);
-                        break;
-                    case "BUTTON_3":
-                        PressButton(cmdArg, 3);
-                        break;
-                    case "BUTTON_4":
-                        PressButton(cmdArg, 4);
-                        break;
-                    case "BUTTON_5":
-                        PressButton(cmdArg, 5);
-                        break;
-                    case "BUTTON_6":
-                        PressButton(cmdArg, 6);
-                        break;
-                    case "BUTTON_7":
-                        PressButton(cmdArg, 7);
-                        break;
-                    case "BUTTON_8":
-                        PressButton(cmdArg, 8);
-                        break;
-                    case "BUTTON_9":
-                        PressButton(cmdArg, 9);
-                        break;
-                    case "NEXT_MENU":
-                        NextMenuPage(cmdArg);
-                        break;
-                    case "PREVIOUS_MENU":
-                        PreviousMenuPage(cmdArg);
-                        break;
-                    case "DRAW_MENUS":
-                        DrawAllMenus();
-                        break;
                     case "MULTITIMER":
                         CallMultiTimer(cmdArg);
                         break;

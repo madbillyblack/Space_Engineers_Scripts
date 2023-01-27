@@ -49,6 +49,7 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             PrintHeader();
+            CheckLitButtons();
 
             if (_statusMessage != "")
                 Echo(DASHES + " MESSAGES " + DASHES + "\n" + _statusMessage);
@@ -88,7 +89,7 @@ namespace IngameScript
                 Menu menu = _menus[key];
 
                 Echo("MENU " + menu.IDNumber + DASHES);
-                Echo(" * Pages: " + );
+                Echo(" * Pages: " + menu.PageCount);
                 foreach(int pageKey in menu.Pages.Keys)
                 {
                     MenuPage page = menu.Pages[pageKey];
