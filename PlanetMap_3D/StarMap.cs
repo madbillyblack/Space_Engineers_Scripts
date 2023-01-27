@@ -77,6 +77,8 @@ namespace IngameScript
 			public Planet ActivePlanet;
 			public Waypoint ActiveWaypoint;
 
+			public float ZoomMod;
+
 			MyIni Ini;
 
 			// Constructor
@@ -99,6 +101,8 @@ namespace IngameScript
 
 				FocalLength = ParseInt(GetMapKey(ZOOM_KEY, DV_FOCAL.ToString()), DV_FOCAL);
 				RotationalRadius = ParseInt(GetMapKey(RADIUS_KEY, DV_RADIUS.ToString()), DV_RADIUS);
+
+				ZoomMod = 1;
 
 				// Get movement velocities
 				string[] movements = GetMapKey(MOTION_KEY, DV_MOTION).Split(',');
@@ -281,6 +285,16 @@ namespace IngameScript
 			// Zoom // - Changes Focal Length of Maps. true => Zoom In / false => Zoom Out
 			public void Zoom(bool zoomIn)
 			{
+				if(Mode == "ORBIT")
+                {
+					if (zoomIn)
+						ZoomMod /= ZOOM_STEP;
+					else
+						ZoomMod *= ZOOM_STEP;
+
+					return;
+                }
+
 				int doF = FocalLength;
 				float newScale;
 

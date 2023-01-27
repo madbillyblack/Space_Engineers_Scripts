@@ -32,8 +32,8 @@ namespace IngameScript
 				cmdArg = cmds[1];
 
 			// Account for single instance commands with underscores
-			if (cmdArg == "RADIUS" || cmdArg == "SHIP")//|| cmdArg == "JUMP")
-				command = args[0];
+			//if (cmdArg == "RADIUS" || cmdArg == "SHIP")//|| cmdArg == "JUMP")
+				//command = args[0];
 
 			string argData = "";
 			//_statusMessage = "";
@@ -116,6 +116,7 @@ namespace IngameScript
 					}
 					break;
 				case "TOGGLE":
+					AddMessage("TOGGLING");
 					if (cmdArg == "WAYPOINT")
 					{
 						SetWaypointState(argData, 2);

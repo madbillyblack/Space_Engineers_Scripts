@@ -80,7 +80,21 @@ namespace IngameScript
         // PRINT STATS //
         void PrintStats()
         {
-            
+            if (_menus.Count < 1)
+                Echo("NO MENUS FOUND");
+
+            foreach(int key in _menus.Keys)
+            {
+                Menu menu = _menus[key];
+
+                Echo("MENU " + menu.IDNumber + DASHES);
+                Echo(" * Pages: " + );
+                foreach(int pageKey in menu.Pages.Keys)
+                {
+                    MenuPage page = menu.Pages[pageKey];
+
+                }
+            }
         }
     }
 }

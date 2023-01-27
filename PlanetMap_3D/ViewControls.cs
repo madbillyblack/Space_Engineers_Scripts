@@ -212,16 +212,19 @@ namespace IngameScript
 
 			Vector3 planetPos = map.ActivePlanet.position;
 
-			map.Center = (_myPos + planetPos) / 2;
+			map.Center = (_myPos + planetPos) *0.75f;
+			//map.Center = _myPos;
+
 			map.Altitude = 0;
 			Vector3 orbit = _myPos - planetPos;
-			map.Azimuth = (int)ToDegrees((float)Math.Abs(Math.Atan2(orbit.Z, orbit.X) + (float)Math.PI * 0.75f)); //  )
+			map.Azimuth = (int)ToDegrees((float)Math.Abs(Math.Atan2(orbit.Z, orbit.X) + PI * 0.75f)); //  )
 
 			//Get largest component distance between ship and planet.
 			//double span = Math.Sqrt(orbit.LengthSquared() - Math.Pow(orbit.Y,2));
 			float span = orbit.Length();
 
-			double newRadius = 1.25f * map.FocalLength * span / map.Viewport.Height;
+			map.FocalLength = DV_FOCAL;
+			double newRadius = 1.25f * map.FocalLength * span / map.Viewport.Height * map.ZoomMod;
 
 			if (newRadius > MAX_VALUE || newRadius < 0)
 			{
@@ -231,6 +234,8 @@ namespace IngameScript
 			}
 
 			map.RotationalRadius = (int)newRadius;
+
+			map.UpdateBasicParameters();
 		}
 
 
@@ -292,6 +297,7 @@ namespace IngameScript
 			}
 
 			map.Mode = mapMode;
+			map.SetMapKey(MODE_KEY, mapMode);
 		}
 
 

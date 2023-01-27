@@ -232,6 +232,9 @@ namespace IngameScript
 			map.GpsState++;
 			if (map.GpsState > 2)
 				map.GpsState = 0;
+
+			map.Mode = map.GpsStateToMode();
+			map.SetMapKey(GPS_KEY, map.Mode);
 		}
 
 		void cycleGPSForList(List<StarMap> maps)
@@ -322,6 +325,8 @@ namespace IngameScript
 		// LOG WAYPOINT //
 		public void LogWaypoint(String waypointName, Vector3 position, String markerType, String waypointColor)
 		{
+			
+
 			if (waypointName == "")
 			{
 				AddMessage("No Waypoint Name Provided! Please Try Again.");
@@ -330,22 +335,27 @@ namespace IngameScript
 
 			Waypoint waypoint = GetWaypoint(waypointName);
 
-			if (waypoint != null)
-            {
-				AddMessage("Waypoint " + waypointName + " updated.");
-			}
-			else
+			bool newWaypoint = waypoint == null;
+
+			if (newWaypoint)			
             {
 				waypoint = new Waypoint();
 				waypoint.name = waypointName;
 			}
-				
+			else
+			{
+				AddMessage("Waypoint " + waypointName + " updated.");
+			}
+
 			waypoint.position = position;
 			waypoint.marker = markerType;
 			waypoint.isActive = true;
 			waypoint.color = waypointColor;
 
-			_waypointList.Add(waypoint);
+
+			if(newWaypoint)
+				_waypointList.Add(waypoint);
+
 			DataToLog();
 			foreach (StarMap map in _mapList)
 			{

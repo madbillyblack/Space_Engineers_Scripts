@@ -22,6 +22,8 @@ namespace IngameScript
 {
     partial class Program
     {
+        const float PI = (float)Math.PI;
+
         // HAS SURFACES //
         static int GetSurfaceCount(IMyTerminalBlock block)
         {
