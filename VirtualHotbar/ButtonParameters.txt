@@ -1,0 +1,90 @@
+TOGGLE STRING
+Block name followed by optional argument (separated with ';')
+
+	Normal (+) / Inverted (-)
+
+	NORMAL
+	+ ""
+	- "OFF"
+
+	VENT
+	+ "PRESSURIZED"
+	- "DEPRESSURIZED"
+
+	DOOR
+	+ "OPEN"
+	- "CLOSED"
+
+	SENSOR
+	+ "DETECTED"
+	- "NOT DETECTED"
+
+	LANDING GEAR / CONNECTOR
+	+ "LOCKED"
+	- "AUTOLOCK"
+
+ 	BATTERY / JUMP DRIVE
+	+ "RECHARGE"
+	- "CHARGED"
+
+	EJECTOR / CONNECTOR
+	+ "THROW OUT"
+	- "COLLECT ALL"
+
+	GAS TANK
+	+ "STOCKPILE"
+	- "FULL"
+
+	ACTUATOR/THRUSTER
+	+ ">{value}"
+	- "<{value}"
+
+ICONS
+	{CAMERA}
+
+	{THRUSTER}
+	{+THRUST}
+	{-THRUST}
+
+	{LIGHT}
+
+	{GEAR}
+	{GEAR_DOWN}
+	{GEAR_UP}
+
+	{MISSILE}
+	{GATLING}
+	{CANNON}
+
+	{TURRET}
+	{M_TURRET}
+
+	{DOCK A}
+	{DOCK B}
+	{UNDOCK}
+
+	{H2}
+	{O2}
+	{H2_TANK}
+	{O2_TANK}
+
+	{JETTISON}
+
+	{DRILL}
+	{WELDER}
+	{GRINDER}
+
+	{POWER}
+	{BATTERY}
+	{REACTOR}
+
+	{<}
+	{>}
+	{^}
+	{V}
+	{<<}
+	{>>}
+	{^^}
+	{VV}
+	{TOGGLE}
+	{CYCLE}
