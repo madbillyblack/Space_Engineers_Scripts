@@ -268,7 +268,7 @@ namespace IngameScript
             Echo("Displays: " + _displays.Count);
 
             //MenuDebug();
-
+            MultiTimerDebug();
 
             // If cargo successfully unloaded, increment load count.
             if (_unloaded)
@@ -414,7 +414,7 @@ namespace IngameScript
             }
         }
 
-
+        /*
         // REFUEL //Finds all reactors containing defined tag, and loads them with defined amounts of fuel. 
         void Refuel()
         {
@@ -439,7 +439,7 @@ namespace IngameScript
                 }
             }
         }
-
+        */
 
         // RESTOCK //
         void Restock(List<IMyTerminalBlock> destBlocks, string sourceTag)
@@ -932,8 +932,6 @@ namespace IngameScript
             EnsureKey(block, INI_HEAD, "LargeRailgunAmmo", amounts[5].ToString());
             EnsureKey(block, INI_HEAD, "SmallRailgunAmmo", amounts[6].ToString());
         }
-
-
 
 
 

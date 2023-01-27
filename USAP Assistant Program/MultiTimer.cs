@@ -53,6 +53,7 @@ namespace IngameScript
 
             public MultiTimer(IMyTimerBlock timer)
             {
+                Phases = new Dictionary<int, Phase>();
                 Block = timer;
                 Ini = GetIni(Block as IMyTerminalBlock);
                 TagFromBlockName();
@@ -236,7 +237,7 @@ namespace IngameScript
             // INIT
             void Init(string action, IMyProgrammableBlock programBlock = null)
             {
-                List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>();
+                Blocks = new List<IMyTerminalBlock>();
                 Action = action;
 
                 ProgramBlock = programBlock;
@@ -357,12 +358,20 @@ namespace IngameScript
         // ACTION BLOCK FROM BLOCK NAME //
         ActionBlock ActionBlockFromBlockName(string blockName, string action)
         {
+            //_statusMessage += "\n Getting Block: " + blockName;
             IMyTerminalBlock block = GridTerminalSystem.GetBlockWithName(blockName);
 
             if (block == null)
+            {
+                _statusMessage += "\nBlock Not Found!";
                 return null;
-
-            return new ActionBlock(block, action);
+            }
+            else
+            {
+                Echo ("\nBlock: ");
+                Echo(block.CustomName);
+                return new ActionBlock(block, action);
+            }     
         }
 
 
@@ -392,6 +401,47 @@ namespace IngameScript
             }
 
             timer.TimerCall();
+        }
+
+
+        // MULTITIMER DEBUG //
+        void MultiTimerDebug()
+        {
+            
+            if(_multiTimers.Count < 1)
+            {
+                Echo("No MultiTimers found!");
+                return;
+            }
+
+            string multiString = "MultiTimers " + DASHES;
+
+            foreach(string tag in _multiTimers.Keys)
+            {
+                MultiTimer timer = _multiTimers[tag];
+
+                multiString += "\n * " + tag + "\n   - Phases: " + timer.PhaseCount;
+                Echo("A");
+                foreach (int key in timer.Phases.Keys)
+                {
+                    Phase phase = timer.Phases[key];
+                    multiString += "\n    Phase " + phase.Number;
+                    Echo("B");
+                    foreach (ActionBlock actionBlock in phase.Actions)
+                    {
+                        Echo("C");
+                        if (actionBlock.Blocks.Count > 0)
+                            foreach (IMyTerminalBlock block in actionBlock.Blocks)
+                                multiString += "\n      " + block.CustomName + ":" + actionBlock.Action;
+                        else if(actionBlock.ProgramBlock != null)
+                            multiString += "\n      " + actionBlock.ProgramBlock.CustomName + ":" + actionBlock.Action;
+                    }
+                }
+
+
+            }
+
+            Echo(multiString);
         }
     }
 }

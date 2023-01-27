@@ -979,7 +979,7 @@ namespace IngameScript
             return new string[] {name, prefix};
         }
 
-
+        /*
         // MENU DEBUG //
         void MenuDebug()
         {
@@ -1018,7 +1018,7 @@ namespace IngameScript
             }
         }
 
-
+        
         // DRAW CURRENT MENU //
         void DrawCurrentMenu()
         {
@@ -1030,5 +1030,6 @@ namespace IngameScript
             DrawMenu(menu);
             IncrementMenuKey();
         }
+        */
     }
 }
