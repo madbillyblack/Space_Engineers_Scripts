@@ -171,6 +171,9 @@ namespace IngameScript
                     case "MULTITIMER":
                         CallMultiTimer(cmdArg);
                         break;
+                    case "CALL_PHASE":
+                        CallPhase(cmdArg);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;

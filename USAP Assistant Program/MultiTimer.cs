@@ -157,6 +157,7 @@ namespace IngameScript
             public bool StartNext;
             public List<ActionBlock> Actions;
             public string Header;
+            public string Name;
 
             public Phase(MultiTimer timer, int number, bool defaultNext)
             {
@@ -165,6 +166,7 @@ namespace IngameScript
                 Number = number;
                 Header = PHASE_HEADER + Number.ToString();
 
+                Name = timer.GetKey(Header, "Name", Number.ToString());
                 Duration = ParseFloat(timer.GetKey(Header, "Duration", timer.Block.TriggerDelay.ToString("0.##")), timer.Block.TriggerDelay);
                 ActionCount = ParseInt(timer.GetKey(Header, "Action Count", "1"), 1);
                 StartNext = ParseBool(timer.GetKey(Header, "Start Next Phase", defaultNext.ToString()));
@@ -390,6 +392,21 @@ namespace IngameScript
         }
 
 
+        // PHASE FROM NAME //
+        Phase PhaseFromName(MultiTimer timer, string name)
+        {
+            foreach(int key in timer.Phases.Keys)
+            {
+                Phase phase = timer.Phases[key];
+
+                if (phase.Name == name)
+                    return phase;
+            }
+
+            return null;
+        }
+
+
         // CALL MULTI TIMER //
         void CallMultiTimer(string tag)
         {
@@ -404,6 +421,40 @@ namespace IngameScript
             timer.TimerCall();
         }
 
+
+        // CALL PHASE //
+        void CallPhase(string phaseData)
+        {
+            string[] data = phaseData.Split(' ');
+            if(data.Length < 2)
+            {
+                _statusMessage += "\nINSUFFICIENT PHASE DATA!";
+            }
+
+            string phaseName = data[0];
+            string tag = "";
+            for(int i = 1; i < data.Length; i++)
+            {
+                tag += data[i] + " ";
+            }
+
+            MultiTimer timer = GetMultiTimer(tag.Trim());
+            if(timer == null)
+            {
+                _statusMessage += "No Timer with tag \"" + tag + "\" found!";
+                return;
+            }
+
+            Phase phase = PhaseFromName(timer, phaseName);
+            if(phase == null)
+            {
+                _statusMessage += "No Phase with name \"" + phaseName + "\" found!";
+                return;
+            }
+
+            timer.CurrentPhase = phase.Number;
+            timer.TimerCall();
+        }
 
         // MULTITIMER DEBUG //
         void MultiTimerDebug()
@@ -447,6 +498,18 @@ namespace IngameScript
         static void RunNext(string arg)
         {
             _nextCommand = arg;
+        }
+
+
+        // RUN LAST //
+        void RunLast()
+        {
+            if (_nextCommand == "")
+                return;
+
+            MainSwitch(_nextCommand);
+
+            _nextCommand = "";
         }
     }
 }

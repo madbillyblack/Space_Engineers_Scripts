@@ -262,8 +262,12 @@ namespace IngameScript
             //Echo("... " + _runningNumber);
             //_runningNumber++;
 
+            RunLast();
+
             MainSwitch(argument);
             
+
+
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
 
@@ -928,7 +932,6 @@ namespace IngameScript
             EnsureKey(block, INI_HEAD, "LargeRailgunAmmo", amounts[5].ToString());
             EnsureKey(block, INI_HEAD, "SmallRailgunAmmo", amounts[6].ToString());
         }
-
 
 
         // BORROWED FUNCTIONS // -------------------------------------------------------------------------------------------------------------------------
