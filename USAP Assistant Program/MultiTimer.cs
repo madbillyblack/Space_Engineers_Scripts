@@ -39,7 +39,7 @@ namespace IngameScript
             public int PhaseCount;
             public Dictionary<int, Phase> Phases;
 
-            public bool CommandInterrupt;
+            public bool IsInterruptible;
 
             int currentPhase;
 
@@ -65,7 +65,7 @@ namespace IngameScript
 
                 PhaseCount = ParseInt(GetKey(MULTI_HEADER, PHASE_KEY, "2"), 2);
                 currentPhase = ParseInt(GetKey(MULTI_HEADER, CURRENT_KEY, "0"), 0);
-                CommandInterrupt = ParseBool(GetKey(MULTI_HEADER, "Interrupt with command", "False"));
+                IsInterruptible = ParseBool(GetKey(MULTI_HEADER, "Interrupt with command", "False"));
 
                 if (currentPhase >= PhaseCount)
                     currentPhase = 0;
@@ -149,6 +149,18 @@ namespace IngameScript
                         }
                     }
                 }
+            }
+
+
+            public bool CanBeCalled()
+            {
+                if (Block.IsCountingDown && !IsInterruptible)
+                {
+                    _statusMessage += "\nMulti-Timer " + Tag + " cannot be interrupted!";
+                    return false;
+                }
+
+                return true;
             }
         }
 
@@ -431,7 +443,8 @@ namespace IngameScript
                 return;
             }
 
-            timer.TimerCall();
+            if(timer.CanBeCalled()) // Check done here, because irrelevant when triggered by timer block.
+                timer.TimerCall();
         }
 
 
@@ -465,16 +478,11 @@ namespace IngameScript
                 return;
             }
 
-            if(timer.Block.IsCountingDown && !timer.CommandInterrupt)
+            if(timer.CanBeCalled())
             {
-                _statusMessage += "/nMulti-Timer " + timer.Tag + " cannot be interrupted with command!";
-                return;
+                timer.CurrentPhase = phase.Number;
+                timer.TimerCall();
             }
-
-
-
-            timer.CurrentPhase = phase.Number;
-            timer.TimerCall();
         }
 
         // MULTITIMER DEBUG //
