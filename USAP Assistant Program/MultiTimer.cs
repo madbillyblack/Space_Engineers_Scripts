@@ -165,11 +165,12 @@ namespace IngameScript
 
                 Number = number;
                 Header = PHASE_HEADER + Number.ToString();
+                string phaseHeader = DASHES + " " + Header + " " + DASHES;
 
-                Name = timer.GetKey(Header, "Name", Number.ToString());
-                Duration = ParseFloat(timer.GetKey(Header, "Duration", timer.Block.TriggerDelay.ToString("0.##")), timer.Block.TriggerDelay);
-                ActionCount = ParseInt(timer.GetKey(Header, "Action Count", "1"), 1);
-                StartNext = ParseBool(timer.GetKey(Header, "Start Next Phase", defaultNext.ToString()));
+                Name = timer.GetKey(phaseHeader, "Name", Number.ToString());
+                Duration = ParseFloat(timer.GetKey(phaseHeader, "Duration", timer.Block.TriggerDelay.ToString("0.##")), timer.Block.TriggerDelay);
+                ActionCount = ParseInt(timer.GetKey(phaseHeader, "Action Count", "1"), 1);
+                StartNext = ParseBool(timer.GetKey(phaseHeader, "Start Next Phase", defaultNext.ToString()));
             }
 
             
@@ -299,10 +300,12 @@ namespace IngameScript
             if (phase.ActionCount < 1)
                 return;
 
-            for(int i = 0; i < phase.ActionCount; i++)
+            string header = phase.Header + " Actions";
+
+            for (int i = 0; i < phase.ActionCount; i++)
             {
-                string blockString = timer.GetKey(phase.Header, "Block " + i, "");
-                string actionString = timer.GetKey(phase.Header, "Action " + i, "");
+                string blockString = timer.GetKey(header, "Block " + i, "");
+                string actionString = timer.GetKey(header, "Action " + i, "");
 
                 if(blockString != "" && actionString != "")
                 {
