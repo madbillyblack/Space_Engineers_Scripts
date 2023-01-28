@@ -39,7 +39,11 @@ namespace IngameScript
             public int PhaseCount;
             public Dictionary<int, Phase> Phases;
 
+            public bool CommandInterrupt;
+
             int currentPhase;
+
+
             public int CurrentPhase
             {
                 get { return currentPhase; }
@@ -61,6 +65,7 @@ namespace IngameScript
 
                 PhaseCount = ParseInt(GetKey(MULTI_HEADER, PHASE_KEY, "2"), 2);
                 currentPhase = ParseInt(GetKey(MULTI_HEADER, CURRENT_KEY, "0"), 0);
+                CommandInterrupt = ParseBool(GetKey(MULTI_HEADER, "Interrupt with command", "False"));
 
                 if (currentPhase >= PhaseCount)
                     currentPhase = 0;
@@ -266,8 +271,13 @@ namespace IngameScript
                 if(timer.CustomName.ToUpper().Contains(MULTI_TAG) && SameGridID(timer))
                 {
                     MultiTimer multiTimer = new MultiTimer(timer);
-
-                    if(multiTimer.Tag != ERROR)
+                    string tag = multiTimer.Tag;
+                    if(_multiTimers.Keys.Contains<string>(tag))
+                    {
+                        _statusMessage += "\nERROR: Cannot add Multitimer from block:\n  " + multiTimer.Block.CustomName +
+                                           "\n  => Tag already in use.";
+                    }
+                    else if(multiTimer.Tag != ERROR)
                     {
                         AssignPhases(multiTimer);
                         _multiTimers.Add(multiTimer.Tag, multiTimer); // Use Tag parameter as dictionary key.
@@ -369,7 +379,7 @@ namespace IngameScript
 
             if (block == null)
             {
-                _statusMessage += "\nBlock Not Found!";
+                _statusMessage += "\nBlock Not Found: " + blockName;
                 return null;
             }
             else
@@ -454,6 +464,14 @@ namespace IngameScript
                 _statusMessage += "No Phase with name \"" + phaseName + "\" found!";
                 return;
             }
+
+            if(timer.Block.IsCountingDown && !timer.CommandInterrupt)
+            {
+                _statusMessage += "/nMulti-Timer " + timer.Tag + " cannot be interrupted with command!";
+                return;
+            }
+
+
 
             timer.CurrentPhase = phase.Number;
             timer.TimerCall();
