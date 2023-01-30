@@ -22,11 +22,11 @@ namespace IngameScript
 {
     partial class Program
     {
-        const string MENU_HEAD = "Context Menu";
+        const string MENU_HEAD = "Virtual Hotbar";
         const string PAGE_KEY = "Current Page";
         const string PAGE_COUNT = "Page Count";
         const string ID_KEY = "Menu ID";
-        const string PAGE_HEAD = "MENU PAGE ";
+        const string PAGE_HEAD = "HOTBAR PAGE ";
         const string BUTTON_BLOCK = "Block";
         const string BLOCK_LABEL = "Block Label";
         const string BUTTON_ACTION = "Action";

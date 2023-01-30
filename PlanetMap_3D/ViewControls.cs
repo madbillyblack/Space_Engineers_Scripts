@@ -235,7 +235,7 @@ namespace IngameScript
 
 			map.RotationalRadius = (int)newRadius;
 
-			map.UpdateBasicParameters();
+			//map.UpdateBasicParameters();
 		}
 
 

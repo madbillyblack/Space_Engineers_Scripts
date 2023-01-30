@@ -22,7 +22,7 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
-        const string MENU_TAG = "[MENU]"; // Tag use to assign constext menus to block
+        const string MENU_TAG = "[VHB]"; // Tag use to assign constext menus to block
         static IMyProgrammableBlock _me;
 
         //const string SLASHES = "///////////////";
@@ -49,6 +49,7 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             PrintHeader();
+            PrintStats();
             CheckLitButtons();
 
             if (_statusMessage != "")
