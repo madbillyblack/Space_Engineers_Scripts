@@ -499,18 +499,22 @@ namespace IngameScript
             // Set Block Group, Program Block or Blocks
             if (prefix.ToUpper() == "G")
             {
+                Echo("GROUP: " + blockName);
                 IMyBlockGroup group = GridTerminalSystem.GetBlockGroupWithName(blockName);
 
-                if (group == null)
+                try
+                {
+                    //Assign group blocks to button's block list.
+                    group.GetBlocks(button.Blocks);
+                }
+                catch
                 {
                     _statusMessage += "NO GROUP WITH NAME \"" + blockName + "\" FOUND!\n";
-                }
-
-                //Assign group blocks to button's block list.
-                group.GetBlocks(button.Blocks);
+                } 
             }
             else if(prefix.ToUpper() == "P")
             {
+                Echo("PROGRAM: " + blockName);
                 string programName = blockName;
                 button.SetProgramBlock(GetProgramBlock(programName));
             }
@@ -532,7 +536,7 @@ namespace IngameScript
                     }
                 }
             }
-
+            Echo("E");
             button.SetBlockLabel(blockLabelString);
 /*
             if (prefix.Contains("T"))
@@ -544,7 +548,6 @@ namespace IngameScript
                 button.SetActionLabel(actionLabelString);
             else
                 button.SetActionLabel(button.Action);
-
             return button;
         }
 

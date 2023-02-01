@@ -155,10 +155,11 @@ namespace IngameScript
 
 
 		// DRAW GATLING //
-		void DrawGatling(Vector2 position, float scale, float fontSize, Color color)
+		void DrawGatling(Vector2 position, float scale, Color color)
         {
 			Vector2 pos = position - new Vector2(scale * 0.35f, scale * 0.0625f);
-			Vector2 barrelSize = new Vector2 (scale * 0.25f, scale * 0.01f);
+			Vector2 barrelSize = new Vector2 (scale * 0.25f, scale * 0.02f);
+			float fontSize = scale * 0.01f;
 
 			// Barrels
 			DrawTexture(SQUARE, pos, barrelSize, 0, color);
@@ -173,7 +174,7 @@ namespace IngameScript
 
 			// Bullets
 			pos += new Vector2(scale * 0.15f, scale * -0.25f);
-			DrawText("---", pos, fontSize, TextAlignment.LEFT, color);
+			DrawText("----", pos, fontSize, TextAlignment.LEFT, color);
 		}
 			
 		// DRAW CANNON //
@@ -593,5 +594,8 @@ namespace IngameScript
 			
 			DrawTarget(pos, size * targetMod, bgColor);
 		}
+
+
+
 	}
 }

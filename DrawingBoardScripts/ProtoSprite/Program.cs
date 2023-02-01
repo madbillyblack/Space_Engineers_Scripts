@@ -58,6 +58,7 @@ namespace IngameScript
             {
                 Echo("Drawing ...");
                 DrawPrototype();
+                Echo("Scale: " + _viewport.Height + "x" + _viewport.Width);
             }
             else
             {
@@ -108,7 +109,8 @@ namespace IngameScript
             //DrawMissile(center, scale, _bgColor, _buttonColor);
 
             //DrawTarget(center, scale, _bgColor);
-            DrawTargetType(CIRCLE, center, scale, _bgColor, _buttonColor);
+            //DrawTargetType(CIRCLE, center, scale, _bgColor, _buttonColor);
+            DrawGatling(center, scale, _bgColor);
 
             DrawTexture(RING, center - new Vector2(50, 0), new Vector2(100, 100), 0, Color.Red);
 
