@@ -168,7 +168,7 @@ namespace IngameScript
 					DrawToggle(position, scale * 0.75f, iconColor, buttonColor);
 					break;
 				case "{CYCLE}":
-					DrawCycle(arrowPos, arrowScale * 0.67f, iconColor);
+					DrawCycle(position, scale * 0.75f, iconColor, buttonColor);
 					break;
 				case "{X}":
 					DrawX(position, scale * 0.75f, iconColor);
@@ -691,8 +691,26 @@ namespace IngameScript
 
 
 		// DRAW CYCLE //
-		void DrawCycle(Vector2 position, float scale, Color color)
+		void DrawCycle(Vector2 position, float scale, Color color, Color bgColor)
 		{
+			Vector2 pos = position - new Vector2(scale * 0.33f, 0);
+			Vector2 size = new Vector2(scale, scale);
+
+			DrawTexture(CIRCLE, pos, size * 0.67f, 0, color);
+
+			// Center Mask
+			pos = position - new Vector2(scale * 0.2f, 0);
+			DrawTexture(CIRCLE, pos, size * 0.4f, PI * 0.5f, bgColor);
+
+			// Corner Mask
+			pos = position + new Vector2(0, scale * 0.2f);
+			DrawTexture(SQUARE, pos, size * 0.4f, 0, bgColor);
+
+			// Pointer
+			pos = position + new Vector2(scale * 0.145f, scale * 0.125f);
+			DrawTexture(TRIANGLE, pos, size * 0.25f, PI, color);
+
+			/*
 			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
 			Vector2 blockScale = new Vector2(scale, scale);
 			position -= new Vector2(scale * 0.5f, scale * 0.3f);
@@ -700,6 +718,7 @@ namespace IngameScript
 			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
 			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
 			DrawTexture(TRIANGLE, position + new Vector2(scale * 0.67f, -scale * 0.25f), blockScale * 0.5f, PI * 0.75f, color);
+			*/
 		}
 
 
