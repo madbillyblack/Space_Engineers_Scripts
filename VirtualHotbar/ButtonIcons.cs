@@ -20,8 +20,8 @@ using VRageMath;
 
 namespace IngameScript
 {
-    partial class Program
-    {
+	partial class Program
+	{
 		const string SQUARE = "SquareSimple";
 		const string BOX = "SquareHollow";
 		const string SEMI = "SemiCircle";
@@ -33,7 +33,7 @@ namespace IngameScript
 		const string LEFT = "LEFT";
 		const string RIGHT = "RIGHT";
 
-		readonly Vector2 _shadowOffset = new Vector2(1,1);
+		readonly Vector2 _shadowOffset = new Vector2(1, 1);
 
 		// DRAW ACTION LABEL //
 		void DrawActionLabel(MenuButton button, Vector2 position, float scale, float fontSize, Color iconColor, Color buttonColor)
@@ -177,6 +177,24 @@ namespace IngameScript
 				case "{CANCEL}":
 					DrawCircleX(position, scale * 0.75f, iconColor, buttonColor);
 					break;
+				case "{PISTON}":
+					DrawPiston(position, scale, iconColor, "");
+					break;
+				case "{PISTON_EXTEND}":
+					DrawPiston(position, scale, iconColor, "EXTEND");
+					break;
+				case "{PISTON_RETRACT}":
+					DrawPiston(position, scale, iconColor, "RETRACT");
+					break;
+				case "{DOWN_PISTON}":
+					DrawPiston(position, scale, iconColor, "", true);
+					break;
+				case "{DOWN_PISTON_EXTEND}":
+					DrawPiston(position, scale, iconColor, "EXTEND", true);
+					break;
+				case "{DOWN_PISTON_RETRACT}":
+					DrawPiston(position, scale, iconColor, "RETRACT", true);
+					break;
 				default:
 					DrawActionText(labelA, labelB, position, fontSize * 0.5f, iconColor);
 					break;
@@ -186,26 +204,26 @@ namespace IngameScript
 
 		// DRAW CAMERA ICON //
 		void DrawCamera(Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position + new Vector2(-scale * 0.2f, 0);// scale * 0.125f);
 
 			// Camera Body
-			DrawTexture(SQUARE, pos, new Vector2(scale * 0.33f, scale *0.25f), 0, color);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.33f, scale * 0.25f), 0, color);
 
 			pos += new Vector2(scale / 5, 0);
 
 			// Camera Lens
 			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.25f, scale * 0.25f), PI * 1.5f, color);
-        }
+		}
 
 
 		// DRAW THRUSTER //
 		void DrawThruster(string symbol, Vector2 position, float scale, float fontsize, Color iconColor, Color textColor)
-        {
+		{
 			Vector2 pos = position + new Vector2(-scale * 0.167f, 0);// scale *0.2f);
 
 			// Thruster Bell
-			DrawTexture(SEMI, pos, new Vector2(scale *0.33f, scale *0.6f), 0, iconColor);
+			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.6f), 0, iconColor);
 
 			pos += new Vector2(scale * 0.167f, scale * -0.025f);
 			DrawText("|||||", pos, fontsize * 0.75f, TextAlignment.CENTER, iconColor);
@@ -221,7 +239,7 @@ namespace IngameScript
 
 			pos -= new Vector2(0, symbolScale * 25);
 			DrawText(symbol, pos, symbolScale, TextAlignment.CENTER, textColor);
-        }
+		}
 
 
 		// DRAW LIGHT //
@@ -263,12 +281,12 @@ namespace IngameScript
 
 			// Up Arrow
 			pos += new Vector2(scale * 0.25f, scale * -0.1f);
-			if(direction != DOWN)
-			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, iconColor);
+			if (direction != DOWN)
+				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * 0.125f), 0, iconColor);
 
 			// Down Arrow
-			if(direction != UP)
-            {
+			if (direction != UP)
+			{
 				pos += new Vector2(0, scale * 0.175f);
 				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * -0.125f), 0, iconColor);
 			}
@@ -277,7 +295,7 @@ namespace IngameScript
 
 		// DRAW MISSILE //
 		void DrawMissile(Vector2 position, float scale, Color iconColor, Color bgColor)
-        {
+		{
 			Vector2 pos = position + new Vector2(scale * -0.35f, 0);
 
 			// Body
@@ -327,7 +345,7 @@ namespace IngameScript
 
 		// DRAW CANNON //
 		void DrawCannon(Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position + new Vector2(scale * -0.33f, 0);// scale * 0.125f);
 
 			// Barrel
@@ -345,7 +363,7 @@ namespace IngameScript
 
 		// DRAW DOCK //
 		void DrawDock(string type, Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position + new Vector2(scale * -0.33f, 0);// scale * 0.167f);
 
 			// Left collar
@@ -363,8 +381,8 @@ namespace IngameScript
 			pos += new Vector2(scale * 0.037f, 0);
 			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.33f), PI * 1.5f, color);
 
-			if(type == "A")
-            {
+			if (type == "A")
+			{
 				// Right Seal
 				pos = position + new Vector2(scale * 0.067f, 0);//scale * 0.167f);
 				DrawTexture(SQUARE, pos, new Vector2(scale * 0.025f, scale * 0.167f), 0, color);
@@ -374,7 +392,7 @@ namespace IngameScript
 				DrawTexture(SQUARE, pos, new Vector2(scale * 0.025f, scale * 0.167f), 0, color);
 			}
 			else if (type == "B")
-            {
+			{
 				// Upper Link
 				pos = position + new Vector2(scale * -0.0835f, scale * -0.05f);
 				DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.05f), 0, color);
@@ -388,7 +406,7 @@ namespace IngameScript
 
 		// DRAW SEAPARATION //
 		void DrawSeparation(Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position + new Vector2(scale * -0.33f, 0);//scale * 0.167f);
 
 			// Left
@@ -414,13 +432,13 @@ namespace IngameScript
 
 		// DRAW GAS //
 		void DrawGas(string gasType, string shape, Vector2 position, float scale, Color iconColor, Color textColor)
-        {
+		{
 			Vector2 pos = position + new Vector2(scale * -0.25f, 0);// scale * 0.175f);
 			DrawTexture(shape, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, iconColor);
 
 			// Element
 			pos += new Vector2(scale * 0.2f, scale * -0.225f);
-			if(gasType == "H2")
+			if (gasType == "H2")
 				DrawText("H", pos, scale * 0.0125f, TextAlignment.CENTER, textColor);
 			else if (gasType == "O2")
 				DrawText("O", pos, scale * 0.0125f, TextAlignment.CENTER, textColor);
@@ -433,7 +451,7 @@ namespace IngameScript
 
 		// DRAW TURRET //
 		void DrawTurret(Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position + new Vector2(scale * -0.25f, scale * 0.1f);
 
 			DrawTexture(SEMI, pos, new Vector2(scale * 0.4f, scale * 0.4f), 0, color);
@@ -445,7 +463,7 @@ namespace IngameScript
 
 		// DRAW MISSILE TURRET //
 		void DrawMissileTurret(Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position - new Vector2(scale * 0.05f, scale * 0.125f);
 
 			// Barrel
@@ -458,7 +476,7 @@ namespace IngameScript
 
 		// DRAW JETTISON //
 		void DrawJettison(Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position - new Vector2(scale * 0.33f, scale * 0.15f);
 			Vector2 size = new Vector2(scale * 0.2f, scale * 0.2f);
 
@@ -478,8 +496,8 @@ namespace IngameScript
 
 		// DRAW DRILL //
 		void DrawDrill(Vector2 position, float scale, Color iconColor, Color bgColor)
-        {
-			Vector2 pos = position + new Vector2(scale  * -0.125f, 0);// scale * 0.167f);
+		{
+			Vector2 pos = position + new Vector2(scale * -0.125f, 0);// scale * 0.167f);
 
 			DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.33f, scale * 0.5f), PI * 0.5f, iconColor);
 
@@ -498,9 +516,9 @@ namespace IngameScript
 
 		// DRAW WELDER //
 		void DrawWelder(Vector2 position, float scale, float fontSize, Color color)
-        {
+		{
 			// Body
-			Vector2 pos = position + new Vector2(scale * - 0.33f, 0);//scale * 0.167f);
+			Vector2 pos = position + new Vector2(scale * -0.33f, 0);//scale * 0.167f);
 			DrawTexture(SEMI, pos, new Vector2(scale * 0.33f, scale * 0.25f), PI * 0.5f, color);
 
 			// Arms
@@ -509,7 +527,7 @@ namespace IngameScript
 
 			pos += new Vector2(scale * 0.2f, scale * -0.125f);
 			DrawTexture(SQUARE, pos, armSize, armAngle, color);
-			
+
 			pos += new Vector2(0, scale * 0.25f);
 			DrawTexture(SQUARE, pos, armSize, -armAngle, color);
 
@@ -523,7 +541,7 @@ namespace IngameScript
 
 		// DRAW GRINDER //
 		void DrawGrinder(Vector2 position, float scale, Color iconColor, Color bgColor)
-        {
+		{
 			Vector2 pos = position + new Vector2(-scale * 0.0625f, 0);//scale * 0.167f);
 			Vector2 size = new Vector2(scale * 0.167f, scale * 0.33f);
 			Vector2 offset = new Vector2(size.X * -0.5f, size.Y * -0.4f);
@@ -533,8 +551,8 @@ namespace IngameScript
 
 			DrawRotatedTriangle(pos, offset, size, angle, iconColor);
 
-			for(int i = 0; i < 5; i++)
-            {
+			for (int i = 0; i < 5; i++)
+			{
 				angle += PI * 0.333f;
 				DrawRotatedTriangle(pos, offset, size, angle, iconColor);
 			}
@@ -544,7 +562,7 @@ namespace IngameScript
 
 		// DRAW POWER //
 		void DrawPower(string shape, Vector2 position, float scale, Color color, Color bgColor)
-        {
+		{
 			Vector2 pos = position + new Vector2(scale * -0.25f, 0);// scale * 0.167f);
 
 			DrawTexture(shape, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, color);
@@ -557,7 +575,7 @@ namespace IngameScript
 
 		// DRAW BOLT // - Draws Electricity Bolt icon
 		void DrawBolt(Vector2 position, float scale, Color color)
-        {
+		{
 			Vector2 pos = position - new Vector2(scale * 0.125f, scale * 0.125f);
 			Vector2 size = new Vector2(scale * 0.125f, scale * 0.33f);
 
@@ -630,7 +648,7 @@ namespace IngameScript
 				case UP:
 				default:
 					rotation = 0;
-					offset1 = new Vector2(scale *0.25f, scale * 0.2f);
+					offset1 = new Vector2(scale * 0.25f, scale * 0.2f);
 					offset2 = new Vector2(0, length);
 					break;
 			}
@@ -684,7 +702,7 @@ namespace IngameScript
 				pos += new Vector2(0, fontSize * 12);
 
 				DrawText(lowerText, pos, fontSize, TextAlignment.CENTER, fontColor);
-				
+
 				pos += _shadowOffset;
 				DrawText(lowerText, pos, fontSize, TextAlignment.CENTER, fontColor);
 
@@ -767,6 +785,53 @@ namespace IngameScript
 			DrawTexture(CIRCLE, pos, new Vector2(scale * 0.667f, scale * 0.667f), 0, color);
 
 			DrawX(position, scale * 0.667f, bgColor);
+		}
+
+
+		// DRAW PISTON //
+		void DrawPiston(Vector2 position, float scale, Color color, string action, bool upsideDown = false)
+		{
+			Vector2 startPos = position;// - new Vector2(scale * 0.125f, 0);
+			Vector2 pos = startPos - new Vector2(scale * 0.035f, 0);
+
+			// Draw Piston arm
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.033f, scale * 0.667f), 0, color);
+
+			pos = startPos + new Vector2(scale * 0.025f, 0);
+
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.033f, scale * 0.667f), 0, color);
+
+
+			int vertMod;
+
+			if (upsideDown)
+				vertMod = -1;
+			else
+				vertMod = 1;
+
+			// Draw Cylinder
+			pos = startPos - new Vector2(scale * 0.07f, scale * -0.17f * vertMod);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.33f), 0, color);
+
+			// Draw Head
+			pos -= new Vector2(0, scale * 0.5f * vertMod);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.033f), 0, color);
+
+			startPos = position + new Vector2(scale * 0.125f, scale * -0.167f * vertMod);
+
+			// Draw Extend Arrow
+			if (action != "RETRACT")
+			{
+				pos = startPos - new Vector2(0, scale * 0.085f * vertMod);
+				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * 0.125f * vertMod), 0, color);
+			}
+
+			// Draw Retract Arrow
+			if (action != "EXTEND")
+			{
+				pos = startPos + new Vector2(0, scale * 0.085f * vertMod);
+				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * -0.125f * vertMod), 0, color);
+			}
 		}
 	}
 }

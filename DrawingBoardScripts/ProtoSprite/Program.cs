@@ -111,7 +111,8 @@ namespace IngameScript
             //DrawTarget(center, scale, _bgColor);
             //DrawTargetType(CIRCLE, center, scale, _bgColor, _buttonColor);
             //DrawGatling(center, scale, _bgColor);
-            DrawCircleX(center, scale, _bgColor, _buttonColor);
+            //DrawCircleX(center, scale, _bgColor, _buttonColor);
+            DrawPiston(center, scale, _bgColor, "EXTEND");
 
             DrawTexture(RING, center - new Vector2(50, 0), new Vector2(100, 100), 0, Color.Red);
 

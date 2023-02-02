@@ -619,5 +619,51 @@ namespace IngameScript
 			DrawX(position, scale * 0.667f, bgColor);
         }
 
+
+		// DRAW PISTON //
+		void DrawPiston(Vector2 position, float scale, Color color, string action, bool upsideDown = false)
+        {
+			Vector2 startPos = position - new Vector2(scale * 0.125f, 0);
+			Vector2 pos = startPos - new Vector2(scale * 0.035f, 0);
+
+			// Draw Piston arm
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.033f, scale * 0.667f), 0, color);
+
+			pos = startPos + new Vector2(scale * 0.025f, 0);
+
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.033f, scale * 0.667f), 0, color);
+
+
+			int vertMod;
+
+			if (upsideDown)
+				vertMod = -1;
+			else
+				vertMod = 1;
+
+			// Draw Cylinder
+			pos = startPos - new Vector2(scale * 0.07f, scale * -0.17f * vertMod);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.33f), 0, color);
+
+			// Draw Head
+			pos -= new Vector2(0, scale * 0.5f * vertMod);
+			DrawTexture(SQUARE, pos, new Vector2(scale * 0.167f, scale * 0.033f), 0, color);
+
+			startPos = position + new Vector2(scale * 0.125f, scale * -0.167f * vertMod);
+
+			// Draw Extend Arrow
+			if(action != "RETRACT")
+            {
+				pos = startPos - new Vector2(0, scale * 0.075f * vertMod);
+				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * 0.125f * vertMod), 0, color);
+            }
+
+			// Draw Retract Arrow
+			if(action != "EXTEND")
+            {
+				pos = startPos + new Vector2(0, scale * 0.075f * vertMod);
+				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * -0.125f * vertMod), 0, color);
+			}
+		}
 	}
 }
