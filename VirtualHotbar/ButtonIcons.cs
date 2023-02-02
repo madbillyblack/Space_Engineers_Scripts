@@ -170,6 +170,13 @@ namespace IngameScript
 				case "{CYCLE}":
 					DrawCycle(arrowPos, arrowScale * 0.67f, iconColor);
 					break;
+				case "{X}":
+					DrawX(position, scale * 0.75f, iconColor);
+					break;
+				case "{CIRCLE_X}":
+				case "{CANCEL}":
+					DrawCircleX(position, scale * 0.75f, iconColor, buttonColor);
+					break;
 				default:
 					DrawActionText(labelA, labelB, position, fontSize * 0.5f, iconColor);
 					break;
@@ -736,6 +743,30 @@ namespace IngameScript
 			}
 
 			DrawTarget(pos, size * targetMod, bgColor);
+		}
+
+
+		// DRAW X //
+		void DrawX(Vector2 position, float scale, Color color)
+		{
+			float rotation = PI * 0.25f;
+			Vector2 pos = position - new Vector2(scale * 0.333f, 0);
+			Vector2 boxScale = new Vector2(scale * 0.67f, scale * 0.25f);
+
+			DrawTexture(SQUARE, pos, boxScale, rotation, color);
+
+			DrawTexture(SQUARE, pos, boxScale, -rotation, color);
+		}
+
+
+		// DRAW CIRCLE X //
+		void DrawCircleX(Vector2 position, float scale, Color color, Color bgColor)
+		{
+			Vector2 pos = position - new Vector2(scale * 0.333f, 0);
+
+			DrawTexture(CIRCLE, pos, new Vector2(scale * 0.667f, scale * 0.667f), 0, color);
+
+			DrawX(position, scale * 0.667f, bgColor);
 		}
 	}
 }

@@ -567,7 +567,7 @@ namespace IngameScript
 			DrawTexture(SQUARE, pos, new Vector2(scale * 0.01f, scale * 0.6667f), 0, color);
 		}
 
-
+		// DRAW TARGET TYPE //
 		void DrawTargetType(string shape, Vector2 position, float scale, Color color, Color bgColor)
         {
 			Vector2 pos = position - new Vector2(scale * 0.33f, 0);
@@ -596,6 +596,28 @@ namespace IngameScript
 		}
 
 
+		// DRAW X //
+		void DrawX(Vector2 position, float scale, Color color)
+        {
+			float rotation = PI * 0.25f;
+			Vector2 pos = position - new Vector2(scale * 0.333f,0);
+			Vector2 boxScale = new Vector2(scale * 0.67f, scale * 0.25f);
+
+			DrawTexture(SQUARE, pos, boxScale, rotation, color);
+
+			DrawTexture(SQUARE, pos, boxScale, -rotation, color);
+		}
+
+
+		// DRAW CIRCLE X //
+		void DrawCircleX(Vector2 position, float scale, Color color, Color bgColor)
+        {
+			Vector2 pos = position - new Vector2(scale * 0.333f, 0);
+
+			DrawTexture(CIRCLE, pos, new Vector2(scale * 0.667f, scale * 0.667f), 0, color);
+
+			DrawX(position, scale * 0.667f, bgColor);
+        }
 
 	}
 }
