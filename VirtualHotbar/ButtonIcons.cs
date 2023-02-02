@@ -165,7 +165,7 @@ namespace IngameScript
 					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, DOWN);
 					break;
 				case "{TOGGLE}":
-					DrawToggle(arrowPos, arrowScale * 0.67f, iconColor);
+					DrawToggle(position, scale * 0.75f, iconColor, buttonColor);
 					break;
 				case "{CYCLE}":
 					DrawCycle(arrowPos, arrowScale * 0.67f, iconColor);
@@ -667,8 +667,18 @@ namespace IngameScript
 
 
 		// DRAW TOGGLE //
-		void DrawToggle(Vector2 position, float scale, Color color)
+		void DrawToggle(Vector2 position, float scale, Color color, Color bgColor)
 		{
+			Vector2 pos = position - new Vector2(scale * 0.33f, 0);
+			Vector2 size = new Vector2(scale, scale);
+
+			DrawTexture(CIRCLE, pos, size * 0.67f, 0, color);
+
+			pos = position - new Vector2(scale * 0.25f, 0);
+
+			DrawTexture(SEMI, pos, size * 0.5f, PI * 0.5f, bgColor);
+
+			/*
 			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
 			Vector2 blockScale = new Vector2(scale, scale);
 			position -= new Vector2(scale * 0.5f, scale * 0.3f);
@@ -676,6 +686,7 @@ namespace IngameScript
 			DrawTexture(RING, position, blockScale, 0, color);
 			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
 			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
+			*/
 		}
 
 
