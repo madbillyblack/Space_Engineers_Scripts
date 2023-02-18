@@ -172,9 +172,12 @@ namespace IngameScript
 			timer.StartCountdown();
 			bulkhead.SetOverride(true);
 
-			if (phase == "6")
+
+			foreach (IMyDoor door in bulkhead.Doors)
 			{
-				foreach (IMyDoor door in bulkhead.Doors)
+				door.GetActionWithName("OnOff_On").Apply(door);
+
+				if (phase == "6")
 				{
 					bool autoOpen = Util.ParseBool(IniKey.GetKey(door, INI_HEAD, "AutoOpen", "true"));
 					if (!autoOpen)
