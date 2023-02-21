@@ -111,8 +111,8 @@ namespace IngameScript
 			if (UnknownSector(sector, "lock"))
 				return;
 
-			IMyTimerBlock timer = sector.LockTimer;
-			string phase = GetKey(timer, INI_HEAD, "Phase", "0");
+			LockTimer timer = sector.LockTimer;
+			string phase = timer.GetKey("Phase", "0");
 
 			Bulkhead bulkhead = sector.GetExteriorBulkhead();
 			if (bulkhead == null)
@@ -142,18 +142,18 @@ namespace IngameScript
 				case "6": // OPEN SELF
 					bulkhead.Open(false);
 					_statusMessage = "Dock " + sector.Name + " is sealed.";
-					SetKey(timer, INI_HEAD, "Phase", "0"); // Consider Removing for HATCH call
+					timer.SetKey("Phase", "0"); // Consider Removing for HATCH call
 					break;
 				case "7": // DISENGAGE CONNECTIONS
 					ActivateDock(sector, false);
-					SetKey(timer, INI_HEAD, "Phase", "8");
+					timer.SetKey("Phase", "8");
 					timer.TriggerDelay = 10;
 					timer.StartCountdown();
 					_statusMessage = "Dock " + sector.Name + " disengaged.";
 					break;
 				case "8": // RE-ENGAGE CONNECTIONS & RESET
 					ActivateDock(sector, true);
-					SetKey(timer, INI_HEAD, "Phase", "0");
+					timer.SetKey("Phase", "0");
 					_statusMessage = "Dock " + sector.Name + " re-enabled.";
 					break;
 				default:
@@ -164,25 +164,26 @@ namespace IngameScript
 
 
 		// TIMER OVERRIDE // - First Timer Action overrides lock.
-		void TimerOverride(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, string phase)
+		void TimerOverride(LockTimer timer, Sector sector, Bulkhead bulkhead, string phase)
 		{
 			_statusMessage = "Overriding Lock " + sector.Name;
-			SetKey(timer, INI_HEAD, "Phase", phase);
+			timer.SetKey("Phase", phase);
 			timer.TriggerDelay = 1;
 			timer.StartCountdown();
 			bulkhead.SetOverride(true);
 
 
-			foreach (IMyDoor door in bulkhead.Doors)
+			foreach (PressureDoor pressureDoor in bulkhead.Doors)
 			{
+				IMyDoor door = pressureDoor.Door;
 				door.GetActionWithName("OnOff_On").Apply(door);
 
 				if (phase == "6")
 				{
-					bool autoOpen = ParseBool(GetKey(door, INI_HEAD, "AutoOpen", "true"));
+					bool autoOpen = ParseBool(pressureDoor.GetKey("AutoOpen", "true"));
 					if (!autoOpen)
 					{
-						SetKey(door, INI_HEAD, "Override", "false");
+						pressureDoor.SetKey("Override", "false");
 					}
 				}
 			}
@@ -192,10 +193,10 @@ namespace IngameScript
 
 
 		// TIMER OPEN // - Second Timer Call - opens overriden doors.  Set openAll to true to open normally disabled doors.
-		void TimerOpen(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, bool openAll)
+		void TimerOpen(LockTimer timer, Sector sector, Bulkhead bulkhead, bool openAll)
 		{
 			bulkhead.Open(openAll);
-			SetKey(timer, INI_HEAD, "Phase", "0");
+			timer.SetKey("Phase", "0");
 			_statusMessage = sector.Type + " " + sector.Name + " opened.";
 			sector.Check();
 		}
@@ -234,11 +235,11 @@ namespace IngameScript
 		// STAGE LOCK // - Executes various repeated functions for Timer Calls
 		void StageLock(Sector sector, string phase, int alert)
 		{
-			IMyTimerBlock timer = sector.LockTimer;
+			LockTimer timer = sector.LockTimer;
 			UInt32 delay;
-			SetKey(timer, INI_HEAD, "Phase", phase);
+			timer.SetKey("Phase", phase);
 
-			if (UInt32.TryParse(GetKey(timer, INI_HEAD, "Delay", DELAY.ToString()), out delay))
+			if (UInt32.TryParse(timer.GetKey("Delay", DELAY.ToString()), out delay))
 				delay--;
 			else
 				delay = DELAY - 1;

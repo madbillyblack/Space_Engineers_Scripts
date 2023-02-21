@@ -33,15 +33,19 @@ namespace IngameScript
 			public float NormalIntensity { get; set; }
 			public float EmergencyIntensity { get; set; }
 
+			BlockIni Ini;
+
 			public PressureLight(IMyLightingBlock light)
 			{
 				LightBlock = light;
-				NormalColor = ColorFromString(GetKey(light, INI_HEAD, "Normal_Color", light.Color.R.ToString() + "," + light.Color.G.ToString() + "," + light.Color.B.ToString()));
-				EmergencyColor = ColorFromString(GetKey(light, INI_HEAD, "Emergency_Color", "255,0,0"));
-				NormalRadius = float.Parse(GetKey(light, INI_HEAD, "Normal_Radius", light.Radius.ToString()));
-				EmergencyRadius = float.Parse(GetKey(light, INI_HEAD, "Emergency_Radius", light.Radius.ToString()));
-				NormalIntensity = float.Parse(GetKey(light, INI_HEAD, "Normal_Intensity", light.Intensity.ToString()));
-				EmergencyIntensity = float.Parse(GetKey(light, INI_HEAD, "Emergency_Intensity", "10"));
+				Ini = new BlockIni(light, INI_HEAD);
+
+				NormalColor = ColorFromString(GetKey("Normal_Color", light.Color.R.ToString() + "," + light.Color.G.ToString() + "," + light.Color.B.ToString()));
+				EmergencyColor = ColorFromString(GetKey("Emergency_Color", "255,0,0"));
+				NormalRadius = float.Parse(GetKey("Normal_Radius", light.Radius.ToString()));
+				EmergencyRadius = float.Parse(GetKey("Emergency_Radius", light.Radius.ToString()));
+				NormalIntensity = float.Parse(GetKey("Normal_Intensity", light.Intensity.ToString()));
+				EmergencyIntensity = float.Parse(GetKey("Emergency_Intensity", "10"));
 			}
 
 			public void SetState(bool pressurized)
@@ -59,6 +63,18 @@ namespace IngameScript
 					LightBlock.Intensity = EmergencyIntensity;
 				}
 			}
+
+			// GET KEY
+			public string GetKey(string key, string defaultValue)
+            {
+				return Ini.GetKey(key, defaultValue);
+			}
+
+			// SET KEY
+			public void SetKey(string key, string value)
+            {
+				Ini.SetKey(key, value);
+            }
 		}
 	}
 }

@@ -85,7 +85,7 @@ namespace IngameScript
 		const float THRESHHOLD = 0.2f;
 		const int SCREEN_THRESHHOLD = 180;
 		const string UNIT = "%"; // Default pressure unit.
-		const string DATA_TAG = "[P_Data]";
+		//const string DATA_TAG = "[P_Data]";
 		const string SLASHES = "//////////////////////////////////////////////////////////////////////////////////////////////////////\n";
 		const string GROUP_TAG = "SECTOR";
 
@@ -148,6 +148,8 @@ namespace IngameScript
 		static List<Bulkhead> _bulkheads;
 		static List<DataDisplay> _dataDisplays;
 
+		static BlockIni _programIni;
+
 		// PROGRAM /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public Program()
 		{
@@ -162,14 +164,14 @@ namespace IngameScript
 			_textColor = new Color(TEXT_RED, TEXT_GREEN, TEXT_BLUE);
 			_roomColor = new Color(ROOM_RED, ROOM_GREEN, ROOM_BLUE);
 
-			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+			
 			//_autoCheck = true;
 
 			// Assign all correctly named components to sectors.
 			Build();
 
 			// Check program block's custom data for Refresh_Rate and set UpdateFrequency accordingly.
-			string updateFactor = GetKey(Me, INI_HEAD, "Refresh_Rate", "10");
+			string updateFactor = _programIni.GetKey("Refresh_Rate", "10");
 			switch (updateFactor)
 			{
 				case "1":
@@ -501,15 +503,19 @@ namespace IngameScript
 		// BUILD // Searches grid for all components and adds them to current run.
 		void Build()
 		{
+			_programIni = new BlockIni(Me, INI_HEAD);
+			_gridID = _programIni.GetHeader(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+
 			// Initialize global groups
 			_buildMessage = "BUILD: ";
 			_sectorGroups = new List<IMyBlockGroup>();
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
 			_dataDisplays = new List<DataDisplay>();
-			_vacTag = GetKey(Me, INI_HEAD, "Vac_Tag", VAC_TAG);
-			_systemsName = GetKey(Me, INI_HEAD, "Systems_Group", "");
-			_autoClose = ParseBool(GetKey(Me, INI_HEAD, "Auto-Close", "true"));
+
+			_vacTag = _programIni.GetKey("Vac_Tag", VAC_TAG);
+			_systemsName = _programIni.GetKey("Systems_Group", "");
+			_autoClose = ParseBool(_programIni.GetKey("Auto-Close", "true"));
 
 			// Get tagged Sector Groups and add to List
 
@@ -555,8 +561,8 @@ namespace IngameScript
 
 
 			//Set Pressure Unit as well as Atmospheric and User-Defined Factors
-			_unit = GetKey(Me, INI_HEAD, "Unit", UNIT);
-			if (float.TryParse(GetKey(Me, INI_HEAD, "Factor", "1"), out _factor))
+			_unit = _programIni.GetKey("Unit", UNIT);
+			if (float.TryParse(_programIni.GetKey("Factor", "1"), out _factor))
 				Echo("Unit: " + _unit + "   Factor: " + _factor);
 			else
 				_statusMessage = "UNPARSABLE FACTOR INPUT!!!";
@@ -702,7 +708,7 @@ namespace IngameScript
 			}
 			else
             {
-				bulkhead.Doors.Add(door);
+				bulkhead.Doors.Add(new PressureDoor(door));
             }
 
 			return bulkhead;
@@ -712,7 +718,7 @@ namespace IngameScript
 		//ASSIGN DATA DISPLAYS// Get and set up blocks and surfaces designated as data displays
 		void AssignDataDisplays()
 		{
-			IMyBlockGroup dataGroup = GridTerminalSystem.GetBlockGroupWithName(GetKey(Me, INI_HEAD, "Data_Group", "Pressure Data"));
+			IMyBlockGroup dataGroup = GridTerminalSystem.GetBlockGroupWithName(_programIni.GetKey("Data_Group", "Pressure Data"));
 			if (dataGroup == null)
             {
 				_buildMessage += "\nOptional: No Pressure Data group found.";
@@ -775,7 +781,7 @@ namespace IngameScript
 						EnsureKey(vent, INI_HEAD, "Auto_Close_Delay", "0");
 					
 						
-					sector.AutoCloseDelay = ParseUInt(GetKey(vent, INI_HEAD, "Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);
+					sector.AutoCloseDelay = ParseUInt(sector.GetKey("Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);
 					sector.CurrentDelayTime = sector.AutoCloseDelay;
 				}
             }

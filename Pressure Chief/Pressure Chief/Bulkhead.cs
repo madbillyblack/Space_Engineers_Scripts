@@ -26,7 +26,7 @@ namespace IngameScript
 		public class Bulkhead
 		{
 			public List<Sector> Sectors;
-			public List<IMyDoor> Doors;
+			public List<PressureDoor> Doors;
 			public List<IMyTextSurfaceProvider> LCDs;
 			public List<IMyTextSurface> Surfaces;
 			public List<GaugeSurface> Gauges;
@@ -45,11 +45,16 @@ namespace IngameScript
 			//public IMyAirVent VentB;
 			public string TagB;
 
+			//MyIni Ini;
+			PressureDoor MainDoor;
+
 			// Constructor - Door required
 			public Bulkhead(IMyDoor myDoor)
 			{
+				MainDoor = new PressureDoor(myDoor);
+				//Ini = GetIni(MainDoor);
 				Sectors = new List<Sector>();
-				Doors = new List<IMyDoor>();
+				Doors = new List<PressureDoor>();
 				LCDs = new List<IMyTextSurfaceProvider>();
 				Surfaces = new List<IMyTextSurface>();
 				Gauges = new List<GaugeSurface>();
@@ -59,15 +64,15 @@ namespace IngameScript
 
 				// Check to see if door is also being used by Elevator Manager Script
 				if (myDoor.CustomData.Contains("Elevator_Door"))
-					ElevatorDoor = ParseBool(GetKey(myDoor, INI_HEAD, "Elevator_Door", "False"));
+					ElevatorDoor = ParseBool(MainDoor.GetKey("Elevator_Door", "False"));
 				else
 					ElevatorDoor = false;
 
-				Doors.Add(myDoor);
+				Doors.Add(MainDoor);
 				Override = false;
 
-				TagA = GetKey(myDoor, INI_HEAD, "Sector_A", "").Trim();
-				TagB = GetKey(myDoor, INI_HEAD, "Sector_B", "").Trim();
+				TagA = MainDoor.GetKey("Sector_A", "").Trim();
+				TagB = MainDoor.GetKey("Sector_B", "").Trim();
 			}
 
 			// CHECK // - Checks pressure difference between sectors and bulkhead override status and locks/unlocks accordingly.
@@ -79,26 +84,26 @@ namespace IngameScript
 				foreach(Sector sector in Sectors)
 					sector.Check();
 
-				Override = ParseBool(GetKey(Doors[0], INI_HEAD, "Override", "false"));
+				Override = ParseBool(MainDoor.GetKey("Override", "false"));
 
 				if (Sectors[0].IsPressurized == Sectors[1].IsPressurized || Override)
 				{
-					foreach (IMyDoor door in Doors)
+					foreach (PressureDoor door in Doors)
 					{
 						if (ElevatorDoor && !Override)
-							SetKey(door, INI_HEAD, "Lock_Down", "False");
+							MainDoor.SetKey("Lock_Down", "False");
 						else
-							door.GetActionWithName("OnOff_On").Apply(door);
+							door.Door.GetActionWithName("OnOff_On").Apply(door.Door);
 					}		
 				}
 				else
 				{
-					foreach (IMyDoor door in Doors)
+					foreach (PressureDoor door in Doors)
                     {
-						door.GetActionWithName("OnOff_Off").Apply(door);
+						door.Door.GetActionWithName("OnOff_Off").Apply(door.Door);
 						if(ElevatorDoor)
                         {
-							SetKey(door, INI_HEAD, "Lock_Down", "True");
+							MainDoor.SetKey("Lock_Down", "True");
                         }
 					}
 				}
@@ -110,17 +115,16 @@ namespace IngameScript
 			public void SetOverride(bool overrided)
 			{
 				Override = overrided;
-				foreach (IMyDoor door in Doors)
-					SetKey(door, INI_HEAD, "Override", overrided.ToString());
+				MainDoor.SetKey("Override", overrided.ToString());
 			}
 
 
 			// OPEN // - openAll variable determines if doors with AutoOpen set to false are also opened.
 			public void Open(bool openAll)
 			{
-				foreach (IMyDoor myDoor in Doors)
+				foreach (PressureDoor myDoor in Doors)
 				{
-					bool auto = ParseBool(GetKey(myDoor, INI_HEAD, "AutoOpen", "true"));
+					bool auto = ParseBool(MainDoor.GetKey("AutoOpen", "true"));
 					if (auto || openAll)
 					{
 						myDoor.OpenDoor();
@@ -135,7 +139,7 @@ namespace IngameScript
 				if (Gauges.Count < 1)
 					return;
 
-				bool locked = !Doors[0].IsWorking;
+				bool locked = !MainDoor.Door.IsWorking;
 
 				foreach(GaugeSurface gauge in Gauges)
 				{
@@ -147,6 +151,64 @@ namespace IngameScript
 						DrawGauge(gauge, gauge.SectorA, gauge.SectorB, locked, true);
 				}
 			}
+
+			/*
+			public string GetKey(string key, string defaultValue)
+			{
+				EnsureKey(key, defaultValue);
+				return Ini.Get(INI_HEAD, key).ToString();
+			}
+
+			void EnsureKey(string key, string defaultValue)
+			{
+				if (!Ini.ContainsKey(INI_HEAD, key))
+					SetKey(key, defaultValue);
+			}
+
+			public void SetKey(string key, string value)
+			{
+				Ini.Set(INI_HEAD, key, value);
+				MainDoor.CustomData = Ini.ToString();
+			}
+			*/
+		}
+	
+	
+		public class PressureDoor
+        {
+			public IMyDoor Door;
+			BlockIni Ini;
+
+			// Constructor
+			public PressureDoor(IMyDoor door)
+            {
+				Door = door;
+				Ini = new BlockIni(Door, INI_HEAD);
+            }
+
+			// GET KEY
+			public string GetKey(string key, string defaultValue)
+			{
+				return Ini.GetKey(key, defaultValue);
+			}
+
+			// SET KEY
+			public void SetKey(string key, string value)
+			{
+				Ini.SetKey(key, value);
+			}
+
+			// OPEN DOOR
+			public void OpenDoor()
+            {
+				Door.OpenDoor();
+            }
+
+			// CLOSE DOOR
+			public void CloseDoor()
+            {
+				Door.CloseDoor();
+            }
 		}
 	}
 }

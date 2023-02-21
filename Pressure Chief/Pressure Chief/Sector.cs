@@ -39,7 +39,7 @@ namespace IngameScript
 			public string NormalColor; // Default pressurized light color for sector
 			public string EmergencyColor; // Default depressurized light color for sector
 			public string Status; // Current pressure status read from main Vents[0]
-			public IMyTimerBlock LockTimer;
+			public LockTimer LockTimer;
 			public IMySoundBlock LockAlarm;
 			public bool IsPressurized;
 			public bool Depressurizing;
@@ -47,7 +47,7 @@ namespace IngameScript
 			public int AutoCloseDelay;
 			public int CurrentDelayTime;
 
-
+			BlockIni Ini;
 
 			// Constructor
 			public Sector(IMyBlockGroup blockGroup)
@@ -71,6 +71,17 @@ namespace IngameScript
 				AssignTimer();
 			}
 
+			// GET KEY
+			public string GetKey(string key, string defaultValue)
+			{
+				return Ini.GetKey(key, defaultValue);
+			}
+
+			// SET KEY
+			public void SetKey(string key, string value)
+			{
+				Ini.SetKey(key, value);
+			}
 
 			// SET NAME
 			private void SetName()
@@ -102,13 +113,14 @@ namespace IngameScript
 				}
 
 				IMyAirVent airVent = Vents[0];
-				Vents.Add(airVent);
-				Status = GetKey(airVent, INI_HEAD, "Status", airVent.Status.ToString());
+				Ini = new BlockIni(airVent, INI_HEAD);
+				//Vents.Add(airVent);
+				Status = GetKey("Status", airVent.Status.ToString());
 				IsPressurized = airVent.GetOxygenLevel() >= 1 - THRESHHOLD;
 
 				//Name = TagFromName(airVent.CustomName);
-				NormalColor = GetKey(airVent, INI_HEAD, "Normal_Color", NORMAL);
-				EmergencyColor = GetKey(airVent, INI_HEAD, "Emergency_Color", EMERGENCY);
+				NormalColor = GetKey("Normal_Color", NORMAL);
+				EmergencyColor = GetKey("Emergency_Color", EMERGENCY);
 			}
 
 
@@ -167,7 +179,7 @@ namespace IngameScript
 					return;
                 }
 
-				LockTimer = timers[0];
+				LockTimer = new LockTimer(timers[0]);
 				Type = "Lock";
 				AssignAlarm();
 
@@ -249,7 +261,7 @@ namespace IngameScript
 			public void UpdateStatus()
 			{
 				IMyAirVent airVent = Vents[0];
-				string oldStatus = GetKey(airVent, INI_HEAD, "Status", "0");
+				string oldStatus = GetKey("Status", "0");
 				float o2Level;
 				if (!float.TryParse(oldStatus, out o2Level))
 					o2Level = 0;
@@ -260,7 +272,7 @@ namespace IngameScript
 						CloseDoors();
 				}
 
-				SetKey(airVent, INI_HEAD, "Status", airVent.GetOxygenLevel().ToString());
+				SetKey("Status", airVent.GetOxygenLevel().ToString());
 			}
 
 
@@ -310,7 +322,7 @@ namespace IngameScript
 				{
 					foreach (PressureLight light in Lights)
 					{
-						SetKey(light.LightBlock, INI_HEAD, "Emergency_Color", colorData);
+						light.SetKey("Emergency_Color", colorData);
 						light.EmergencyColor = ColorFromString(colorData);
 					}
 					//IniKey.SetKey(Vents[0], INI_HEAD, "Emergency_Color", colorData);
@@ -319,7 +331,7 @@ namespace IngameScript
 				{
 					foreach (PressureLight light in Lights)
 					{
-						SetKey(light.LightBlock, INI_HEAD, "Normal_Color", colorData);
+						light.SetKey("Normal_Color", colorData);
 						light.NormalColor = ColorFromString(colorData);
 					}
 					//IniKey.SetKey(Vents[0], INI_HEAD, "Normal_Color", colorData);
@@ -334,13 +346,13 @@ namespace IngameScript
 				{
 					if (emergency)
 					{
-						SetKey(light.LightBlock, INI_HEAD, "Emergency_Radius", radius);
+						light.SetKey("Emergency_Radius", radius);
 						light.EmergencyRadius = float.Parse(radius);
 					}
 
 					else
 					{
-						SetKey(light.LightBlock, INI_HEAD, "Normal_Radius", radius);
+						light.SetKey("Normal_Radius", radius);
 						light.NormalRadius = float.Parse(radius);
 					}
 				}
@@ -350,12 +362,12 @@ namespace IngameScript
 			// SET INTENSITY //
 			public void SetIntensity(string intensity, bool emergency)
 			{
-				foreach (IMyLightingBlock light in Lights)
+				foreach (PressureLight light in Lights)
 				{
 					if (emergency)
-						SetKey(light, INI_HEAD, "Emergency_Intensity", intensity);
+						light.SetKey("Emergency_Intensity", intensity);
 					else
-						SetKey(light, INI_HEAD, "Normal_Intensity", intensity);
+						light.SetKey("Normal_Intensity", intensity);
 				}
 			}
 
@@ -487,6 +499,46 @@ namespace IngameScript
                 {
 					DrawSingleSectorGauge(gauge, this);
                 }
+            }
+		}
+
+
+		// LOCK TIMER CLASS //
+		public class LockTimer
+		{
+			public IMyTimerBlock Timer;
+			BlockIni Ini;
+
+			// Constructor
+			public LockTimer(IMyTimerBlock timer)
+			{
+				Timer = timer;
+				Ini = new BlockIni(Timer, INI_HEAD);
+			}
+
+			// GET KEY
+			public string GetKey(string key, string defaultValue)
+			{
+				return Ini.GetKey(key, defaultValue);
+			}
+
+			// SET KEY
+			public void SetKey(string key, string value)
+			{
+				Ini.SetKey(key, value);
+			}
+
+			// TRIGGER DELAY
+			public float TriggerDelay
+            {
+                get { return Timer.TriggerDelay; }
+				set { Timer.TriggerDelay = value; }
+            }
+
+			//START COUNTDOWN
+			public void StartCountdown()
+            {
+				Timer.StartCountdown();
             }
 		}
 	}

@@ -22,68 +22,65 @@ namespace IngameScript
 {
     partial class Program
     {
-        public class MyScreen
-        {
-			// DRAW TEXTURE //
-			public static void DrawTexture(string shape, Vector2 position, Vector2 scale, float rotation, Color color, MySpriteDrawFrame frame)
+		// DRAW TEXTURE //
+		public static void DrawTexture(string shape, Vector2 position, Vector2 scale, float rotation, Color color, MySpriteDrawFrame frame)
+		{
+			MySprite sprite = new MySprite()
 			{
-				MySprite sprite = new MySprite()
-				{
-					Type = SpriteType.TEXTURE,
-					Data = shape,
-					Position = position,
-					RotationOrScale = rotation,
-					Size = scale,
-					Color = color
-				};
+				Type = SpriteType.TEXTURE,
+				Data = shape,
+				Position = position,
+				RotationOrScale = rotation,
+				Size = scale,
+				Color = color
+			};
 
-				frame.Add(sprite);
-			}
+			frame.Add(sprite);
+		}
 
 
-			// WRITE TEXT //
-			public static void WriteText(string text, Vector2 position, TextAlignment alignment, float scale, Color color, MySpriteDrawFrame frame)
+		// WRITE TEXT //
+		public static void WriteText(string text, Vector2 position, TextAlignment alignment, float scale, Color color, MySpriteDrawFrame frame)
+		{
+			var sprite = new MySprite()
 			{
-				var sprite = new MySprite()
-				{
-					Type = SpriteType.TEXT,
-					Data = text,
-					Position = position,
-					RotationOrScale = scale,
-					Color = color,
-					Alignment = alignment,
-					FontId = "White"
-				};
-				frame.Add(sprite);
-			}
+				Type = SpriteType.TEXT,
+				Data = text,
+				Position = position,
+				RotationOrScale = scale,
+				Color = color,
+				Alignment = alignment,
+				FontId = "White"
+			};
+			frame.Add(sprite);
+		}
 
-			public static IMyTextSurface PrepareTextSurface(IMyTextSurfaceProvider lcd)
+		public static IMyTextSurface PrepareTextSurface(IMyTextSurfaceProvider lcd)
+		{
+			if (lcd.SurfaceCount < 1)
+				return null;
+
+			byte index = 0;
+			if (lcd.SurfaceCount > 1)
 			{
-				if (lcd.SurfaceCount < 1)
-					return null;
-
-				byte index = 0;
-				if (lcd.SurfaceCount > 1)
+				if (!Byte.TryParse(GetKey(lcd as IMyTerminalBlock, INI_HEAD, "Screen_Index", "0"), out index) || index >= lcd.SurfaceCount)
 				{
-					if (!Byte.TryParse(GetKey(lcd as IMyTerminalBlock, INI_HEAD, "Screen_Index", "0"), out index) || index >= lcd.SurfaceCount)
-					{
-						index = 0;
-						_statusMessage = "Invalid 'Screen_Index' value in block " + (lcd as IMyTerminalBlock).CustomName;
-					}
+					index = 0;
+					_statusMessage = "Invalid 'Screen_Index' value in block " + (lcd as IMyTerminalBlock).CustomName;
 				}
-				IMyTextSurface textSurface = lcd.GetSurface(index);
-
-				// Set the sprite display mode
-				textSurface.ContentType = ContentType.SCRIPT;
-				// Make sure no built-in script has been selected
-				textSurface.Script = "";
-
-				// Set Background Color to black
-				textSurface.ScriptBackgroundColor = Color.Black;
-
-
-				return textSurface;
 			}
+			IMyTextSurface textSurface = lcd.GetSurface(index);
+
+			// Set the sprite display mode
+			textSurface.ContentType = ContentType.SCRIPT;
+			// Make sure no built-in script has been selected
+			textSurface.Script = "";
+
+			// Set Background Color to black
+			textSurface.ScriptBackgroundColor = Color.Black;
+
+
+			return textSurface;
 		}
 	}
 }

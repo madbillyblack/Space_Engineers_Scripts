@@ -28,17 +28,20 @@ namespace IngameScript
             public List<GaugeSurface> Surfaces;
             public List<Sector> Sectors;
 
+			MyIni Ini;
+
 			// CONSTRUCTOR
             public GaugeBlock(IMyTerminalBlock block)
             {
                 Block = block;
+				Ini = GetIni(Block);
                 Surfaces = new List<GaugeSurface>();
                 Sectors = new List<Sector>();
 
                 _buildMessage += "\nAdded LCD Block " + Block.CustomName;
 
                 // Get Sectors from Ini String
-                string[] sectorStrings = GetKey(Block, GAUGE_HEAD, "Sectors", "").Split('\n');
+                string[] sectorStrings = GetKey("Sectors", "").Split('\n');
                 foreach(string sectorString in sectorStrings)
                 {
                     Sector sector = GetSector(sectorString);
@@ -58,7 +61,7 @@ namespace IngameScript
                         boolDefault = "False";
 
                     // Check Custom Data of Block to see if screen should be active. Set parameter if not there.
-                    if(ParseBool(GetKey(Block, GAUGE_HEAD, "Show_On_Screen_" + i, boolDefault)))
+                    if(ParseBool(GetKey("Show_On_Screen_" + i, boolDefault)))
                     {
                         string gaugeHead = GAUGE_HEAD + " " + i;
 
@@ -66,11 +69,11 @@ namespace IngameScript
 
                         if (Sectors.Count > 0)
                         {
-                            sectorA = GetKey(Block, gaugeHead, "Sector_A", Sectors[0].Name);
+                            sectorA = GetKey("Sector_A", Sectors[0].Name);
 
                             if (Sectors.Count > 1)
                             {
-                                sectorB = GetKey(Block, gaugeHead, "Sector_B", Sectors[1].Name);
+                                sectorB = GetKey("Sector_B", Sectors[1].Name);
                                 Bulkhead bulkhead = GetBulkhead(sectorA + "," + sectorB);
                                 _buildMessage += "\nAssigning surface " + i + " of " + Block.CustomName + " to bulkhead [" + sectorA + "," + sectorB + "]";
 
@@ -92,9 +95,8 @@ namespace IngameScript
                             }
                         }
                     }
-                }    
+                }
             }
-
 
             // ASSIGN SINGLE SECTOR GAUGE // Assign a gauge to a specific sector, just to display that sector's pressure.
             public void AssignSingleSectorGauge(string sectorName, int index)
@@ -110,7 +112,25 @@ namespace IngameScript
 					_buildMessage += "\nAssigning LCD " + Block.CustomName + " to sector " + sector.Name;
 				}		
 			}
-        }
+
+			public string GetKey(string key, string defaultValue)
+			{
+				EnsureKey(key, defaultValue);
+				return Ini.Get(INI_HEAD, key).ToString();
+			}
+
+			void EnsureKey(string key, string defaultValue)
+			{
+				if (!Ini.ContainsKey(INI_HEAD, key))
+					SetKey(key, defaultValue);
+			}
+
+			public void SetKey(string key, string value)
+			{
+				Ini.Set(INI_HEAD, key, value);
+				Block.CustomData = Ini.ToString();
+			}
+		}
 
         public class GaugeSurface
         {
@@ -147,7 +167,7 @@ namespace IngameScript
 				else
 					defaultSide = "Select A or B";
 
-				Side = GetKey(owner.Block, gaugeHead, "Side", defaultSide);
+				Side = owner.GetKey("Side", defaultSide);
                 
                 bool vert;
                 if (owner.Block.BlockDefinition.SubtypeId.ToString().Contains("Corner_LCD"))
@@ -155,10 +175,10 @@ namespace IngameScript
                 else
                     vert = true;
                 
-                Vertical = ParseBool(GetKey(owner.Block, gaugeHead, "Vertical", vert.ToString()));
+                Vertical = ParseBool(owner.GetKey("Vertical", vert.ToString()));
                 
-                Flipped = ParseBool(GetKey(owner.Block, gaugeHead, "Flipped", "False"));
-                Brightness = ParseFloat(GetKey(owner.Block, gaugeHead, "Brightness", "1"));
+                Flipped = ParseBool(owner.GetKey("Flipped", "False"));
+                Brightness = ParseFloat(owner.GetKey("Brightness", "1"));
 
                 // Set the sprite display mode
                 Surface.ContentType = ContentType.SCRIPT;
@@ -287,43 +307,43 @@ namespace IngameScript
 				leftColor = _roomColor;
 			}
 
-			MyScreen.DrawTexture("SquareSimple", leftPos, leftScale, 0, new Color(redA, greenA, blueA), frame);
-			MyScreen.WriteText(leftText, leftTextPos, leftChamberAlignment, textSize, leftColor, frame);
+			DrawTexture("SquareSimple", leftPos, leftScale, 0, new Color(redA, greenA, blueA), frame);
+			WriteText(leftText, leftTextPos, leftChamberAlignment, textSize, leftColor, frame);
 			leftTextPos += leftReadingOffset;
-			MyScreen.WriteText((string.Format("{0:0.##}", (pressureA * _atmo * _factor))) + _unit, leftTextPos, leftChamberAlignment, textSize * 0.75f, _textColor, frame);
+			WriteText((string.Format("{0:0.##}", (pressureA * _atmo * _factor))) + _unit, leftTextPos, leftChamberAlignment, textSize * 0.75f, _textColor, frame);
 
 			// Right Chamber
-			MyScreen.DrawTexture("SquareSimple", rightPos, rightScale, 0, new Color(redB, greenB, blueB), frame);
-			MyScreen.WriteText(sectorB.Name, rightTextPos, rightChamberAlignment, textSize, _textColor, frame);
+			DrawTexture("SquareSimple", rightPos, rightScale, 0, new Color(redB, greenB, blueB), frame);
+			WriteText(sectorB.Name, rightTextPos, rightChamberAlignment, textSize, _textColor, frame);
 			rightTextPos += new Vector2(0, textSize * 25);
-			MyScreen.WriteText((string.Format("{0:0.##}", (pressureB * _atmo * _factor))) + _unit, rightTextPos, rightChamberAlignment, textSize * 0.75f, _textColor, frame);
+			WriteText((string.Format("{0:0.##}", (pressureB * _atmo * _factor))) + _unit, rightTextPos, rightChamberAlignment, textSize * 0.75f, _textColor, frame);
 
 			// Grid Texture
 			position = new Vector2(0, viewport.Center.Y);
-			MyScreen.DrawTexture("Grid", position, gridScale, 0, Color.Black, frame);
+			DrawTexture("Grid", position, gridScale, 0, Color.Black, frame);
 			position += new Vector2(1, 0);
-			MyScreen.DrawTexture("Grid", position, new Vector2(width, height * 20), 0, Color.Black, frame);
+			DrawTexture("Grid", position, new Vector2(width, height * 20), 0, Color.Black, frame);
 
 			// Status Frame
 			position = viewport.Center - new Vector2(width * 0.075f, 0);
-			MyScreen.DrawTexture("SquareSimple", position, new Vector2(width * 0.15f, height), 0, statusColor, frame);
+			DrawTexture("SquareSimple", position, new Vector2(width * 0.15f, height), 0, statusColor, frame);
 
 			// Door Background
 			position = viewport.Center - new Vector2(width * 0.0625f, 0);
-			MyScreen.DrawTexture("SquareSimple", position, new Vector2(width * 0.125f, height * 0.95f), 0, Color.Black, frame);
+			DrawTexture("SquareSimple", position, new Vector2(width * 0.125f, height * 0.95f), 0, Color.Black, frame);
 
 			// Door Status
 			if (locked)
 			{
 				position = viewport.Center - new Vector2(width * 0.04f, 0);
-				MyScreen.DrawTexture("Cross", position, new Vector2(width * 0.08f, width * 0.08f), 0, Color.White, frame);
+				DrawTexture("Cross", position, new Vector2(width * 0.08f, width * 0.08f), 0, Color.White, frame);
 			}
 			else
 			{
 				position = viewport.Center - new Vector2(width * 0.06f, 0);
-				MyScreen.DrawTexture("Arrow", position, new Vector2(width * 0.08f, width * 0.08f), (float)Math.PI / -2, Color.White, frame);
+				DrawTexture("Arrow", position, new Vector2(width * 0.08f, width * 0.08f), (float)Math.PI / -2, Color.White, frame);
 				position += new Vector2(width * 0.04f, 0);
-				MyScreen.DrawTexture("Arrow", position, new Vector2(width * 0.08f, width * 0.08f), (float)Math.PI / 2, Color.White, frame);
+				DrawTexture("Arrow", position, new Vector2(width * 0.08f, width * 0.08f), (float)Math.PI / 2, Color.White, frame);
 			}
 
 			frame.Dispose();
@@ -375,16 +395,16 @@ namespace IngameScript
 				gridScale = new Vector2(width, height * 20);
 			}
 
-			MyScreen.DrawTexture("SquareSimple", pos, scale, 0, new Color(red, green, blue), frame);
-			MyScreen.WriteText(sector.Name, textPos, alignment, textSize, _textColor, frame);
+			DrawTexture("SquareSimple", pos, scale, 0, new Color(red, green, blue), frame);
+			WriteText(sector.Name, textPos, alignment, textSize, _textColor, frame);
 			textPos += readingOffset;
-			MyScreen.WriteText((string.Format("{0:0.##}", (pressure * _atmo * _factor))) + _unit, textPos, alignment, textSize * 0.75f, _textColor, frame);
+			WriteText((string.Format("{0:0.##}", (pressure * _atmo * _factor))) + _unit, textPos, alignment, textSize * 0.75f, _textColor, frame);
 
 			// Grid Texture
 			position = new Vector2(0, viewport.Center.Y);
-			MyScreen.DrawTexture("Grid", position, gridScale, 0, Color.Black, frame);
+			DrawTexture("Grid", position, gridScale, 0, Color.Black, frame);
 			position += new Vector2(1, 0);
-			MyScreen.DrawTexture("Grid", position, new Vector2(width, height * 20), 0, Color.Black, frame);
+			DrawTexture("Grid", position, new Vector2(width, height * 20), 0, Color.Black, frame);
 
 			frame.Dispose();
 		}

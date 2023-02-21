@@ -29,13 +29,17 @@ namespace IngameScript
 			public List<DataScreen> Screens;
 			public int screenCount;
 
+			BlockIni Ini;
+
 			public DataDisplay(IMyTerminalBlock block)
 			{
 				Block = block;
+				Ini = new BlockIni(Block, MONITOR_HEAD);
+
 				screenCount = (block as IMyTextSurfaceProvider).SurfaceCount;
 				Screens = new List<DataScreen>();
 
-				string s = GetKey(block, MONITOR_HEAD, "Screen_Indices", "0");
+				string s = GetKey("Screen_Indices", "0");
 				string[] screens = s.Split(',');
 
 				if (screens.Length < 1 || screenCount < 1)
@@ -53,6 +57,18 @@ namespace IngameScript
 						}
 					}
 				}
+			}
+
+			// GET KEY
+			public string GetKey(string key, string defaultValue)
+			{
+				return Ini.GetKey(key, defaultValue);
+			}
+
+			// SET KEY
+			public void SetKey(string key, string value)
+			{
+				Ini.SetKey(key, value);
 			}
 		}
 
@@ -82,6 +98,7 @@ namespace IngameScript
 			public bool ShowConnectorNames;
 			public bool ShowConnectorStatus;
 
+			BlockIni Ini;
 			public DataScreen(IMyTerminalBlock block, IMyTextSurface surface, int screenIndex)
 			{
 				Sectors = new List<Sector>();
@@ -91,9 +108,10 @@ namespace IngameScript
 				ScreenIndex = screenIndex;
 				
 				IniTitle = MONITOR_HEAD + " " + screenIndex;
-				Header = GetKey(block, IniTitle, "Header", "Basic");
+				Ini = new BlockIni(ParentBlock, IniTitle);
+				Header = GetKey("Header", "Basic");
 
-				string sectorIni = GetKey(block, IniTitle, "Sectors", "");
+				string sectorIni = GetKey("Sectors", "");
 				string[] sectors = sectorIni.Split('\n');
 
 				if (sectors.Length > 0)
@@ -106,23 +124,37 @@ namespace IngameScript
 					}
 				}
 
-				ShowBuild = ParseBool(GetKey(block, IniTitle, "Show_Build", "False"));
-				ShowSectorType = ParseBool(GetKey(block, IniTitle, "Sector_Type", "False"));
-				ShowSectorStatus = ParseBool(GetKey(block, IniTitle, "Sector_Status", "True"));
-				ShowLockStatus = ParseBool(GetKey(block, IniTitle, "Lock_Status", "False"));
-				ShowVentCount = ParseBool(GetKey(block, IniTitle, "Vent_Count", "False"));
-				ShowDoorCount = ParseBool(GetKey(block, IniTitle, "Door_Count", "True"));
-				ShowDoorNames = ParseBool(GetKey(block, IniTitle, "Door_Names", "False"));
-				ShowDoorStatus = ParseBool(GetKey(block, IniTitle, "Door_Status", "False"));
-				ShowLightCount = ParseBool(GetKey(block, IniTitle, "Light_Count", "False"));
-				ShowMergeCount = ParseBool(GetKey(block, IniTitle, "Merge_Count", "True"));
-				ShowMergeNames = ParseBool(GetKey(block, IniTitle, "Merge_Names", "False"));
-				ShowMergeStatus = ParseBool(GetKey(block, IniTitle, "Merge_Status", "False"));
-				ShowConnectorCount = ParseBool(GetKey(block, IniTitle, "Connector_Count", "True"));
-				ShowConnectorNames = ParseBool(GetKey(block, IniTitle, "Connector_Names", "False"));
-				ShowConnectorStatus = ParseBool(GetKey(block, IniTitle, "Connector_Status", "False"));
+				ShowBuild = ParseBool(GetKey("Show_Build", "False"));
+				ShowSectorType = ParseBool(GetKey("Sector_Type", "False"));
+				ShowSectorStatus = ParseBool(GetKey("Sector_Status", "True"));
+				ShowLockStatus = ParseBool(GetKey("Lock_Status", "False"));
+				ShowVentCount = ParseBool(GetKey("Vent_Count", "False"));
+				ShowDoorCount = ParseBool(GetKey("Door_Count", "True"));
+				ShowDoorNames = ParseBool(GetKey("Door_Names", "False"));
+				ShowDoorStatus = ParseBool(GetKey("Door_Status", "False"));
+				ShowLightCount = ParseBool(GetKey("Light_Count", "False"));
+				ShowMergeCount = ParseBool(GetKey("Merge_Count", "True"));
+				ShowMergeNames = ParseBool(GetKey("Merge_Names", "False"));
+				ShowMergeStatus = ParseBool(GetKey("Merge_Status", "False"));
+				ShowConnectorCount = ParseBool(GetKey("Connector_Count", "True"));
+				ShowConnectorNames = ParseBool(GetKey("Connector_Names", "False"));
+				ShowConnectorStatus = ParseBool(GetKey("Connector_Status", "False"));
+			}
+
+
+			// GET KEY
+			public string GetKey(string key, string defaultValue)
+			{
+				return Ini.GetKey(key, defaultValue);
+			}
+
+			// SET KEY
+			public void SetKey(string key, string value)
+			{
+				Ini.SetKey(key, value);
 			}
 		}
+
 
 		// UPDATE MONITORS // Print Overview text to any blocks in the _dataDisplays list.
 		void UpdateData()

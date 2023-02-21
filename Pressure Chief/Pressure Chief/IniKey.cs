@@ -24,6 +24,67 @@ namespace IngameScript
     {
 		// INI FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+		// BLOCK INI
+		class BlockIni
+        {
+			IMyTerminalBlock Block;
+			MyIni Ini;
+			string MainHeader;
+
+			// Constructor
+			public BlockIni(IMyTerminalBlock block, string header)
+            {
+				Block = block;
+				MainHeader = header;
+				Ini = GetIni(Block);
+            }
+
+
+			// GET KEY
+			public string GetKey(string key, string defaultValue)
+			{
+				EnsureKey(key, defaultValue);
+				return Ini.Get(MainHeader, key).ToString();
+			}
+
+			// GET HEADER
+			public string GetHeader(string header, string key, string defaultValue)
+            {
+				EnsureHeader(header, key, defaultValue);
+				return Ini.Get(header, key).ToString();
+			}
+
+
+			// ENSURE KEY
+			void EnsureKey(string key, string defaultValue)
+			{
+				if (!Ini.ContainsKey(MainHeader, key))
+					SetKey(key, defaultValue);
+			}
+
+			// ENSURE HEADER
+			void EnsureHeader(string header, string key, string defaultValue)
+            {
+				if (!Ini.ContainsKey(header, key))
+					SetHeader(header, key, defaultValue);
+			}
+
+
+			// SET KEY
+			public void SetKey(string key, string value)
+			{
+				Ini.Set(MainHeader, key, value);
+				Block.CustomData = Ini.ToString();
+			}
+
+			// SET HEADER
+			public void SetHeader(string header, string key, string value)
+            {
+				Ini.Set(header, key, value);
+				Block.CustomData = Ini.ToString();
+			}
+		}
+
 		// GET INI // Get entire INI object from specified block.
 		public static MyIni GetIni(IMyTerminalBlock block)
 		{
