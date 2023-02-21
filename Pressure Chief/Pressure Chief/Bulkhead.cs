@@ -59,15 +59,15 @@ namespace IngameScript
 
 				// Check to see if door is also being used by Elevator Manager Script
 				if (myDoor.CustomData.Contains("Elevator_Door"))
-					ElevatorDoor = Util.ParseBool(IniKey.GetKey(myDoor, INI_HEAD, "Elevator_Door", "False"));
+					ElevatorDoor = ParseBool(GetKey(myDoor, INI_HEAD, "Elevator_Door", "False"));
 				else
 					ElevatorDoor = false;
 
 				Doors.Add(myDoor);
 				Override = false;
 
-				TagA = IniKey.GetKey(myDoor, INI_HEAD, "Sector_A", "").Trim();
-				TagB = IniKey.GetKey(myDoor, INI_HEAD, "Sector_B", "").Trim();
+				TagA = GetKey(myDoor, INI_HEAD, "Sector_A", "").Trim();
+				TagB = GetKey(myDoor, INI_HEAD, "Sector_B", "").Trim();
 			}
 
 			// CHECK // - Checks pressure difference between sectors and bulkhead override status and locks/unlocks accordingly.
@@ -79,14 +79,14 @@ namespace IngameScript
 				foreach(Sector sector in Sectors)
 					sector.Check();
 
-				Override = Util.ParseBool(IniKey.GetKey(Doors[0], INI_HEAD, "Override", "false"));
+				Override = ParseBool(GetKey(Doors[0], INI_HEAD, "Override", "false"));
 
 				if (Sectors[0].IsPressurized == Sectors[1].IsPressurized || Override)
 				{
 					foreach (IMyDoor door in Doors)
 					{
 						if (ElevatorDoor && !Override)
-							IniKey.SetKey(door, INI_HEAD, "Lock_Down", "False");
+							SetKey(door, INI_HEAD, "Lock_Down", "False");
 						else
 							door.GetActionWithName("OnOff_On").Apply(door);
 					}		
@@ -98,7 +98,7 @@ namespace IngameScript
 						door.GetActionWithName("OnOff_Off").Apply(door);
 						if(ElevatorDoor)
                         {
-							IniKey.SetKey(door, INI_HEAD, "Lock_Down", "True");
+							SetKey(door, INI_HEAD, "Lock_Down", "True");
                         }
 					}
 				}
@@ -111,7 +111,7 @@ namespace IngameScript
 			{
 				Override = overrided;
 				foreach (IMyDoor door in Doors)
-					IniKey.SetKey(door, INI_HEAD, "Override", overrided.ToString());
+					SetKey(door, INI_HEAD, "Override", overrided.ToString());
 			}
 
 
@@ -120,7 +120,7 @@ namespace IngameScript
 			{
 				foreach (IMyDoor myDoor in Doors)
 				{
-					bool auto = Util.ParseBool(IniKey.GetKey(myDoor, INI_HEAD, "AutoOpen", "true"));
+					bool auto = ParseBool(GetKey(myDoor, INI_HEAD, "AutoOpen", "true"));
 					if (auto || openAll)
 					{
 						myDoor.OpenDoor();

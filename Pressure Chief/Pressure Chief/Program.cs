@@ -162,14 +162,14 @@ namespace IngameScript
 			_textColor = new Color(TEXT_RED, TEXT_GREEN, TEXT_BLUE);
 			_roomColor = new Color(ROOM_RED, ROOM_GREEN, ROOM_BLUE);
 
-			_gridID = IniKey.GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+			_gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 			//_autoCheck = true;
 
 			// Assign all correctly named components to sectors.
 			Build();
 
 			// Check program block's custom data for Refresh_Rate and set UpdateFrequency accordingly.
-			string updateFactor = IniKey.GetKey(Me, INI_HEAD, "Refresh_Rate", "10");
+			string updateFactor = GetKey(Me, INI_HEAD, "Refresh_Rate", "10");
 			switch (updateFactor)
 			{
 				case "1":
@@ -385,7 +385,7 @@ namespace IngameScript
 			else
 				gridID = Me.CubeGrid.EntityId.ToString();
 
-			IniKey.SetKey(Me, SHARED, "Grid_ID", gridID);
+			SetKey(Me, SHARED, "Grid_ID", gridID);
 			_gridID = gridID;
 
 			List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
@@ -394,7 +394,7 @@ namespace IngameScript
 			foreach (IMyTerminalBlock block in blocks)
 			{
 				if (block.CustomData.Contains(SHARED))
-					IniKey.SetKey(block, SHARED, "Grid_ID", gridID);
+					SetKey(block, SHARED, "Grid_ID", gridID);
 			}
 
 			Build();
@@ -507,9 +507,9 @@ namespace IngameScript
 			_sectors = new List<Sector>();
 			_bulkheads = new List<Bulkhead>();
 			_dataDisplays = new List<DataDisplay>();
-			_vacTag = IniKey.GetKey(Me, INI_HEAD, "Vac_Tag", VAC_TAG);
-			_systemsName = IniKey.GetKey(Me, INI_HEAD, "Systems_Group", "");
-			_autoClose = Util.ParseBool(IniKey.GetKey(Me, INI_HEAD, "Auto-Close", "true"));
+			_vacTag = GetKey(Me, INI_HEAD, "Vac_Tag", VAC_TAG);
+			_systemsName = GetKey(Me, INI_HEAD, "Systems_Group", "");
+			_autoClose = ParseBool(GetKey(Me, INI_HEAD, "Auto-Close", "true"));
 
 			// Get tagged Sector Groups and add to List
 
@@ -541,7 +541,7 @@ namespace IngameScript
 				List<IMyAirVent> tempVents = new List<IMyAirVent>();
 				sectorGroup.GetBlocksOfType<IMyAirVent>(tempVents);
 
-				if(tempVents.Count > 0 && IniKey.GetKey(tempVents[0], SHARED, "Grid_ID", _gridID) == _gridID)
+				if(tempVents.Count > 0 && GetKey(tempVents[0], SHARED, "Grid_ID", _gridID) == _gridID)
 					_sectors.Add(new Sector(sectorGroup));
 			}
 
@@ -555,8 +555,8 @@ namespace IngameScript
 
 
 			//Set Pressure Unit as well as Atmospheric and User-Defined Factors
-			_unit = IniKey.GetKey(Me, INI_HEAD, "Unit", UNIT);
-			if (float.TryParse(IniKey.GetKey(Me, INI_HEAD, "Factor", "1"), out _factor))
+			_unit = GetKey(Me, INI_HEAD, "Unit", UNIT);
+			if (float.TryParse(GetKey(Me, INI_HEAD, "Factor", "1"), out _factor))
 				Echo("Unit: " + _unit + "   Factor: " + _factor);
 			else
 				_statusMessage = "UNPARSABLE FACTOR INPUT!!!";
@@ -625,19 +625,19 @@ namespace IngameScript
 		// MARK BLOCK // Mark Doors and LCD blocks with both of their sectors so that they can later be assigned to the appropriate Bulkhead.
 		static void MarkBlock(IMyDoor door, string sectorName)
         {
-			IniKey.EnsureKey(door, SHARED, "Grid_ID", _gridID);
+			EnsureKey(door, SHARED, "Grid_ID", _gridID);
 
-			string sectorA = IniKey.GetKey(door, INI_HEAD, "Sector_A", "");
-			string sectorB = IniKey.GetKey(door, INI_HEAD, "Sector_B", "");
+			string sectorA = GetKey(door, INI_HEAD, "Sector_A", "");
+			string sectorB = GetKey(door, INI_HEAD, "Sector_B", "");
 
 			if (sectorA == "" && sectorB.ToUpper() != sectorName.ToUpper())
 			{
-				IniKey.SetKey(door, INI_HEAD, "Sector_A", sectorName);
+				SetKey(door, INI_HEAD, "Sector_A", sectorName);
 				_buildMessage += "\n" + door.CustomName + "Added to [" + sectorName + "]";
 			}
 			else if (sectorB == "" && sectorA.ToUpper() != sectorName.ToUpper())
 			{
-				IniKey.SetKey(door, INI_HEAD, "Sector_B", sectorName);
+				SetKey(door, INI_HEAD, "Sector_B", sectorName);
 				_buildMessage += "\n" + door.CustomName + "Added to [" + sectorName + "]";
 			}
 			else if (sectorA.ToUpper() != sectorName.ToUpper() && sectorB.ToUpper() != sectorName.ToUpper())
@@ -650,15 +650,15 @@ namespace IngameScript
 		// MARK LCD BLOCK //
 		static void MarkLCDBlock(IMyTerminalBlock block, string sectorName)
         {
-			IniKey.EnsureKey(block, SHARED, "Grid_ID", _gridID);
+			EnsureKey(block, SHARED, "Grid_ID", _gridID);
 
-			IniKey.SetKey(block, GAUGE_HEAD, "Added", "False");
+			SetKey(block, GAUGE_HEAD, "Added", "False");
 
-			string sectorList = IniKey.GetKey(block, GAUGE_HEAD, "Sectors", "");
+			string sectorList = GetKey(block, GAUGE_HEAD, "Sectors", "");
 
 			if(sectorList == "")
             {
-				IniKey.SetKey(block, GAUGE_HEAD, "Sectors", sectorName);
+				SetKey(block, GAUGE_HEAD, "Sectors", sectorName);
 			}
             else
             {
@@ -675,7 +675,7 @@ namespace IngameScript
 
 				newList += sectorName;
 
-				IniKey.SetKey(block, GAUGE_HEAD, "Sectors", newList);
+				SetKey(block, GAUGE_HEAD, "Sectors", newList);
 			}
 		}
 
@@ -683,8 +683,8 @@ namespace IngameScript
 		// BULKHEAD FROM DOOR //
 		public static Bulkhead BulkheadFromDoor(IMyDoor door)
         {
-			string sectorA = IniKey.GetKey(door, INI_HEAD, "Sector_A", "");
-			string sectorB = IniKey.GetKey(door, INI_HEAD, "Sector_B", "");
+			string sectorA = GetKey(door, INI_HEAD, "Sector_A", "");
+			string sectorB = GetKey(door, INI_HEAD, "Sector_B", "");
 
 			if (sectorA == "" || sectorB == "")
 			{
@@ -712,7 +712,7 @@ namespace IngameScript
 		//ASSIGN DATA DISPLAYS// Get and set up blocks and surfaces designated as data displays
 		void AssignDataDisplays()
 		{
-			IMyBlockGroup dataGroup = GridTerminalSystem.GetBlockGroupWithName(IniKey.GetKey(Me, INI_HEAD, "Data_Group", "Pressure Data"));
+			IMyBlockGroup dataGroup = GridTerminalSystem.GetBlockGroupWithName(GetKey(Me, INI_HEAD, "Data_Group", "Pressure Data"));
 			if (dataGroup == null)
             {
 				_buildMessage += "\nOptional: No Pressure Data group found.";
@@ -726,7 +726,7 @@ namespace IngameScript
 
 			foreach (IMyTerminalBlock dataBlock in dataBlocks)
 			{
-				if((dataBlock as IMyTextSurfaceProvider).SurfaceCount > 0 && IniKey.GetKey(dataBlock, SHARED, "Grid_ID", _gridID) == _gridID)
+				if((dataBlock as IMyTextSurfaceProvider).SurfaceCount > 0 && GetKey(dataBlock, SHARED, "Grid_ID", _gridID) == _gridID)
 					_dataDisplays.Add(new DataDisplay(dataBlock));
 			}
 		}
@@ -746,11 +746,11 @@ namespace IngameScript
 				if (lcdBlock.SurfaceCount > 0)
 				{
 					Echo((lcdBlock as IMyTerminalBlock).CustomName);
-					bool added = Util.ParseBool(IniKey.GetKey(lcdBlock as IMyTerminalBlock, GAUGE_HEAD, "Added", "True"));
+					bool added = ParseBool(GetKey(lcdBlock as IMyTerminalBlock, GAUGE_HEAD, "Added", "True"));
 
 					if (!added)
 					{
-						IniKey.SetKey(lcdBlock as IMyTerminalBlock, GAUGE_HEAD, "Added", "True");
+						SetKey(lcdBlock as IMyTerminalBlock, GAUGE_HEAD, "Added", "True");
 						GaugeBlock gaugeBlock = new GaugeBlock(lcdBlock as IMyTerminalBlock);
 					}
 				}
@@ -772,10 +772,10 @@ namespace IngameScript
 
 					// If sector is a dock or lock, disable autoclose by default
 					if (sector.Type != "Room")
-						IniKey.EnsureKey(vent, INI_HEAD, "Auto_Close_Delay", "0");
+						EnsureKey(vent, INI_HEAD, "Auto_Close_Delay", "0");
 					
 						
-					sector.AutoCloseDelay = Util.ParseUInt(IniKey.GetKey(vent, INI_HEAD, "Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);
+					sector.AutoCloseDelay = ParseUInt(GetKey(vent, INI_HEAD, "Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);
 					sector.CurrentDelayTime = sector.AutoCloseDelay;
 				}
             }

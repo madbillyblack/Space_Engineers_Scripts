@@ -22,53 +22,50 @@ namespace IngameScript
 {
     partial class Program
     {
-        public class IniKey
-        {
-			// INI FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////////////////
+		// INI FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			// GET INI // Get entire INI object from specified block.
-			public static MyIni GetIni(IMyTerminalBlock block)
+		// GET INI // Get entire INI object from specified block.
+		public static MyIni GetIni(IMyTerminalBlock block)
+		{
+			MyIni iniOuti = new MyIni();
+
+			MyIniParseResult result;
+			if (!iniOuti.TryParse(block.CustomData, out result))
 			{
-				MyIni iniOuti = new MyIni();
-
-				MyIniParseResult result;
+				block.CustomData = "---\n" + block.CustomData;
 				if (!iniOuti.TryParse(block.CustomData, out result))
-				{
-					block.CustomData = "---\n" + block.CustomData;
-					if (!iniOuti.TryParse(block.CustomData, out result))
-						throw new Exception(result.ToString());
-				}
-
-				return iniOuti;
+					throw new Exception(result.ToString());
 			}
 
-
-			// ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
-			public static void EnsureKey(IMyTerminalBlock block, string header, string key, string defaultVal)
-			{
-				//if (!block.CustomData.Contains(header) || !block.CustomData.Contains(key))
-				MyIni ini = GetIni(block);
-				if (!ini.ContainsKey(header, key))
-					SetKey(block, header, key, defaultVal);
-			}
+			return iniOuti;
+		}
 
 
-			// GET KEY // Gets ini value from block.  Returns default argument if doesn't exist.
-			public static string GetKey(IMyTerminalBlock block, string header, string key, string defaultVal)
-			{
-				EnsureKey(block, header, key, defaultVal);
-				MyIni blockIni = GetIni(block);
-				return blockIni.Get(header, key).ToString();
-			}
+		// ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
+		public static void EnsureKey(IMyTerminalBlock block, string header, string key, string defaultVal)
+		{
+			//if (!block.CustomData.Contains(header) || !block.CustomData.Contains(key))
+			MyIni ini = GetIni(block);
+			if (!ini.ContainsKey(header, key))
+				SetKey(block, header, key, defaultVal);
+		}
 
 
-			// SET KEY // Update ini key for block, and write back to custom data.
-			public static void SetKey(IMyTerminalBlock block, string header, string key, string arg)
-			{
-				MyIni blockIni = GetIni(block);
-				blockIni.Set(header, key, arg);
-				block.CustomData = blockIni.ToString();
-			}
+		// GET KEY // Gets ini value from block.  Returns default argument if doesn't exist.
+		public static string GetKey(IMyTerminalBlock block, string header, string key, string defaultVal)
+		{
+			EnsureKey(block, header, key, defaultVal);
+			MyIni blockIni = GetIni(block);
+			return blockIni.Get(header, key).ToString();
+		}
+
+
+		// SET KEY // Update ini key for block, and write back to custom data.
+		public static void SetKey(IMyTerminalBlock block, string header, string key, string arg)
+		{
+			MyIni blockIni = GetIni(block);
+			blockIni.Set(header, key, arg);
+			block.CustomData = blockIni.ToString();
 		}
     }
 }

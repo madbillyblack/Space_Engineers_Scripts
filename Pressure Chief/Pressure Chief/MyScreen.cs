@@ -65,7 +65,7 @@ namespace IngameScript
 				byte index = 0;
 				if (lcd.SurfaceCount > 1)
 				{
-					if (!Byte.TryParse(IniKey.GetKey(lcd as IMyTerminalBlock, INI_HEAD, "Screen_Index", "0"), out index) || index >= lcd.SurfaceCount)
+					if (!Byte.TryParse(GetKey(lcd as IMyTerminalBlock, INI_HEAD, "Screen_Index", "0"), out index) || index >= lcd.SurfaceCount)
 					{
 						index = 0;
 						_statusMessage = "Invalid 'Screen_Index' value in block " + (lcd as IMyTerminalBlock).CustomName;

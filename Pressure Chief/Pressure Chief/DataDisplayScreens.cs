@@ -35,7 +35,7 @@ namespace IngameScript
 				screenCount = (block as IMyTextSurfaceProvider).SurfaceCount;
 				Screens = new List<DataScreen>();
 
-				string s = IniKey.GetKey(block, MONITOR_HEAD, "Screen_Indices", "0");
+				string s = GetKey(block, MONITOR_HEAD, "Screen_Indices", "0");
 				string[] screens = s.Split(',');
 
 				if (screens.Length < 1 || screenCount < 1)
@@ -91,9 +91,9 @@ namespace IngameScript
 				ScreenIndex = screenIndex;
 				
 				IniTitle = MONITOR_HEAD + " " + screenIndex;
-				Header = IniKey.GetKey(block, IniTitle, "Header", "Basic");
+				Header = GetKey(block, IniTitle, "Header", "Basic");
 
-				string sectorIni = IniKey.GetKey(block, IniTitle, "Sectors", "");
+				string sectorIni = GetKey(block, IniTitle, "Sectors", "");
 				string[] sectors = sectorIni.Split('\n');
 
 				if (sectors.Length > 0)
@@ -106,21 +106,21 @@ namespace IngameScript
 					}
 				}
 
-				ShowBuild = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Show_Build", "False"));
-				ShowSectorType = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Sector_Type", "False"));
-				ShowSectorStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Sector_Status", "True"));
-				ShowLockStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Lock_Status", "False"));
-				ShowVentCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Vent_Count", "False"));
-				ShowDoorCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Door_Count", "True"));
-				ShowDoorNames = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Door_Names", "False"));
-				ShowDoorStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Door_Status", "False"));
-				ShowLightCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Light_Count", "False"));
-				ShowMergeCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Merge_Count", "True"));
-				ShowMergeNames = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Merge_Names", "False"));
-				ShowMergeStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Merge_Status", "False"));
-				ShowConnectorCount = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Connector_Count", "True"));
-				ShowConnectorNames = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Connector_Names", "False"));
-				ShowConnectorStatus = Util.ParseBool(IniKey.GetKey(block, IniTitle, "Connector_Status", "False"));
+				ShowBuild = ParseBool(GetKey(block, IniTitle, "Show_Build", "False"));
+				ShowSectorType = ParseBool(GetKey(block, IniTitle, "Sector_Type", "False"));
+				ShowSectorStatus = ParseBool(GetKey(block, IniTitle, "Sector_Status", "True"));
+				ShowLockStatus = ParseBool(GetKey(block, IniTitle, "Lock_Status", "False"));
+				ShowVentCount = ParseBool(GetKey(block, IniTitle, "Vent_Count", "False"));
+				ShowDoorCount = ParseBool(GetKey(block, IniTitle, "Door_Count", "True"));
+				ShowDoorNames = ParseBool(GetKey(block, IniTitle, "Door_Names", "False"));
+				ShowDoorStatus = ParseBool(GetKey(block, IniTitle, "Door_Status", "False"));
+				ShowLightCount = ParseBool(GetKey(block, IniTitle, "Light_Count", "False"));
+				ShowMergeCount = ParseBool(GetKey(block, IniTitle, "Merge_Count", "True"));
+				ShowMergeNames = ParseBool(GetKey(block, IniTitle, "Merge_Names", "False"));
+				ShowMergeStatus = ParseBool(GetKey(block, IniTitle, "Merge_Status", "False"));
+				ShowConnectorCount = ParseBool(GetKey(block, IniTitle, "Connector_Count", "True"));
+				ShowConnectorNames = ParseBool(GetKey(block, IniTitle, "Connector_Names", "False"));
+				ShowConnectorStatus = ParseBool(GetKey(block, IniTitle, "Connector_Status", "False"));
 			}
 		}
 

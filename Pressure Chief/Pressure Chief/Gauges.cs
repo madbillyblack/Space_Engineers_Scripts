@@ -38,7 +38,7 @@ namespace IngameScript
                 _buildMessage += "\nAdded LCD Block " + Block.CustomName;
 
                 // Get Sectors from Ini String
-                string[] sectorStrings = IniKey.GetKey(Block, GAUGE_HEAD, "Sectors", "").Split('\n');
+                string[] sectorStrings = GetKey(Block, GAUGE_HEAD, "Sectors", "").Split('\n');
                 foreach(string sectorString in sectorStrings)
                 {
                     Sector sector = GetSector(sectorString);
@@ -58,7 +58,7 @@ namespace IngameScript
                         boolDefault = "False";
 
                     // Check Custom Data of Block to see if screen should be active. Set parameter if not there.
-                    if(Util.ParseBool(IniKey.GetKey(Block, GAUGE_HEAD, "Show_On_Screen_" + i, boolDefault)))
+                    if(ParseBool(GetKey(Block, GAUGE_HEAD, "Show_On_Screen_" + i, boolDefault)))
                     {
                         string gaugeHead = GAUGE_HEAD + " " + i;
 
@@ -66,11 +66,11 @@ namespace IngameScript
 
                         if (Sectors.Count > 0)
                         {
-                            sectorA = IniKey.GetKey(Block, gaugeHead, "Sector_A", Sectors[0].Name);
+                            sectorA = GetKey(Block, gaugeHead, "Sector_A", Sectors[0].Name);
 
                             if (Sectors.Count > 1)
                             {
-                                sectorB = IniKey.GetKey(Block, gaugeHead, "Sector_B", Sectors[1].Name);
+                                sectorB = GetKey(Block, gaugeHead, "Sector_B", Sectors[1].Name);
                                 Bulkhead bulkhead = GetBulkhead(sectorA + "," + sectorB);
                                 _buildMessage += "\nAssigning surface " + i + " of " + Block.CustomName + " to bulkhead [" + sectorA + "," + sectorB + "]";
 
@@ -147,7 +147,7 @@ namespace IngameScript
 				else
 					defaultSide = "Select A or B";
 
-				Side = IniKey.GetKey(owner.Block, gaugeHead, "Side", defaultSide);
+				Side = GetKey(owner.Block, gaugeHead, "Side", defaultSide);
                 
                 bool vert;
                 if (owner.Block.BlockDefinition.SubtypeId.ToString().Contains("Corner_LCD"))
@@ -155,10 +155,10 @@ namespace IngameScript
                 else
                     vert = true;
                 
-                Vertical = Util.ParseBool(IniKey.GetKey(owner.Block, gaugeHead, "Vertical", vert.ToString()));
+                Vertical = ParseBool(GetKey(owner.Block, gaugeHead, "Vertical", vert.ToString()));
                 
-                Flipped = Util.ParseBool(IniKey.GetKey(owner.Block, gaugeHead, "Flipped", "False"));
-                Brightness = Util.ParseFloat(IniKey.GetKey(owner.Block, gaugeHead, "Brightness", "1"));
+                Flipped = ParseBool(GetKey(owner.Block, gaugeHead, "Flipped", "False"));
+                Brightness = ParseFloat(GetKey(owner.Block, gaugeHead, "Brightness", "1"));
 
                 // Set the sprite display mode
                 Surface.ContentType = ContentType.SCRIPT;

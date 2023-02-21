@@ -112,7 +112,7 @@ namespace IngameScript
 				return;
 
 			IMyTimerBlock timer = sector.LockTimer;
-			string phase = IniKey.GetKey(timer, INI_HEAD, "Phase", "0");
+			string phase = GetKey(timer, INI_HEAD, "Phase", "0");
 
 			Bulkhead bulkhead = sector.GetExteriorBulkhead();
 			if (bulkhead == null)
@@ -142,18 +142,18 @@ namespace IngameScript
 				case "6": // OPEN SELF
 					bulkhead.Open(false);
 					_statusMessage = "Dock " + sector.Name + " is sealed.";
-					IniKey.SetKey(timer, INI_HEAD, "Phase", "0"); // Consider Removing for HATCH call
+					SetKey(timer, INI_HEAD, "Phase", "0"); // Consider Removing for HATCH call
 					break;
 				case "7": // DISENGAGE CONNECTIONS
 					ActivateDock(sector, false);
-					IniKey.SetKey(timer, INI_HEAD, "Phase", "8");
+					SetKey(timer, INI_HEAD, "Phase", "8");
 					timer.TriggerDelay = 10;
 					timer.StartCountdown();
 					_statusMessage = "Dock " + sector.Name + " disengaged.";
 					break;
 				case "8": // RE-ENGAGE CONNECTIONS & RESET
 					ActivateDock(sector, true);
-					IniKey.SetKey(timer, INI_HEAD, "Phase", "0");
+					SetKey(timer, INI_HEAD, "Phase", "0");
 					_statusMessage = "Dock " + sector.Name + " re-enabled.";
 					break;
 				default:
@@ -167,7 +167,7 @@ namespace IngameScript
 		void TimerOverride(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, string phase)
 		{
 			_statusMessage = "Overriding Lock " + sector.Name;
-			IniKey.SetKey(timer, INI_HEAD, "Phase", phase);
+			SetKey(timer, INI_HEAD, "Phase", phase);
 			timer.TriggerDelay = 1;
 			timer.StartCountdown();
 			bulkhead.SetOverride(true);
@@ -179,10 +179,10 @@ namespace IngameScript
 
 				if (phase == "6")
 				{
-					bool autoOpen = Util.ParseBool(IniKey.GetKey(door, INI_HEAD, "AutoOpen", "true"));
+					bool autoOpen = ParseBool(GetKey(door, INI_HEAD, "AutoOpen", "true"));
 					if (!autoOpen)
 					{
-						IniKey.SetKey(door, INI_HEAD, "Override", "false");
+						SetKey(door, INI_HEAD, "Override", "false");
 					}
 				}
 			}
@@ -195,7 +195,7 @@ namespace IngameScript
 		void TimerOpen(IMyTimerBlock timer, Sector sector, Bulkhead bulkhead, bool openAll)
 		{
 			bulkhead.Open(openAll);
-			IniKey.SetKey(timer, INI_HEAD, "Phase", "0");
+			SetKey(timer, INI_HEAD, "Phase", "0");
 			_statusMessage = sector.Type + " " + sector.Name + " opened.";
 			sector.Check();
 		}
@@ -236,9 +236,9 @@ namespace IngameScript
 		{
 			IMyTimerBlock timer = sector.LockTimer;
 			UInt32 delay;
-			IniKey.SetKey(timer, INI_HEAD, "Phase", phase);
+			SetKey(timer, INI_HEAD, "Phase", phase);
 
-			if (UInt32.TryParse(IniKey.GetKey(timer, INI_HEAD, "Delay", DELAY.ToString()), out delay))
+			if (UInt32.TryParse(GetKey(timer, INI_HEAD, "Delay", DELAY.ToString()), out delay))
 				delay--;
 			else
 				delay = DELAY - 1;
@@ -252,7 +252,7 @@ namespace IngameScript
 			if (sector.LockAlarm != null)
 			{
 				IMySoundBlock alarm = sector.LockAlarm;
-				bool autoSound = Util.ParseBool(IniKey.GetKey(alarm, INI_HEAD, "Auto-Sound-Select", "true"));
+				bool autoSound = ParseBool(GetKey(alarm, INI_HEAD, "Auto-Sound-Select", "true"));
 
 				if (autoSound)
 					alarm.SelectedSound = "SoundBlockAlert" + alert;
@@ -283,16 +283,16 @@ namespace IngameScript
 				{
 					if (overriding)
 					{
-						bool autoOpen = Util.ParseBool(IniKey.GetKey(door, INI_HEAD, "AutoOpen", "true"));
-						bool exterior = IniKey.GetKey(door, INI_HEAD, "Sector_A", "") == _vacTag || IniKey.GetKey(door, INI_HEAD, "Sector_B", "") == _vacTag;
+						bool autoOpen = ParseBool(GetKey(door, INI_HEAD, "AutoOpen", "true"));
+						bool exterior = GetKey(door, INI_HEAD, "Sector_A", "") == _vacTag || GetKey(door, INI_HEAD, "Sector_B", "") == _vacTag;
 						if (autoOpen && exterior)
-							IniKey.SetKey(door, INI_HEAD, "Override", "true");
+							SetKey(door, INI_HEAD, "Override", "true");
 						else
-							IniKey.SetKey(door, INI_HEAD, "Override", "false");
+							SetKey(door, INI_HEAD, "Override", "false");
 					}
 					else
 					{
-						IniKey.SetKey(door, INI_HEAD, "Override", "false");
+						SetKey(door, INI_HEAD, "Override", "false");
 						door.CloseDoor();
 					}
 				}
@@ -383,7 +383,7 @@ namespace IngameScript
 					group.GetBlocksOfType<IMyShipMergeBlock>(mergeBlocks);
 
 					// If Group has merge blocks and is not part of the original grid
-					if (mergeBlocks.Count > 0 && IniKey.GetKey(mergeBlocks[0], INI_HEAD, "Grid_ID", "") != _gridID)
+					if (mergeBlocks.Count > 0 && GetKey(mergeBlocks[0], INI_HEAD, "Grid_ID", "") != _gridID)
 					{
 						foreach(IMyShipMergeBlock myMergeBlock in sector.MergeBlocks)
                         {

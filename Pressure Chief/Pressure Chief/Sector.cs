@@ -103,12 +103,12 @@ namespace IngameScript
 
 				IMyAirVent airVent = Vents[0];
 				Vents.Add(airVent);
-				Status = IniKey.GetKey(airVent, INI_HEAD, "Status", airVent.Status.ToString());
+				Status = GetKey(airVent, INI_HEAD, "Status", airVent.Status.ToString());
 				IsPressurized = airVent.GetOxygenLevel() >= 1 - THRESHHOLD;
 
 				//Name = TagFromName(airVent.CustomName);
-				NormalColor = IniKey.GetKey(airVent, INI_HEAD, "Normal_Color", NORMAL);
-				EmergencyColor = IniKey.GetKey(airVent, INI_HEAD, "Emergency_Color", EMERGENCY);
+				NormalColor = GetKey(airVent, INI_HEAD, "Normal_Color", NORMAL);
+				EmergencyColor = GetKey(airVent, INI_HEAD, "Emergency_Color", EMERGENCY);
 			}
 
 
@@ -249,7 +249,7 @@ namespace IngameScript
 			public void UpdateStatus()
 			{
 				IMyAirVent airVent = Vents[0];
-				string oldStatus = IniKey.GetKey(airVent, INI_HEAD, "Status", "0");
+				string oldStatus = GetKey(airVent, INI_HEAD, "Status", "0");
 				float o2Level;
 				if (!float.TryParse(oldStatus, out o2Level))
 					o2Level = 0;
@@ -260,7 +260,7 @@ namespace IngameScript
 						CloseDoors();
 				}
 
-				IniKey.SetKey(airVent, INI_HEAD, "Status", airVent.GetOxygenLevel().ToString());
+				SetKey(airVent, INI_HEAD, "Status", airVent.GetOxygenLevel().ToString());
 			}
 
 
@@ -310,8 +310,8 @@ namespace IngameScript
 				{
 					foreach (PressureLight light in Lights)
 					{
-						IniKey.SetKey(light.LightBlock, INI_HEAD, "Emergency_Color", colorData);
-						light.EmergencyColor = Util.ColorFromString(colorData);
+						SetKey(light.LightBlock, INI_HEAD, "Emergency_Color", colorData);
+						light.EmergencyColor = ColorFromString(colorData);
 					}
 					//IniKey.SetKey(Vents[0], INI_HEAD, "Emergency_Color", colorData);
 				}
@@ -319,8 +319,8 @@ namespace IngameScript
 				{
 					foreach (PressureLight light in Lights)
 					{
-						IniKey.SetKey(light.LightBlock, INI_HEAD, "Normal_Color", colorData);
-						light.NormalColor = Util.ColorFromString(colorData);
+						SetKey(light.LightBlock, INI_HEAD, "Normal_Color", colorData);
+						light.NormalColor = ColorFromString(colorData);
 					}
 					//IniKey.SetKey(Vents[0], INI_HEAD, "Normal_Color", colorData);
 				}
@@ -334,13 +334,13 @@ namespace IngameScript
 				{
 					if (emergency)
 					{
-						IniKey.SetKey(light.LightBlock, INI_HEAD, "Emergency_Radius", radius);
+						SetKey(light.LightBlock, INI_HEAD, "Emergency_Radius", radius);
 						light.EmergencyRadius = float.Parse(radius);
 					}
 
 					else
 					{
-						IniKey.SetKey(light.LightBlock, INI_HEAD, "Normal_Radius", radius);
+						SetKey(light.LightBlock, INI_HEAD, "Normal_Radius", radius);
 						light.NormalRadius = float.Parse(radius);
 					}
 				}
@@ -353,9 +353,9 @@ namespace IngameScript
 				foreach (IMyLightingBlock light in Lights)
 				{
 					if (emergency)
-						IniKey.SetKey(light, INI_HEAD, "Emergency_Intensity", intensity);
+						SetKey(light, INI_HEAD, "Emergency_Intensity", intensity);
 					else
-						IniKey.SetKey(light, INI_HEAD, "Normal_Intensity", intensity);
+						SetKey(light, INI_HEAD, "Normal_Intensity", intensity);
 				}
 			}
 

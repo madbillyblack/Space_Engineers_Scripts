@@ -22,67 +22,64 @@ namespace IngameScript
 {
     partial class Program
     {
-        public class Util
-        {
-			// PARSE BOOL //
-			public static bool ParseBool(string val)
+		// PARSE BOOL //
+		public static bool ParseBool(string val)
+		{
+			string uVal = val.ToUpper();
+			if (uVal == "TRUE" || uVal == "T" || uVal == "1")
 			{
-				string uVal = val.ToUpper();
-				if (uVal == "TRUE" || uVal == "T" || uVal == "1")
-				{
-					return true;
-				}
-
-				return false;
+				return true;
 			}
 
+			return false;
+		}
 
-			// COLOR FROM STRING // Returns color based on comma separated RGB value.
-			public static Color ColorFromString(string rgb)
+
+		// COLOR FROM STRING // Returns color based on comma separated RGB value.
+		public static Color ColorFromString(string rgb)
+		{
+			string[] values = rgb.Split(',');
+			if (values.Length < 3)
+				return Color.Black;
+
+			byte[] outputs = new byte[3];
+			for (int i = 0; i < 3; i++)
 			{
-				string[] values = rgb.Split(',');
-				if (values.Length < 3)
-					return Color.Black;
-
-				byte[] outputs = new byte[3];
-				for (int i = 0; i < 3; i++)
-				{
-					bool success = byte.TryParse(values[i], out outputs[i]);
-					if (!success)
-						outputs[i] = 0;
-				}
-
-				return new Color(outputs[0], outputs[1], outputs[2]);
+				bool success = byte.TryParse(values[i], out outputs[i]);
+				if (!success)
+					outputs[i] = 0;
 			}
 
+			return new Color(outputs[0], outputs[1], outputs[2]);
+		}
 
-			// PARSE FLOAT //
-			public static float ParseFloat(string numberString)
+
+		// PARSE FLOAT //
+		public static float ParseFloat(string numberString)
+		{
+			float number;
+
+			if (Single.TryParse(numberString, out number))
+				return number;
+			else
+				return 0;
+		}
+
+
+		// PARSE INT //
+		public static int ParseUInt(string value)
+		{
+			UInt32 number;
+			try
 			{
-				float number;
-
-				if (Single.TryParse(numberString, out number))
-					return number;
-				else
-					return 0;
+				number = UInt32.Parse(value);
+			}
+			catch
+			{
+				number = 0;
 			}
 
-
-			// PARSE INT //
-			public static int ParseUInt(string value)
-            {
-				UInt32 number;
-				try
-                {
-					number = UInt32.Parse(value);
-                }
-				catch
-                {
-					number = 0;
-                }
-
-				return (int)number;
-            }
+			return (int)number;
 		}
     }
 }
