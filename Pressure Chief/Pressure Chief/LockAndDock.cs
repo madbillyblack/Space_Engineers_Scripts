@@ -28,14 +28,14 @@ namespace IngameScript
 		 *bool openAll determines if non-AutoOpen doors are included in sequence. */
 		void OpenLock(string tag, bool openAll)
 		{
-			string phase;
+			int phase;
 			if (openAll)
-				phase = "3";
+				phase = 3;
 			else
-				phase = "1";
+				phase = 1;
 
 			Sector sector = GetSector(tag);
-			if (UnknownSector(sector, "Lock"))
+			if (UnknownSector(sector, LOCK))
 				return;
 
 			if (sector.Docked() && !openAll)
@@ -48,6 +48,8 @@ namespace IngameScript
 			if (sector.Vents.Count > 0)
 			{
 				sector.SetPressureStatus(true);
+				//sector.UpdateLights(false); // pressurized = false
+				sector.SetBlink(true);
 
 				foreach (IMyAirVent vent in sector.Vents)
 				{
@@ -64,7 +66,7 @@ namespace IngameScript
 		{
 			Sector sector = GetSector(tag);
 
-			if (UnknownSector(sector, "Lock"))
+			if (UnknownSector(sector, LOCK))
 				return;
 
 			// Restore Docked sector to normal status.
@@ -90,7 +92,7 @@ namespace IngameScript
 		void CycleLock(string tag)
 		{
 			Sector sector = GetSector(tag);
-			if (UnknownSector(sector, "Lock"))
+			if (UnknownSector(sector, LOCK))
 				return;
 
 			Bulkhead bulkhead = sector.GetExteriorBulkhead();
@@ -108,11 +110,12 @@ namespace IngameScript
 		void TimerCall(string tag)
 		{
 			Sector sector = GetSector(tag);
-			if (UnknownSector(sector, "lock"))
+			if (UnknownSector(sector, LOCK))
 				return;
 
 			LockTimer timer = sector.LockTimer;
-			string phase = timer.GetKey("Phase", "0");
+			//string phase = timer.GetKey("Phase", "0");
+			
 
 			Bulkhead bulkhead = sector.GetExteriorBulkhead();
 			if (bulkhead == null)
@@ -121,53 +124,59 @@ namespace IngameScript
 				return;
 			}
 
-			switch (phase)
+			switch (sector.Phase)
 			{
-				case "1": // OVERRIDE EXTERIOR BULKHEAD
-					TimerOverride(timer, sector, bulkhead, "2");
+				case 1: // OVERRIDE EXTERIOR BULKHEAD
+					TimerOverride(timer, sector, bulkhead, 2);
 					break;
-				case "2": // OPEN AUTO-OPEN DOORS ONLY
+				case 2: // OPEN AUTO-OPEN DOORS ONLY
 					TimerOpen(timer, sector, bulkhead, false);
 					break;
-				case "3":// OVERRIDE EXTERIOR BULKHEAD
-					TimerOverride(timer, sector, bulkhead, "4");
+				case 3:// OVERRIDE EXTERIOR BULKHEAD
+					TimerOverride(timer, sector, bulkhead, 4);
 					break;
-				case "4":
+				case 4:
 					TimerOpen(timer, sector, bulkhead, true);
 					break;
-				case "5": // OVERRIDE SELF AND DOCKED PORT
+				case 5: // OVERRIDE SELF AND DOCKED PORT
 					SetDockedOverride(sector, true);
-					TimerOverride(timer, sector, bulkhead, "6");
+					TimerOverride(timer, sector, bulkhead, 6);
 					break;
-				case "6": // OPEN SELF
+				case 6: // OPEN SELF
 					bulkhead.Open(false);
 					_statusMessage = "Dock " + sector.Name + " is sealed.";
-					timer.SetKey("Phase", "0"); // Consider Removing for HATCH call
+					sector.SetPhase(0);
+					//timer.SetKey("Phase", "0"); // Consider Removing for HATCH call
 					break;
-				case "7": // DISENGAGE CONNECTIONS
+				case 7: // DISENGAGE CONNECTIONS
 					ActivateDock(sector, false);
-					timer.SetKey("Phase", "8");
+					sector.SetPhase(8);
+					//timer.SetKey("Phase", "8");
 					timer.TriggerDelay = 10;
 					timer.StartCountdown();
 					_statusMessage = "Dock " + sector.Name + " disengaged.";
 					break;
-				case "8": // RE-ENGAGE CONNECTIONS & RESET
+				case 8: // RE-ENGAGE CONNECTIONS & RESET
 					ActivateDock(sector, true);
-					timer.SetKey("Phase", "0");
+					sector.SetPhase(0);
+					//timer.SetKey("Phase", "0");
 					_statusMessage = "Dock " + sector.Name + " re-enabled.";
 					break;
 				default:
-					_statusMessage = sector.Name + " timer phase: " + phase;
+					_statusMessage = sector.Name + " timer phase: " + sector.Phase;
 					break;
 			}
+
+			sector.Check();
 		}
 
 
 		// TIMER OVERRIDE // - First Timer Action overrides lock.
-		void TimerOverride(LockTimer timer, Sector sector, Bulkhead bulkhead, string phase)
+		void TimerOverride(LockTimer timer, Sector sector, Bulkhead bulkhead, int phase)
 		{
 			_statusMessage = "Overriding Lock " + sector.Name;
-			timer.SetKey("Phase", phase);
+			sector.SetPhase(phase);
+			//timer.SetKey("Phase", phase);
 			timer.TriggerDelay = 1;
 			timer.StartCountdown();
 			bulkhead.SetOverride(true);
@@ -178,7 +187,7 @@ namespace IngameScript
 				IMyDoor door = pressureDoor.Door;
 				door.GetActionWithName("OnOff_On").Apply(door);
 
-				if (phase == "6")
+				if (phase == 6)
 				{
 					bool autoOpen = ParseBool(pressureDoor.GetKey("AutoOpen", "true"));
 					if (!autoOpen)
@@ -196,7 +205,9 @@ namespace IngameScript
 		void TimerOpen(LockTimer timer, Sector sector, Bulkhead bulkhead, bool openAll)
 		{
 			bulkhead.Open(openAll);
-			timer.SetKey("Phase", "0");
+			sector.SetPhase(0);
+			sector.SetBlink(false);
+			//timer.SetKey("Phase", "0");
 			_statusMessage = sector.Type + " " + sector.Name + " opened.";
 			sector.Check();
 		}
@@ -205,20 +216,20 @@ namespace IngameScript
 		// DOCK SEAL // - Attempts to lock dock connectors to other dock.
 		void DockSeal(Sector sector)
 		{
-			if (UnknownSector(sector, "Dock"))
+			if (UnknownSector(sector, DOCK))
 				return;
 
 			foreach (IMyShipConnector connector in sector.Connectors)
 				connector.Connect();
 
-			StageLock(sector, "5", 2); // phase "3", alert 2
+			StageLock(sector, 5, 2); // phase "3", alert 2
 		}
 
 
 		// UNDOCK // - Close dock, get other dock, close and reset override, then start timer to separate.
 		void Undock(Sector sector)
 		{
-			if (UnknownSector(sector, "Dock"))
+			if (UnknownSector(sector, DOCK))
 				return;
 
 			sector.CloseDoors();
@@ -228,16 +239,17 @@ namespace IngameScript
 			//foreach (IMyDoor door in dockedDoors)
 			//	door.CloseDoor();
 
-			StageLock(sector, "7", 1);
+			StageLock(sector, 7, 1);
 		}
 
 
 		// STAGE LOCK // - Executes various repeated functions for Timer Calls
-		void StageLock(Sector sector, string phase, int alert)
+		void StageLock(Sector sector, int phase, int alert)
 		{
 			LockTimer timer = sector.LockTimer;
 			UInt32 delay;
-			timer.SetKey("Phase", phase);
+			sector.SetPhase(phase);
+			//timer.SetKey("Phase", phase);
 
 			if (UInt32.TryParse(timer.GetKey("Delay", DELAY.ToString()), out delay))
 				delay--;

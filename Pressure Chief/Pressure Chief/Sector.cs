@@ -22,6 +22,9 @@ namespace IngameScript
 {
     partial class Program
     {
+		const string LOCK = "LOCK";
+		const string DOCK = "DOCK";
+
 		// SECTOR // - Class that includes all components for a specific room.
 		public class Sector
 		{
@@ -46,6 +49,7 @@ namespace IngameScript
 			public bool HasChanged;
 			public int AutoCloseDelay;
 			public int CurrentDelayTime;
+			public int Phase;
 
 			BlockIni Ini;
 
@@ -66,9 +70,10 @@ namespace IngameScript
 				SetName();
 				AssignVents();
 				AssignDoors(); //And add to Bulkhead
+				AssignTimer();
 				AssignLights();
 				UpdateLights(IsPressurized);
-				AssignTimer();
+				
 			}
 
 			// GET KEY
@@ -155,7 +160,7 @@ namespace IngameScript
 
 				foreach (IMyLightingBlock lightingBlock in lightingBlocks)
 				{
-					PressureLight light = new PressureLight(lightingBlock);
+					PressureLight light = new PressureLight(lightingBlock, IsAirLock());
 					Lights.Add(light);
 				}
 			}
@@ -166,9 +171,12 @@ namespace IngameScript
 			{
 				List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
 				Group.GetBlocksOfType<IMyTimerBlock>(timers);
+				Phase = 0;
 
 				if (timers.Count < 1)
+                {
 					return;
+				}	
 				else if (timers.Count > 1)
 				{
 					_buildMessage += "\nWARNING: Sector " + Name + " has more than 1 timer assigned.\n * Only timer " + timers[0].CustomName + " will be used.";
@@ -180,9 +188,11 @@ namespace IngameScript
                 }
 
 				LockTimer = new LockTimer(timers[0]);
-				Type = "Lock";
-				AssignAlarm();
+				Type = LOCK;
+				Phase = ParseUInt(LockTimer.GetKey("Phase", "0"));
 
+				AssignAlarm();
+				
 				// Check if Lock has merge blocks required to be a dock.
 				AssignMergeBlocks();
 			}
@@ -215,7 +225,7 @@ namespace IngameScript
 				if (MergeBlocks.Count < 1)
 					return;
 
-				Type = "Dock";
+				Type = DOCK;
 				AssignConnectors();
 			}
 
@@ -235,8 +245,11 @@ namespace IngameScript
 			// CHECK - Check all pressure status between this and all neighboring sectors and update lights based on pressure status.
 			public void Check()
 			{
-				bool pressurized = Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD;
+				bool airlockActive = IsAirLock() && Phase > 0 && Phase < 5;
+
+				bool pressurized = (Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD) && !airlockActive;
 				bool depressurize = Vents[0].Depressurize;
+
 				if (IsPressurized == pressurized && Depressurizing == depressurize)
 					HasChanged = false;
 				else
@@ -388,6 +401,16 @@ namespace IngameScript
 					IsPressurized = false;
 			}
 
+			// SET BLINK
+			public void SetBlink(bool blinkOn)
+			{
+				if (Lights.Count< 1)
+					return;
+
+				foreach (PressureLight light in Lights)
+					light.SetBlink(blinkOn);
+            }
+
 
 			// UPDATE LIGHTS //
 			public void UpdateLights(bool pressurized)
@@ -440,7 +463,7 @@ namespace IngameScript
 			// DOCKED // Returns if sector is docked to another grid
 			public bool Docked()
 			{
-				if (Type != "DOCK" || MergeBlocks.Count < 1)
+				if (Type != DOCK || MergeBlocks.Count < 1)
 					return false;
 
 				foreach (IMyShipMergeBlock mergeBlock in MergeBlocks)
@@ -459,7 +482,7 @@ namespace IngameScript
 				// If delay set to 0 or no doors open exit
 				if (AutoCloseDelay < 1 || !HasOpenDoors())
                 {
-					CurrentDelayTime = AutoCloseDelay;
+					//CurrentDelayTime = AutoCloseDelay;
 					return;
 				}
 					
@@ -487,6 +510,15 @@ namespace IngameScript
 				return false;
             }
 
+			// SET AUTO CLOSE
+			public void SetAutoCloseDelay(string delayTime)
+            {
+				AutoCloseDelay = ParseUInt(delayTime);
+				if (AutoCloseDelay > 0)
+					CurrentDelayTime = AutoCloseDelay;
+
+				SetKey("Auto_Close_Delay", AutoCloseDelay.ToString());
+            }
 
 
 			// DRAW GAUGES //
@@ -500,6 +532,19 @@ namespace IngameScript
 					DrawSingleSectorGauge(gauge, this);
                 }
             }
+
+			// IS LOCK
+			public bool IsAirLock()
+            {
+				return Type == LOCK || Type == DOCK;
+            }
+
+			// SET PHASE
+			public void SetPhase(int phase)
+			{
+				Phase = phase;
+				LockTimer.SetKey("Phase", Phase.ToString());
+			}
 		}
 
 

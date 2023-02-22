@@ -28,13 +28,13 @@ namespace IngameScript
             public List<GaugeSurface> Surfaces;
             public List<Sector> Sectors;
 
-			MyIni Ini;
+			BlockIni Ini;
 
 			// CONSTRUCTOR
             public GaugeBlock(IMyTerminalBlock block)
             {
                 Block = block;
-				Ini = GetIni(Block);
+				Ini = new BlockIni(Block, GAUGE_HEAD);
                 Surfaces = new List<GaugeSurface>();
                 Sectors = new List<Sector>();
 
@@ -113,22 +113,16 @@ namespace IngameScript
 				}		
 			}
 
+			// GET KEY
 			public string GetKey(string key, string defaultValue)
 			{
-				EnsureKey(key, defaultValue);
-				return Ini.Get(INI_HEAD, key).ToString();
+				return Ini.GetKey(key, defaultValue);
 			}
 
-			void EnsureKey(string key, string defaultValue)
-			{
-				if (!Ini.ContainsKey(INI_HEAD, key))
-					SetKey(key, defaultValue);
-			}
-
+			// SET KEY
 			public void SetKey(string key, string value)
 			{
-				Ini.Set(INI_HEAD, key, value);
-				Block.CustomData = Ini.ToString();
+				Ini.SetKey(key, value);
 			}
 		}
 
