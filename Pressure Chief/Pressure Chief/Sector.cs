@@ -48,7 +48,7 @@ namespace IngameScript
 			public bool Depressurizing;
 			public bool HasChanged;
 			public int AutoCloseDelay;
-			public int CurrentDelayTime;
+			//public int CurrentDelayTime;
 			public int Phase;
 
 			BlockIni Ini;
@@ -144,8 +144,10 @@ namespace IngameScript
 				{
 					Bulkhead bulkhead = BulkheadFromDoor(door);
 					if (bulkhead != null && bulkhead.Sectors.Count < 2 && !bulkhead.Sectors.Contains(this))
+                    {
 						bulkhead.Sectors.Add(this);
-
+						bulkhead.SetAutoClose();
+					}
 				}
 			}
 
@@ -258,7 +260,7 @@ namespace IngameScript
 				IsPressurized = pressurized;
 				Depressurizing = depressurize;
 				DrawGauges();
-				AutoClose();
+				//AutoClose();
 
 				if (!HasChanged)
 					return;
@@ -475,14 +477,19 @@ namespace IngameScript
 				return false;
 			}
 
-
+			/*
 			// AUTO CLOSE //
 			public void AutoClose()
             {
 				// If delay set to 0 or no doors open exit
-				if (AutoCloseDelay < 1 || !HasOpenDoors())
+				if(AutoCloseDelay < 1)
                 {
-					//CurrentDelayTime = AutoCloseDelay;
+					return;
+                }
+
+				if (!HasOpenDoors())
+                {
+					CurrentDelayTime = AutoCloseDelay;
 					return;
 				}
 					
@@ -491,7 +498,7 @@ namespace IngameScript
 				if (CurrentDelayTime < 1)
 					CloseDoors();
             }
-
+			*/
 
 			// HAS OPEN DOORS //
 			public bool HasOpenDoors()
@@ -511,13 +518,18 @@ namespace IngameScript
             }
 
 			// SET AUTO CLOSE
-			public void SetAutoCloseDelay(string delayTime)
+			public void SetAutoCloseDelay(string delayTime, bool writeToData = true)
             {
-				AutoCloseDelay = ParseUInt(delayTime);
-				if (AutoCloseDelay > 0)
-					CurrentDelayTime = AutoCloseDelay;
+				//AutoCloseDelay = (ParseUInt(delayTime) * _autoCloseFactor)/10; // Division by 10 is for backwards compatibility
+				AutoCloseDelay = ParseUInt(delayTime);// * (int)(20 * _autoCloseFactor / _sectors.Count +1); // +1 to avoid 0 on upadate100
 
-				SetKey("Auto_Close_Delay", AutoCloseDelay.ToString());
+				//if (AutoCloseDelay > 0)
+				//	CurrentDelayTime = AutoCloseDelay;
+
+				if(writeToData)
+                {
+					SetKey("Auto_Close_Delay", AutoCloseDelay.ToString());
+				}
             }
 
 

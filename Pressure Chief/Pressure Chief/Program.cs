@@ -100,6 +100,7 @@ namespace IngameScript
 		static string _unit; // Display unit of pressure.
 		static float _atmo; // Atmospheric conversion factor decided by unit.
 		static float _factor; // Multiplier of pressure reading.
+		static int _autoCloseFactor;
 		static string _systemsName;
 
 		// Breather Array - Used to indicate that program is running in terminal
@@ -170,23 +171,7 @@ namespace IngameScript
 			// Assign all correctly named components to sectors.
 			Build();
 
-			// Check program block's custom data for Refresh_Rate and set UpdateFrequency accordingly.
-			string updateFactor = _programIni.GetKey("Refresh_Rate", "10");
-			switch (updateFactor)
-			{
-				case "1":
-					Runtime.UpdateFrequency = UpdateFrequency.Update1;
-					break;
-				case "10":
-					Runtime.UpdateFrequency = UpdateFrequency.Update10;
-					break;
-				case "100":
-					Runtime.UpdateFrequency = UpdateFrequency.Update100;
-					break;
-				default:
-					Runtime.UpdateFrequency = UpdateFrequency.Update10;
-					break;
-			}
+
 		}
 
 
@@ -417,6 +402,8 @@ namespace IngameScript
 		{
 			_programIni = new BlockIni(Me, INI_HEAD);
 			_gridID = _programIni.GetHeader(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+
+			SetUpdateFrequency();
 
 			// Initialize global groups
 			_buildMessage = "BUILD: ";
@@ -691,13 +678,45 @@ namespace IngameScript
 					// If sector is a dock or lock, disable autoclose by default
 					if (sector.Type != "Room")
 						EnsureKey(vent, INI_HEAD, "Auto_Close_Delay", "0");
-					
-						
-					sector.AutoCloseDelay = ParseUInt(sector.GetKey("Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);
-					sector.CurrentDelayTime = sector.AutoCloseDelay;
+
+
+					//sector.AutoCloseDelay = ParseUInt(sector.GetKey("Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);
+					sector.SetAutoCloseDelay(sector.GetKey("Auto_Close_Delay", "20"), false);
+					//sector.CurrentDelayTime = sector.AutoCloseDelay;
 				}
             }
-        }
+
+			foreach (Bulkhead bulkhead in _bulkheads)
+				bulkhead.SetAutoClose();
+		}
+
+
+		// SET UPDATE FREQUENCY //
+		void SetUpdateFrequency()
+        {
+			// Check program block's custom data for Refresh_Rate and set UpdateFrequency accordingly.
+			string updateFactor = _programIni.GetKey("Refresh_Rate", "10");
+			switch (updateFactor)
+			{
+				case "1":
+					_autoCloseFactor = 1;
+					Runtime.UpdateFrequency = UpdateFrequency.Update1;
+					break;
+				case "10":
+					_autoCloseFactor = 10;
+					Runtime.UpdateFrequency = UpdateFrequency.Update10;
+					break;
+				case "100":
+					_autoCloseFactor = 100;
+					Runtime.UpdateFrequency = UpdateFrequency.Update100;
+					break;
+				default:
+					_autoCloseFactor = 10;
+					Runtime.UpdateFrequency = UpdateFrequency.Update10;
+					break;
+			}
+		}
+
 
 		// END HERE ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

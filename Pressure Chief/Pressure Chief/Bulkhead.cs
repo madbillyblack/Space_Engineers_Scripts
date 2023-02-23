@@ -36,6 +36,9 @@ namespace IngameScript
 			public bool Override; // If True, Bulkhead ignores pressure checks and is always unlocked.
 			public bool ElevatorDoor;
 
+			public int AutoCloseDelay;
+			public int DelayCount;
+
 			// Variables for sectors separated by bulkhead.
 			//public Sector SectorA;
 			//public IMyAirVent VentA;
@@ -108,6 +111,7 @@ namespace IngameScript
 					}
 				}
 
+				AutoClose();
 				DrawGauges();
 			}
 
@@ -152,28 +156,74 @@ namespace IngameScript
 				}
 			}
 
-			/*
-			public string GetKey(string key, string defaultValue)
-			{
-				EnsureKey(key, defaultValue);
-				return Ini.Get(INI_HEAD, key).ToString();
-			}
+			// SET AUTO CLOSE
+			public void SetAutoClose()
+            {
+				int delay;
 
-			void EnsureKey(string key, string defaultValue)
-			{
-				if (!Ini.ContainsKey(INI_HEAD, key))
-					SetKey(key, defaultValue);
-			}
+				if (Sectors.Count < 2)
+                {
+					AutoCloseDelay = 0;
+					return;
+				}
 
-			public void SetKey(string key, string value)
+				int timeA = Sectors[0].AutoCloseDelay;
+				int timeB = Sectors[1].AutoCloseDelay;
+
+
+				if (timeA > timeB)
+					delay = timeA;
+				else
+					delay = timeB;
+
+				if (delay == 0)
+					AutoCloseDelay = 0;
+				else
+					AutoCloseDelay = 60 * delay /(_autoCloseFactor * _bulkheads.Count) + 1;
+				
+				DelayCount = AutoCloseDelay;
+            }
+
+
+			// AUTO CLOSE
+			public void AutoClose()
+            {
+				if (AutoCloseDelay == 0)
+					return;
+
+				if(IsClosed())
+                {
+					DelayCount = AutoCloseDelay;
+					return;
+				}
+					
+				DelayCount--;
+				if(DelayCount < 0)
+					CloseDoors();
+            }
+
+			// CLOSE DOORS
+			public void CloseDoors()
+            {
+				foreach (PressureDoor door in Doors)
+					door.CloseDoor();
+            }
+
+			// IS CLOSED
+			bool IsClosed()
 			{
-				Ini.Set(INI_HEAD, key, value);
-				MainDoor.CustomData = Ini.ToString();
+				foreach (PressureDoor door in Doors)
+                {
+					if (door.Door.OpenRatio > 0)
+						return false;
+                }
+
+				return true;
 			}
-			*/
 		}
 	
 	
+		// PRESSURE DOOR
 		public class PressureDoor
         {
 			public IMyDoor Door;
@@ -209,6 +259,8 @@ namespace IngameScript
             {
 				Door.CloseDoor();
             }
+
+
 		}
 	}
 }
