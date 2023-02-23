@@ -121,7 +121,7 @@ namespace IngameScript
 				Ini = new BlockIni(airVent, INI_HEAD);
 				//Vents.Add(airVent);
 				Status = GetKey("Status", airVent.Status.ToString());
-				IsPressurized = airVent.GetOxygenLevel() >= 1 - THRESHHOLD;
+				IsPressurized = airVent.GetOxygenLevel() >= 1 - _differential;
 
 				//Name = TagFromName(airVent.CustomName);
 				NormalColor = GetKey("Normal_Color", NORMAL);
@@ -249,7 +249,7 @@ namespace IngameScript
 			{
 				bool airlockActive = IsAirLock() && Phase > 0 && Phase < 5;
 
-				bool pressurized = (Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD) && !airlockActive;
+				bool pressurized = (Vents[0].GetOxygenLevel() >= 1 - _differential) && !airlockActive;
 				bool depressurize = Vents[0].Depressurize;
 
 				if (IsPressurized == pressurized && Depressurizing == depressurize)
@@ -283,7 +283,7 @@ namespace IngameScript
 
 				if (Type == "Room")
 				{
-					if (Math.Abs(o2Level - airVent.GetOxygenLevel()) > THRESHHOLD)
+					if (Math.Abs(o2Level - airVent.GetOxygenLevel()) > _differential)
 						CloseDoors();
 				}
 
@@ -386,16 +386,16 @@ namespace IngameScript
 				}
 			}
 
-
+			
 			// SET PRESSURE STATUS // Update IsPressurized bool based on Vent Pressure.
 			public void SetPressureStatus()
 			{
-				IsPressurized = Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD;
+				IsPressurized = Vents[0].GetOxygenLevel() >= 1 - _differential;
 			}
 
 			public void SetPressureStatus(bool doorOverride)
 			{
-				bool pressurized = Vents[0].GetOxygenLevel() >= 1 - THRESHHOLD;
+				bool pressurized = Vents[0].GetOxygenLevel() >= 1 - _differential;
 
 				if (pressurized && !doorOverride)
 					IsPressurized = true;

@@ -100,6 +100,7 @@ namespace IngameScript
 		static string _unit; // Display unit of pressure.
 		static float _atmo; // Atmospheric conversion factor decided by unit.
 		static float _factor; // Multiplier of pressure reading.
+		static float _differential;
 		static int _autoCloseFactor;
 		static string _systemsName;
 
@@ -137,7 +138,7 @@ namespace IngameScript
 
 		int _currentBulkhead; //Sector that the program is currently checking
 							//static bool _autoCheck;
-		static bool _autoClose;
+		//static bool _autoClose;
 
 		static Color _backgroundColor; //Global used to store background color of LCD displays
 		static Color _textColor; //Global used to store default text color of LCD displays
@@ -414,7 +415,7 @@ namespace IngameScript
 
 			_vacTag = _programIni.GetKey("Vac_Tag", VAC_TAG);
 			_systemsName = _programIni.GetKey("Systems_Group", "");
-			_autoClose = ParseBool(_programIni.GetKey("Auto-Close", "true"));
+			//_autoClose = ParseBool(_programIni.GetKey("Auto-Close", "true"));
 
 			// Get tagged Sector Groups and add to List
 
@@ -461,10 +462,12 @@ namespace IngameScript
 
 			//Set Pressure Unit as well as Atmospheric and User-Defined Factors
 			_unit = _programIni.GetKey("Unit", UNIT);
+
 			if (float.TryParse(_programIni.GetKey("Factor", "1"), out _factor))
 				Echo("Unit: " + _unit + "   Factor: " + _factor);
 			else
 				_statusMessage = "UNPARSABLE FACTOR INPUT!!!";
+
 			switch (_unit.ToLower())
 			{
 				case "atm":
@@ -486,6 +489,8 @@ namespace IngameScript
 					_atmo = 100;
 					break;
 			}
+
+			_differential = ParseFloat(_programIni.GetKey("Lockdown Differential", THRESHHOLD.ToString())); ;
 
 			//_statusMessage = _buildMessage;
 			SetAutoCloseDelays();
