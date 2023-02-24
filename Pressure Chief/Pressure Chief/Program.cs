@@ -682,7 +682,8 @@ namespace IngameScript
 
 					// If sector is a dock or lock, disable autoclose by default
 					if (sector.Type != "Room")
-						EnsureKey(vent, INI_HEAD, "Auto_Close_Delay", "0");
+						sector.SetAutoCloseDelay(sector.GetKey("Auto_Close_Delay", "0"), false);
+					//EnsureKey(vent, INI_HEAD, "Auto_Close_Delay", "0");
 
 
 					//sector.AutoCloseDelay = ParseUInt(sector.GetKey("Auto_Close_Delay", "20")) * (int)(20 / _sectors.Count);

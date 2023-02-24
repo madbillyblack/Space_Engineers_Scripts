@@ -170,7 +170,6 @@ namespace IngameScript
 				int timeA = Sectors[0].AutoCloseDelay;
 				int timeB = Sectors[1].AutoCloseDelay;
 
-
 				if (timeA > timeB)
 					delay = timeA;
 				else

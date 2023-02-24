@@ -69,8 +69,8 @@ namespace IngameScript
 				Group = blockGroup;
 				SetName();
 				AssignVents();
-				AssignDoors(); //And add to Bulkhead
 				AssignTimer();
+				AssignDoors(); //And add to Bulkhead
 				AssignLights();
 				UpdateLights(IsPressurized);
 				
