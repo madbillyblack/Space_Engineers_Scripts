@@ -204,7 +204,7 @@ namespace IngameScript
 			}
 			Echo(sectorData);
 
-			UpdateData();
+			PrintData();
 
 			// Check for vents to run script from
 			if (_sectors.Count < 1)
@@ -619,27 +619,7 @@ namespace IngameScript
         }
 
 
-		//ASSIGN DATA DISPLAYS// Get and set up blocks and surfaces designated as data displays
-		void AssignDataDisplays()
-		{
-			IMyBlockGroup dataGroup = GridTerminalSystem.GetBlockGroupWithName(_programIni.GetKey("Data_Group", "Pressure Data"));
-			if (dataGroup == null)
-            {
-				_buildMessage += "\nOptional: No Pressure Data group found.";
-				return;
-			}
-				
 
-			List<IMyTerminalBlock> dataBlocks = new List<IMyTerminalBlock>();
-			dataGroup.GetBlocks(dataBlocks);
-
-
-			foreach (IMyTerminalBlock dataBlock in dataBlocks)
-			{
-				if((dataBlock as IMyTextSurfaceProvider).SurfaceCount > 0 && GetKey(dataBlock, SHARED, "Grid_ID", _gridID) == _gridID)
-					_dataDisplays.Add(new DataDisplay(dataBlock));
-			}
-		}
 
 
 		// ASSIGN LCD BLOCKS

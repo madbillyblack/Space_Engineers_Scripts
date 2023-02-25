@@ -22,6 +22,8 @@ namespace IngameScript
 {
     partial class Program
     {
+		int _currentDisplay;
+
 		// DATA DISPLAY // Wrapper class for blocks that display pressure monitor displays.
 		public class DataDisplay
 		{
@@ -156,123 +158,168 @@ namespace IngameScript
 		}
 
 
-		// UPDATE MONITORS // Print Overview text to any blocks in the _dataDisplays list.
-		void UpdateData()
+		//ASSIGN DATA DISPLAYS// Get and set up blocks and surfaces designated as data displays
+		void AssignDataDisplays()
 		{
+			_currentDisplay = 0;
+
+			IMyBlockGroup dataGroup = GridTerminalSystem.GetBlockGroupWithName(_programIni.GetKey("Data_Group", "Pressure Data"));
+			if (dataGroup == null)
+			{
+				_buildMessage += "\nOptional: No Pressure Data group found.";
+				return;
+			}
+
+
+			List<IMyTerminalBlock> dataBlocks = new List<IMyTerminalBlock>();
+			dataGroup.GetBlocks(dataBlocks);
+
+
+			foreach (IMyTerminalBlock dataBlock in dataBlocks)
+			{
+				if ((dataBlock as IMyTextSurfaceProvider).SurfaceCount > 0 && GetKey(dataBlock, SHARED, "Grid_ID", _gridID) == _gridID)
+					_dataDisplays.Add(new DataDisplay(dataBlock));
+			}
+		}
+
+
+
+		// PRINT DATA
+		void PrintData()
+        {
 			Echo(_dataDisplays.Count.ToString());
 			if (_dataDisplays.Count < 1)
 				return;
 
-			foreach (DataDisplay display in _dataDisplays)
+			IncrementDataDisplays();
+			DataDisplay display = _dataDisplays[_currentDisplay];
+
+			UpdateData(display);
+		}
+
+
+		// INCREMENT DATA DISPLAYS //
+		void IncrementDataDisplays()
+        {
+			if (_dataDisplays.Count < 2)
+				return;
+
+			_currentDisplay++;
+			if (_currentDisplay >= _dataDisplays.Count)
+				_currentDisplay = 0;
+        }
+
+
+		// UPDATE MONITORS // Print Overview text to any blocks in the _dataDisplays list.
+		void UpdateData(DataDisplay display)
+		{
+			if (display.Screens.Count > 0)
 			{
-				if (display.Screens.Count > 0)
+				foreach (DataScreen screen in display.Screens)
 				{
-					foreach (DataScreen screen in display.Screens)
+					string readOut = "";
+					switch (screen.Header.ToLower())
 					{
-						string readOut = "";
-						switch (screen.Header.ToLower())
-						{
-							case "breather":
-								readOut += "PRESSURE CHIEF " + _breather[_breatherStep] + SLASHES + _overview + "\n";
-								break;
-							case "full":
-								readOut += "PRESSURE CHIEF " + SLASHES + _overview + "\n";
-								break;
-							case "basic":
-								readOut += "PRESSURE CHIEF " + SLASHES;
-								break;
-							case "blank":
-								readOut += SLASHES;
-								break;
-							case "none":
-								break;
-							default:
-								readOut = screen.Header + "\n";
-								break;
-						}
+						case "breather":
+							readOut += "PRESSURE CHIEF " + _breather[_breatherStep] + SLASHES + _overview + "\n";
+							break;
+						case "full":
+							readOut += "PRESSURE CHIEF " + SLASHES + _overview + "\n";
+							break;
+						case "basic":
+							readOut += "PRESSURE CHIEF " + SLASHES;
+							break;
+						case "blank":
+							readOut += SLASHES;
+							break;
+						case "none":
+							break;
+						default:
+							readOut = screen.Header + "\n";
+							break;
+					}
 
-						if (screen.ShowBuild)
-							readOut += _buildMessage + "\n";
+					if (screen.ShowBuild)
+						readOut += _buildMessage + "\n";
 
-						if (screen.Sectors.Count > 0)
+					if (screen.Sectors.Count > 0)
+					{
+						foreach (Sector sector in screen.Sectors)
 						{
-							foreach (Sector sector in screen.Sectors)
+							readOut += sector.Name;
+							if (screen.ShowSectorType)
+								readOut += " (" + sector.Type + ")";
+							if (screen.ShowSectorStatus)
+								readOut += " - " + sector.Vents[0].Status.ToString();
+							readOut += "\n";
+							if (screen.ShowVentCount)
+								readOut += "* Vents: " + sector.Vents.Count + "\n";
+							if (screen.ShowLightCount)
+								readOut += "* Lights: " + sector.Lights.Count + "\n";
+
+							// Door Info
+							if (screen.ShowDoorCount)
+								readOut += "* Doors: " + sector.Doors.Count + "\n";
+							if (screen.ShowDoorNames)
 							{
-								readOut += sector.Name;
-								if (screen.ShowSectorType)
-									readOut += " (" + sector.Type + ")";
-								if (screen.ShowSectorStatus)
-									readOut += " - " + sector.Vents[0].Status.ToString();
-								readOut += "\n";
-								if (screen.ShowVentCount)
-									readOut += "* Vents: " + sector.Vents.Count + "\n";
-								if (screen.ShowLightCount)
-									readOut += "* Lights: " + sector.Lights.Count + "\n";
-
-								// Door Info
-								if (screen.ShowDoorCount)
-									readOut += "* Doors: " + sector.Doors.Count + "\n";
-								if (screen.ShowDoorNames)
+								foreach (IMyDoor door in sector.Doors)
 								{
-									foreach (IMyDoor door in sector.Doors)
+									readOut += "   - " + door.CustomName;
+									if (screen.ShowDoorStatus)
 									{
-										readOut += "   - " + door.CustomName;
-										if (screen.ShowDoorStatus)
-										{
-											readOut += ": " + door.Status.ToString();
-											if (door.IsWorking)
-												readOut += ", Unlocked";
-											else
-												readOut += ", Locked";
-										}
-
-										readOut += "\n";
+										readOut += ": " + door.Status.ToString();
+										if (door.IsWorking)
+											readOut += ", Unlocked";
+										else
+											readOut += ", Locked";
 									}
+
+									readOut += "\n";
 								}
+							}
 
-								bool isDock = sector.Type.ToLower() == "dock";
+							bool isDock = sector.Type.ToLower() == "dock";
 
-								// Connector Info
-								if (screen.ShowConnectorCount && isDock)
-									readOut += "* Connectors: " + sector.Connectors.Count + "\n";
-								if (screen.ShowConnectorNames && sector.Connectors.Count > 0)
+							// Connector Info
+							if (screen.ShowConnectorCount && isDock)
+								readOut += "* Connectors: " + sector.Connectors.Count + "\n";
+							if (screen.ShowConnectorNames && sector.Connectors.Count > 0)
+							{
+								foreach (IMyShipConnector connector in sector.Connectors)
 								{
-									foreach (IMyShipConnector connector in sector.Connectors)
-									{
-										readOut += "   - " + connector.CustomName;
-										if (screen.ShowConnectorStatus)
-											readOut += ": " + connector.Status.ToString();
-										readOut += "\n";
-									}
+									readOut += "   - " + connector.CustomName;
+									if (screen.ShowConnectorStatus)
+										readOut += ": " + connector.Status.ToString();
+									readOut += "\n";
 								}
+							}
 
-								// Merge Info
-								if (screen.ShowMergeCount && isDock)
-									readOut += "* Merge Blocks: " + sector.MergeBlocks.Count + "\n";
-								if (screen.ShowMergeNames && sector.MergeBlocks.Count > 0)
+							// Merge Info
+							if (screen.ShowMergeCount && isDock)
+								readOut += "* Merge Blocks: " + sector.MergeBlocks.Count + "\n";
+							if (screen.ShowMergeNames && sector.MergeBlocks.Count > 0)
+							{
+								foreach (IMyShipMergeBlock mergeBlock in sector.MergeBlocks)
 								{
-									foreach (IMyShipMergeBlock mergeBlock in sector.MergeBlocks)
+									readOut += "   - " + mergeBlock.CustomName;
+									if (screen.ShowMergeStatus)
 									{
-										readOut += "   - " + mergeBlock.CustomName;
-										if (screen.ShowMergeStatus)
-										{
-											string mergeStatus;
-											bool merged = mergeBlock.IsConnected;
-											if (merged)
-												mergeStatus = "Connected";
-											else
-												mergeStatus = "Not Connected";
+										string mergeStatus;
+										bool merged = mergeBlock.IsConnected;
+										if (merged)
+											mergeStatus = "Connected";
+										else
+											mergeStatus = "Not Connected";
 
-											readOut += ": " + mergeStatus;
-										}
-										readOut += "\n";
+										readOut += ": " + mergeStatus;
 									}
+									readOut += "\n";
 								}
 							}
 						}
-
-						screen.Surface.WriteText(readOut);
 					}
+
+					screen.Surface.WriteText(readOut);
 				}
 			}
 		}
