@@ -253,23 +253,7 @@ namespace IngameScript
 			}
 
 			return null;
-		}
-
-
-		// GET BULKHEAD // Returns bulkhead with given double-tag.
-		static Bulkhead GetBulkhead(string tag)
-		{
-			if (_bulkheads.Count < 1)
-				return null;
-
-			foreach (Bulkhead bulkhead in _bulkheads)
-			{
-				if (tag.Contains(bulkhead.TagA) && tag.Contains(bulkhead.TagB))
-					return bulkhead;
-			}
-
-			return null;
-		}
+        }
 
 
 		// SET GRID ID // Updates Grid ID parameter for all designated blocks in Grid, then rebuilds the grid.

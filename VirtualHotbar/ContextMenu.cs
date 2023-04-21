@@ -522,7 +522,7 @@ namespace IngameScript
             {
                 button.IsPlaceHolder = true;
             }
-            else
+            else if(!string.IsNullOrEmpty(blockName))
             {
                 List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
                 GridTerminalSystem.SearchBlocksOfName(blockName, blocks);

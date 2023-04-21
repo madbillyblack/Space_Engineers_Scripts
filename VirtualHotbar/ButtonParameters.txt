@@ -39,14 +39,16 @@ Block name followed by optional argument (separated with ';')
 	+ ">{value}"
 	- "<{value}"
 
+PLACE_HOLDER
+	{AUX}	
+
 ICONS
 	{CAMERA}
+	{LIGHT}
 
 	{THRUSTER}
 	{+THRUST}
 	{-THRUST}
-
-	{LIGHT}
 
 	{GEAR}
 	{GEAR_DOWN}
@@ -63,20 +65,33 @@ ICONS
 	{DOCK B}
 	{UNDOCK}
 
+	{JETTISON}
+
 	{H2}
-	{O2}
 	{H2_TANK}
+	{O2}
 	{O2_TANK}
 
-	{JETTISON}
+	{POWER}
+	{BATTERY}
+	{REACTOR}
+
+	{PISTON}
+	{PISTON_EXTEND}
+	{PISTON_RETRACT}
+
+	{DOWN_PISTON}
+	{DOWN_PISTON_EXTEND}
+	{DOWN_PISTON_RETRACT}
 
 	{DRILL}
 	{WELDER}
 	{GRINDER}
 
-	{POWER}
-	{BATTERY}
-	{REACTOR}
+	{TARGET}
+	{TARGET_A}
+	{TARGET_B}
+	{TARGET_C}
 
 	{<}
 	{>}
@@ -86,5 +101,9 @@ ICONS
 	{>>}
 	{^^}
 	{VV}
+
 	{TOGGLE}
 	{CYCLE}
+
+	{X}
+	{CIRCLE_X}/{CANCEL}

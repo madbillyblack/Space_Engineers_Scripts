@@ -260,6 +260,55 @@ namespace IngameScript
             }
 
 
+        }
+
+
+		// GET BULKHEAD // Returns bulkhead with given double-tag.
+		static Bulkhead GetBulkhead(string tag)
+		{
+			if (_bulkheads.Count < 1)
+				return null;
+
+			foreach (Bulkhead bulkhead in _bulkheads)
+			{
+				if (tag.Contains(bulkhead.TagA) && tag.Contains(bulkhead.TagB))
+					return bulkhead;
+			}
+
+			return null;
 		}
+
+
+		/* OVERRIDE // - Get Bulkhead and set Override State:
+		 * 0: Override = False (Restore)
+		 * 1: Override = True
+		 * 2: Toggle Override
+		 */
+		void Override(string bulkheadTags, int state = 1)
+        {
+			Bulkhead bulkhead = GetBulkhead(bulkheadTags);
+
+			if (bulkhead == null)
+            {
+				_statusMessage = "No bulkhead with tags \"" + bulkheadTags + "\" found!";
+				return;
+			}
+
+			switch(state)
+            {
+				case 0: // Restore Bulkhead
+					bulkhead.SetOverride(false);
+					break;
+				case 1: // Override Bulkhead
+					bulkhead.SetOverride(true);
+					break;
+				case 2: // Toggle Bulkhead
+					bulkhead.SetOverride(!bulkhead.Override);
+					break;
+				default:
+					_statusMessage = "INVALID OVERRIDE CASE!!!";
+					break;
+            }
+        }
 	}
 }

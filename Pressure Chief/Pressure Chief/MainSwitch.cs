@@ -70,12 +70,14 @@ namespace IngameScript
 					Undock(GetSector(cmdArg));
 					break;
 				case "OVERRIDE":
-					Bulkhead overrideDoor = GetBulkhead(cmdArg);
-					overrideDoor.SetOverride(true);
+					Override(cmdArg, 1);
 					break;
 				case "RESTORE":
-					Bulkhead restoreDoor = GetBulkhead(cmdArg);
-					restoreDoor.SetOverride(false);
+				case "RESTORE_OVERRIDE":
+					Override(cmdArg, 0);
+					break;
+				case "TOGGLE_OVERRIDE":
+					Override(cmdArg, 2);
 					break;
 				case "REFRESH":
 					Build();
