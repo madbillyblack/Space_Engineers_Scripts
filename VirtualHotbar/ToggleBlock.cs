@@ -147,9 +147,11 @@ namespace IngameScript
                     case "MySearchlight":
                         state = (Block as IMyLargeTurretBase).IsUnderControl;
                         break;
-                    case "MyTurretControlBlock":
+/*                    case "MyTurretControlBlock":
+#pragma warning disable ProhibitedMemberRule // Prohibited Type Or Member
                         state = (Block as IMyTurretControlBlock).IsUnderControl;
-                        break;
+#pragma warning restore ProhibitedMemberRule // Prohibited Type Or Member
+                        break;*/
                     case "MyRemoteControl":
                         state = (Block as IMyRemoteControl).IsUnderControl;
                         break;

@@ -22,6 +22,21 @@ namespace IngameScript
 {
     partial class Program
     {
+        // TRIGGER CALL // - Return true if cycle exeuted by player or event trigger
+        static bool TriggerCall(UpdateType updateSource)
+        {
+            if ((updateSource & (UpdateType.Trigger | UpdateType.Terminal)) > 0
+                || (updateSource & (UpdateType.Mod)) > 0
+                || (updateSource & (UpdateType.Script)) > 0)
+            {
+                return true;
+            }
+                
+            return false;
+        }
+
+
+
         // PARSE INT //
         static int ParseInt(string arg, int defaultValue)
         {

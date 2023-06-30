@@ -192,6 +192,7 @@ namespace IngameScript
         static LandingGearAssembly _landingGear;
 
         string _cruiseTag;
+        float _cruiseFactor = 1;
         static List<IMyThrust> _cruiseThrusters;
         readonly string[] _breather = {"|", "/","--", "\\"};
         static Byte _breath;
@@ -264,9 +265,8 @@ namespace IngameScript
 
             RunLast();
 
-            MainSwitch(argument);
-            
-
+            if(TriggerCall(updateSource))
+                MainSwitch(argument);
 
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
@@ -582,6 +582,9 @@ namespace IngameScript
             // Set static instance of this program block
             _Me = Me;
             _breath = 0;
+
+            _programIni = GetIni(Me);
+
 
             _statusMessage = "";
             _gridID = GetKey(Me, SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());

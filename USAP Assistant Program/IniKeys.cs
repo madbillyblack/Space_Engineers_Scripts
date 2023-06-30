@@ -25,6 +25,7 @@ namespace IngameScript
         const string SHARED = "Shared Data";
         const string GRID_KEY = "Grid_ID";
         static string _gridID;
+        static MyIni _programIni;
 
         // ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
         static void EnsureKey(IMyTerminalBlock block, string header, string key, string defaultVal)
@@ -68,6 +69,30 @@ namespace IngameScript
             }
 
             return iniOuti;
+        }
+
+
+        // GET PROGRAM KEY //
+        static string GetProgramKey(string keyName, string defaultString)
+        {
+            EnsureProgramKey(keyName, defaultString);
+            return _programIni.Get(INI_HEAD, keyName).ToString();
+        }
+
+
+        // SET PROGRAM KEY //
+        static void SetProgramKey(string keyName, string inputString)
+        {
+            _programIni.Set(INI_HEAD, keyName, inputString);
+            _Me.CustomData = _programIni.ToString();
+        }
+
+
+        // ENSURE PROGRAM KEY //
+        static void EnsureProgramKey(string keyName, string defaultString)
+        {
+            if (!_programIni.ContainsKey(INI_HEAD, keyName))
+                SetProgramKey(keyName, defaultString);
         }
 
 

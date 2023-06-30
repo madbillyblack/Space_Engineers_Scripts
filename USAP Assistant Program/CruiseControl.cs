@@ -28,6 +28,9 @@ namespace IngameScript
         static float _targetThrottle;
         double _thrustWeightRatio;
 
+        double _ki = 0;
+        double _kd = 0;
+
 
         // SET THRUST WEIGHT RATIO //
         void SetThrustWeightRatio()
@@ -49,9 +52,9 @@ namespace IngameScript
         void SetGain()
         {
             if (_thrustWeightRatio <= 0)
-                _Kp = 1/INVERSE_GAIN;
+                _Kp = _cruiseFactor/INVERSE_GAIN;
             else
-                _Kp = (2.33 / INVERSE_GAIN) / _thrustWeightRatio;
+                _Kp = _cruiseFactor * (2.33 / INVERSE_GAIN) / _thrustWeightRatio;
 
             Echo("P-Gain:\n" + _Kp + "\n");
         }
@@ -114,7 +117,7 @@ namespace IngameScript
 
             _cruiseThrustersOn = true;
 
-            _pid = new PID(_Kp, KI, KD, TIME_STEP);
+            _pid = new PID(_Kp, _ki, _kd, TIME_STEP);
             //Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
@@ -212,6 +215,13 @@ namespace IngameScript
             _cruiseThrusters = new List<IMyThrust>();
             _cruiseTag = GetKey(Me, INI_HEAD, "Cruise Thrusters", "");
 
+            float[] gains = GainsFromString(GetKey(Me, INI_HEAD, "Cruise Gains", "1,0,0"));
+
+            // Set user gain factors
+            _cruiseFactor = gains[0];
+            _ki = gains[1];
+            _kd = gains[2];        
+
             if (_cruiseTag == "")
                 return;
 
@@ -240,6 +250,27 @@ namespace IngameScript
 
             int value = (int)(power * 100);
             _currentPower = value + "%";
+        }
+
+
+        // GAINS FROM STRING //
+        float[] GainsFromString(string gainArray)
+        {
+            float [] output = {1, 0, 0};
+            string[] values = gainArray.Split(',');
+
+            if(values.Length > 2)
+            {
+                for(int i = 0; i < 3; i++)
+                {
+                    output[i] = ParseFloat(values[i], 0);
+                }
+            }
+
+            if (output[0] <= 0)
+                output[0] = 1;
+
+            return output;
         }
     }
 }
