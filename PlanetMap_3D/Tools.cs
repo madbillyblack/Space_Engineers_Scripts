@@ -123,5 +123,22 @@ namespace IngameScript
 
             return angleOut;
         }
+
+
+        // ARRAY TRIM //
+        public static string[] ArrayTrim(string[] array)
+        {
+            string[] output = new string[array.Length];
+
+            if(array.Length > 0)
+            {
+                for (int i = 0;  i < array.Length; i++)
+                {
+                    output[i] = array[i].Trim();
+                }
+            }
+
+            return output;
+        }
     }
 }

@@ -25,7 +25,9 @@ namespace IngameScript
 		const string MAP_HEADER = "MAP DISPLAY";
 
 		// Key Constants
-		const string MODE_KEY = "Mode";
+		const string DEF_MODES = "FREE, SHIP, CHASE, PLANET, ORBIT, WORLD";
+        const string MODE_KEY = "Mode";
+		const string MODE_LIST = "Available Modes";
 		const string CENTER_KEY = "Center";
 		const string AZ_KEY = "Azimuth";
 		const string ALT_KEY = "Altitude";
@@ -53,6 +55,7 @@ namespace IngameScript
 
 			public Vector3 Center;
 			public string Mode;
+			public string[] Modes;
 			public int Altitude;
 			public int Azimuth;
 			public int RotationalRadius;
@@ -94,6 +97,7 @@ namespace IngameScript
 				Index = screenIndex;
 
 				Mode = GetMapKey(MODE_KEY, "FREE");
+				Modes = ArrayTrim(GetMapKey(MODE_LIST, DEF_MODES).Split(','));
 
 				Center = StringToVector3(GetMapKey(CENTER_KEY, ORIGIN));
 				Azimuth = ParseInt(GetMapKey(AZ_KEY, "0"), 0);	

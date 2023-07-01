@@ -318,9 +318,16 @@ namespace IngameScript
 		void CycleMode(StarMap map, bool cycleUp)
         {
 			_activePlanet = "";
-			string[] modes = { "FREE", "SHIP", "CHASE", "PLANET", "ORBIT", "WORLD" };
+			string[] modes = map.Modes;
 			int length = modes.Length;
 
+			if (modes.Length < 2)
+				return;
+
+			if(length > 0)
+			{
+
+			}
 			int modeIndex = 0;
 			for (int i = 0; i < length; i++)
 			{
