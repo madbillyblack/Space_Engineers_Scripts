@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33529.622
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevotionScript", "DevotionScript.csproj", "{BFB4DCD5-AA21-4B45-ACF3-4752549D3F7E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BFB4DCD5-AA21-4B45-ACF3-4752549D3F7E}.Debug|x64.ActiveCfg = Debug|x64
+		{BFB4DCD5-AA21-4B45-ACF3-4752549D3F7E}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C19FB04E-C75E-4A8F-8AFF-E72862C748B9}
+	EndGlobalSection
+EndGlobal

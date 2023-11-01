@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31729.503
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipBoard Script", "ClipBoard Script.csproj", "{8CE9D949-9D82-4514-ADF8-2EC24CCD45C0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8CE9D949-9D82-4514-ADF8-2EC24CCD45C0}.Debug|x64.ActiveCfg = Debug|x64
+		{8CE9D949-9D82-4514-ADF8-2EC24CCD45C0}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C872F40F-0879-4758-B600-594554542CDF}
+	EndGlobalSection
+EndGlobal

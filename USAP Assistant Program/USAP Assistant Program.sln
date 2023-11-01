@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31729.503
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "USAP Assistant Program", "USAP Assistant Program.csproj", "{FFBF8A82-EDA4-47EA-957B-868B5C6AFC3A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FFBF8A82-EDA4-47EA-957B-868B5C6AFC3A}.Debug|x64.ActiveCfg = Debug|x64
+		{FFBF8A82-EDA4-47EA-957B-868B5C6AFC3A}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2B80F0E7-F717-4FE5-9448-AE22952604EC}
+	EndGlobalSection
+EndGlobal
