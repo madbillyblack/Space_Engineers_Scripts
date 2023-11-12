@@ -1,0 +1,10 @@
+﻿R e a d m e
+-----------
+
+Version 1.3.2
+
+New Features:
+- Easy Waypoint Batch Import from Text Panels
+- Cycle Marker Type of Active Waypoint
+- Duplicate Waypoint Entries now update location of Waypoint
+- Custom Data Reading/Writing optimization for Star Maps

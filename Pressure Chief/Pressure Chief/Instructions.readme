@@ -1,0 +1,243 @@
+﻿DESCRIPTION
+/////////////////////////////////////////////////////////////////////////////////////
+PRESSURE CHIEF is a pressure maintainance program that isolates hull breaches as well as providing commands for the operation of airlocks and docking ports.
+
+This script is a ground-up overhaul of my Pressure Lockdown Protocol:
+https://steamcommunity.com/sharedfiles/filedetails/?id=1117528271
+
+
+FEATURES
+/////////////////////////////////////////////////////////////////////////////////////
+* Limited set-up requirements
+* Looping script can be set to run every 1, 10, or 100 ticks.
+* Doors between rooms of differing pressure are automatically locked (turned off).
+* Designated lights will change color based on pressure state.
+* LCDs display pressure difference between current and neighboring rooms.
+* LCD support for Large SciFi Terminal and Large SciFi Button Panel blocks.
+* Commands for openning and closing airlocks.
+* Commands for docking and undocking with merge blocks.
+
+
+BASIC SET-UP
+/////////////////////////////////////////////////////////////////////////////////////
+In order to run the script, load it onto a programmable block, then rename at least two airvents to include a SINGLE-SECTOR-TAG (see below) that designates the room in which the vent is located. Then rename any doors that separate the two rooms with a DOUBLE-SECTOR-TAG.  If the script does not automatically recognize the vents and doors, running the command "REFRESH" from the programmable block's argument field in the terminal.
+
+Optionally, it's also recommended to include the SINGLE-SECTOR-TAG in the name of any light blocks in a sector.  The result is that these lights will change color depending on the pressurization state of that room.  Once the light has been recongized by the script, its Normal and Emergency colors can be changed in the Custom Data field of that light light block.
+
+
+SINGLE-SECTOR-TAGS
+------------------
+* Affected blocks: Air Vents, Lights, Timers, Merge Blocks, Connectors
+* Format: [|Sector Tag|]
+* Example Tag: [|Cabin|]
+* Example Block Name: Air Vent [|Cabin|]
+* Can include spaces, underscores, and most special characters.
+* Sector names can be almost any length, but short and descriptive is best.
+* DO NOT include square brackets [] or pipes | except at the opening and closing of the tag.  (It's alright to have them in other parts of the block name).
+
+DOUBLE-SECTOR-TAGS
+------------------
+* Affected blocks: Doors, Text Panels, Large SciFi Terminal, Large SciFi Button Panel
+* Format: [|Sector A|Sector B|]
+* Example Tag: [|Cabin|Med Bay|]
+* Example Block Name: Airtight Sliding Door [|Cabin|Med Bay|]
+* Follows most of the same formatting rules to SINGLE-SECTOR-TAGS
+* The order of the sectors in the tag does not matter for doors.
+* For any LCD capable block, the first sector will indicate the sector the block is found in, and the second sector will indicate the neighboring sector.
+* Example: LCD named "Pressure Display Screen [|Atrium|Airlock 6|]" is located in the Atrium, and shows the pressure difference between that room and Airlock 6.
+
+
+
+ADVANCED SET-UP
+/////////////////////////////////////////////////////////////////////////////////////
+Beyond the basic room functionality, engineers can create Airlocks and Docking-Ports using the script. In order to do so, your grid will need a "Vacuum Vent".  This vent will be located on the outside of the grid (exposed to vacuum), and should be renamed to include the VAC-TAG.
+
+VAC-TAG
+-------
+* Default: [|EXT|]
+* Example: External Vent [|EXT|]
+* Can be changed in Custom Data of Programmable Block
+* Can be included in DOUBLE-SECTOR-TAGS (i.e. for Doors) just the same as any other sector tag.
+* Example: Lock Door [|Lock A|EXT|]
+
+AIRLOCKS
+--------
+An Airlock is a special type of room that can be intentionally depressurized by the script. In order to create an Airlock, a sector needs to have at least one exterior door that includes the VAC-TAG in the DOUBLE-SECTOR-TAG in its name.  The Airlock will also need a Timer-Block, renamed to include that sector's SINGLE-SECTOR-TAG.
+
+In the timer block's action list, run this script's programmable block with the following argument:
+
+	TIMER_CALL <Sector Tag>
+
+Do not include brackets or pipes in the sector tag in this argument.  Example:
+
+	TIMER_CALL Lock 4
+
+Once the timer is set up, the lock can be controlled from any connected action bars (i.e. Button Panels, Control Seats, etc) using the following commands:
+
+	OPEN_LOCK <Sector Tag>
+	CLOSE_LOCK <Sector Tag>
+	CYCLE_LOCK <Sector Tag>
+	OPEN_LOCK <Sector Tag>
+
+See COMMANDS below for more details.
+
+Optionally, a sound-block can be linked to the airlock as well.  Just rename the block to include the SECTOR-TAG.  The script will automatically format the block and trigger it to announce when the lock is about to be opened.
+
+DOCKS
+-----
+Docks are a sub-category of Airlocks, and include some additional functionality.  To create a dock, follow the same set-up steps for setting up an airlock, making sure to set up a Lock-Timer for the dock.  In order for an airlock to be considered a dock by the script, it must also include at least one merge-block.  Rename any mergeblocks for this dock to include SINGLE-SECTOR-TAGs for the dock (NOT the VAC-TAG, even though the merge-blocks should be located on the outside of the grid).
+
+When constructing the dock, make sure that the blocks are arranged in such a way that your grid can get an air-tight seal with the other grid, but also that it can separate from that grid when undocking. Angled and curved armor blocks can be very useful in achieving this.
+
+Optionally, connector blocks can be associated with this dock by renaming them with the dock's sector tag.
+
+In addition to all of the airlock commands, a docks can be controlled with the following commands:
+
+	DOCK_SEAL <Sector Tag>
+	UNDOCK <Sector Tag>
+
+COMMANDS
+/////////////////////////////////////////////////////////////////////////////////////
+Minimally the program will run passively once there are at least two neighboring rooms with tagged vents and a tagged door between them.  The user can also input commands, or map specific commands to a hot-bar. Some commands may require additional parameters such as a sector tag or a color code. These parameters will be indicated in this documentation with angle brackets <>.  When the actual parameter is applied, angle brackets should not be used.
+
+REFRESH
+-------
+* Rebuilds the entire network, adding any newly tagged components.
+* This is a good function to run while you're still building a ship or implementing this script.  You may, for example, want to add lights to an existing room. You would add all of the lights, rename them to include the sector tag, then run the REFRESH command from the programmable block.
+
+OVERRIDE <Sector A>|<Sector B>
+------------------------------
+* Example: OVERRIDE Cockpit|Cabin
+* Overrides the lock on any doors between the two specified sectors, even if there is a significant pressure difference.
+* Order of the sectors does not matter.
+* Good for emergency situations where a sector cannot be pressurized.
+
+RESTORE <Sector A>|<Sector B>
+-----------------------------
+* Example: RESTORE Med bay|Armory
+* Undoes the override between two rooms.
+* Takes same parameter format as override.
+
+TIMER_CALL <Sector Tag>
+-----------------------
+* Example: TIMER_CALL D01
+* This is a generic command that is run from a timer block's action bar.
+* It is ESSENTIAL to the operation of any air locks or docking ports.
+* Without a timer that runs this command, other commands like OPEN_LOCK and CLOSE_LOCK will not function properly.
+
+OPEN_LOCK <Sector Tag>
+----------------------
+* Example: OPEN_LOCK Hangar 2
+* Depressurizes an airlock or docking port and initializes opening sequence.
+* Sector MUST have a tagged timer block in order to run this command.
+* Doors that have AutoOpen set to false will not be opened by this command. See AutoOpen section below.
+
+OPEN_ALL <Sector Tag>
+---------------------
+* Example: OPEN_ALL Airlock-A
+* Exact same functionality as OPEN_LOCK, but doors with AutoOpen disabled will open as well.
+* Particularly useful if you have an Airtight Hangar door that you don't normally want to open, run this command when you specifically do.
+
+CLOSE_LOCK <Sector Tag>
+-----------------------
+* Example: CLOSE_LOCK Cargo Bay
+* Closes all doors in the sector, resets overrides, and attempts to repressurize the room.
+
+CYCLE_LOCK <Sector Tag>
+-----------------------
+* Example: CYCLE_LOCK AirLock
+* Depending on if the lock is opened or closed, this command will attempt to set it to the opposite state.
+* Good for running a lock off of a timer trigger, or off of a single button.
+
+DOCK_SEAL <Sector Tag>
+----------------------
+* Example: DOCK_SEAL Port-7
+* Once you have merged to another grid that is running this script, run this function to establish a connection between the docking ports of both grids.
+* Will attempt to lock any connectors.
+* Will override exterior doors of both locks, and open the door to your ship.
+
+UNDOCK <Sector Tag>
+-------------------
+* Example: UNDOCK Docking Collar
+* Closes all the doors to the dock on your ship and the dock of the other grid and then initiallizes the separation sequence.
+* After a short timer delay, the merge blocks and connectors of your dock should deactivate, and you can separate from the other grid.
+* The merge blocks and connectors will reactivate after about 10 seconds.
+
+SET_LIGHT_COLOR <Red Value>,<Green Value>,<Blue Value> <Sector Tag>
+-------------------------------------------------------------------
+* Example: SET_LIGHT_COLOR 255,0,255 The Purple Room
+* Sets the RGB color value for normal (pressurized) lighting in that room.
+* Indivual lights can be adjusted by updating the "Normal_Color" parameter in their custom data field.
+* Default color is White (255,255,255)
+
+SET_EMERGENCY_COLOR <Red Value>,<Green Value>,<Blue Value> <Sector Tag>
+-----------------------------------------------------------------------
+* Example: SET_EMERGENCY_COLOR 255,127,0 The Orange Dock
+* Sets the RGB color value for emergency (depressurized) lighting in that room.
+* Indivual lights can be adjusted by updating the "Normal_Color" parameter in their custom data field.
+* Default color is Red (255,0,0)
+
+SET_GRID_ID
+-----------
+* Sets the Grid_ID parameter in the custom data of any tagged blocks.
+* Helps to avoid conflicts with between any merged grids that may be running the same program.
+* May be good practice to run this command before docking.
+* DO NOT run this command while merged to another grid.
+
+
+CUSTOM DATA BY BLOCK
+/////////////////////////////////////////////////////////////////////////////////////
+This program maintains several variables for specific blocks in the Custom Data field of that block. Some of the variables are just there to be used by the program, and therefore should not be changed by the user, most of them are intended to allow the user to make their own customizations to the way the script operates.
+
+NOTE:  For a lot of these variables to be updated, you will need to run the programmable block with the REFRESH command in order for the changes to take effect.
+
+GENERAL (ALL AFFECTED BLOCKS)
+-----------------------------
+* Grid_ID // Designates that blocks will be run by the programmable block on this grid.  Recommend only changing via SET_GRID_ID command.
+
+PROGRAMMABLE BLOCK (THIS PROGRAM)
+---------------------------------
+* Auto-Close // Bool value.  If set to true, program will automatically close doors for any sector that losees pressure.
+* Refresh_Rate // Value 1, 10, or 100. How frequently the script executes (1: once every tick, 10: once every 10 ticks, 100: once every 100 ticks).  The script only checks one sector each execution, therefore, it may make sense to run faster for larger grids.
+* Vac_Tag // Text string. Change this if you want to use a different tag for your exterior vent. Do not include "[", "]", or "|". 
+
+AIR VENT
+--------
+* Status // This is meant to be read by the program and shouldn't be touched by the user.
+* Normal_Color // Comma separated RGB values. This is the default pressurized light color for that sector.
+* Emergency_Color // Comma separated RGB values. This is the default depressurized color for that sector.
+
+DOOR
+----
+* Override // Bool value.  If set to True, door will be unlocked (set to on) regardless of pressure differences between sectors.
+* AutoOpen // Bool value.  This is mainly used for locks and docks.  If set to False, the door will not open for the basic OPEN_LOCK command.  It will still open for the OPEN_ALL command.
+
+LIGHT
+-----
+* Normal_Color // Comma separated RGB values. This is the default pressurized light color for that individual light.
+* Emergency_Color // Comma separated RGB values. This is the default depressurized color for that individual light.
+
+LCD
+---
+* Screen_Index // Unsigned Integer value. This will only show up for LCD blocks that have more than one screen (i.e. Sci-Fi Button Panels). This is the screen number where you want the pressure display to appear.  The first (left-most) screen is 0.
+* Side // For program use only.  Should be left alone by user.
+
+TIMER
+-----
+* Delay // Unsigned Integer value. Sets the delay time for main sequence lock commands. Should be set to approximately the time (in seconds) it takes the room to pressurize/depressurize.
+* Phase // This is for program use and shouldn't be changed by the user.
+
+SOUND BLOCK
+-----------
+* Auto-Sound-Select // Bool value.  Set to False if you want to use a different lock alarm sound.
+
+MERGE BLOCK
+-----------
+
+CONNECTOR
+---------
+
+
+
+
+

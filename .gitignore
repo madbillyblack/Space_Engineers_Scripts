@@ -1,9 +1,6 @@
 #files
-*png
-*readme
 *.suo
 
 #directories
-*MDK/
 *bin/
 *obj/
