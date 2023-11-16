@@ -128,7 +128,7 @@ namespace IngameScript
 			{
 				foreach (PressureDoor myDoor in Doors)
 				{
-					bool auto = ParseBool(MainDoor.GetKey("AutoOpen", "true"));
+					bool auto = ParseBool(myDoor.GetKey("AutoOpen", "true"));
 					if (auto || openAll)
 					{
 						myDoor.OpenDoor();

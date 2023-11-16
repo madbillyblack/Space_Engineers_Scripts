@@ -41,6 +41,7 @@
     <Compile Include="ButtonIcons.cs" />
     <Compile Include="ContextMenu.cs" />
     <Compile Include="DrawFunctions.cs" />
+    <Compile Include="GroupProfiles.cs" />
     <Compile Include="IniKeys.cs" />
     <Compile Include="MainSwitch.cs" />
     <Compile Include="MDK\Bootstrapper.cs" />
