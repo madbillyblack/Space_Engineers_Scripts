@@ -207,6 +207,7 @@ namespace IngameScript
 			bulkhead.Open(openAll);
 			sector.SetPhase(0);
 			sector.SetBlink(false);
+			sector.IsStaging = false;
 			//timer.SetKey("Phase", "0");
 			_statusMessage = sector.Type + " " + sector.Name + " opened.";
 			sector.Check();
@@ -246,6 +247,7 @@ namespace IngameScript
 		// STAGE LOCK // - Executes various repeated functions for Timer Calls
 		void StageLock(Sector sector, int phase, int alert)
 		{
+			sector.IsStaging = true;
 			LockTimer timer = sector.LockTimer;
 			UInt32 delay;
 			sector.SetPhase(phase);

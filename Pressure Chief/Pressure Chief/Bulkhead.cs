@@ -84,12 +84,19 @@ namespace IngameScript
 				if (Sectors.Count < 2)
 					return;
 
+				bool staging = false;
+
+				// Check sector.  If it is a lock in process of closing set staging override to true
 				foreach(Sector sector in Sectors)
-					sector.Check();
+				{
+                    sector.Check();
+					if (sector.IsStaging)
+						staging = true;
+                }
 
 				Override = ParseBool(MainDoor.GetKey("Override", "false"));
 
-				if (Sectors[0].IsPressurized == Sectors[1].IsPressurized || Override)
+				if (Sectors[0].IsPressurized == Sectors[1].IsPressurized || Override || staging)
 				{
 					foreach (PressureDoor door in Doors)
 					{

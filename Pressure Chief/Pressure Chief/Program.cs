@@ -228,7 +228,7 @@ namespace IngameScript
 					_currentBulkhead = 0;
 
 				Bulkhead bulkhead = _bulkheads[_currentBulkhead];
-				Echo("\nCurrent Check: Bulkhead[" + bulkhead.TagA + " / " + bulkhead.TagB + "]");
+				Echo("\nCurrent Check:\nBulkhead [" + bulkhead.TagA + " / " + bulkhead.TagB + "]");
 				bulkhead.Check();
 			}
 			else 

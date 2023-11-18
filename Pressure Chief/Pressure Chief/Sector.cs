@@ -47,6 +47,7 @@ namespace IngameScript
 			public bool IsPressurized;
 			public bool Depressurizing;
 			public bool HasChanged;
+			public bool IsStaging;
 			public int AutoCloseDelay;
 			//public int CurrentDelayTime;
 			public int Phase;
@@ -63,6 +64,7 @@ namespace IngameScript
 				MergeBlocks = new List<IMyShipMergeBlock>();
 				Connectors = new List<IMyShipConnector>();
 				Gauges = new List<GaugeSurface>();
+				IsStaging = false;
 				//Surfaces = new List<IMyTextSurface>(); //OBSOLETE
 				//Bulkheads = new List<Bulkhead>(); //OBSOLETE
 
@@ -192,6 +194,9 @@ namespace IngameScript
 				LockTimer = new LockTimer(timers[0]);
 				Type = LOCK;
 				Phase = ParseUInt(LockTimer.GetKey("Phase", "0"));
+
+				if(Phase == 1 || Phase == 3)
+					IsStaging = true;
 
 				AssignAlarm();
 				
