@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DRAM - Drill Rig Automation Manager", "DRAM - Drill Rig Automation Manager\DRAM - Drill Rig Automation Manager.csproj", "{03CCF619-90D3-470E-9416-F19B8E370627}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{03CCF619-90D3-470E-9416-F19B8E370627}.Debug|x64.ActiveCfg = Debug|x64
+		{03CCF619-90D3-470E-9416-F19B8E370627}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {44725B65-E8C0-4307-8C2E-C483AF8C475D}
+	EndGlobalSection
+EndGlobal
