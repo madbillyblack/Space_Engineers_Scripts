@@ -25,11 +25,12 @@ namespace IngameScript
         const string HORZ_TAG = "[HORZ]";
         const string VERT_TAG = "[VERT]";
         const string BASE_TAG = "[BASE]";
+        const string MIN = "Min Limit";
+        const string MAX = "Max Limit";
 
         const float H_STEP = 1;
         const float V_STEP = 1;
-        const float B_START = 5;
-        const float ROTOR_SPEED = 3;
+        const float B_START = 9;
         const float PISTON_SPEED = 1;
 
         public PistonAssembly _BasePistons, _VertPistons, _HorzPistons;
@@ -82,7 +83,11 @@ namespace IngameScript
                 if(Pistons.Count < 1) return;
 
                 foreach (Piston piston in Pistons)
+                {
                     piston.Base.MinLimit += min;
+                    piston.SetKey(MIN, piston.Base.MinLimit);
+                }
+
             }
 
             public void SetMinimum(float min)
@@ -90,7 +95,11 @@ namespace IngameScript
                 if (Pistons.Count < 1) return;
 
                 foreach (Piston piston in Pistons)
+                {
+                    piston.SetKey(MIN, min);
                     piston.Base.MinLimit = min;
+                }
+
             }
 
             public void AdjustMaximum(float max)
@@ -98,7 +107,11 @@ namespace IngameScript
                 if (Pistons.Count < 1) return;
 
                 foreach (Piston piston in Pistons)
+                {
                     piston.Base.MaxLimit += max;
+                    piston.SetKey(MAX, piston.Base.MaxLimit);
+                }
+                    
             }
 
             public void SetMaximum(float max)
@@ -106,7 +119,11 @@ namespace IngameScript
                 if (Pistons.Count < 1) return;
 
                 foreach (Piston piston in Pistons)
+                {
+                    piston.SetKey(MAX, max);
                     piston.Base.MaxLimit = max;
+                }
+                    
             }
 
             public void SetVelocity(float value)
@@ -124,11 +141,13 @@ namespace IngameScript
             public IMyPistonBase Base;
             MyIni Ini;
 
-            public Piston(IMyPistonBase piston)
+            public Piston(IMyPistonBase piston, float min, float max)
             {
                 Base = piston;
                 Ini = GetIni(Base);
 
+                Base.MinLimit = (float) GetKey(MIN, min);
+                Base.MaxLimit = (float) GetKey(MAX, max);
             }
 
             public void SetKey(string key, double value)
@@ -165,15 +184,15 @@ namespace IngameScript
 
                     if (name.Contains(HORZ_TAG))
                     {
-                        _HorzPistons.Pistons.Add(new Piston(piston));
+                        _HorzPistons.Pistons.Add(new Piston(piston, 0, 0));
                     }
                     else if (name.Contains(VERT_TAG))
                     {
-                        _VertPistons.Pistons.Add(new Piston(piston));
+                        _VertPistons.Pistons.Add(new Piston(piston, 0, 0));
                     }
                     else if (name.Contains(BASE_TAG))
                     {
-                        _BasePistons.Pistons.Add(new Piston(piston));
+                        _BasePistons.Pistons.Add(new Piston(piston, _baseStart, _baseStart + 0.5f));
                     }
                 }
             }

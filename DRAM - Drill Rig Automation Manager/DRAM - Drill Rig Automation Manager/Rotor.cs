@@ -22,6 +22,7 @@ namespace IngameScript
 {
     partial class Program
     {
+        const float ROTOR_SPEED = 1;
         public const string VELOCITY = "Velocity";
         public const string ON = "OnOff_On";
         public const string OFF = "OnOff_Off";
@@ -118,6 +119,7 @@ namespace IngameScript
 
         public void AddRotors()
         {
+            _rotorCount = 0;
             _rotors = new RotorAssembly();
 
             List<IMyMotorAdvancedStator> rotors = new List<IMyMotorAdvancedStator>();
@@ -134,6 +136,8 @@ namespace IngameScript
                 if(SameGridID(rotor) && rotor.CustomName.Contains(MAIN_TAG))
                     _rotors.Rotors.Add(new Rotor(rotor));
             }
+
+            _rotorCount = _rotors.Rotors.Count;
         }
     }
 }

@@ -24,6 +24,8 @@ namespace IngameScript
     {
         public void MainSwitch(string cmd)
         {
+            _lastCommand = cmd;
+
             switch (cmd.ToUpper())
             {
                 case "CYCLE_CALL":
@@ -51,20 +53,24 @@ namespace IngameScript
         // CYCLE CALL // - Function called by sensor when drill arm reaches end of movement
         public void CycleCall()
         {
+            _rotors.Reverse();
+
+            SetCycleCount(_cycleCount + 1);
+
             if (_phase == CYCLE)
-                CycleCheck();
+                RunCycle();
             else if (_phase == RETRACT)
                 RetractCheck();
             else
                 StopRig();
+
+            DisplayData();
         }
 
 
         // CYCLE CHECK // - Basic Check for Cycle Call
-        public void CycleCheck()
+        public void RunCycle()
         {
-            _rotors.Reverse();
-
             if (_HorzPistons.MinPos() > 9.95f)
                 RetractRig();
             else if (_horzCount > 0)
@@ -91,6 +97,12 @@ namespace IngameScript
 
             if(_horzCount > 0)
                 _HorzPistons.SetVelocity(_pistonSpeed / _horzCount);
+
+            if (_vertCount > 0)
+                _VertPistons.SetVelocity(_pistonSpeed / _vertCount);
+
+            if (_baseCount > 0)
+                _BasePistons.SetVelocity(-_pistonSpeed / _baseCount);
         }
 
 
@@ -117,14 +129,22 @@ namespace IngameScript
             else if (_vertCount > 0 && _VertPistons.MaxPos() < 10)
                 _VertPistons.AdjustMaximum(_vertStep / _vertCount);
             else
+            {
+                _statusMessage += "Finished Sequence\n";
                 StopRig();
+            }
+                
         }
 
 
         // START RIG //
         public void StartRig()
         {
-            SetMainKey(MAIN_HEADER, PHASE, CYCLE);
+            if (GetMainKey(MAIN_HEADER, PHASE, CYCLE) == CYCLE)
+                CycleRig();
+            else
+                RetractRig();
+
             ActivateDrills(true);
             _rotors.StartRotors();
         }
@@ -133,7 +153,6 @@ namespace IngameScript
         // STOP RIG //
         public void StopRig()
         {
-            SetMainKey(MAIN_HEADER, PHASE, STOP);
             ActivateDrills(false);
             _rotors.StopRotors();
         }
@@ -143,6 +162,7 @@ namespace IngameScript
         public void ResetRig()
         {
             StopRig();
+            SetCycleCount(0);
 
             // Set start position for Base pistons and move toward that point
             _BasePistons.SetMaximum(B_START + 0.5f);
@@ -154,6 +174,8 @@ namespace IngameScript
             _VertPistons.SetMaximum(0);
             _HorzPistons.SetVelocity(-PISTON_SPEED);
             _VertPistons.SetVelocity(-PISTON_SPEED);
+
+            DisplayData();
         }
     }
 }

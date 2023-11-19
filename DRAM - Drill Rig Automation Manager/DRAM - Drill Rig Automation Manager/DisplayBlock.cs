@@ -35,9 +35,11 @@ namespace IngameScript
 
             public DisplayBlock (IMyTerminalBlock block)
             {
+                
                 Surfaces = new List<IMyTextSurface> ();
                 IMyTextSurfaceProvider provider = block as IMyTextSurfaceProvider;
                 Block = block;
+                Ini = GetIni(Block);
 
                 if (provider.SurfaceCount == 1)
                     PrepareSurface(provider.GetSurface(0));
@@ -71,12 +73,9 @@ namespace IngameScript
                 return Ini.Get(DISPLAY_HEADER, key).ToBoolean();
             }
 
-            public void WriteData()
+            public void WriteData(string data)
             {
                 if (Surfaces.Count < 1) return;
-
-                string data = "DRAM\nDrill Rig Automation Manager\n\nMessages:\n" + _statusMessage;
-
 
                 foreach (IMyTextSurface surface in Surfaces)
                     surface.WriteText(data);
@@ -113,8 +112,16 @@ namespace IngameScript
         {
             if (_displayBlocks.Count < 1) return;
 
+            string data = "DRAM\nDrill Rig Automation Manager\n  Command: " + _lastCommand
+                                                          + "\n  Phase: " + _phase + "  Count: " + _cycleCount
+                                                          + "\n  Drills: " + _drillCount + "  Rotors: " + _rotorCount
+                                                          + "\n  Base Pistons: " + _baseCount + "  Vertitcal Pistons: " + _vertCount
+                                                          + "\n  Horizontal Pistons: " + _horzCount
+                                                          + "\n  Vertical Step: " + _vertStep + "  Horizontal Step: " + _horzStep
+                                                          + "\nMessages:\n" + _statusMessage;
+
             foreach (DisplayBlock block in _displayBlocks)
-                block.WriteData();
+                block.WriteData(data);
         }
     }
 }
