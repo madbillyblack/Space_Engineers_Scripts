@@ -22,7 +22,9 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
+        const string MAIN_HEADER = "DRAM";
         const string MAIN_TAG = "[DRAM]";
+       
         const string STOP = "STOPPED";
         const string CYCLE = "CYCLING";
         const string RETRACT = "RETRACTING";
@@ -57,12 +59,12 @@ namespace IngameScript
 
         public void Build()
         {
-            _horzStep = ParseFloat(GetMainKey(MAIN_TAG, "Horizontal Step", H_STEP.ToString()), H_STEP);
-            _vertStep = ParseFloat(GetMainKey(MAIN_TAG, "Vertical Step", V_STEP.ToString()), V_STEP);
-            _baseStart = ParseFloat(GetMainKey(MAIN_TAG, "Base Start", B_START.ToString()), B_START);
-            _pistonSpeed = ParseFloat(GetMainKey(MAIN_TAG, "Piston Speed", PISTON_SPEED.ToString()), PISTON_SPEED);
-            _rotorSpeed = ParseFloat(GetMainKey(MAIN_TAG, "Rotor Speed", ROTOR_SPEED.ToString()), ROTOR_SPEED);
-            _phase = GetMainKey(MAIN_TAG, PHASE, STOP);
+            _horzStep = ParseFloat(GetMainKey(MAIN_HEADER, "Horizontal Step", H_STEP.ToString()), H_STEP);
+            _vertStep = ParseFloat(GetMainKey(MAIN_HEADER, "Vertical Step", V_STEP.ToString()), V_STEP);
+            _baseStart = ParseFloat(GetMainKey(MAIN_HEADER, "Base Start", B_START.ToString()), B_START);
+            _pistonSpeed = ParseFloat(GetMainKey(MAIN_HEADER, "Piston Speed", PISTON_SPEED.ToString()), PISTON_SPEED);
+            _rotorSpeed = ParseFloat(GetMainKey(MAIN_HEADER, "Rotor Speed", ROTOR_SPEED.ToString()), ROTOR_SPEED);
+            _phase = GetMainKey(MAIN_HEADER, PHASE, STOP);
 
             _BasePistons = new PistonAssembly();
             _VertPistons = new PistonAssembly();

@@ -87,7 +87,7 @@ namespace IngameScript
         public void CycleRig()
         {
             _phase = CYCLE;
-            SetMainKey(MAIN_TAG, PHASE, CYCLE);
+            SetMainKey(MAIN_HEADER, PHASE, CYCLE);
 
             if(_horzCount > 0)
                 _HorzPistons.SetVelocity(_pistonSpeed / _horzCount);
@@ -98,7 +98,7 @@ namespace IngameScript
         public void RetractRig()
         {
             _phase = RETRACT;
-            SetMainKey(MAIN_TAG, PHASE, RETRACT);
+            SetMainKey(MAIN_HEADER, PHASE, RETRACT);
 
             if(_horzCount > 0)
             {
@@ -124,7 +124,7 @@ namespace IngameScript
         // START RIG //
         public void StartRig()
         {
-            SetMainKey(MAIN_TAG, PHASE, CYCLE);
+            SetMainKey(MAIN_HEADER, PHASE, CYCLE);
             ActivateDrills(true);
             _rotors.StartRotors();
         }
@@ -133,7 +133,7 @@ namespace IngameScript
         // STOP RIG //
         public void StopRig()
         {
-            SetMainKey(MAIN_TAG, PHASE, STOP);
+            SetMainKey(MAIN_HEADER, PHASE, STOP);
             ActivateDrills(false);
             _rotors.StopRotors();
         }

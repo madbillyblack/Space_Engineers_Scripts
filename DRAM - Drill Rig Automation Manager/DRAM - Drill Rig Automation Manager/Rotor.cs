@@ -78,19 +78,19 @@ namespace IngameScript
 
             public void SetKey(string key, double value)
             {
-                Ini.Set(MAIN_TAG, key, value);
+                Ini.Set(MAIN_HEADER, key, value);
                 Base.CustomData = Ini.ToString();
             }
 
             public double GetKey(string key, double defaultValue)
             {
-                if (!Ini.ContainsKey(MAIN_TAG, key))
+                if (!Ini.ContainsKey(MAIN_HEADER, key))
                 {
                     SetKey(key, defaultValue);
                     return defaultValue;
                 }
 
-                return Ini.Get(MAIN_TAG, key).ToDouble();
+                return Ini.Get(MAIN_HEADER, key).ToDouble();
             }
 
             public void Reverse()
@@ -131,7 +131,7 @@ namespace IngameScript
 
             foreach (IMyMotorAdvancedStator rotor in rotors )
             {
-                if(SameGridID(rotor))
+                if(SameGridID(rotor) && rotor.CustomName.Contains(MAIN_TAG))
                     _rotors.Rotors.Add(new Rotor(rotor));
             }
         }
