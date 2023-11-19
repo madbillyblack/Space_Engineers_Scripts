@@ -26,6 +26,12 @@ namespace IngameScript
         const string VERT_TAG = "[VERT]";
         const string BASE_TAG = "[BASE]";
 
+        const float H_STEP = 1;
+        const float V_STEP = 1;
+        const float B_START = 5;
+        const float ROTOR_SPEED = 3;
+        const float PISTON_SPEED = 1;
+
         public PistonAssembly _BasePistons, _VertPistons, _HorzPistons;
 
         public class PistonAssembly
@@ -40,11 +46,16 @@ namespace IngameScript
             public double MaxPos()
             { 
                 double max = 0;
-                foreach (Piston piston in Pistons)
+
+                if(Pistons.Count > 0)
                 {
-                    if(piston.Base.CurrentPosition > max)
-                        max = piston.Base.CurrentPosition;
+                    foreach (Piston piston in Pistons)
+                    {
+                        if (piston.Base.CurrentPosition > max)
+                            max = piston.Base.CurrentPosition;
+                    }
                 }
+
 
                 return max;
             }
@@ -53,13 +64,57 @@ namespace IngameScript
             {
                 double min = 10;
 
-                foreach (Piston piston in Pistons)
+                if(Pistons.Count > 0)
                 {
-                    if (piston.Base.CurrentPosition < min)
-                        min = piston.Base.CurrentPosition;
+                    foreach (Piston piston in Pistons)
+                    {
+                        if (piston.Base.CurrentPosition < min)
+                            min = piston.Base.CurrentPosition;
+
+                    }
                 }
 
                 return min;
+            }
+
+            public void AdjustMinimum(float min)
+            {
+                if(Pistons.Count < 1) return;
+
+                foreach (Piston piston in Pistons)
+                    piston.Base.MinLimit += min;
+            }
+
+            public void SetMinimum(float min)
+            {
+                if (Pistons.Count < 1) return;
+
+                foreach (Piston piston in Pistons)
+                    piston.Base.MinLimit = min;
+            }
+
+            public void AdjustMaximum(float max)
+            {
+                if (Pistons.Count < 1) return;
+
+                foreach (Piston piston in Pistons)
+                    piston.Base.MaxLimit += max;
+            }
+
+            public void SetMaximum(float max)
+            {
+                if (Pistons.Count < 1) return;
+
+                foreach (Piston piston in Pistons)
+                    piston.Base.MaxLimit = max;
+            }
+
+            public void SetVelocity(float value)
+            {
+                if (Pistons.Count < 1) return;
+
+                foreach (Piston piston in Pistons)
+                    piston.Base.Velocity = value;
             }
         }
 
@@ -122,6 +177,10 @@ namespace IngameScript
                     }
                 }
             }
+
+            _vertCount = _VertPistons.Pistons.Count();
+            _horzCount = _HorzPistons.Pistons.Count();
+            _baseCount = _BasePistons.Pistons.Count();
         }
     }
 }

@@ -23,19 +23,21 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         const string MAIN_TAG = "[DRAM]";
-        const float H_STEP = 1;
-        const float V_STEP = 1;
-        const float B_START = 5;
-        const float SPEED = 3;
         const string STOP = "STOPPED";
         const string CYCLE = "CYCLING";
         const string RETRACT = "RETRACTING";
+        const string PHASE = "PHASE"; // Ini Key for drill phase
 
-        public string _state; // Current operational state of the rig
+        public string _phase; // Current operational state of the rig
         public float _baseStart; // Starting max distance of BasePiston Assembly
         public float _vertStep; // Total vertical step taken after rig retracts
         public float _horzStep; // Total horizontal step taken after rig completes a basic cycle
+        public float _pistonSpeed; // Magnitude of piston velocity
+        public float _rotorSpeed; // Magnitude of rotor velocity
         public static string _statusMessage;
+        public int _vertCount, _horzCount, _baseCount;
+
+        public List<IMyShipDrill> _drills;
 
         public Program()
         {
@@ -46,28 +48,69 @@ namespace IngameScript
             Build();
         }
 
-        public void Save()
-        {
-
-        }
+        public void Save(){}
 
         public void Main(string argument, UpdateType updateSource)
         {
-
+            MainSwitch(argument);
         }
 
         public void Build()
         {
-            _state = GetMainKey(MAIN_TAG, "STATE", STOP);
             _horzStep = ParseFloat(GetMainKey(MAIN_TAG, "Horizontal Step", H_STEP.ToString()), H_STEP);
             _vertStep = ParseFloat(GetMainKey(MAIN_TAG, "Vertical Step", V_STEP.ToString()), V_STEP);
             _baseStart = ParseFloat(GetMainKey(MAIN_TAG, "Base Start", B_START.ToString()), B_START);
+            _pistonSpeed = ParseFloat(GetMainKey(MAIN_TAG, "Piston Speed", PISTON_SPEED.ToString()), PISTON_SPEED);
+            _rotorSpeed = ParseFloat(GetMainKey(MAIN_TAG, "Rotor Speed", ROTOR_SPEED.ToString()), ROTOR_SPEED);
+            _phase = GetMainKey(MAIN_TAG, PHASE, STOP);
 
             _BasePistons = new PistonAssembly();
             _VertPistons = new PistonAssembly();
             _HorzPistons = new PistonAssembly();
 
             AddPistons();
+        }
+
+
+        // ADD DRILLS //
+        public void AddDrills()
+        {
+            _drills = new List<IMyShipDrill>();
+
+            List<IMyShipDrill> allDrills = new List<IMyShipDrill>();
+            GridTerminalSystem.GetBlocksOfType<IMyShipDrill>(allDrills);
+
+            if (allDrills.Count < 1)
+            {
+                _statusMessage += "No Drills found!\n";
+                return;
+            }
+
+            foreach (IMyShipDrill drill in allDrills)
+            {
+                if(drill.CustomName.Contains(MAIN_TAG))
+                {
+                    _drills.Add(drill);
+                }
+            }
+
+            if (_drills.Count < 1)
+                _statusMessage += "No Drills found with tag "+ MAIN_TAG +"!\n";
+        }
+
+
+        // ACTIVATE DRILLS // - Powers drills on/off depending on bool argument
+        public void ActivateDrills(bool turnOn)
+        {
+            if (_drills.Count < 1) return;
+
+            foreach(IMyShipDrill drill in  _drills)
+            {
+                if (turnOn)
+                    drill.GetActionWithName(ON).Apply(drill);
+                else
+                    drill.GetActionWithName(OFF).Apply(drill);
+            }
         }
     }
 }

@@ -22,17 +22,58 @@ namespace IngameScript
 {
     partial class Program
     {
-        List<Rotor> _rotors;
+        public const string VELOCITY = "Velocity";
+        public const string ON = "OnOff_On";
+        public const string OFF = "OnOff_Off";
+
+        public RotorAssembly _rotors;
+
+        public class RotorAssembly
+        {
+            public List<Rotor> Rotors;
+
+            public RotorAssembly()
+            {
+                Rotors = new List<Rotor>();
+            }
+
+            public void Reverse()
+            {
+                if (Rotors.Count < 1) return;
+
+                foreach(Rotor rotor in Rotors)
+                    rotor.Reverse();
+            }
+
+            public void StartRotors()
+            {
+                if (Rotors.Count < 1) return;
+
+                foreach (Rotor rotor in Rotors)
+                    rotor.StartRotor();
+            }
+
+            public void StopRotors()
+            {
+                if (Rotors.Count < 1) return;
+
+                foreach (Rotor rotor in Rotors)
+                    rotor.StopRotor();
+            }
+        }
+        
 
         public class Rotor
         {
             public IMyMotorAdvancedStator Base;
             MyIni Ini;
+            float velocity;
 
             public Rotor(IMyMotorAdvancedStator rotorBase)
             {
                 Base = rotorBase;
-                Ini = GetIni(Base as IMyTerminalBlock);
+                Ini = GetIni(Base);
+                velocity = (float) GetKey(VELOCITY, ROTOR_SPEED);
             }
 
             public void SetKey(string key, double value)
@@ -51,15 +92,36 @@ namespace IngameScript
 
                 return Ini.Get(MAIN_TAG, key).ToDouble();
             }
+
+            public void Reverse()
+            {
+                velocity *= -1;
+                Base.TargetVelocityRPM = velocity;
+                SetKey(VELOCITY, velocity);
+            }
+
+            public void StopRotor()
+            {
+                Base.TargetVelocityRPM = 0;
+                Base.GetActionWithName(OFF).Apply(Base);
+                Base.RotorLock = true;
+            }
+
+            public void StartRotor()
+            {
+                Base.TargetVelocityRPM = velocity;
+                Base.RotorLock = false;
+                Base.GetActionWithName(ON).Apply(Base);
+            }
         }
 
 
         public void AddRotors()
         {
-            _rotors = new List<Rotor>();
+            _rotors = new RotorAssembly();
 
             List<IMyMotorAdvancedStator> rotors = new List<IMyMotorAdvancedStator>();
-            GridTerminalSystem.GetBlocksOfType< IMyMotorAdvancedStator>(rotors);
+            GridTerminalSystem.GetBlocksOfType<IMyMotorAdvancedStator>(rotors);
 
             if (rotors.Count < 1 )
             {
@@ -69,8 +131,8 @@ namespace IngameScript
 
             foreach (IMyMotorAdvancedStator rotor in rotors )
             {
-                if(SameGridID(rotor as IMyTerminalBlock))
-                    _rotors.Add(new Rotor(rotor));
+                if(SameGridID(rotor))
+                    _rotors.Rotors.Add(new Rotor(rotor));
             }
         }
     }
