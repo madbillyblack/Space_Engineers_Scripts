@@ -17,6 +17,7 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
+using static IngameScript.Program;
 
 namespace IngameScript
 {
@@ -200,6 +201,32 @@ namespace IngameScript
             _vertCount = _VertPistons.Pistons.Count();
             _horzCount = _HorzPistons.Pistons.Count();
             _baseCount = _BasePistons.Pistons.Count();
+        }
+
+        // SET START POSITION // Gets current position of Base Pistons and adjust ini parameters accordingly
+        public void SetStartPoint()
+        {
+            List<Piston> pistons = _BasePistons.Pistons;
+            if (pistons.Count < 1) return;
+
+            float start = 0;
+
+            foreach (Piston piston in pistons)
+            {
+                IMyPistonBase myBase = piston.Base;
+                float pos = myBase.CurrentPosition;
+
+                start += pos;
+
+                myBase.MinLimit = pos;
+                myBase.MaxLimit = pos + 0.5f * V_STEP / pistons.Count;
+
+                piston.SetKey(MIN, myBase.MinLimit);
+                piston.SetKey(MAX, myBase.MaxLimit);
+            }
+
+            _baseStart = start;
+            SetMainKey(MAIN_HEADER, B_START_TAG, start.ToString());
         }
     }
 }

@@ -22,9 +22,23 @@ namespace IngameScript
 {
     partial class Program
     {
-        public void MainSwitch(string cmd)
+        public void MainSwitch(string arg)
         {
-            _lastCommand = cmd;
+            _lastCommand = arg;
+            string cmd;
+            string data;
+            string[] args = arg.Split(' ');
+
+            if(args.Length > 1)
+            {
+                cmd = args[0].Trim();  
+                data = args[1].Trim();
+            }
+            else
+            {
+                cmd = arg;
+                data = "";
+            }
 
             switch (cmd.ToUpper())
             {
@@ -37,14 +51,35 @@ namespace IngameScript
                 case "STOP":
                     StopRig();
                     break;
+                case "EMERGENCY_STOP":
+                case "ALERT":
+                    EmergencyStop();
+                    break;
+                case "BEACON_ON":
+                case "ACTIVATE_BEACON":
+                    ActivateBeacons(true);
+                    break;
+                case "BEACON_OFF":
+                case "DEACTIVATE_BEACON":
+                    ActivateBeacons(false);
+                    break;
                 case "RESET":
                     ResetRig();
                     break;
                 case "REFRESH":
                     Build();
                     break;
+                case "SET_START_POINT":
+                    SetStartPoint();
+                    break;
+                case "LOWER":
+                    LowerRig();
+                    break;
+                case "SET_GRID_ID":
+                    SetGridID(data);
+                    break;
                 default:
-                    _statusMessage = "UNKOWN COMMAND: \"" + cmd + "\"";
+                    _statusMessage = "UNKOWN COMMAND: \"" + arg + "\"";
                     break;
             }
         }
@@ -133,7 +168,6 @@ namespace IngameScript
                 _statusMessage += "Finished Sequence\n";
                 StopRig();
             }
-                
         }
 
 
@@ -146,6 +180,7 @@ namespace IngameScript
                 RetractRig();
 
             ActivateDrills(true);
+            ActivateBeacons(false);
             _rotors.StartRotors();
         }
 
@@ -158,6 +193,14 @@ namespace IngameScript
         }
 
 
+        // EMERGENCY STOP // - Stop rig and light the beacons. Gondor calls for aid!
+        public void EmergencyStop()
+        {
+            StopRig();
+            ActivateBeacons(true);
+        }
+
+
         // RESET RIG // - Return pistons to their original configuration
         public void ResetRig()
         {
@@ -165,8 +208,8 @@ namespace IngameScript
             SetCycleCount(0);
 
             // Set start position for Base pistons and move toward that point
-            _BasePistons.SetMaximum(B_START + 0.5f);
-            _BasePistons.SetMinimum(B_START);
+            _BasePistons.SetMaximum(_baseStart + 0.5f);
+            _BasePistons.SetMinimum(_baseStart);
             _BasePistons.SetVelocity(PISTON_SPEED);
 
             // Retract Horz & Vert Pistons

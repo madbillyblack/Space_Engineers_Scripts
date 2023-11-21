@@ -25,6 +25,7 @@ namespace IngameScript
         const string MAIN_HEADER = "DRAM";
         const string MAIN_TAG = "[DRAM]";
        
+        const string B_START_TAG = "Base Start";
         const string STOP = "STOPPED";
         const string CYCLE = "CYCLING";
         const string RETRACT = "RETRACTING";
@@ -41,6 +42,7 @@ namespace IngameScript
         public static int _vertCount, _horzCount, _baseCount, _rotorCount, _drillCount, _cycleCount;
 
         public List<IMyShipDrill> _drills;
+        public List<IMyBeacon> _beacons;
 
         public Program()
         {
@@ -67,7 +69,7 @@ namespace IngameScript
 
             _horzStep = ParseFloat(GetMainKey(MAIN_HEADER, "Horizontal Step", H_STEP.ToString()), H_STEP);
             _vertStep = ParseFloat(GetMainKey(MAIN_HEADER, "Vertical Step", V_STEP.ToString()), V_STEP);
-            _baseStart = ParseFloat(GetMainKey(MAIN_HEADER, "Base Start", B_START.ToString()), B_START);
+            _baseStart = ParseFloat(GetMainKey(MAIN_HEADER, B_START_TAG, B_START.ToString()), B_START);
             _pistonSpeed = ParseFloat(GetMainKey(MAIN_HEADER, "Piston Speed", PISTON_SPEED.ToString()), PISTON_SPEED);
             _rotorSpeed = ParseFloat(GetMainKey(MAIN_HEADER, "Rotor Speed", ROTOR_SPEED.ToString()), ROTOR_SPEED);
             _phase = GetMainKey(MAIN_HEADER, PHASE, STOP);
@@ -80,6 +82,7 @@ namespace IngameScript
             AddDrills();
             AddRotors();
             AddDisplays();
+            AddBeacons();
 
             DisplayData();
         }
@@ -134,6 +137,38 @@ namespace IngameScript
         {
             _cycleCount = value;
             SetMainKey(MAIN_HEADER, COUNT, value.ToString());
+        }
+
+
+        // ADD BEACONS // 
+        public void AddBeacons()
+        {
+            _beacons = new List<IMyBeacon>();
+
+            List<IMyBeacon> allBeacons = new List<IMyBeacon>();
+            GridTerminalSystem.GetBlocksOfType<IMyBeacon>(allBeacons);
+
+            if(allBeacons.Count < 1) return;
+            foreach (IMyBeacon beacon in allBeacons)
+            {
+                if(beacon.CustomName.Contains(MAIN_TAG))
+                    _beacons.Add(beacon);
+            }
+        }
+
+
+        // ACTIVATE BEACONS //
+        public void ActivateBeacons(bool turnOn)
+        {
+            if (_beacons.Count < 1) return;
+
+            foreach(IMyBeacon beacon in _beacons)
+            {
+                if(turnOn)
+                    beacon.GetActionWithName(ON).Apply(beacon);
+                else
+                    beacon.GetActionWithName(OFF).Apply(beacon);
+            }
         }
     }
 }
