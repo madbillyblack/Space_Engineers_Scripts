@@ -180,6 +180,7 @@ namespace IngameScript
                 RetractRig();
 
             ActivateDrills(true);
+            ActivateLights(true);
             ActivateBeacons(false);
             _rotors.StartRotors();
         }
@@ -189,6 +190,7 @@ namespace IngameScript
         public void StopRig()
         {
             ActivateDrills(false);
+            ActivateLights(false);
             _rotors.StopRotors();
         }
 

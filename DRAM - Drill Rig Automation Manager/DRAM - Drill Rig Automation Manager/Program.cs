@@ -43,6 +43,7 @@ namespace IngameScript
 
         public List<IMyShipDrill> _drills;
         public List<IMyBeacon> _beacons;
+        public List<IMyLightingBlock> _lights;
 
         public Program()
         {
@@ -83,6 +84,7 @@ namespace IngameScript
             AddRotors();
             AddDisplays();
             AddBeacons();
+            AddLights();
 
             DisplayData();
         }
@@ -105,7 +107,7 @@ namespace IngameScript
 
             foreach (IMyShipDrill drill in allDrills)
             {
-                if(drill.CustomName.Contains(MAIN_TAG))
+                if(SameGridID(drill) && drill.CustomName.Contains(MAIN_TAG))
                 {
                     _drills.Add(drill);
                 }
@@ -151,7 +153,7 @@ namespace IngameScript
             if(allBeacons.Count < 1) return;
             foreach (IMyBeacon beacon in allBeacons)
             {
-                if(beacon.CustomName.Contains(MAIN_TAG))
+                if(SameGridID(beacon) && beacon.CustomName.Contains(MAIN_TAG))
                     _beacons.Add(beacon);
             }
         }
@@ -168,6 +170,39 @@ namespace IngameScript
                     beacon.GetActionWithName(ON).Apply(beacon);
                 else
                     beacon.GetActionWithName(OFF).Apply(beacon);
+            }
+        }
+
+
+        // ADD LIGHTS //
+        public void AddLights()
+        {
+            _lights = new List<IMyLightingBlock>();
+
+            List<IMyLightingBlock> allLights = new List<IMyLightingBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyLightingBlock>(allLights);
+
+            if (allLights.Count < 1) return;
+
+            foreach(IMyLightingBlock light in allLights)
+            {
+                if(SameGridID(light) && light.CustomName.Contains(MAIN_TAG))
+                    _lights.Add(light);
+            }
+        }
+
+
+        // ACTIVATE LIGHTS //
+        public void ActivateLights(bool turnOn)
+        {
+            if(_lights.Count < 1) return;
+
+            foreach(IMyLightingBlock light in _lights)
+            {
+                if(turnOn)
+                    light.GetActionWithName(ON).Apply(light);
+                else
+                    light.GetActionWithName(OFF).Apply(light);
             }
         }
     }
