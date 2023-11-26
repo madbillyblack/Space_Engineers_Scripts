@@ -32,11 +32,20 @@ namespace IngameScript
         MyIni _ini;
 
         IMySensorBlock _sensor;
+        IMyCockpit _cockpit;
+
 
         #region
         // PRORGRAM //
         public Program()
         {
+            List<IMyCockpit> cockpits = new List<IMyCockpit>();
+            GridTerminalSystem.GetBlocksOfType<IMyCockpit>(cockpits);
+            if(cockpits.Count > 0)
+                _cockpit = cockpits.First();
+            else
+                _cockpit = null;
+
             _ini = GetIni(Me);
             _surface = Me.GetSurface(0);
             _surface.ContentType = ContentType.TEXT_AND_IMAGE;
@@ -45,7 +54,7 @@ namespace IngameScript
             GridTerminalSystem.GetBlocksOfType<IMyCameraBlock>(_cameras);
 
             _castData = "";
-            Runtime.UpdateFrequency = UpdateFrequency.Update10;
+            Runtime.UpdateFrequency = UpdateFrequency.Update1;
 
             List<IMyTerminalBlock> inventoryBlocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName("Cargo", inventoryBlocks);
@@ -81,14 +90,24 @@ namespace IngameScript
         // MAIN //
         public void Main(string argument, UpdateType updateSource)
         {
-            _surface.WriteText("");
+            if (_cockpit == null)
+            {
+                Echo("No Cockpit");
+                return;
+            }
+
+            double elevation;
+            if (_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out elevation))
+                Echo("Elevation: " + elevation);
+                //_surface.WriteText("Elevation: " + elevation);
+
 
             //PrintBlockTypes();
             //PrintEntityIDs();
             //PrintDetected();
             //PrintFubar();
             //PrintSubTypes();
-            PrintScreenSize();
+            //PrintScreenSize();
 
 
 
