@@ -29,6 +29,7 @@ namespace IngameScript
         public double _hoverHeight = 2.5;
 
         List<IMyThrust> _hoverThrusters;
+        List<IMyLandingGear> _landingGear;
 
         IMyCockpit _cockpit;
 
@@ -40,6 +41,7 @@ namespace IngameScript
             SetMainIni();
             SetCockpit();
             AddThrusters();
+            AddLandingGear();
             SetGains();
             GetHeightFromIni();
             AddHoverControl();
@@ -138,6 +140,39 @@ namespace IngameScript
             _kP = float.Parse(GetMainKey(MAIN_HEADER, P_KEY, KP.ToString()));
             _kI = float.Parse(GetMainKey(MAIN_HEADER, I_KEY, KI.ToString()));
             _kD = float.Parse(GetMainKey(MAIN_HEADER, D_KEY, KD.ToString()));
+        }
+
+
+        // ACTIVATE LANDING GEAR //
+        public void ActivateLandingGear(bool lockGear)
+        {
+            if(_landingGear.Count < 1) return;
+
+            foreach(IMyLandingGear landingGear in _landingGear)
+            {
+                if(lockGear)
+                    landingGear.Lock();
+                else
+                    landingGear.Unlock();
+            }
+        }
+
+
+        // ADD LANDING GEAR //
+        public void AddLandingGear()
+        {
+            _landingGear = new List<IMyLandingGear>();
+
+            List<IMyLandingGear> tempGearList = new List<IMyLandingGear>();
+            GridTerminalSystem.GetBlocksOfType<IMyLandingGear>(tempGearList);
+
+            if (tempGearList.Count < 1) return;
+
+            foreach(IMyLandingGear landingGear in tempGearList)
+            {
+                if(landingGear.CustomName.Contains(MAIN_TAG) && SameGridID(landingGear))
+                    _landingGear.Add(landingGear);
+            }
         }
     }
 }

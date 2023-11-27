@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.EntityComponents;
+﻿using Sandbox;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI.Ingame;
@@ -43,6 +44,7 @@ namespace IngameScript
             if(_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out height))
             {
                 double error = _hoverHeight - height;
+                Echo("Error: " + error);
                 ControlThrusters((float)_pid.Control(error));
             }
 
@@ -68,9 +70,13 @@ namespace IngameScript
                 return;
 
             _hoverThrustersOn = true;
+            _cockpit.DampenersOverride = false;
+
             SetMainKey(MAIN_HEADER, HOVER_ON, "true");
+
             _pid = new PID(_kP, _kI, _kD, TIME_STEP);
             //Runtime.UpdateFrequency = UpdateFrequency.Update10;
+            ActivateLandingGear(false);
         }
 
 
@@ -79,6 +85,7 @@ namespace IngameScript
         {
             ControlThrusters(0);
             _hoverThrustersOn = false;
+            _cockpit.DampenersOverride = true;
             SetMainKey(MAIN_HEADER, HOVER_ON, "false");
         }
 

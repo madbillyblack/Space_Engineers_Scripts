@@ -26,6 +26,7 @@ namespace IngameScript
         // USER SETTINGS //
         const string HOVER_GROUP = "Hover Thrusters"; // Name of the group for hover thrusters
         const string COCKPIT_TAG = "[Reference]"; // Include this tag in the name of your reference cockpit
+        const string MAIN_TAG = "[HOVER]";
         const double KP = 1;
         const double KI = 0;
         const double KD = 0;
