@@ -27,6 +27,7 @@ namespace IngameScript
         const string SHARED = "Shared Data";
         const string GRID_KEY = "Grid_ID";
         const string HOVER_ON = "Hover Active";
+        const string MODE = "Current Mode";
         const string HOVER_KEY = "Hover Height";
         static string _gridID;
 

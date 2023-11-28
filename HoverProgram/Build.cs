@@ -27,6 +27,7 @@ namespace IngameScript
         public bool _hasHoverThrusters;
 
         public double _hoverHeight = 2.5;
+        public double _descentSpeed = 10;
 
         List<IMyThrust> _hoverThrusters;
         List<IMyLandingGear> _landingGear;

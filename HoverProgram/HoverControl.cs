@@ -23,6 +23,12 @@ namespace IngameScript
 {
     partial class Program
     {
+        // Operation Mode Strings
+        const string START = "Starting";
+        const string ACTIVE = "Hover";
+        const string LAND = "Landing";
+        const string DESCENT = "Descending";
+
         const string P_KEY = "P-Gain";
         const string I_KEY = "I-Gain";
         const string D_KEY = "D-Gain";
@@ -32,6 +38,7 @@ namespace IngameScript
         public double _kP;
         public double _kI;
         public double _kD;
+        string _mode;
 
 
         // PID HOVER CHECK //
@@ -44,11 +51,24 @@ namespace IngameScript
             if(_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out height))
             {
                 double error = _hoverHeight - height;
-                Echo("Error: " + error);
-                ControlThrusters((float)_pid.Control(error));
-            }
 
+                if (error < -5)
+                    pidDescentCheck();
+                else
+                    ControlThrusters((float)_pid.Control(error));
+            }
         }
+
+
+        // PID DESCENT CHECK //
+        public void pidDescentCheck()
+        {
+            double descent = GetDownwardVelocity();
+
+            double error = descent - _descentSpeed;
+            ControlThrusters((float)_pid.Control(error));
+        }
+
 
         // CONTROL THRUSTERS //
         void ControlThrusters(float input)
@@ -106,6 +126,7 @@ namespace IngameScript
         void AddHoverControl()
         {
             _hoverThrustersOn = ParseBool(GetMainKey(MAIN_HEADER, HOVER_ON, "false"));
+            _mode = GetMainKey(MAIN_HEADER, MODE, ACTIVE);
 
             if (_hoverThrustersOn)
                 _pid = new PID(_kP, _kI, _kD, TIME_STEP);
@@ -164,6 +185,45 @@ namespace IngameScript
                 diff = ParseFloat(value, (float)HEIGHT_STEP * -1);
 
             AdjustTargetHeight(diff);
+        }
+
+
+        // CONTROL SWITCH //
+        public void ControlSwitch()
+        {
+            switch(_mode)
+            {
+                case ACTIVE:
+                    pidHoverCheck();
+                    break;
+                case START:
+                    break;
+                case DESCENT:
+                    pidDescentCheck();
+                    break;
+
+            }
+        }
+
+
+        // GET FORWARD VELOCITY //
+        public double GetDownwardVelocity()
+        {
+            return Vector3D.Dot(_cockpit.WorldMatrix.Down, _cockpit.GetShipVelocities().LinearVelocity);
+        }
+
+
+        // ACTIVATE HOVER //
+        public void ActivateHover()
+        {
+            // TODO
+        }
+
+
+        // ACTIVATE DESCENT //
+        public void ActivateDescent()
+        {
+            // TODO
         }
     }
 }
