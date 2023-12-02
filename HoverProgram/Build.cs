@@ -25,11 +25,14 @@ namespace IngameScript
         public string _statusMessage, _lastCommand;
 
         public bool _hasHoverThrusters;
+        public bool _hasDownThrusters;
 
         public double _hoverHeight = 2.5;
+        public double _parkHeight = 1;
         public double _descentSpeed = 10;
 
         List<IMyThrust> _hoverThrusters;
+        List<IMyThrust> _downThrusters;
         List<IMyLandingGear> _landingGear;
 
         IMyCockpit _cockpit;
@@ -39,6 +42,8 @@ namespace IngameScript
         public void Build()
         {
             _statusMessage = "";
+            _data = "";
+            AddBreather();
             SetMainIni();
             SetCockpit();
             AddThrusters();
@@ -46,11 +51,19 @@ namespace IngameScript
             SetGains();
             GetHeightFromIni();
             AddHoverControl();
+            SetTickRate(TICK_RATE);
+            AddDisplays();
         }
 
 
         public void SetTickRate(int tickRate)
         { 
+            if(_mode == INACTIVE)
+            {
+                Runtime.UpdateFrequency = UpdateFrequency.None;
+                return;
+            }
+
             switch(tickRate)
             {
                 case 1:
@@ -74,6 +87,7 @@ namespace IngameScript
         {
             // Initialize lists
             _hoverThrusters = new List<IMyThrust>();
+            _downThrusters = new List<IMyThrust>();
             List<IMyThrust> thrusters = new List<IMyThrust>();
 
             // Get thrusters from Hover Group
@@ -92,12 +106,20 @@ namespace IngameScript
             foreach (IMyThrust thruster in thrusters)
             {
                 if (SameGridID(thruster))
-                _hoverThrusters.Add(thruster);
+                {
+                    if(thruster.GridThrustDirection == Vector3I.Down)
+                        _hoverThrusters.Add(thruster);
+                    else if(thruster.GridThrustDirection == Vector3I.Up)
+                        _downThrusters.Add(thruster);
+                }
+                    
             }
 
             _hasHoverThrusters = _hoverThrusters.Count > 0;
             if (!_hasHoverThrusters)
                 _statusMessage += "NO HOVER THRUSTERS FOUND!\n\n";
+
+            _hasDownThrusters = _downThrusters.Count > 0;
         }
 
 
@@ -131,16 +153,17 @@ namespace IngameScript
         // GET HEIGHT FROM INI //
         public void GetHeightFromIni()
         {
-            _hoverHeight = ParseFloat(GetMainKey(MAIN_HEADER, HOVER_KEY, _hoverHeight.ToString()), (float) _hoverHeight);
+            _hoverHeight = ParseFloat(GetMainKey(HEADER, HOVER_KEY, _hoverHeight.ToString()), (float) _hoverHeight);
+            _parkHeight = ParseFloat(GetMainKey(HEADER, PARK_HEIGHT, _parkHeight.ToString()), (float) _parkHeight);
         }
 
 
         // SET GAINS //
         public void SetGains()
         {
-            _kP = float.Parse(GetMainKey(MAIN_HEADER, P_KEY, KP.ToString()));
-            _kI = float.Parse(GetMainKey(MAIN_HEADER, I_KEY, KI.ToString()));
-            _kD = float.Parse(GetMainKey(MAIN_HEADER, D_KEY, KD.ToString()));
+            _kP = float.Parse(GetMainKey(HEADER, P_KEY, KP.ToString()));
+            _kI = float.Parse(GetMainKey(HEADER, I_KEY, KI.ToString()));
+            _kD = float.Parse(GetMainKey(HEADER, D_KEY, KD.ToString()));
         }
 
 
@@ -159,6 +182,15 @@ namespace IngameScript
         }
 
 
+        // SET AUTO LOCK //
+        public void SetAutoLock(bool autoLock)
+        {
+            if (_landingGear.Count < 1) return;
+
+            foreach (IMyLandingGear landingGear in _landingGear)
+                landingGear.AutoLock = autoLock;
+        }
+
         // ADD LANDING GEAR //
         public void AddLandingGear()
         {
@@ -174,6 +206,14 @@ namespace IngameScript
                 if(landingGear.CustomName.Contains(MAIN_TAG) && SameGridID(landingGear))
                     _landingGear.Add(landingGear);
             }
+        }
+
+
+        // ADD BREATHER //
+        public void AddBreather()
+        {
+            _cycleCount = 0;
+            _currentBreath = _breather [0];
         }
     }
 }

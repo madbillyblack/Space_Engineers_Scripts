@@ -24,62 +24,100 @@ namespace IngameScript
     partial class Program
     {
         // Operation Mode Strings
-        const string START = "Starting";
-        const string ACTIVE = "Hover";
-        const string LAND = "Landing";
-        const string DESCENT = "Descending";
+        const string START = "starting";
+        const string ACTIVE = "hover";
+        const string LAND = "landing";
+        const string INACTIVE = "off";
 
         const string P_KEY = "P-Gain";
         const string I_KEY = "I-Gain";
         const string D_KEY = "D-Gain";
 
         PID _pid;
+        PID _parkingPid;
         public bool _hoverThrustersOn;
         public double _kP;
         public double _kI;
         public double _kD;
         string _mode;
 
+        const string ON = "OnOff_On";
+        const string OFF = "OnOff_Off";
 
-        // PID HOVER CHECK //
-        public void pidHoverCheck()
+
+        // GET CURRENT HEIGHT //
+        public double GetCurrentHeight()
         {
-            if (!_hoverThrustersOn || _pid == null) return;
-
             double height;
 
-            if(_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out height))
-            {
-                double error = _hoverHeight - height;
+            if (_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out height))
+                return height;
 
-                if (error < -5)
-                    pidDescentCheck();
-                else
-                    ControlThrusters((float)_pid.Control(error));
-            }
+            return _hoverHeight;
+        }
+
+
+        // PID HOVER CHECK //
+        public void PidHoverCheck()
+        {
+            if (!_hoverThrustersOn) return;
+
+            double height = GetCurrentHeight();
+
+            double error = _hoverHeight - height;
+
+            if (error < -5)
+                PidDescentCheck(_descentSpeed);
+            else
+                ControlThrusters((float)_pid.Control(error));
         }
 
 
         // PID DESCENT CHECK //
-        public void pidDescentCheck()
+        public void PidDescentCheck(double descentSpeed)
         {
             double descent = GetDownwardVelocity();
 
-            double error = descent - _descentSpeed;
+            double error = descent - descentSpeed;
             ControlThrusters((float)_pid.Control(error));
+        }
+
+
+        // PID START CHECK //
+        public void PidStartCheck()
+        {
+            double height = GetCurrentHeight();
+            double error = _hoverHeight - height;
+
+            ControlThrusters((float)_parkingPid.Control(error));
+
+            if(height > _hoverHeight)
+                NormalizeHover();
+        }
+
+
+        // PID LAND CHECK //
+        public void PidLandCheck()
+        {
+            PidDescentCheck(LANDING_SPEED);
+
+            if (GetCurrentHeight() <= _hoverHeight || IsParked())
+                TurnOff();
         }
 
 
         // CONTROL THRUSTERS //
         void ControlThrusters(float input)
         {
-            if (!_hasHoverThrusters)
-                return;
+            if (!_hasHoverThrusters) return;
 
             foreach (IMyThrust thruster in _hoverThrusters)
-            {
                 thruster.ThrustOverridePercentage = input;
-            }
+
+            if (!_hasDownThrusters) return;
+            
+            foreach (IMyThrust downThruster in _downThrusters)
+                downThruster.ThrustOverridePercentage = -input;
         }
 
 
@@ -90,13 +128,19 @@ namespace IngameScript
                 return;
 
             _hoverThrustersOn = true;
-            _cockpit.DampenersOverride = false;
+            //_cockpit.DampenersOverride = false;
 
-            SetMainKey(MAIN_HEADER, HOVER_ON, "true");
+            SetMainKey(HEADER, HOVER_ON, "true");
 
-            _pid = new PID(_kP, _kI, _kD, TIME_STEP);
+            //_pid = new PID(_kP, _kI, _kD, TIME_STEP);
             //Runtime.UpdateFrequency = UpdateFrequency.Update10;
             ActivateLandingGear(false);
+
+
+            foreach (IMyThrust thruster in _hoverThrusters)
+                thruster.GetActionWithName(ON).Apply(thruster);
+
+            SetTickRate(TICK_RATE);
         }
 
 
@@ -105,33 +149,55 @@ namespace IngameScript
         {
             ControlThrusters(0);
             _hoverThrustersOn = false;
-            _cockpit.DampenersOverride = true;
-            SetMainKey(MAIN_HEADER, HOVER_ON, "false");
+            //_cockpit.DampenersOverride = true;
+            SetMainKey(HEADER, HOVER_ON, "false");
+
+            foreach (IMyThrust thruster in _hoverThrusters)
+                thruster.GetActionWithName(OFF).Apply(thruster);                
         }
 
 
         // TOGGLE HOVER THRUSTERS //
         void ToggleHoverThrusters()
         {
-            if (!_hoverThrustersOn)
+           
+
+            if (_mode == INACTIVE || _mode == LAND)
             {
-                HoverThrustersOn();
+                StartHover();
             }
             else
-                HoverThrustersOff();
+                StopHover();
         }
 
 
         // ADD HOVER CONTROL //
         void AddHoverControl()
         {
-            _hoverThrustersOn = ParseBool(GetMainKey(MAIN_HEADER, HOVER_ON, "false"));
-            _mode = GetMainKey(MAIN_HEADER, MODE, ACTIVE);
+            _hoverThrustersOn = ParseBool(GetMainKey(HEADER, HOVER_ON, "false"));
+            _mode = GetMainKey(HEADER, MODE, ACTIVE).ToLower();
 
+            _pid = new PID(_kP, _kI, _kD, TIME_STEP);
+            _parkingPid = new PID(_kP * PARKING_MOD, _kI * PARKING_MOD, _kD * PARKING_MOD, TIME_STEP);
+
+            switch(_mode)
+            {
+                case ACTIVE:
+                    NormalizeHover();
+                    break;
+                case START:
+                    StartHover();
+                    break;
+                case LAND:
+                    StopHover();
+                    break;
+            }
+            /*
             if (_hoverThrustersOn)
                 _pid = new PID(_kP, _kI, _kD, TIME_STEP);
             else
                 _pid = null;
+            */
         }
 
 
@@ -144,7 +210,7 @@ namespace IngameScript
                 newTarget *= -1;
 
             _hoverHeight = newTarget;
-            SetMainKey(MAIN_HEADER, HOVER_KEY, newTarget.ToString());
+            SetMainKey(HEADER, HOVER_KEY, newTarget.ToString());
         }
 
 
@@ -156,7 +222,7 @@ namespace IngameScript
             if(_hoverHeight < 0)
                 _hoverHeight = 0;
 
-            SetMainKey(MAIN_HEADER, HOVER_KEY, _hoverHeight.ToString());
+            SetMainKey(HEADER, HOVER_KEY, _hoverHeight.ToString());
         }
 
 
@@ -188,20 +254,23 @@ namespace IngameScript
         }
 
 
-        // CONTROL SWITCH //
-        public void ControlSwitch()
+        // CONTROL HOVER //
+        public void ControlHover()
         {
             switch(_mode)
             {
                 case ACTIVE:
-                    pidHoverCheck();
+                    PidHoverCheck();
                     break;
                 case START:
+                    PidStartCheck();
                     break;
-                case DESCENT:
-                    pidDescentCheck();
+                case LAND:
+                    PidLandCheck();
                     break;
-
+                default:
+                    Echo("-- HOVER DEACTIVATED --");
+                    break;
             }
         }
 
@@ -213,17 +282,67 @@ namespace IngameScript
         }
 
 
-        // ACTIVATE HOVER //
-        public void ActivateHover()
+        // START HOVER // - Initialize Hover from parked position
+        public void StartHover()
         {
-            // TODO
+            double parkingMod = _hoverHeight * 0.005;
+            _parkingPid = new PID(_kP * parkingMod, _kI * parkingMod, _kD * parkingMod, TIME_STEP);
+            _mode = START;
+            SetMainKey(HEADER, MODE, START);
+            SetAutoLock(false);
+            HoverThrustersOn();
         }
 
 
-        // ACTIVATE DESCENT //
-        public void ActivateDescent()
+        // STOP HOVER // - Initialize the landing/park sequence
+        public void StopHover()
         {
-            // TODO
+            _mode = LAND;
+            SetMainKey(HEADER, MODE, LAND);
+            SetAutoLock(true);
+        }
+
+
+        // NORMALIZE HOVER // - Switch the craft to its main hover mode
+        public void NormalizeHover()
+        {
+            _mode = ACTIVE;
+            SetMainKey(HEADER, MODE, ACTIVE);
+        }
+
+
+        // SET PARK HEIGHT //
+        public void SetParkHeight()
+        {
+            _parkHeight = GetCurrentHeight();
+            SetMainKey(HEADER, PARK_HEIGHT, _parkHeight.ToString());
+        }
+
+
+        // IS PARKED //
+        public bool IsParked()
+        {
+            if(_landingGear.Count > 0)
+            {
+                foreach (IMyLandingGear landingGear in _landingGear)
+                {
+                    if (landingGear.IsLocked)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+
+        // TURN OFF //
+        public void TurnOff()
+        {
+            _mode = INACTIVE;
+            SetMainKey(HEADER, MODE, INACTIVE);
+
+            HoverThrustersOff();
+            Runtime.UpdateFrequency = UpdateFrequency.None;
         }
     }
 }

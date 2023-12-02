@@ -39,6 +39,7 @@
   <Import Project="MDK/MDK.paths.props" Condition="exists('MDK/MDK.paths.props')" />
   <ItemGroup>
     <Compile Include="Build.cs" />
+    <Compile Include="DisplayBlock.cs" />
     <Compile Include="HoverControl.cs" />
     <Compile Include="IniKeys.cs" />
     <Compile Include="MainSwitch.cs" />

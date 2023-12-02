@@ -46,10 +46,10 @@ namespace IngameScript
                     ToggleHoverThrusters();
                     break;
                 case "HOVER_ON":
-                    HoverThrustersOn();
+                    StartHover();
                     break;
-                case "HOVER_OF":
-                    HoverThrustersOff();
+                case "HOVER_OFF":
+                    StopHover();
                     break;
                 case "REFRESH":
                     Build();
@@ -65,6 +65,10 @@ namespace IngameScript
                     break;
                 case "INCREASE_HEIGHT":
                     IncreaseHeight(data);
+                    break;
+                case "SET_PARK":
+                case "SET_PARK_HEIGHT":
+                    SetParkHeight();
                     break;
                 default:
                     _statusMessage = "UNKOWN COMMAND: \"" + arg + "\"";

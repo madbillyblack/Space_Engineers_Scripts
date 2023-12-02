@@ -23,12 +23,13 @@ namespace IngameScript
     partial class Program
     {
         public static IMyProgrammableBlock _me;
-        const string MAIN_HEADER = "Hover Program";
+        const string HEADER = "Hover Program";
         const string SHARED = "Shared Data";
         const string GRID_KEY = "Grid_ID";
         const string HOVER_ON = "Hover Active";
         const string MODE = "Current Mode";
         const string HOVER_KEY = "Hover Height";
+        const string PARK_HEIGHT = "Parked Height";
         static string _gridID;
 
         static MyIni _mainIni;
