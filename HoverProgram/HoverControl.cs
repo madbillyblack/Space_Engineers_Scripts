@@ -48,10 +48,17 @@ namespace IngameScript
         // GET CURRENT HEIGHT //
         public double GetCurrentHeight()
         {
-            double height;
-
-            if(_scanningEnabled)
+            if (_scanningEnabled)
                 return _scanCamera.DetectHeight();
+
+            return GetRawHeight();
+        }
+
+
+        // GET RAW HEIGHT //
+        public double GetRawHeight()
+        {
+            double height;
 
             if (_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out height))
                 return height;
@@ -91,7 +98,7 @@ namespace IngameScript
         // PID START CHECK //
         public void PidStartCheck()
         {
-            double height = GetCurrentHeight();
+            double height = GetRawHeight();
             double error = _hoverHeight - height;
 
             ControlThrusters((float)_parkingPid.Control(error));
@@ -141,9 +148,8 @@ namespace IngameScript
             //Runtime.UpdateFrequency = UpdateFrequency.Update10;
             ActivateLandingGear(false);
 
-
-            foreach (IMyThrust thruster in _hoverThrusters)
-                thruster.GetActionWithName(ON).Apply(thruster);
+            ActivateThrusters(_hoverThrusters, true);
+            ActivateThrusters(_downThrusters, true);            
 
             SetTickRate(TICK_RATE);
         }
@@ -157,8 +163,8 @@ namespace IngameScript
             //_cockpit.DampenersOverride = true;
             SetMainKey(HEADER, HOVER_ON, "false");
 
-            foreach (IMyThrust thruster in _hoverThrusters)
-                thruster.GetActionWithName(OFF).Apply(thruster);                
+            ActivateThrusters(_hoverThrusters, false);
+            ActivateThrusters(_downThrusters, false);
         }
 
 
@@ -292,8 +298,10 @@ namespace IngameScript
         // START HOVER // - Initialize Hover from parked position
         public void StartHover()
         {
-            double parkingMod = _hoverHeight * 0.005;
-            _parkingPid = new PID(_kP * parkingMod, _kI * parkingMod, _kD * parkingMod, TIME_STEP);
+            //double parkingMod = _hoverHeight * 0.005;
+            //_parkingPid = new PID(_kP * parkingMod, _kI * parkingMod, _kD * parkingMod, TIME_STEP);
+            //double parkingMod = _hoverHeight * 0.005;
+            _parkingPid = new PID(_kP * PARKING_MOD, _kI * PARKING_MOD, _kD * PARKING_MOD, TIME_STEP);
             _mode = START;
             SetMainKey(HEADER, MODE, START);
             SetAutoLock(false);
@@ -350,6 +358,21 @@ namespace IngameScript
 
             HoverThrustersOff();
             Runtime.UpdateFrequency = UpdateFrequency.None;
+        }
+
+
+        // ACTIVATE THRUSTERS //
+        public void ActivateThrusters(List<IMyThrust> thrusters, bool activate)
+        {
+            if (thrusters.Count < 1) return;
+
+            foreach (IMyThrust thruster in thrusters)
+            {
+                if (activate)
+                    thruster.GetActionWithName(ON).Apply(thruster);
+                else
+                    thruster.GetActionWithName(OFF).Apply(thruster);
+            }
         }
     }
 }

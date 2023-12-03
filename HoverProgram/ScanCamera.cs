@@ -50,7 +50,7 @@ namespace IngameScript
 
                         double dist = Vector3.Distance((Vector3) hitPoint, Block.GetPosition());
 
-                        return dist * GravityCos();
+                        return dist * GravityCos() + CAMERA_MOD;
                     }
                     return ScanRange;
                 }

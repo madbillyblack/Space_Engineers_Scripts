@@ -33,12 +33,13 @@ namespace IngameScript
         const double TIME_STEP = 1.0 / 6.0;
         const int TICK_RATE = 1;
         const double HEIGHT_STEP = 0.5;
-        const double PARKING_MOD = 0.025;
+        const double PARKING_MOD = 0.015;
         const double LANDING_SPEED = 0.01;
         const double DESCENT_MOD = 3;
         const double CALIBRATION = 0.1;
         const double SCAN_LIMIT = 30;
         const int SCAN_MOD = 4;
+        const double CAMERA_MOD = 0.75;
 
         // DO NOT CHANGE ANYTHING BELOW THIS LINE!!! ////////////////////////////////////////////////////////////////////
 
