@@ -50,6 +50,9 @@ namespace IngameScript
         {
             double height;
 
+            if(_scanningEnabled)
+                return _scanCamera.DetectHeight();
+
             if (_cockpit.TryGetPlanetElevation(MyPlanetElevation.Surface, out height))
                 return height;
 
@@ -213,6 +216,7 @@ namespace IngameScript
 
             _hoverHeight = newTarget;
             SetMainKey(HEADER, HOVER_KEY, newTarget.ToString());
+            
         }
 
 
@@ -225,6 +229,7 @@ namespace IngameScript
                 _hoverHeight = 0;
 
             SetMainKey(HEADER, HOVER_KEY, _hoverHeight.ToString());
+            SetScanRange();
         }
 
 

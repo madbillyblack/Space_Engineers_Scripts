@@ -37,6 +37,8 @@ namespace IngameScript
         const double LANDING_SPEED = 0.01;
         const double DESCENT_MOD = 3;
         const double CALIBRATION = 0.1;
+        const double SCAN_LIMIT = 30;
+        const int SCAN_MOD = 4;
 
         // DO NOT CHANGE ANYTHING BELOW THIS LINE!!! ////////////////////////////////////////////////////////////////////
 

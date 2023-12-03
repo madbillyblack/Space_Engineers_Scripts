@@ -27,7 +27,7 @@ namespace IngameScript
         public bool _hasHoverThrusters;
         public bool _hasDownThrusters;
 
-        public double _hoverHeight = 2.5;
+        public static double _hoverHeight = 2.5;
         public double _parkHeight = 1;
         public double _descentSpeed = 10;
 
@@ -35,7 +35,7 @@ namespace IngameScript
         List<IMyThrust> _downThrusters;
         List<IMyLandingGear> _landingGear;
 
-        IMyCockpit _cockpit;
+        public static IMyCockpit _cockpit;
 
 
         // BUILD //
@@ -48,6 +48,7 @@ namespace IngameScript
             SetCockpit();
             AddThrusters();
             AddLandingGear();
+            AddScanCamera();
             SetGains();
             GetHeightFromIni();
             AddHoverControl();
@@ -155,6 +156,7 @@ namespace IngameScript
         {
             _hoverHeight = ParseFloat(GetMainKey(HEADER, HOVER_KEY, _hoverHeight.ToString()), (float) _hoverHeight);
             _parkHeight = ParseFloat(GetMainKey(HEADER, PARK_HEIGHT, _parkHeight.ToString()), (float) _parkHeight);
+            SetScanRange();
         }
 
 
@@ -215,5 +217,8 @@ namespace IngameScript
             _cycleCount = 0;
             _currentBreath = _breather [0];
         }
+
+
+
     }
 }
