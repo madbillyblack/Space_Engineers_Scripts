@@ -26,18 +26,19 @@ namespace IngameScript
         {
             _lastCommand = arg;
             string cmd;
-            string data;
+            string data = "";
             string[] args = arg.Split(' ');
 
             if(args.Length > 1)
             {
-                cmd = args[0].Trim();  
-                data = args[1].Trim();
+                cmd = args[0].Trim();
+                
+                for(int i = 1; i < args.Length; i++)
+                    data += args[i];
             }
             else
             {
                 cmd = arg;
-                data = "";
             }
 
             switch (cmd.ToUpper())
@@ -69,6 +70,18 @@ namespace IngameScript
                 case "SET_PARK":
                 case "SET_PARK_HEIGHT":
                     SetParkHeight();
+                    break;
+                case "SET_GAINS":
+                    SetGainsFromString(data);
+                    break;
+                case "ADJUST_P":
+                    AdjustP(data);
+                    break;
+                case "ADJUST_I":
+                    AdjustI(data);
+                    break;
+                case "ADJUST_D":
+                    AdjustD(data);
                     break;
                 default:
                     _statusMessage = "UNKOWN COMMAND: \"" + arg + "\"";

@@ -35,6 +35,8 @@ namespace IngameScript
         const double HEIGHT_STEP = 0.5;
         const double PARKING_MOD = 0.025;
         const double LANDING_SPEED = 0.01;
+        const double DESCENT_MOD = 3;
+        const double CALIBRATION = 0.1;
 
         // DO NOT CHANGE ANYTHING BELOW THIS LINE!!! ////////////////////////////////////////////////////////////////////
 

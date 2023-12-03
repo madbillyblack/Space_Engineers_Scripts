@@ -66,10 +66,12 @@ namespace IngameScript
 
             double error = _hoverHeight - height;
 
-            if (error < -5)
+
+            if (error < - DESCENT_MOD)
                 PidDescentCheck(_descentSpeed);
             else
                 ControlThrusters((float)_pid.Control(error));
+
         }
 
 

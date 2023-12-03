@@ -147,5 +147,68 @@ namespace IngameScript
                 _integralBuffer.Clear();
             }
         }
+
+
+        // SET GAINS FROM STRING //
+        public void SetGainsFromString(string gains)
+        {
+            string[] gainArgs = gains.Split(',');
+            if (gainArgs.Length != 3)
+            {
+                _statusMessage += "Invalid GAIN argument!\n Follow format kP,kI,kD";
+                return;
+            }
+
+            _kP = ParseFloat(gainArgs[0].Trim(), (float) _kP);
+            _kI = ParseFloat(gainArgs[1].Trim(), (float) _kI);
+            _kD = ParseFloat(gainArgs[2].Trim(), (float) _kD);
+
+            SetMainKey(HEADER, P_KEY, _kP.ToString("0.####"));
+            SetMainKey(HEADER, I_KEY, _kI.ToString("0.####"));
+            SetMainKey(HEADER, D_KEY, _kD.ToString("0.####"));
+
+            _pid = new PID(_kP, _kI, _kD, TIME_STEP);
+        }
+
+
+        // ADJUST GAIN //
+        public double AdjustGain(double gain, string adjustment)
+        {
+            double mod;
+            if (adjustment == "")
+                mod = CALIBRATION;
+            else mod = ParseFloat(adjustment, 0);
+
+            double newGain = gain + mod;
+
+            if (newGain < 0)
+                return 0;
+
+            return newGain;
+        }
+
+
+        // ADJUST P //
+        public void AdjustP(string adjustment)
+        {
+            _kP = AdjustGain(_kP, adjustment);
+            _pid = new PID(_kP,_kI, _kD, TIME_STEP);
+        }
+
+
+        // ADJUST I //
+        public void AdjustI(string adjustment)
+        {
+            _kI = AdjustGain(_kI, adjustment);
+            _pid = new PID(_kP, _kI, _kD, TIME_STEP);
+        }
+
+
+        // ADJUST D //
+        public void AdjustD(string adjustment)
+        {
+            _kD = AdjustGain(_kD, adjustment);
+            _pid = new PID(_kP, _kI, _kD, TIME_STEP);
+        }
     }
 }

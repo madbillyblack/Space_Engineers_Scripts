@@ -126,7 +126,7 @@ namespace IngameScript
         public void DisplayData()
         {
             _data = "// HOVER PROGRAM " + _currentBreath +"\nMode: " + _mode + "   Target Height: " + _hoverHeight +
-                            "m\nGains: " + _kP + "," + _kI + "," + _kD +
+                            "m\nGains: " + _kP.ToString("0.##") + ", " + _kI.ToString("0.##") + ", " + _kD.ToString("0.##") +
                             "\nCmd: " + _lastCommand + "\nMsg:\n" + _statusMessage;
 
             if (_displayBlocks.Count < 1) return;
