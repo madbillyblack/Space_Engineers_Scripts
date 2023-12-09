@@ -315,8 +315,24 @@ namespace IngameScript
 			AddMessage("Importing Coordinates of type: " + typeSingle);
 
 			ImportFromLCDs(typeSingle);
+			ImportFromDataScreens(typeSingle);
         }
 
+
+		// IMPORT FROM DATASCREENS //
+		void ImportFromDataScreens(string type)
+		{
+			if (_dataDisplays.Count < 0) return;
+
+			foreach(DataDisplay display in  _dataDisplays)
+			{
+				if(display.CurrentPage == INPUT_PAGE)
+				{
+                    ImportCoordinates(display.Surface, type);
+                    display.Surface.WriteText(display.BuildPageHeader(GPS_INPUT) + BELOW_LINE);
+                }	
+			}
+		}
 
 		// BRIDGE FUNCTIONS // Ensure that commands from old switch are backwards compatible /////////////////////////////////////////////
 
