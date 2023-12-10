@@ -73,19 +73,28 @@ namespace IngameScript
 			{
 				List<IMyTerminalBlock> refBlocks = new List<IMyTerminalBlock>();
 				GridTerminalSystem.SearchBlocksOfName(refName, refBlocks);
+
+
+
 				if (refBlocks.Count > 0)
 				{
-					_refBlock = refBlocks[0] as IMyTerminalBlock;
-					Echo("Reference: " + _refBlock.CustomName);
+					foreach (IMyTerminalBlock block in refBlocks)
+					{
+						if(GetKey(block, SHARED, "Grid_ID", _gridID) == _gridID)
+						{
+                            _refBlock = block as IMyTerminalBlock;
+                            Echo("Reference: " + _refBlock.CustomName);
+                            _myPos = _refBlock.GetPosition();
+							return;
+                        }
+					}
 				}
-				else
-				{
-					AddMessage("WARNING: No Block containing " + refName + " found.\nMay result in false orientation!");
-					_refBlock = Me as IMyTerminalBlock;
-				}
-			}
 
-			_myPos = _refBlock.GetPosition();
+                AddMessage("WARNING: No Block containing " + refName + " found.\nMay result in false orientation!");
+                _refBlock = Me as IMyTerminalBlock;
+                _myPos = _refBlock.GetPosition();
+
+            }
 		}
 
 
