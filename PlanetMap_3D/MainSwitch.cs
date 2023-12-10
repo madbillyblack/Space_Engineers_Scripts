@@ -130,7 +130,10 @@ namespace IngameScript
 					if (cmdArg == "GPS")
 						cycleGPSForList(maps);
 					else if (cmdArg.Contains("TYPE"))
-						maps[0].CycleActiveWaypointType();
+					{
+                        maps[0].CycleActiveWaypointType();
+						DataToLog();
+                    }
 					break;
 				case "NEXT":
 					nextLast(maps, cmdArg, argData,true);
