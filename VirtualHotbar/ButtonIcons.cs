@@ -195,7 +195,14 @@ namespace IngameScript
 				case "{DOWN_PISTON_RETRACT}":
 					DrawPiston(position, scale, iconColor, "RETRACT", true);
 					break;
-				default:
+				case "{DOORS}":
+				case "{OPEN_DOORS}":
+					DrawDoors(position, scale * 0.67f, iconColor, buttonColor);
+					break;
+				case "{CLOSE_DOORS}":
+                    DrawDoors(position, scale * 0.67f, iconColor, buttonColor, true);
+                    break;
+                default:
 					DrawActionText(labelA, labelB, position, fontSize * 0.5f, iconColor);
 					break;
 			}
@@ -863,5 +870,43 @@ namespace IngameScript
 				DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.125f, scale * -0.125f * vertMod), 0, color);
 			}
 		}
-	}
+
+
+        // DRAW DOORS //
+        void DrawDoors(Vector2 position, float scale, Color iconColor, Color bgColor, bool closing = false)
+        {
+            string directionA, directionB;
+
+            if (closing)
+            {
+                directionA = "RIGHT";
+                directionB = "LEFT";
+            }
+            else
+            {
+                directionA = "LEFT";
+                directionB = "RIGHT";
+            }
+
+            // Outline/Background
+            Vector2 pos = position - new Vector2(scale * 0.5f, 0);
+            DrawTexture(SQUARE, pos, new Vector2(scale, scale), 0, iconColor);
+
+            // Doors (single block)
+            pos = position - new Vector2(scale * 0.45f, 0);
+            DrawTexture(SQUARE, pos, new Vector2(scale * 0.9f, scale * 0.9f), 0, bgColor);
+
+            // Opening Divider
+            pos = position - new Vector2(scale * 0.125f, 0);
+            DrawTexture(SQUARE, pos, new Vector2(scale * 0.25f, scale * 0.9f), 0, iconColor);
+
+            // Triangle A - Left Door
+            pos = position + new Vector2(scale * -0.275f, scale * 0.1f);
+            DrawTriangle(pos, scale * 0.25f, iconColor, directionA);
+
+            // Triangle B - Right Door
+            pos = position + new Vector2(scale * 0.275f, scale * 0.1f);
+            DrawTriangle(pos, scale * 0.25f, iconColor, directionB);
+        }
+    }
 }
