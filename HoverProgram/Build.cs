@@ -22,6 +22,8 @@ namespace IngameScript
 {
     partial class Program
     {
+        const string THRUST_KEY = "Hover Thruster";
+
         public string _statusMessage, _lastCommand;
 
         public bool _hasHoverThrusters;
@@ -90,7 +92,37 @@ namespace IngameScript
             _hoverThrusters = new List<IMyThrust>();
             _downThrusters = new List<IMyThrust>();
             List<IMyThrust> thrusters = new List<IMyThrust>();
+            GridTerminalSystem.GetBlocksOfType<IMyThrust>(thrusters);
 
+            TagThrustersFromGroup();
+
+            // Add thrusters with same Grid ID to hover list
+            foreach (IMyThrust thruster in thrusters)
+            {
+                if (thruster.CustomData.Contains(THRUST_KEY) && SameGridID(thruster))
+                {
+                    bool active = ParseBool(GetKey(thruster, HEADER, THRUST_KEY, "True"));
+
+                    if(active && thruster.GridThrustDirection == Vector3I.Down)
+                        _hoverThrusters.Add(thruster);
+                    else if(active && thruster.GridThrustDirection == Vector3I.Up)
+                        _downThrusters.Add(thruster);
+                }    
+            }
+
+            _hasHoverThrusters = _hoverThrusters.Count > 0;
+            if (!_hasHoverThrusters)
+                _statusMessage += "NO HOVER THRUSTERS FOUND!\n\n";
+
+            _hasDownThrusters = _downThrusters.Count > 0;
+        }
+
+
+        // TAG THRUSTERS FROM GROUP //
+        public void TagThrustersFromGroup()
+        {
+            List<IMyThrust> thrusters = new List<IMyThrust>();
+            
             // Get thrusters from Hover Group
             try
             {
@@ -99,28 +131,13 @@ namespace IngameScript
             }
             catch
             {
-                _statusMessage += "No Block Group \"" + HOVER_GROUP +"\" Defined!\n\n";
                 return;
             }
 
-            // Add thrusters with same Grid ID to hover list
+            if (thrusters.Count < 1) return;
+
             foreach (IMyThrust thruster in thrusters)
-            {
-                if (SameGridID(thruster))
-                {
-                    if(thruster.GridThrustDirection == Vector3I.Down)
-                        _hoverThrusters.Add(thruster);
-                    else if(thruster.GridThrustDirection == Vector3I.Up)
-                        _downThrusters.Add(thruster);
-                }
-                    
-            }
-
-            _hasHoverThrusters = _hoverThrusters.Count > 0;
-            if (!_hasHoverThrusters)
-                _statusMessage += "NO HOVER THRUSTERS FOUND!\n\n";
-
-            _hasDownThrusters = _downThrusters.Count > 0;
+                EnsureKey(thruster, HEADER, THRUST_KEY, "True");
         }
 
 
@@ -217,8 +234,5 @@ namespace IngameScript
             _cycleCount = 0;
             _currentBreath = _breather [0];
         }
-
-
-
     }
 }
