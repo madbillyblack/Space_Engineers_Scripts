@@ -39,9 +39,9 @@
   <Import Project="MDK/MDK.paths.props" Condition="exists('MDK/MDK.paths.props')" />
   <ItemGroup>
     <Compile Include="ButtonIcons.cs" />
+    <Compile Include="Profiles.cs" />
     <Compile Include="ContextMenu.cs" />
     <Compile Include="DrawFunctions.cs" />
-    <Compile Include="GroupProfiles.cs" />
     <Compile Include="IniKeys.cs" />
     <Compile Include="MainSwitch.cs" />
     <Compile Include="MDK\Bootstrapper.cs" />

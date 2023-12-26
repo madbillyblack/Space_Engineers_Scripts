@@ -33,7 +33,17 @@ namespace IngameScript
 		const string LEFT = "LEFT";
 		const string RIGHT = "RIGHT";
 
-		readonly Vector2 _shadowOffset = new Vector2(1, 1);
+		// LABELS //
+		const string TOGGLE_LABEL = "{TOGGLE}";
+		const string BATT_LABEL = "{BATTERY}";
+		const string CYCLE_LABEL = "{CYCLE}";
+		const string JETTISON = "{JETTISON}";
+		const string GEAR_LABEL = "{GEAR}";
+		const string H2_TANK = "{H2_TANK}";
+		const string DOOR_LABEL = "{DOORS}";
+		const string REACTOR = "{REACTOR}";
+
+        readonly Vector2 _shadowOffset = new Vector2(1, 1);
 
 		// DRAW ACTION LABEL //
 		void DrawActionLabel(MenuButton button, Vector2 position, float scale, float fontSize, Color iconColor, Color buttonColor)
@@ -62,7 +72,7 @@ namespace IngameScript
 				case "{LIGHT}":
 					DrawLight(position, scale, fontSize, iconColor);
 					break;
-				case "{GEAR}":
+				case GEAR_LABEL:
 					DrawLandingGear(position, scale * 0.9f, iconColor, buttonColor);
 					break;
 				case "{GEAR_DOWN}":
@@ -95,7 +105,7 @@ namespace IngameScript
 				case "{O2}":
 					DrawGas("O2", SQUARE, position, scale, iconColor, buttonColor);
 					break;
-				case "{H2_TANK}":
+				case H2_TANK:
 					DrawGas("H2", CIRCLE, position, scale, iconColor, buttonColor);
 					break;
 				case "{O2_TANK}":
@@ -107,7 +117,7 @@ namespace IngameScript
 				case "{M_TURRET}":
 					DrawMissileTurret(position, scale, iconColor);
 					break;
-				case "{JETTISON}":
+				case JETTISON:
 					DrawJettison(position, scale * 0.9f, iconColor);
 					break;
 				case "{DRILL}":
@@ -122,10 +132,10 @@ namespace IngameScript
 				case "{POWER}":
 					DrawBolt(position, scale, iconColor);
 					break;
-				case "{BATTERY}":
+				case BATT_LABEL:
 					DrawPower(SQUARE, position, scale, iconColor, buttonColor);
 					break;
-				case "{REACTOR}":
+				case REACTOR:
 					DrawPower(CIRCLE, position, scale, iconColor, buttonColor);
 					break;
 				case "{TARGET}":
@@ -164,10 +174,10 @@ namespace IngameScript
 				case "{VV}":
 					DrawDoubleTriangle(arrowPos, arrowScale, iconColor, DOWN);
 					break;
-				case "{TOGGLE}":
+				case TOGGLE_LABEL:
 					DrawToggle(position, scale * 0.75f, iconColor, buttonColor);
 					break;
-				case "{CYCLE}":
+				case CYCLE_LABEL:
 					DrawCycle(position, scale * 0.75f, iconColor, buttonColor);
 					break;
 				case "{X}":
@@ -195,7 +205,7 @@ namespace IngameScript
 				case "{DOWN_PISTON_RETRACT}":
 					DrawPiston(position, scale, iconColor, "RETRACT", true);
 					break;
-				case "{DOORS}":
+				case DOOR_LABEL:
 				case "{OPEN_DOORS}":
 					DrawDoors(position, scale * 0.67f, iconColor, buttonColor);
 					break;

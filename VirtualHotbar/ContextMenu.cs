@@ -17,6 +17,7 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
+using static IngameScript.Program;
 
 namespace IngameScript
 {
@@ -39,6 +40,7 @@ namespace IngameScript
         const string BUTTON_KEY = "Button Color";
         const string LABEL_KEY = "Label Color";
         const string PLACE_HOLDER = "{AUX}";
+        const string BLINK_LENGTH = "Blink Length";
 
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
@@ -99,14 +101,7 @@ namespace IngameScript
 
                 SetPageCount();
                 SetCurrentPage();
-
-                MaxButtons = ParseInt(GetKey(MENU_HEAD, MAX_BUTTONS, "8"), 8);
-
-                // Ensure a valid MaxButton Value was supplied.
-                if (MaxButtons < 1)
-                    MaxButtons = 1;
-                else if (MaxButtons > BUTTON_LIMIT)
-                    MaxButtons = BUTTON_LIMIT;
+                SetButtonLimit(ParseInt(GetKey(MENU_HEAD, MAX_BUTTONS, "8"), 8));
 
                 // Vertical Alignment
                 Alignment = GetKey(MENU_HEAD, "Alignment", "BOTTOM");
@@ -140,6 +135,20 @@ namespace IngameScript
                 LabelColor = ParseColor(GetKey(MENU_COLOR, LABEL_KEY, "160,160,160"));
                 ButtonColor = ParseColor(GetKey(MENU_COLOR, BUTTON_KEY, "0,160,160"));
             }
+
+
+            // SET BUTTON LIMIT //
+            public void SetButtonLimit(int buttonLimit)
+            {
+                MaxButtons = buttonLimit;
+
+                // Ensure a valid MaxButton Value was supplied.
+                if (MaxButtons < 1)
+                    MaxButtons = 1;
+                else if (MaxButtons > BUTTON_LIMIT)
+                    MaxButtons = BUTTON_LIMIT;
+            }
+
 
             // GET CURRENT PAGE //
             public MenuPage GetCurrentPage()
@@ -228,6 +237,23 @@ namespace IngameScript
                 }
 
                 return redraw;
+            }
+
+            // SET BUTTON KEYS //
+            public void SetButtonKeys(string header, string blockName, string blockLabel, string action, string actionLabel, string toggleBlockName, string blinkLength = "0")
+            {
+                SetKey(header, BUTTON_BLOCK, blockName);
+                SetKey(header, BLOCK_LABEL, blockLabel);
+                SetKey(header, BUTTON_ACTION, action);
+                SetKey(header, ACTION_LABEL, actionLabel);
+                SetKey(header, TOGGLE_KEY, toggleBlockName);
+                SetKey(header, BLINK_LENGTH, blinkLength);
+            }
+
+            // SET PAGE TITLE //
+            public void SetPageTitleKey(int page, string title)
+            {
+                SetKey(PageHeader(page), "Title", title);
             }
         }
 
@@ -459,7 +485,7 @@ namespace IngameScript
         MenuPage InitializeMenuPage(Menu menu, int pageNumber)
         {
             MenuPage menuPage = new MenuPage(pageNumber);
-            string header = DASHES + PAGE_HEAD + pageNumber + DASHES;
+            string header = PageHeader(pageNumber);
 
             menuPage.Name = menu.GetKey(header, "Title", "");
 
@@ -477,9 +503,7 @@ namespace IngameScript
         {
             MenuButton button = new MenuButton(buttonNumber);
 
-            string header = "Button " + buttonNumber + " (page " + pageNumber + ")";
-            //string blockKey = BUTTON_BLOCK + button.Number;
-            //string actionKey = BUTTON_ACTION + button.Number;
+            string header = ButtonHeader(pageNumber, buttonNumber);
             
             string blockString = menu.GetKey(header, BUTTON_BLOCK, ""); // Block #
             string blockLabelString = menu.GetKey(header, BLOCK_LABEL, ""); // Block # Label
@@ -489,7 +513,7 @@ namespace IngameScript
 
             AssignToggleBlock(button, menu.GetKey(header, TOGGLE_KEY, "")); // Toggle Block (if any)
 
-            button.SetBlinkDuration(ParseFloat(menu.GetKey(header, "Blink Length", "0"), 0));
+            button.SetBlinkDuration(ParseFloat(menu.GetKey(header, BLINK_LENGTH, "0"), 0));
 
             // Get Block Name and Prefix from string
             string[] buttonData = GetBlockDataFromKey(blockString);
@@ -1034,5 +1058,18 @@ namespace IngameScript
             IncrementMenuKey();
         }
         */
+
+
+        // BUTTON HEADER //
+        public string ButtonHeader(int pageNumber, int buttonNumber)
+        {
+            return "Button " + buttonNumber + " (page " + pageNumber + ")";
+        }
+
+
+        public static string PageHeader(int pageNumber)
+        {
+            return DASHES + PAGE_HEAD + pageNumber + DASHES;
+        }
     }
 }

@@ -22,7 +22,21 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
+        // USER TAGS // - Adjust as needed
         const string MENU_TAG = "[VHB]"; // Tag use to assign constext menus to block
+        const string SYSTEMS = "Flight Systems";
+        const string BATTERIES = "Batteries";
+        const string HYDROGEN_TANKS = "Hydrogen Tanks";
+        const string DRILLS = "Drills";
+        const string STONE_GROUP = "Stone Out";
+        const string ICE_GROUP = "Ice Out";
+
+        // USAP CONSTANTS
+        const string USAP = "P:USAP Program"; // Name of USAP Program Block
+        const string GEAR_TIMER = "Gear Timer [LG]"; // Timer that triggers USAP landing Gear Command
+
+        // DO NOT EDIT BELOW THIS LINE ///////////////////////////////////////////////////////////////////////////////////////////////
+
         static IMyProgrammableBlock _me;
 
         //const string SLASHES = "///////////////";

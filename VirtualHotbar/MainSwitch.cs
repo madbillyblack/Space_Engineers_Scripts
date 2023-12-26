@@ -87,6 +87,9 @@ namespace IngameScript
                     case "SET_GRID_ID":
                         SetGridID(cmdArg);
                         break;
+                    case "LOAD_PROFILE":
+                        LoadProfile(cmdArg);
+                        break;
                     default:
                         _statusMessage += "\nUNRECOGNIZED COMMAND:\n" + arg;
                         break;
