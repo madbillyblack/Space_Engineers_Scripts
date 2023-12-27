@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -71,16 +72,39 @@ namespace IngameScript
                     break;
                 default:
                     _statusMessage += "\nPROFILE \"" + profile + "\" not found.";
-                    break;
+                    return;
             }
 
+            Build();
         }
 
 
         // LOAD GENERAL PROFILE //
         public void LoadGeneralProfile(Menu menu)
         {
+            // Set Page Title
+            menu.SetPageTitleKey(1, "Primary Systems");
 
+            // Set Buttons 1 - 4
+            SetMainFour(menu);
+
+            //TODO
+
+            // Button 5
+            string header = ButtonHeader(1, 5);
+            menu.SetButtonKeys(header, "", "", "", "", "");
+
+            // Button 6
+            header = ButtonHeader(1, 6);
+            menu.SetButtonKeys(header, "", "", "", "", "");
+
+            // Button 7
+            header = ButtonHeader(1, 7);
+            menu.SetButtonKeys(header, "", "", "", "", "");
+
+            // Button 8
+            header = ButtonHeader(1, 8);
+            menu.SetButtonKeys(header, "", "", "", "", "");
         }
 
 
@@ -90,74 +114,129 @@ namespace IngameScript
             // Set Page Title
             menu.SetPageTitleKey(1, "Mining Systems");
 
-            // Set Buttons 1 - 3
-            SetMainThree(menu);
-
-            // Button 4
-            string header = ButtonHeader(1, 4);
-            menu.SetButtonKeys(header, USAP, "UNLOAD", "UNLOAD", JETTISON, "");
+            // Set Buttons 1 - 4
+            SetMainFour(menu);
 
             // Button 5
-            header = ButtonHeader(1, 5);
-            string toggleBlock = FirstNameFromGroup(DRILLS);
-            menu.SetButtonKeys(header, "G:" + DRILLS, DRILLS, ON_OFF, "{DRILL}", toggleBlock);
+            string header = ButtonHeader(1, 5);
+            string groupName = AddShipTag(DRILLS);
+            string toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:" + groupName, DRILLS, ON_OFF, "{DRILL}", toggleBlock);
 
             // Button 6
             header = ButtonHeader(1, 6);
-            toggleBlock = FirstNameFromGroup(STONE_GROUP);
-            menu.SetButtonKeys(header, "G:" + STONE_GROUP, "STONE", ON_OFF, JETTISON, toggleBlock);
+            groupName = AddShipTag(STONE_GROUP);
+            toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:" + groupName, "STONE", ON_OFF, JETTISON, toggleBlock);
 
             // Button 7
             header = ButtonHeader(1, 7);
-            toggleBlock = FirstNameFromGroup(ICE_GROUP);
-            menu.SetButtonKeys(header, "G:" + ICE_GROUP, "ICE", ON_OFF, JETTISON, toggleBlock);
+            groupName = AddShipTag(ICE_GROUP);
+            toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header,"G:" + groupName, "ICE", ON_OFF, JETTISON, toggleBlock);
 
             // Button 8
             header = ButtonHeader(1, 8);
-            menu.SetButtonKeys(header, GEAR_TIMER, "GEAR", TRIGGER, GEAR_LABEL, "");
-
-            Build();
+            string blockName = AddShipTag(USAP);
+            menu.SetButtonKeys(header, "P:"+blockName, "UNLOAD", "UNLOAD", JETTISON, "");
         }
 
 
         // LOAD CONSTRUCTOR PROFILE //
         public void LoadConstructorProfile(Menu menu)
         {
+            // Set Page Title
+            menu.SetPageTitleKey(1, "Construction Systems");
 
+            // Set Buttons 1 - 4
+            SetMainFour(menu);
+
+            // Button 5
+            string header = ButtonHeader(1, 5);
+            string groupName = AddShipTag(WELDERS);
+            string toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:" + groupName, "WELD", ON_OFF, "{WELDER}", toggleBlock);
+
+            // Button 6
+            header = ButtonHeader(1, 6);
+            groupName = AddShipTag(GRINDERS);
+            toggleBlock= FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:" + groupName, "GRIND", ON_OFF, "{GRINDER}", toggleBlock);
+
+            // Button 7
+            header = ButtonHeader(1, 7);
+            string blockName = AddShipTag(BOOM_TIMER);
+            menu.SetButtonKeys(header, blockName, "BOOM", TRIGGER, "{DOWN_PISTON}", "");
+
+            // Button 8
+            header = ButtonHeader(1, 8);
+            blockName = AddShipTag(USAP);
+            menu.SetButtonKeys(header, "P:" + blockName, "SUPPLY", "RESUPPLY", "{CYCLE}", "");
         }
 
 
         // LOAD COMBAT PROFILE //
         public void LoadCombatProfile(Menu menu)
         {
+            // Set Page Title
+            menu.SetPageTitleKey(1, "Combat Systems");
 
+            // Set Buttons 1 - 4
+            SetMainFour(menu);
+
+            // TODO
+
+            // Button 5
+            string header = ButtonHeader(1, 5);
+            menu.SetButtonKeys(header, "", "", "", "", "");
+
+            // Button 6
+            header = ButtonHeader(1, 6);
+            menu.SetButtonKeys(header, "", "", "", "", "");
+
+            // Button 7
+            header = ButtonHeader(1, 7);
+            menu.SetButtonKeys(header, "", "", "", "", "");
+
+            // Button 8
+            header = ButtonHeader(1, 8);
+            menu.SetButtonKeys(header, "", "", "", "", "");
         }
 
 
         // LOAD MISSILE PROFILE //
         public void LoadMissileProfile(Menu menu)
         {
-
+            // TODO
         }
 
 
-        // SET MAIN THREE // - Sets the first/main 3 buttons for most menus
-        public void SetMainThree(Menu menu)
+        // SET MAIN FOUR // - Sets the first/main 3 buttons for most menus
+        public void SetMainFour(Menu menu)
         {
             // Button 1
             string header = ButtonHeader(1, 1);
-            string toggleBlock = FirstNameFromGroup(SYSTEMS);
-            menu.SetButtonKeys(header, "G:" + SYSTEMS, "SYS.", ON_OFF, "{TOGGLE}", toggleBlock);
+            string groupName = AddShipTag(BATTERIES);
+            string toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:"+groupName, "BATT", RECHARGE, BATT_LABEL, toggleBlock + ";" + RECHARGE);
 
             // Button 2
             header = ButtonHeader(1, 2);
-            toggleBlock = FirstNameFromGroup(BATTERIES);
-            menu.SetButtonKeys(header, "G:" + BATTERIES, "BATT", RECHARGE, BATT_LABEL, toggleBlock + ";" + RECHARGE);
+            groupName = AddShipTag(SYSTEMS);
+            toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:"+groupName, "SYS.", ON_OFF, "{TOGGLE}", toggleBlock);
 
             // Button 3
             header = ButtonHeader(1, 3);
-            toggleBlock = FirstNameFromGroup(HYDROGEN_TANKS);
-            menu.SetButtonKeys(header, "G:" + HYDROGEN_TANKS, "FUEL", STOCKPILE, H2_TANK, toggleBlock + ";" + STOCKPILE);
+            groupName = AddShipTag(HYDROGEN_TANKS);
+            toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:"+groupName, "FUEL", STOCKPILE, H2_TANK, toggleBlock + ";" + STOCKPILE);
+
+            // Button 4
+            header = ButtonHeader(1, 4);
+            string timerName = AddShipTag(GEAR_TIMER);
+            string delay = GetTimeFromTimer(timerName).ToString();
+            menu.SetButtonKeys(header, timerName, "GEAR", TRIGGER, GEAR_LABEL, "", delay);
         }
 
 
@@ -176,6 +255,35 @@ namespace IngameScript
                 return blocks[0].CustomName;
 
             return "";
+        }
+
+
+        // GET TIME FROM TIMER //
+        public float GetTimeFromTimer(string timerName)
+        {
+            try
+            {
+                IMyTimerBlock timer = GridTerminalSystem.GetBlockWithName(timerName) as IMyTimerBlock;
+                return timer.TriggerDelay;
+            }
+            catch
+            {
+                return 0f;
+            }
+        }
+
+
+        /* TAG AND GROUP // - Add Ship Tag and Block Prefix to Group String
+         * Block Prefixes: 
+         *  "G:" - Block Group
+         *  "P:" - Program Block   */
+        public string AddShipTag(string name)
+        {
+            if (_suffixTag)
+                return name + _shipTag;
+            else
+                return _shipTag + name;
+           
         }
     }
 }

@@ -24,16 +24,23 @@ namespace IngameScript
     {
         // USER TAGS // - Adjust as needed
         const string MENU_TAG = "[VHB]"; // Tag use to assign constext menus to block
+
+        // BLOCK GROUPS
         const string SYSTEMS = "Flight Systems";
         const string BATTERIES = "Batteries";
         const string HYDROGEN_TANKS = "Hydrogen Tanks";
         const string DRILLS = "Drills";
+        const string WELDERS = "Welders";
+        const string GRINDERS = "Grinders";
         const string STONE_GROUP = "Stone Out";
         const string ICE_GROUP = "Ice Out";
 
         // USAP CONSTANTS
-        const string USAP = "P:USAP Program"; // Name of USAP Program Block
+        const string USAP = "USAP Program"; // Name of USAP Program Block
         const string GEAR_TIMER = "Gear Timer [LG]"; // Timer that triggers USAP landing Gear Command
+
+        const string BOOM_TIMER = "Tow Boom Timer"; // Timer that extends and retracts piston
+
 
         // DO NOT EDIT BELOW THIS LINE ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -43,6 +50,9 @@ namespace IngameScript
         const string DASHES = " ------------------- ";
 
         static string _statusMessage;
+
+        static string _shipTag;
+        static bool _suffixTag;
 
         readonly string[] _breather = { "|", "/", "--", "\\" };
         static Byte _breath;
@@ -78,7 +88,7 @@ namespace IngameScript
             _breath = 0;
             _statusMessage = "";
             
-
+            AssignShipTag();
             AssignMenus();
         }
 
@@ -108,8 +118,30 @@ namespace IngameScript
                 foreach(int pageKey in menu.Pages.Keys)
                 {
                     MenuPage page = menu.Pages[pageKey];
-
                 }
+            }
+        }
+
+
+        // ASSIGN SHIP TAG //
+        public static void AssignShipTag()
+        {
+            string rawTag = GetMainKey(MENU_HEAD, "Ship Tag", "");
+
+            if(rawTag == "")
+            {
+                _suffixTag = false;
+                _shipTag = "";
+            }
+            else if(rawTag.ToUpper().Contains("SUFFIX:"))
+            {
+                _suffixTag = true;
+                _shipTag = " " + rawTag.Substring(rawTag.IndexOf(':') + 1);
+            }
+            else
+            {
+                _suffixTag = false;
+                _shipTag = rawTag + " ";
             }
         }
     }
