@@ -278,7 +278,7 @@ namespace IngameScript
 								}
 							}
 
-							bool isDock = sector.Type.ToLower() == "dock";
+							bool isDock = sector.Type.ToUpper() == DOCK;
 
 							// Connector Info
 							if (screen.ShowConnectorCount && isDock)

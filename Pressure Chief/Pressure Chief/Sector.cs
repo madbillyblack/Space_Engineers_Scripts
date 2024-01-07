@@ -3,6 +3,7 @@ using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI.Ingame;
 using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -24,6 +25,7 @@ namespace IngameScript
     {
 		const string LOCK = "LOCK";
 		const string DOCK = "DOCK";
+		const string SEALING = "Checking Seal";
 
 		// SECTOR // - Class that includes all components for a specific room.
 		public class Sector
@@ -51,6 +53,7 @@ namespace IngameScript
 			public int AutoCloseDelay;
 			//public int CurrentDelayTime;
 			public int Phase;
+			public bool CheckingSeal;
 
 			BlockIni Ini;
 
@@ -233,6 +236,7 @@ namespace IngameScript
 					return;
 
 				Type = DOCK;
+				CheckingSeal = ParseBool(GetKey(SEALING,"False"));
 				AssignConnectors();
 			}
 
@@ -274,6 +278,9 @@ namespace IngameScript
 
 				if (Type == "Room")
 					CloseDoors();
+				else if (Type == DOCK && CheckingSeal)
+					CheckSeal(this);
+
 			}
 
 

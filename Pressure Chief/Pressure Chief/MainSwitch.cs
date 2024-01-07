@@ -64,7 +64,7 @@ namespace IngameScript
 					CycleLock(cmdArg);
 					break;
 				case "DOCK_SEAL":
-					DockSeal(GetSector(cmdArg));
+					ActivateSeal(GetSector(cmdArg));
 					break;
 				case "UNDOCK":
 					Undock(GetSector(cmdArg));

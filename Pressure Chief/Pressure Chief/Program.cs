@@ -199,7 +199,7 @@ namespace IngameScript
 				Echo("Lights: " + mySector.Lights.Count);
 				sectorData += "\n" + mySector.Type + " " + mySector.Name + " --- " + mySector.Vents[0].Status.ToString()
 					+ "\n * Doors: " + mySector.Doors.Count + "  * Lights: " + mySector.Lights.Count;
-				if (mySector.Type == "Dock")
+				if (mySector.Type == DOCK)
 					sectorData += "\n * Merge Blocks: " + mySector.MergeBlocks.Count + "  * Connectors: " + mySector.Connectors.Count;
 			}
 			Echo(sectorData);
@@ -290,13 +290,13 @@ namespace IngameScript
 				return true;
 			}
 
-			if (type == "Dock" && sector.Type != "Dock")
+			if (type == DOCK && sector.Type != DOCK)
 			{
 				_statusMessage = "INVALID DOCK CALL!";
 				return true;
 			}
 
-			if (type == "Lock" && sector.Type != "Dock" && sector.Type != "Lock")
+			if (type == LOCK && sector.Type != DOCK && sector.Type != LOCK)
 			{
 				_statusMessage = "INVALID LOCK CALL!";
 				return true;

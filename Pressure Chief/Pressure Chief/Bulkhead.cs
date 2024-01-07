@@ -103,14 +103,14 @@ namespace IngameScript
 						if (ElevatorDoor && !Override)
 							MainDoor.SetKey("Lock_Down", "False");
 						else
-							door.Door.GetActionWithName("OnOff_On").Apply(door.Door);
+							door.Door.GetActionWithName(ON).Apply(door.Door);
 					}		
 				}
 				else
 				{
 					foreach (PressureDoor door in Doors)
                     {
-						door.Door.GetActionWithName("OnOff_Off").Apply(door.Door);
+						door.Door.GetActionWithName(OFF).Apply(door.Door);
 						if(ElevatorDoor)
                         {
 							MainDoor.SetKey("Lock_Down", "True");

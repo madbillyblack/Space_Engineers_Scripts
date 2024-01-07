@@ -17,11 +17,17 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
+using static IngameScript.Program;
+//using static System.Collections.Specialized.BitVector32;
 
 namespace IngameScript
 {
     partial class Program
     {
+		const string ON = "OnOff_On";
+		const string OFF = "OnOff_Off";
+		const string ON_OFF = "OnOff";
+
 		// LOCK & DOCK FUNCTIONS --------------------------------------------------------------------------------------------------------------------------
 
 		/* OPEN LOCK // - Initiallize lock opening sequence
@@ -185,7 +191,7 @@ namespace IngameScript
 			foreach (PressureDoor pressureDoor in bulkhead.Doors)
 			{
 				IMyDoor door = pressureDoor.Door;
-				door.GetActionWithName("OnOff_On").Apply(door);
+				door.GetActionWithName(ON).Apply(door);
 
 				if (phase == 6)
 				{
@@ -214,11 +220,32 @@ namespace IngameScript
 		}
 
 
-		// DOCK SEAL // - Attempts to lock dock connectors to other dock.
-		void DockSeal(Sector sector)
+        // ACTIVATE SEAL //
+        void ActivateSeal(Sector sector)
 		{
-			if (UnknownSector(sector, DOCK))
-				return;
+            if (UnknownSector(sector, DOCK) || sector.Docked())
+                return;
+
+			sector.CheckingSeal = true;
+			sector.SetKey(SEALING, "True");
+
+			ActivateMergeBlocks(sector, ON);
+        }
+
+
+		// CHECK SEAL //
+		static void CheckSeal(Sector sector)
+		{
+			if (sector.Docked())
+				CompleteSeal(sector);
+		}
+
+
+		// COMPLETE SEAL // - Attempts to lock dock connectors to other dock.
+		static void CompleteSeal(Sector sector)
+		{
+			sector.CheckingSeal = false;
+			sector.SetKey(SEALING, "False");
 
 			foreach (IMyShipConnector connector in sector.Connectors)
 				connector.Connect();
@@ -230,7 +257,7 @@ namespace IngameScript
 		// UNDOCK // - Close dock, get other dock, close and reset override, then start timer to separate.
 		void Undock(Sector sector)
 		{
-			if (UnknownSector(sector, DOCK))
+			if (UnknownSector(sector, DOCK) || !sector.Docked())
 				return;
 
 			sector.CloseDoors();
@@ -245,7 +272,7 @@ namespace IngameScript
 
 
 		// STAGE LOCK // - Executes various repeated functions for Timer Calls
-		void StageLock(Sector sector, int phase, int alert)
+		static void StageLock(Sector sector, int phase, int alert)
 		{
 			sector.IsStaging = true;
 			LockTimer timer = sector.LockTimer;
@@ -331,17 +358,18 @@ namespace IngameScript
 		// ACTIVATE DOCK // - Turns dock merge blocks on or off, and attempts to connect any possible connectors.
 		void ActivateDock(Sector sector, bool activate)
 		{
-			string action = "OnOff_Off";
+			string action;
+
 			if (activate)
-				action = "OnOff_On";
-
-
-			if (sector.MergeBlocks.Count < 1)
-				return;
-
-			foreach (IMyShipMergeBlock mergeBlock in sector.MergeBlocks)
-				mergeBlock.GetActionWithName(action).Apply(mergeBlock);
-
+			{
+                action = ON;
+            }
+			else
+			{
+                action = OFF;
+                ActivateMergeBlocks(sector, action);
+            }
+				
 			if (sector.Connectors.Count > 0)
 			{
 				foreach (IMyShipConnector connector in sector.Connectors)
@@ -353,6 +381,17 @@ namespace IngameScript
 				}
 			}
 		}
+
+
+		// ACTIVATE MERGE BLOCKS //
+		void ActivateMergeBlocks(Sector sector, string action)
+		{
+            if (sector.MergeBlocks.Count < 1)
+                return;
+
+            foreach (IMyShipMergeBlock mergeBlock in sector.MergeBlocks)
+                mergeBlock.GetActionWithName(action).Apply(mergeBlock);
+        }
 
 
 		// TOGGLE SYSTEMS // - Toggles Systems Group off/on when docking/undocking.
@@ -368,9 +407,9 @@ namespace IngameScript
 			if (systemGroup == null)
 				return;
 
-			string action = "OnOff_Off";
+			string action = OFF;
 			if (toggleOn)
-				action = "OnOff_On";
+				action = ON;
 
 			systemGroup.GetBlocks(systemBlocks);
 			foreach (IMyTerminalBlock block in systemBlocks)
