@@ -172,6 +172,7 @@ namespace IngameScript
         bool _unloaded;
         bool _hasComponentCargo;
         static bool _cruiseThrustersOn;
+        
 
         // Cruise Thruster variables
         IMyShipController _cockpit;
@@ -196,7 +197,9 @@ namespace IngameScript
         static List<IMyThrust> _cruiseThrusters;
         readonly string[] _breather = {"|", "/","--", "\\"};
         static Byte _breath;
-        
+
+        bool _autoCycle; // TRUE if script is continuously running. FALSE if single execute.
+
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
         {
@@ -240,8 +243,6 @@ namespace IngameScript
             }
 
             Build();
-
-            Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
         public void Save()
@@ -257,11 +258,9 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             _unloaded = false;
-            PrintHeader();
 
-
-            //Echo("... " + _runningNumber);
-            //_runningNumber++;
+            if(_autoCycle)
+                PrintHeader();
 
             RunLast();
 
@@ -669,6 +668,22 @@ namespace IngameScript
 
             AssignDisplays();
             PrintDisplays();
+
+            SetUpdateFrequency();
+        }
+
+
+        // SET CYCLE MODE //
+        public void SetUpdateFrequency()
+        {
+            if(_cruiseThrusters.Count > 0 || _landingGear != null)
+            {
+                Runtime.UpdateFrequency = UpdateFrequency.Update10;
+                _autoCycle = true;
+                return;
+            }
+
+            _autoCycle = false;                
         }
 
 
