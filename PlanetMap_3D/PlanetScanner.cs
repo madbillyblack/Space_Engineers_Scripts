@@ -117,6 +117,14 @@ namespace IngameScript
             }
         }
 
+        void DisplayRefBlock()
+        {
+            if (_refBlock == null)
+                Echo("No reference block set!");
+            else
+                Echo("Ref: " + _refBlock.CustomName);
+        }
+
 
         // SCAN PLANET //
         void ScanPlanet(string planetName, bool resetPlanet = false)

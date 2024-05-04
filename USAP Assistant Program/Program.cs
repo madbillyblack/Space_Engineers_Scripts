@@ -43,6 +43,10 @@ namespace IngameScript
 
         const string MENU_TAG = "[MENU]"; // Tag use to assign constext menus to block
 
+        const int BROADCAST_TIMEOUT = 30; // Length of time (in seconds) required to consider broadcast disconnected.
+        const string DF_BC_SCREEN_TAG = "[SENDER]"; // Default Tag for LCD Broadcaster Screens
+        const string DF_RC_SCREEN_TAG = "[RECEIVER]"; // Default Tag for LCD Reciever Screens
+
         const string SLASHES = "///////////////";
         const string DASHES = " ------------------- ";
 

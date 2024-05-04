@@ -23,6 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         IMyTextSurface _surface;
+        IMyTextSurface _outbox;
         List<IMyCameraBlock> _cameras;
         string _castData;
         double _castRange;
@@ -33,6 +34,12 @@ namespace IngameScript
 
         IMySensorBlock _sensor;
         IMyCockpit _cockpit;
+
+        // Broadcast variables
+        int _runcount = 0;
+        string _broadCastTag = "MDK IGC EXAMPLE 1";
+        IMyBroadcastListener _myBroadcastListener;
+
 
 
         #region
@@ -49,36 +56,46 @@ namespace IngameScript
             _ini = GetIni(Me);
             _surface = Me.GetSurface(0);
             _surface.ContentType = ContentType.TEXT_AND_IMAGE;
+            _outbox = GetDefaultSurface();            
 
-            _cameras = new List<IMyCameraBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMyCameraBlock>(_cameras);
+            // Broadcast INIT
+            Echo("Creator");
+            _myBroadcastListener = IGC.RegisterBroadcastListener(_broadCastTag);
+            _myBroadcastListener.SetMessageCallback(_broadCastTag);
 
-            _castData = "";
-            Runtime.UpdateFrequency = UpdateFrequency.Update1;
+            /*
+                        _cameras = new List<IMyCameraBlock>();
+                        GridTerminalSystem.GetBlocksOfType<IMyCameraBlock>(_cameras);
 
-            List<IMyTerminalBlock> inventoryBlocks = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName("Cargo", inventoryBlocks);
+                        _castData = "";
+                        Runtime.UpdateFrequency = UpdateFrequency.Update1;
 
-            _blocks = new List<IMyTerminalBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(_blocks);
+                        List<IMyTerminalBlock> inventoryBlocks = new List<IMyTerminalBlock>();
+                        GridTerminalSystem.SearchBlocksOfName("Cargo", inventoryBlocks);
 
-            List<IMySensorBlock> sensors = new List<IMySensorBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMySensorBlock>(sensors);
+                        _blocks = new List<IMyTerminalBlock>();
+                        GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(_blocks);
 
-            if (sensors.Count > 0)
-                _sensor = sensors[0];
-            else
-                _sensor = null;
+                        List<IMySensorBlock> sensors = new List<IMySensorBlock>();
+                        GridTerminalSystem.GetBlocksOfType<IMySensorBlock>(sensors);
+
+                        if (sensors.Count > 0)
+                            _sensor = sensors[0];
+                        else
+                            _sensor = null;
 
 
-            if(inventoryBlocks.Count > 0 && inventoryBlocks[0].HasInventory)
-            {
-                _inventory = inventoryBlocks[0].GetInventory(0);
-            }
-            else
-            {
-                _inventory = null;
-            }
+                        if(inventoryBlocks.Count > 0 && inventoryBlocks[0].HasInventory)
+                        {
+                            _inventory = inventoryBlocks[0].GetInventory(0);
+                        }
+                        else
+                        {
+                            _inventory = null;
+                        }
+            */
+
+            Runtime.UpdateFrequency = UpdateFrequency.Update100;
         }
 
 
@@ -86,8 +103,66 @@ namespace IngameScript
         public void Save(){}
         #endregion
 
-        #region
+        #region NEW MAIN
+        public void Main(string argument, UpdateType updateSource)
+        {
+            _runcount++;
+            Echo(_runcount.ToString() + ":" + updateSource.ToString());
+
+            if (
+                (updateSource & (UpdateType.Trigger | UpdateType.Terminal)) > 0
+                || (updateSource & (UpdateType.Mod)) > 0
+                || (updateSource & (UpdateType.Script)) > 0
+                )
+            {
+                if (argument != "")
+                {
+                    IGC.SendBroadcastMessage(_broadCastTag, argument);
+                    Echo("Sending message:\n" + argument);
+                }
+            }
+
+            if ((updateSource & UpdateType.IGC) > 0)
+            {
+                while (_myBroadcastListener.HasPendingMessage)
+                {
+                    MyIGCMessage myIGCMessage = _myBroadcastListener.AcceptMessage();
+                    if (myIGCMessage.Tag == _broadCastTag)
+                    { // This is our tag
+                        if (myIGCMessage.Data is string)
+                        {
+                            string str = myIGCMessage.Data.ToString();
+                            Echo("Received IGC Public Message");
+                            Echo("Tag=" + myIGCMessage.Tag);
+                            Echo("Data=" + myIGCMessage.Data.ToString());
+                            Echo("Source=" + myIGCMessage.Source.ToString("X"));
+
+                            _surface.WriteText(str);
+                        }
+                        else // if(msg.Data is XXX)
+                        {
+                        }
+                    }
+                    else
+                    {
+                    }
+                }
+            }
+            else if (_outbox != null)
+            {
+                
+                string screentext = _outbox.GetText();
+                Echo("OUT BOX:\n" + screentext);
+                IGC.SendBroadcastMessage(_broadCastTag, screentext);
+            }
+        }
+        #endregion
+
+
+        #region OLD MAIN
         // MAIN //
+
+        /*
         public void Main(string argument, UpdateType updateSource)
         {
             if (_cockpit == null)
@@ -112,7 +187,7 @@ namespace IngameScript
 
 
 
-            /*
+            
             if (_inventory == null)
                 return;
 
@@ -172,8 +247,9 @@ namespace IngameScript
                         }
 
                         DisplayMessage(_castData);
-                        */
+                        
         }
+    */
         #endregion
 
 
@@ -329,6 +405,20 @@ namespace IngameScript
 
             Echo(output);
             _surface.WriteText(output);
+        }
+
+        IMyTextSurface GetDefaultSurface()
+        {
+            try
+            {
+                List<IMyTextPanel> panels = new List<IMyTextPanel>();
+                GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(panels);
+                return panels.FirstOrDefault();
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

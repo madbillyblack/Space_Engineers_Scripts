@@ -120,6 +120,8 @@ namespace IngameScript
 			Echo("////// PLANET MAP 3D ////// " + _cycleSpinner[_cycleStep % _cycleSpinner.Length]);
 			Echo("Cmd: " + _previousCommand + "\n");
 
+			DisplayRefBlock();
+
             // Display Data from Planet Scanning System
             DisplayScanData();
 
