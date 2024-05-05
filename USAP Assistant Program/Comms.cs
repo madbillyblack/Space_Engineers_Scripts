@@ -28,6 +28,11 @@ namespace IngameScript
         const string LCD_COMMS_LABEL = "LCD Channel";
         const string BROADCAST = "BROADCAST";
         const string LISTEN = "LISTEN";
+        const string CONNECT_LABEL = "Connected Color";
+        const string DISCONNECT_LABEL = "Disconnected Color";
+
+        const string DF_CONNECT_COLOR = "0,127,0";
+        const string DF_DISCONNECT_COLOR = "24,24,24";
 
         //IMyBroadcastListener _listener;
         bool _commsEnabled;
@@ -58,17 +63,27 @@ namespace IngameScript
 
             public string LastMessage { get; set; }
 
-            public LcdRecieverScreen(IMyTextSurface textSurface, string broadcastTag)
+            public bool IsConnected { get; set; }
+
+            public Color ConnectedColor { get; set; }
+            public Color DisconnectColor { get; set; }
+
+            public LcdRecieverScreen(IMyTextSurface textSurface, string broadcastTag, Color connected, Color disconnected)
             {
                 TextSurface = textSurface;
+                TextSurface.ContentType = ContentType.TEXT_AND_IMAGE;
                 BroadcastTag = broadcastTag;
+                ConnectedColor = connected;
+                DisconnectColor = disconnected;
+                TextSurface.FontColor = DisconnectColor;
+                IsConnected = false;
                 LastLcdReceipt = DateTime.MinValue;
                 LastMessage = "";
             }
 
-            public bool IsConnected()
+            public bool IsTimedOut()
             {
-                return DateTime.Now - LastLcdReceipt < TimeSpan.FromSeconds(BROADCAST_TIMEOUT);
+                return DateTime.Now - LastLcdReceipt > TimeSpan.FromSeconds(BROADCAST_TIMEOUT);
             }
         }
 
@@ -82,6 +97,7 @@ namespace IngameScript
             public LcdBroadcasterScreen(IMyTextSurface textSurface, string broadcastTag)
             {
                 TextSurface = textSurface;
+                TextSurface.ContentType = ContentType.TEXT_AND_IMAGE;
                 BroadcastTag = broadcastTag;
             }
         }
@@ -110,7 +126,7 @@ namespace IngameScript
                     AssignMultiScreen();
             }
 
-            private void AssignSingleScreen(int index = 0, bool multiscreen = false)
+            private void AssignSingleScreen(int index = 0, bool multiscreen = false, bool useDefaultValue = true)
             {
                 string screenId;
                 if (multiscreen)
@@ -118,9 +134,16 @@ namespace IngameScript
                 else
                     screenId = "";
 
+                string defaultValue;
+                if (useDefaultValue)
+                    defaultValue = BROADCAST + ":" + DF_LCD_COMTAG + screenId;
+                else
+                    defaultValue = "";
+
+
                 IMyTextSurface surface = (Block as IMyTextSurfaceProvider).GetSurface(index);
 
-                string[] channelData = IniHandler.GetKey(COMMS_HEADER, "Screen Channel" + screenId, BROADCAST + ":" + DF_LCD_COMTAG + screenId).Split(':');
+                string[] channelData = IniHandler.GetKey(COMMS_HEADER, "Screen Channel" + screenId, defaultValue).Split(':');
 
                 if (channelData.Length != 2)
                     return;
@@ -128,19 +151,38 @@ namespace IngameScript
                 string cmd = channelData[0].ToUpper();
                 string channel = channelData[1];
 
-                if(cmd == BROADCAST)
-                    _broadcasterScreens.Add(channel, new LcdBroadcasterScreen(surface,channel));
-                else if (cmd == LISTEN)
-                    _receiverScreens.Add(channel, new LcdRecieverScreen(surface,channel));
+                try
+                {
+                    if (cmd == BROADCAST)
+                    {
+                        _broadcasterScreens.Add(channel, new LcdBroadcasterScreen(surface, channel));
+                    }
+                    else if (cmd == LISTEN)
+                    {
+                        Color connectedColor = ParseColor(IniHandler.GetKey(COMMS_HEADER, CONNECT_LABEL, DF_CONNECT_COLOR));
+                        Color disconnectColor = ParseColor(IniHandler.GetKey(COMMS_HEADER, DISCONNECT_LABEL, DF_DISCONNECT_COLOR));
+
+                        _receiverScreens.Add(channel, new LcdRecieverScreen(surface, channel, connectedColor, disconnectColor));
+                    }
+                        
+                }
+                catch
+                {
+                    _statusMessage += "Error Adding "+ Block.CustomName +"\n At: " + channel + "\n";
+                }
             }
 
             private void AssignMultiScreen()
             {
+                bool isFirstScreen = true;
+
                 for(int i = 0; i < SurfaceCount; i++)
                 {
                     string screenId = " " + i.ToString();
+                    AssignSingleScreen(i, true, isFirstScreen);
 
-                    AssignSingleScreen(i, true);
+                    // Set to false, so default value isn't written to later screens
+                    isFirstScreen = false;
                 }
             }
         }
@@ -192,6 +234,12 @@ namespace IngameScript
             screen.LastLcdReceipt = DateTime.Now;
             screen.LastMessage = message.Data.ToString();
             screen.TextSurface.WriteText(screen.BroadcastTag + " - Connected\n" + screen.LastMessage);
+
+            if(!screen.IsConnected)
+            {
+                screen.IsConnected = true;
+                screen.TextSurface.FontColor = screen.ConnectedColor;
+            }
         }
 
 
@@ -274,8 +322,12 @@ namespace IngameScript
             List<string> keys = _receiverScreens.Keys.ToList();
             LcdRecieverScreen screen = _receiverScreens[keys[GetCurrentRecieverIndex()]] as LcdRecieverScreen;
 
-            if (!screen.IsConnected())
-                screen.TextSurface.WriteText(screen.BroadcastTag + " - DISCONNECTED\n" + screen.LastMessage);
+            if(screen.IsConnected && screen.IsTimedOut())
+            {
+                screen.IsConnected = false;
+                screen.TextSurface.FontColor = screen.DisconnectColor;
+                screen.TextSurface.WriteText(screen.BroadcastTag + " - ||| DISCONNECTED |||\n" + screen.LastMessage);
+            }
         }
     }
 }
