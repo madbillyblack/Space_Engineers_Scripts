@@ -43,9 +43,8 @@ namespace IngameScript
 
         const string MENU_TAG = "[MENU]"; // Tag use to assign constext menus to block
 
-        const int BROADCAST_TIMEOUT = 30; // Length of time (in seconds) required to consider broadcast disconnected.
-        const string DF_BC_SCREEN_TAG = "[SENDER]"; // Default Tag for LCD Broadcaster Screens
-        const string DF_RC_SCREEN_TAG = "[RECEIVER]"; // Default Tag for LCD Reciever Screens
+        const int BROADCAST_TIMEOUT = 10; // Length of time (in seconds) required to consider broadcast disconnected.
+        const string COMMS_SCREEN_TAG = "[COMMS]"; // Tag to designate screens for sending and receiving data
 
         const string SLASHES = "///////////////";
         const string DASHES = " ------------------- ";
@@ -268,11 +267,15 @@ namespace IngameScript
 
             RunLast();
 
-            if(TriggerCall(updateSource))
+            if (_commsEnabled)
+                ExecuteComms(updateSource);
+            else if(TriggerCall(updateSource))
                 MainSwitch(argument);
 
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
+            ShowBroadcastData();
+
 
             //MenuDebug();
             //MultiTimerDebug();
@@ -673,14 +676,16 @@ namespace IngameScript
             AssignDisplays();
             PrintDisplays();
 
+            AssignComms();
+
             SetUpdateFrequency();
         }
 
 
-        // SET CYCLE MODE //
+        // SET UPDATE FREQUENCY //
         public void SetUpdateFrequency()
         {
-            if(_cruiseThrusters.Count > 0 || _landingGear != null)
+            if(_cruiseThrusters.Count > 0 || _landingGear != null || _commsEnabled)
             {
                 Runtime.UpdateFrequency = UpdateFrequency.Update10;
                 _autoCycle = true;

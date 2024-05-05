@@ -40,8 +40,6 @@ namespace IngameScript
         string _broadCastTag = "MDK IGC EXAMPLE 1";
         IMyBroadcastListener _myBroadcastListener;
 
-
-
         #region
         // PRORGRAM //
         public Program()

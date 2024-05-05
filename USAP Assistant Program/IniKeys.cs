@@ -27,6 +27,43 @@ namespace IngameScript
         static string _gridID;
         static MyIni _programIni;
 
+        public class MyIniHandler
+        {
+            public IMyTerminalBlock Block { get; private set; }
+
+            private MyIni Ini { get; set; }
+
+            public MyIniHandler(IMyTerminalBlock block)
+            {
+                Block = block;
+                Ini = GetIni(Block);
+            }
+
+            public void SetKey(string header, string key, string arg)
+            {
+                Ini.Set(header, key, arg);
+                Block.CustomData = Ini.ToString();
+            }
+
+            public string GetKey(string header, string key, string defaultVal)
+            {
+                EnsureKey(header, key, defaultVal);
+                return Ini.Get(header, key).ToString(); ;
+            }
+
+            private void EnsureKey(string header, string key, string defaultVal)
+            {
+                if (!Ini.ContainsKey(header, key))
+                    SetKey(header, key, defaultVal);
+            }
+
+            public bool HasSameGridId()
+            {
+                return GetKey(SHARED, GRID_KEY, _gridID) == _gridID;
+            }
+        }
+
+
         // ENSURE KEY // Check to see if INI key exists, and if it doesn't write with default value.
         static void EnsureKey(IMyTerminalBlock block, string header, string key, string defaultVal)
         {
