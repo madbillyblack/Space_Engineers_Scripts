@@ -7,6 +7,7 @@ using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Text;
 using VRage;
@@ -30,6 +31,7 @@ namespace IngameScript
         const string LISTEN = "LISTEN";
         const string CONNECT_LABEL = "Connected Color";
         const string DISCONNECT_LABEL = "Disconnected Color";
+        const string DISCONNECT_MSG = "||| DISCONNECTED |||";
 
         const string DF_CONNECT_COLOR = "0,127,0";
         const string DF_DISCONNECT_COLOR = "24,24,24";
@@ -78,12 +80,36 @@ namespace IngameScript
                 TextSurface.FontColor = DisconnectColor;
                 IsConnected = false;
                 LastLcdReceipt = DateTime.MinValue;
-                LastMessage = "";
+                LoadLastMessage();
             }
 
             public bool IsTimedOut()
             {
                 return DateTime.Now - LastLcdReceipt > TimeSpan.FromSeconds(BROADCAST_TIMEOUT);
+            }
+
+            private void LoadLastMessage()
+            {
+
+                StringBuilder stringBuilder = new StringBuilder();
+                TextSurface.ReadText(stringBuilder);
+                string oldMessage = stringBuilder.ToString();
+                string msg = "";
+
+                if (oldMessage.Contains(DISCONNECT_MSG))
+                {
+                    string[] lines = oldMessage.Split('\n');
+
+                    if (lines.Length > 1)
+                    {
+                        for(int i = 1; i <lines.Length; i++)
+                        {
+                            msg += lines[i] + "\n";
+                        }
+                    }
+                }
+
+                LastMessage = msg;
             }
         }
 
@@ -326,8 +352,11 @@ namespace IngameScript
             {
                 screen.IsConnected = false;
                 screen.TextSurface.FontColor = screen.DisconnectColor;
-                screen.TextSurface.WriteText(screen.BroadcastTag + " - ||| DISCONNECTED |||\n" + screen.LastMessage);
+                screen.TextSurface.WriteText(screen.BroadcastTag + " - "+ DISCONNECT_MSG + "\n" + screen.LastMessage);
             }
         }
+
+
+        
     }
 }
