@@ -265,6 +265,7 @@ namespace IngameScript
             {
                 screen.IsConnected = true;
                 screen.TextSurface.FontColor = screen.ConnectedColor;
+                screen.TextSurface.ClearImagesFromSelection();
             }
         }
 
@@ -352,11 +353,9 @@ namespace IngameScript
             {
                 screen.IsConnected = false;
                 screen.TextSurface.FontColor = screen.DisconnectColor;
+                screen.TextSurface.AddImageToSelection("Danger");
                 screen.TextSurface.WriteText(screen.BroadcastTag + " - "+ DISCONNECT_MSG + "\n" + screen.LastMessage);
             }
         }
-
-
-        
     }
 }
