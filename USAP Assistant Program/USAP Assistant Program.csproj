@@ -41,6 +41,7 @@
   <Import Project="MDK/MDK.options.props" />
   <Import Project="MDK/MDK.paths.props" Condition="exists('MDK/MDK.paths.props')" />
   <ItemGroup>
+    <Compile Include="DisplayTurret.cs" />
     <Compile Include="Comms.cs" />
     <Compile Include="MultiTimer.cs" />
     <Compile Include="ConstructionProfiles.cs" />

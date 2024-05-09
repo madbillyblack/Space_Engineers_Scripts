@@ -36,6 +36,7 @@ namespace IngameScript
             bool ShowActiveProfile;
             bool ShowLandingGear;
             bool ShowParked;
+            bool ShowTurrets;
 
             public Display(IMyTextSurfaceProvider surfaceProvider, int surfaceIndex, string iniHeader)
             {
@@ -69,6 +70,11 @@ namespace IngameScript
                     if (_landingGear.Connectors.Count > 0 || _landingGear.LandingPlates.Count > 0)
                         ShowParked = ParseBool(GetKey(block, iniHeader, "Show Parking Status", "true"));
                 }
+
+                if(_turrets.Count > 0)
+                {
+                    ShowTurrets = ParseBool(GetKey(block, iniHeader, "Show Turrets", "True"));
+                }
             }
 
 
@@ -94,8 +100,10 @@ namespace IngameScript
                     else
                         output += "Parking: Unlocked\n";
                 }
+                if (ShowTurrets)
+                    output += _turretString.Trim() + "\n";
 
-                if(ShowLoadCount || ShowCruiseThrust || ShowActiveProfile || ShowLandingGear || ShowParked)
+                if(ShowLoadCount || ShowCruiseThrust || ShowActiveProfile || ShowLandingGear || ShowParked || ShowTurrets)
                     Surface.WriteText(output.Trim());
             }
         }
@@ -150,6 +158,8 @@ namespace IngameScript
         {
             if (_displays.Count < 1)
                 return;
+
+            UpdateTurretString();
 
             foreach (Display display in _displays)
                 display.Print();

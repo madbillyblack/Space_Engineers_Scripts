@@ -274,6 +274,7 @@ namespace IngameScript
 
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
+            Echo("Turrets: " + _turretString);
             ShowBroadcastData();
 
 
@@ -672,6 +673,7 @@ namespace IngameScript
 
             AssignMultiTimers();
 
+            AssignDisplayTurrets();
 
             AssignDisplays();
             PrintDisplays();
@@ -685,7 +687,7 @@ namespace IngameScript
         // SET UPDATE FREQUENCY //
         public void SetUpdateFrequency()
         {
-            if(_cruiseThrusters.Count > 0 || _landingGear != null || _commsEnabled)
+            if(_cruiseThrusters.Count > 0 || _landingGear != null || _commsEnabled || (_turrets.Count > 0 && _displays.Count > 0))
             {
                 Runtime.UpdateFrequency = UpdateFrequency.Update10;
                 _autoCycle = true;
