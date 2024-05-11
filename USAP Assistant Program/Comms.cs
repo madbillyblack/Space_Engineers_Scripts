@@ -32,6 +32,7 @@ namespace IngameScript
         const string CONNECT_LABEL = "Connected Color";
         const string DISCONNECT_LABEL = "Disconnected Color";
         const string DISCONNECT_MSG = "||| DISCONNECTED |||";
+        const string UNCONNECT_MSG = "Searching...";
 
         const string DF_CONNECT_COLOR = "0,127,0";
         const string DF_DISCONNECT_COLOR = "24,24,24";
@@ -81,6 +82,8 @@ namespace IngameScript
                 IsConnected = false;
                 LastLcdReceipt = DateTime.MinValue;
                 LoadLastMessage();
+
+                MessageToScreen(LastMessage, true);
             }
 
             public bool IsTimedOut()
@@ -96,20 +99,39 @@ namespace IngameScript
                 string oldMessage = stringBuilder.ToString();
                 string msg = "";
 
-                if (oldMessage.Contains(DISCONNECT_MSG))
-                {
-                    string[] lines = oldMessage.Split('\n');
 
-                    if (lines.Length > 1)
+                string[] lines = oldMessage.Split('\n');
+
+                if (lines.Length > 1)
+                {
+                    for(int i = 1; i <lines.Length; i++)
                     {
-                        for(int i = 1; i <lines.Length; i++)
-                        {
-                            msg += lines[i] + "\n";
-                        }
+                        msg += lines[i] + "\n";
                     }
                 }
 
                 LastMessage = msg;
+            }
+
+
+            public void MessageToScreen(string message, bool firstRun = false)
+            {
+                string status;
+                if (firstRun)
+                    status = UNCONNECT_MSG;
+                else
+                    status = "Connected";
+
+                LastLcdReceipt = DateTime.Now;
+                LastMessage = message;
+                TextSurface.WriteText(BroadcastTag + " - " + status + "\n" + LastMessage);
+
+                if (!IsConnected)
+                {
+                    IsConnected = true;
+                    TextSurface.FontColor = ConnectedColor;
+                    TextSurface.ClearImagesFromSelection();
+                }
             }
         }
 
@@ -255,19 +277,7 @@ namespace IngameScript
         }
 
 
-        public void MessageToScreen(LcdRecieverScreen screen, MyIGCMessage message)
-        {
-            screen.LastLcdReceipt = DateTime.Now;
-            screen.LastMessage = message.Data.ToString();
-            screen.TextSurface.WriteText(screen.BroadcastTag + " - Connected\n" + screen.LastMessage);
 
-            if(!screen.IsConnected)
-            {
-                screen.IsConnected = true;
-                screen.TextSurface.FontColor = screen.ConnectedColor;
-                screen.TextSurface.ClearImagesFromSelection();
-            }
-        }
 
 
         public void ShowBroadcastData()
@@ -336,7 +346,7 @@ namespace IngameScript
                 while (screen.Listener.HasPendingMessage)
                 {
                     MyIGCMessage message = screen.Listener.AcceptMessage();
-                    MessageToScreen(screen, message);
+                    screen.MessageToScreen(message.Data.ToString());
                 }
             }
         }

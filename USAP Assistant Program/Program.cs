@@ -267,10 +267,10 @@ namespace IngameScript
 
             RunLast();
 
-            if (_commsEnabled)
-                ExecuteComms(updateSource);
-            else if(TriggerCall(updateSource))
+            if (TriggerCall(updateSource))
                 MainSwitch(argument);
+            else if (_commsEnabled)
+                ExecuteComms(updateSource);
 
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
@@ -677,6 +677,9 @@ namespace IngameScript
 
             AssignDisplays();
             PrintDisplays();
+
+            if(_displays.Count < 1)
+                _turrets.Clear();
 
             AssignComms();
 
