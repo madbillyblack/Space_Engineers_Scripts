@@ -30,6 +30,8 @@ namespace IngameScript
 
             IMyTextSurfaceProvider SurfaceProvider;
             IMyTextSurface Surface;
+            bool ShowHeader;
+            bool ShowStatus;
             bool ShowLoadCount;
             bool ShowTargetSpeed;
             bool ShowCruiseThrust;
@@ -46,16 +48,26 @@ namespace IngameScript
 
                 IMyTerminalBlock block = SurfaceProvider as IMyTerminalBlock;
 
+                string isProgram;
+
+                if (block == _Me)
+                    isProgram = "True";
+                else
+                    isProgram = "False";
+
+                ShowHeader = ParseBool(GetKey(block, iniHeader, "Show Header", isProgram));
+                ShowStatus = ParseBool(GetKey(block, iniHeader, "Show Status", isProgram));
+
                 // Set boolean strings to true depending on populated lists.
                 if (_miningCargos.Count > 0)
                 {
-                    ShowLoadCount = ParseBool(GetKey(block, iniHeader, "Show Load Count", "true"));
+                    ShowLoadCount = ParseBool(GetKey(block, iniHeader, "Show Load Count", "True"));
                 }
                     
                 if (_cruiseThrusters.Count > 0)
                 {
                     ShowTargetSpeed = ParseBool(GetKey(block, iniHeader, "Show Target Speed", "True"));
-                    ShowCruiseThrust = ParseBool(GetKey(block, iniHeader, "Show Throttle Level", "true"));
+                    ShowCruiseThrust = ParseBool(GetKey(block, iniHeader, "Show Throttle Level", "True"));
                 }
 
                 if (_constructionCargos.Count > 0)
@@ -68,7 +80,7 @@ namespace IngameScript
                     ShowLandingGear = ParseBool(GetKey(block, iniHeader, "Show Landing Gear", "True"));
 
                     if (_landingGear.Connectors.Count > 0 || _landingGear.LandingPlates.Count > 0)
-                        ShowParked = ParseBool(GetKey(block, iniHeader, "Show Parking Status", "true"));
+                        ShowParked = ParseBool(GetKey(block, iniHeader, "Show Parking Status", "True"));
                 }
 
                 if(_turrets.Count > 0)
@@ -82,28 +94,71 @@ namespace IngameScript
             public void Print()
             {
                 string output = "";
+                int p = 0; // if p > 0, print
 
+                if(ShowHeader)
+                {
+                    output += HEADER + "\n" + SLASHES + SLASHES + "////////  ";
+                    if (_autoCycle)
+                        output += _breather[_breath];
+
+                    output += "\n";
+                    p++;
+                }
+
+                if (ShowStatus)
+                {
+                    output += _statusMessage + "\n";
+                    p++;
+                }
+                    
                 if (ShowLoadCount)
+                {
                     output += "Load Count: " + _loadCount.ToString() + "\n";
+                    p++;
+                }
+                    
                 if (ShowTargetSpeed)
+                {
                     output += "Target Speed: " + _targetThrottle.ToString("0.0") + " m/s\n";
+                    p++;
+                }
+                    
                 if (ShowCruiseThrust)
+                {
                     output += "Auto-Throttle: " + _currentPower + "\n";
+                    p++;
+                }
+                    
                 if (ShowActiveProfile)
+                {
                     output += "Active Profile: " + _activeProfile + "\n";
+                    p++;
+                }
+                    
                 if (ShowLandingGear && _landingGear != null)
+                {
                     output += "Gear: " + _landingGear.Status + "\n";
+                    p++;
+                }
+                    
                 if (ShowParked && _landingGear != null)
                 {
                     if (_landingGear.IsParked())
                         output += "Parking: Locked\n";
                     else
                         output += "Parking: Unlocked\n";
-                }
-                if (ShowTurrets)
-                    output += _turretString.Trim() + "\n";
 
-                if(ShowLoadCount || ShowCruiseThrust || ShowActiveProfile || ShowLandingGear || ShowParked || ShowTurrets)
+                    p++;
+                }
+
+                if (ShowTurrets)
+                {
+                    output += _turretString.Trim() + "\n";
+                    p++;
+                }
+                    
+                if(p > 0)
                     Surface.WriteText(output.Trim());
             }
         }

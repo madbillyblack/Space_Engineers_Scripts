@@ -57,6 +57,7 @@ namespace IngameScript
         const double INVERSE_GAIN = 3; // Inverse factor used for Cruise control. Lower for faster repsonce. Higher for more stability.
 
         //DEFINITIONS:
+        const string HEADER = "UNIVERSAL SHIP ASSISTANT PROGRAM";
         const string INI_HEAD = "USAP";
         const string MAG_TAG = "[MAG";
         const string TRIGGER_HEAD = "USAP Triggers";
@@ -198,10 +199,10 @@ namespace IngameScript
         string _cruiseTag;
         float _cruiseFactor = 1;
         static List<IMyThrust> _cruiseThrusters;
-        readonly string[] _breather = {"|", "/","--", "\\"};
+        readonly static string[] _breather = {"|", "/","--", "\\"};
         static Byte _breath;
 
-        bool _autoCycle; // TRUE if script is continuously running. FALSE if single execute.
+        static bool _autoCycle; // TRUE if script is continuously running. FALSE if single execute.
 
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
