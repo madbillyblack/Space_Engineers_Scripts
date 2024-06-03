@@ -115,6 +115,9 @@ namespace IngameScript
             if (_cruiseThrusters.Count < 1)
                 return;
 
+            SetThrustWeightRatio();
+            SetGain();
+
             _cruiseThrustersOn = true;
 
             _pid = new PID(_Kp, _ki, _kd, TIME_STEP);

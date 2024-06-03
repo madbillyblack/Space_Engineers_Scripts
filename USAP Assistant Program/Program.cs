@@ -114,24 +114,24 @@ namespace IngameScript
                                         "Superconductor:0\n" +
                                         "Thrust:0";
         const string DEFAULT_BASIC =    "BulletproofGlass:0\n" +
-                                        "Computer:0\n" +
-                                        "Construction:0\n" +
+                                        "Computer:300\n" +
+                                        "Construction:1250\n" +
                                         "Detector:0\n" +
                                         "Display:0\n" +
                                         "Explosives:0\n" +
-                                        "Girder:25\n" +
+                                        "Girder:0\n" +
                                         "GravityGenerator:0\n" +
-                                        "InteriorPlate:0\n" +
-                                        "LargeTube:0\n" +
+                                        "InteriorPlate:250\n" +
+                                        "LargeTube:75\n" +
                                         "Medical:0\n" +
                                         "MetalGrid:150\n" +
                                         "Motor:100\n" +
-                                        "PowerCell:25\n" +
+                                        "PowerCell:0\n" +
                                         "RadioCommunication:0\n" +
                                         "Reactor:0\n" +
                                         "SmallTube:500\n" +
                                         "SolarCell:0\n" +
-                                        "SteelPlate:1500\n" +
+                                        "SteelPlate:1550\n" +
                                         "Superconductor:0\n" +
                                         "Thrust:0";
         const string DEFAULT_ADVANCED = "BulletproofGlass:50\n" +
@@ -261,6 +261,10 @@ namespace IngameScript
         // MAIN // -------------------------------------------------------------------------------------------------------------------------------------
         public void Main(string argument, UpdateType updateSource)
         {
+            Echo("Arg: " + argument);
+            Echo("Src:" +  updateSource.ToString());
+            Echo("Max Speed: " + _maxSpeed);
+
             _unloaded = false;
 
             if(_autoCycle)
@@ -269,9 +273,15 @@ namespace IngameScript
             RunLast();
 
             if (TriggerCall(updateSource))
+            {
+                Echo("Triggering: " + argument);
                 MainSwitch(argument);
+            }
             else if (_commsEnabled)
+            {
                 ExecuteComms(updateSource);
+            }
+
 
             Echo("STATUS: " + _statusMessage);
             Echo("Displays: " + _displays.Count);
