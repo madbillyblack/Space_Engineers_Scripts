@@ -1,6 +1,7 @@
 ﻿using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
+using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI.Ingame;
 using System;
 using System.Collections;
@@ -30,6 +31,8 @@ namespace IngameScript
         int _counter = 0;
         IMyInventory _inventory;
         List<IMyTerminalBlock> _blocks;
+        List<ITerminalAction> _actions;
+
         MyIni _ini;
 
         IMySensorBlock _sensor;
@@ -38,13 +41,19 @@ namespace IngameScript
         // Broadcast variables
         int _runcount = 0;
         string _broadCastTag = "MDK IGC EXAMPLE 1";
+        const string EXCLUDE = "EXCLUDE";
         IMyBroadcastListener _myBroadcastListener;
+
+
+
 
         #region
         // PRORGRAM //
         public Program()
         {
             List<IMyCockpit> cockpits = new List<IMyCockpit>();
+
+
             GridTerminalSystem.GetBlocksOfType<IMyCockpit>(cockpits);
             if(cockpits.Count > 0)
                 _cockpit = cockpits.First();
@@ -55,11 +64,24 @@ namespace IngameScript
             _surface = Me.GetSurface(0);
             _surface.ContentType = ContentType.TEXT_AND_IMAGE;
             _outbox = GetDefaultSurface();            
-
+            /*
             // Broadcast INIT
             Echo("Creator");
             _myBroadcastListener = IGC.RegisterBroadcastListener(_broadCastTag);
             _myBroadcastListener.SetMessageCallback(_broadCastTag);
+            */
+            _blocks = new List<IMyTerminalBlock>();
+            _actions = new List<ITerminalAction>();
+
+            List<IMyTerminalBlock> tempBlocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(tempBlocks);
+            foreach(IMyTerminalBlock tempBlock in tempBlocks)
+            {
+                if(!tempBlock.CustomName.ToUpper().Contains(EXCLUDE))
+                    _blocks.Add(tempBlock);
+            }
+
+
 
             /*
                         _cameras = new List<IMyCameraBlock>();
@@ -104,6 +126,28 @@ namespace IngameScript
         #region NEW MAIN
         public void Main(string argument, UpdateType updateSource)
         {
+            //List<IMyTerminalAction> actions = new List<IMyTerminalAction>();
+            _surface.WriteText("");
+
+
+            foreach (IMyTerminalBlock block in _blocks)
+            {
+                _surface.WriteText("--- " + block.CustomName + " ---\n", true);
+                _surface.WriteText(block.DefinitionDisplayNameText + "\n" , true);
+                _surface.WriteText(block.BlockDefinition.ToString() + "\n", true);
+                _surface.WriteText(block.GetType().ToString() + "\n", true);
+
+
+                _actions.Clear();
+
+                block.GetActions(_actions);
+
+                foreach (ITerminalAction action in _actions)
+                    _surface.WriteText(" * " + action.ToString() + "\n", true);
+            }
+
+
+            /*
             _runcount++;
             Echo(_runcount.ToString() + ":" + updateSource.ToString());
 
@@ -153,6 +197,7 @@ namespace IngameScript
                 Echo("OUT BOX:\n" + screentext);
                 IGC.SendBroadcastMessage(_broadCastTag, screentext);
             }
+            */
         }
         #endregion
 

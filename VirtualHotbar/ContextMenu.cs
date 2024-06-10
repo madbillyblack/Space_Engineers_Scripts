@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using VRage;
@@ -283,6 +284,7 @@ namespace IngameScript
             public ToggleBlock ToggleBlock;
 
             public bool IsProgramButton;
+            public bool IsTransponder;
             public bool IsToggleButton;
             public bool IsActive;
             public bool IsPlaceHolder;
@@ -302,6 +304,7 @@ namespace IngameScript
                 IsActive = false;
                 IsPlaceHolder = false;
                 IsProgramButton = false;
+                IsTransponder = false;
                 IsBlinkButton = false;
                 ProgramBlock = null;
                 ActionLabel = new string[] { "#", "" };
@@ -322,6 +325,7 @@ namespace IngameScript
                 ProgramBlock = programBlock;
                 IsProgramButton = !(programBlock == null);
             }
+
 
             // SET TOGGLE BLOCK //
             public void SetToggleBlock(ToggleBlock toggleBlock)
@@ -558,6 +562,9 @@ namespace IngameScript
                         if(SameGridID(block) && block.CustomName == blockName)
                         button.Blocks.Add(block);
                     }
+
+                    if(button.Blocks.Count == 1 && button.Blocks[0].GetType().ToString().ToLower().Contains("transponder"))
+                        button.IsTransponder = true;
                 }
             }
             Echo("E");
@@ -766,6 +773,10 @@ namespace IngameScript
                 else
                     button.ProgramBlock.TryRun(button.Action);
             }
+            else if (button.IsTransponder)
+            {
+                ActivateTransponder(button);
+            }
             else if (button.Blocks.Count > 0)
             {
                 foreach (IMyTerminalBlock block in button.Blocks)
@@ -776,12 +787,43 @@ namespace IngameScript
                     }
                     catch
                     {
-                        _statusMessage += block.CustomName + " cannot perform action \"" + button.Action + "\"!\n"; 
+                        _statusMessage += block.CustomName + " cannot perform action \"" + button.Action + "\"!\n";
                     }
                 }
             }
 
             button.ActivateIllumination();
+        }
+
+
+        // ACTIVATE TRANSPONDER //
+        void ActivateTransponder(MenuButton button)
+        {
+            try
+            {
+                IMyTransponder transponder = button.Blocks[0] as IMyTransponder;
+
+                string[] args = button.Action.Split(' ');
+                if (args.Length < 2)
+                {
+                    _statusMessage += "INVALID TRANSPONDER ACTION:\n " + button.Action + "\n";
+                    return;
+                }
+
+                string action = args[0].ToUpper();
+                int channel = ParseInt(args[1], 0);
+
+                
+
+                if (action == "SET")
+                    transponder.Channel = channel;
+                else if (action == "SEND")
+                    transponder.SendSignal(channel);
+            }
+            catch (Exception e)
+            {
+                _statusMessage += "TRANSPONDER: " + e.Message + "\n";
+            }
         }
 
 
