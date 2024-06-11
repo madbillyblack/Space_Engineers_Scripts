@@ -114,7 +114,8 @@ namespace IngameScript
             //DrawCircleX(center, scale, _bgColor, _buttonColor);
             // DrawPiston(center, scale, _bgColor, "EXTEND");
             //DrawCycle(center, scale, _bgColor, _buttonColor);
-            DrawDoors(center, scale, _bgColor, _buttonColor, true);
+            //DrawDoors(center, scale, _bgColor, _buttonColor, true);
+            DrawSignal(center, scale, _bgColor, _buttonColor, 0);
 
             DrawTexture(RING, center - new Vector2(50, 0), new Vector2(100, 100), 0, Color.Red);
 

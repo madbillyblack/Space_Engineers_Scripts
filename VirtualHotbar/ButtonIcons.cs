@@ -212,6 +212,23 @@ namespace IngameScript
 				case "{CLOSE_DOORS}":
                     DrawDoors(position, scale * 0.67f, iconColor, buttonColor, true);
                     break;
+				case "{SIGNAL}":
+				case "{SIGNAL_UP}":
+					DrawSignal(position, scale * 0.85f, iconColor, buttonColor, 0);
+					break;
+                case "{SIGNAL_DOWN}":
+                    DrawSignal(position, scale * 0.85f, iconColor, buttonColor, 180);
+                    break;
+                case "{SIGNAL_LEFT}":
+                    DrawSignal(position, scale * 0.85f, iconColor, buttonColor, 270);
+                    break;
+                case "{SIGNAL_RIGHT}":
+                    DrawSignal(position, scale * 0.85f, iconColor, buttonColor, 90);
+                    break;
+				case "{BROADCAST}":
+				case "{SIGNAL_DOUBLE}":
+					DrawDoubleSignal(position, scale * 0.85f, iconColor, buttonColor);
+					break;
                 default:
 					DrawActionText(labelA, labelB, position, fontSize * 0.5f, iconColor);
 					break;
@@ -917,6 +934,86 @@ namespace IngameScript
             // Triangle B - Right Door
             pos = position + new Vector2(scale * 0.275f, scale * 0.1f);
             DrawTriangle(pos, scale * 0.25f, iconColor, directionB);
+        }
+
+
+        // DRAW SIGNAL //
+        void DrawSignal(Vector2 position, float scale, Color color, Color bgColor, int dRotation)
+        {
+            float rads = PI * dRotation / 180;
+
+            // Outer circle
+            Vector2 pos = position - new Vector2(scale * 0.4f, 0);
+            DrawTexture(SEMI, pos, new Vector2(scale * 0.8f, scale * 0.8f), rads, color);
+
+            // 1st negative circle
+            pos = position - new Vector2(scale * 0.35f, 0);
+            DrawTexture(SEMI, pos, new Vector2(scale * 0.7f, scale * 0.7f), rads, bgColor);
+
+            // 2nd circle
+            pos = position - new Vector2(scale * 0.3f, 0);
+            DrawTexture(SEMI, pos, new Vector2(scale * 0.6f, scale * 0.6f), rads, color);
+
+            // 2st negative circle
+            pos = position - new Vector2(scale * 0.25f, 0);
+            DrawTexture(SEMI, pos, new Vector2(scale * 0.5f, scale * 0.5f), rads, bgColor);
+
+            // 3rd circle
+            pos = position - new Vector2(scale * 0.2f, 0);
+            DrawTexture(SEMI, pos, new Vector2(scale * 0.4f, scale * 0.4f), rads, color);
+
+            // 3rd negative circle
+            pos = position - new Vector2(scale * 0.15f, 0);
+            DrawTexture(SEMI, pos, new Vector2(scale * 0.3f, scale * 0.3f), rads, bgColor);
+
+            // 4th circle
+            pos = position - new Vector2(scale * 0.1f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.2f, scale * 0.2f), rads, color);
+        }
+
+
+        // DRAW DOUBLE SIGNAL //
+        void DrawDoubleSignal(Vector2 position, float scale, Color color, Color bgColor)
+        {
+            // Outer circle
+            Vector2 pos = position - new Vector2(scale * 0.4f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.8f, scale * 0.8f), 0, color);
+
+            // 1st negative circle
+            pos = position - new Vector2(scale * 0.35f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.7f, scale * 0.7f), 0, bgColor);
+
+            // 2nd circle
+            pos = position - new Vector2(scale * 0.3f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.6f, scale * 0.6f), 0, color);
+
+            // 2st negative circle
+            pos = position - new Vector2(scale * 0.25f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.5f, scale * 0.5f), 0, bgColor);
+
+            // 3rd circle
+            pos = position - new Vector2(scale * 0.2f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.4f, scale * 0.4f), 0, color);
+
+            // Rectangle Mask
+            pos = position - new Vector2(scale * 0.1f, 0);
+            DrawTexture(SQUARE, pos, new Vector2(scale * 0.2f, scale * 0.8f), 0, bgColor);
+            /*
+            // Bottom Triangle
+            pos = position - new Vector2(scale * 0.3f, 0);
+            DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.6f, scale * 0.8f), 0, bgColor);
+
+            // Top Triangle
+            pos = position - new Vector2(scale * 0.3f, 0);
+            DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.6f, scale * -0.8f), 0, bgColor);
+			*/
+            // 3rd negative circle
+            pos = position - new Vector2(scale * 0.15f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.3f, scale * 0.3f), 0, bgColor);
+
+            // 4th circle
+            pos = position - new Vector2(scale * 0.1f, 0);
+            DrawTexture(CIRCLE, pos, new Vector2(scale * 0.2f, scale * 0.2f), 0, color);
         }
     }
 }
