@@ -227,6 +227,7 @@ namespace IngameScript
                     break;
 				case "{BROADCAST}":
 				case "{SIGNAL_DOUBLE}":
+				case "{DOUBLE_SIGNAL}":
 					DrawDoubleSignal(position, scale * 0.85f, iconColor, buttonColor);
 					break;
                 default:

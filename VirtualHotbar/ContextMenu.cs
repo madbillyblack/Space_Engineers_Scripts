@@ -256,6 +256,46 @@ namespace IngameScript
             {
                 SetKey(PageHeader(page), "Title", title);
             }
+
+
+            // COPY PAGE //
+            public void CopyPage(int sourcePage, int destPage)
+            {
+                if (sourcePage > PageCount || destPage > PAGE_LIMIT || sourcePage == destPage)
+                {
+                    _statusMessage += "INVALID Page Numbers: " + sourcePage + " " + destPage + "\n";
+                    return;
+                }
+
+                if (destPage > PageCount)
+                {
+                    destPage = PageCount + 1;
+                    PageCount = destPage;
+                    SetKey(MENU_HEAD, PAGE_COUNT, PageCount.ToString());
+                }
+
+                string sourcePageHeader, destPageHeader, sourceMenuHeader, destMenuHeader;
+
+                sourcePageHeader = PageHeader(sourcePage);
+                destPageHeader = PageHeader(destPage);
+
+                SetKey(destPageHeader, "Title", GetKey(sourcePageHeader, "Title", ""));
+
+                for (int i = 1; i <= MaxButtons; i++)
+                {
+                    sourceMenuHeader = ButtonHeader(sourcePage, i);
+                    destMenuHeader = ButtonHeader(destPage, i);
+
+                    SetButtonKeys(destMenuHeader,
+                        GetKey(sourceMenuHeader, BUTTON_BLOCK, ""),
+                        GetKey(sourceMenuHeader, BLOCK_LABEL, ""),
+                        GetKey(sourceMenuHeader, BUTTON_ACTION, ""),
+                        GetKey(sourceMenuHeader, ACTION_LABEL, ""),
+                        GetKey(sourceMenuHeader, TOGGLE_KEY, ""),
+                        GetKey(sourceMenuHeader, BLINK_LENGTH, "")
+                    );
+                }
+            }
         }
 
 
@@ -1103,15 +1143,45 @@ namespace IngameScript
 
 
         // BUTTON HEADER //
-        public string ButtonHeader(int pageNumber, int buttonNumber)
+        public static string ButtonHeader(int pageNumber, int buttonNumber)
         {
             return "Button " + buttonNumber + " (page " + pageNumber + ")";
         }
 
 
+        // PAGE HEADER //
         public static string PageHeader(int pageNumber)
         {
             return DASHES + PAGE_HEAD + pageNumber + DASHES;
+        }
+
+
+        // COPY PAGE //
+        public void CopyPage(string argString)
+        {
+            int sourcePage, destPage;
+            string menuString;
+            string [] args = argString.Split(' ');
+
+            if(args.Length < 2) {
+                _statusMessage += "INSUFFICIENT COPY ARGUMENTS\n Please Provide:\n * Source Page Number\n * Destination Page Number\n * Menu Number (Optional)\n";
+                return;
+            }
+
+            sourcePage = ParseInt(args[0], 0);
+            destPage = ParseInt(args[1], 0);
+
+            if (args.Length == 2)
+                menuString = "";
+            else
+                menuString = args[2];
+
+            Menu menu = GetMenuByString(menuString);
+            if (MenuNotFound(menu)) { return; }
+
+            menu.CopyPage(sourcePage, destPage);
+
+            Build();
         }
     }
 }

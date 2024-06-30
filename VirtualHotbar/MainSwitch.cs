@@ -90,6 +90,9 @@ namespace IngameScript
                     case "LOAD_PROFILE":
                         LoadProfile(cmdArg);
                         break;
+                    case "COPY_PAGE":
+                        CopyPage(cmdArg);
+                        break;
                     default:
                         _statusMessage += "\nUNRECOGNIZED COMMAND:\n" + arg;
                         break;

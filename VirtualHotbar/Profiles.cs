@@ -166,7 +166,8 @@ namespace IngameScript
             // Button 7
             header = ButtonHeader(1, 7);
             string blockName = AddShipTag(BOOM_TIMER);
-            menu.SetButtonKeys(header, blockName, "BOOM", TRIGGER, "{DOWN_PISTON}", "");
+            string delay = GetTimeFromTimer(blockName).ToString();
+            menu.SetButtonKeys(header, blockName, "BOOM", TRIGGER, "{DOWN_PISTON}", "", delay);
 
             // Button 8
             header = ButtonHeader(1, 8);
@@ -216,15 +217,15 @@ namespace IngameScript
         {
             // Button 1
             string header = ButtonHeader(1, 1);
-            string groupName = AddShipTag(BATTERIES);
+            string groupName = AddShipTag(SYSTEMS);
             string toggleBlock = FirstNameFromGroup(groupName);
-            menu.SetButtonKeys(header, "G:"+groupName, "BATT", RECHARGE, BATT_LABEL, toggleBlock + ";" + RECHARGE);
+            menu.SetButtonKeys(header, "G:" + groupName, "SYS.", ON_OFF, "{TOGGLE}", toggleBlock);
 
             // Button 2
             header = ButtonHeader(1, 2);
-            groupName = AddShipTag(SYSTEMS);
+            groupName = AddShipTag(BATTERIES);
             toggleBlock = FirstNameFromGroup(groupName);
-            menu.SetButtonKeys(header, "G:"+groupName, "SYS.", ON_OFF, "{TOGGLE}", toggleBlock);
+            menu.SetButtonKeys(header, "G:" + groupName, "BATT", RECHARGE, BATT_LABEL, toggleBlock + ";" + RECHARGE);
 
             // Button 3
             header = ButtonHeader(1, 3);
