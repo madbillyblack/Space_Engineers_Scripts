@@ -35,6 +35,7 @@ namespace IngameScript
             string menuKey = "";
             string profile;
             string[] args = arguments.Trim().Split(' ');
+            int startPage = 1;
 
             if (args.Length > 0)
                 profile = args[0];
@@ -43,6 +44,9 @@ namespace IngameScript
 
             if (args.Length > 1)
                 menuKey = args[1];
+
+            if (args.Length > 2)
+                startPage = ParseInt(args[2], 1);
 
             Menu menu = GetMenuByString(menuKey);
             if (MenuNotFound(menu)) return;
@@ -53,18 +57,18 @@ namespace IngameScript
             switch(profile.ToUpper())
             {
                 case "GENERAL":
-                    LoadGeneralProfile(menu);
+                    LoadGeneralProfile(menu, startPage);
                     break;
                 case "MINING":
                 case "MINER":
-                    LoadMiningProfile(menu);
+                    LoadMiningProfile(menu, startPage);
                     break;
                 case "CONSTRUCTION":
                 case "CONSTRUCTOR":
-                    LoadConstructorProfile(menu);
+                    LoadConstructorProfile(menu, startPage);
                     break;
                 case "COMBAT":
-                    LoadCombatProfile(menu);
+                    LoadCombatProfile(menu, startPage);
                     break;
                 case "MISSILE":
                 case "LAMP":
@@ -80,10 +84,10 @@ namespace IngameScript
 
 
         // LOAD GENERAL PROFILE //
-        public void LoadGeneralProfile(Menu menu)
+        public void LoadGeneralProfile(Menu menu, int page)
         {
             // Set Page Title
-            menu.SetPageTitleKey(1, "Primary Systems");
+            menu.SetPageTitleKey(page, "Primary Systems");
 
             // Set Buttons 1 - 4
             SetMainFour(menu);
@@ -91,96 +95,96 @@ namespace IngameScript
             //TODO
 
             // Button 5
-            string header = ButtonHeader(1, 5);
+            string header = ButtonHeader(page, 5);
             menu.SetButtonKeys(header, "", "", "", "", "");
 
             // Button 6
-            header = ButtonHeader(1, 6);
+            header = ButtonHeader(page, 6);
             menu.SetButtonKeys(header, "", "", "", "", "");
 
             // Button 7
-            header = ButtonHeader(1, 7);
+            header = ButtonHeader(page, 7);
             menu.SetButtonKeys(header, "", "", "", "", "");
 
             // Button 8
-            header = ButtonHeader(1, 8);
+            header = ButtonHeader(page, 8);
             menu.SetButtonKeys(header, "", "", "", "", "");
         }
 
 
         // LOAD MINING PROFILE //
-        public void LoadMiningProfile(Menu menu)
+        public void LoadMiningProfile(Menu menu, int page)
         {
             // Set Page Title
-            menu.SetPageTitleKey(1, "Mining Systems");
+            menu.SetPageTitleKey(page, "Mining Systems");
 
             // Set Buttons 1 - 4
             SetMainFour(menu);
 
             // Button 5
-            string header = ButtonHeader(1, 5);
+            string header = ButtonHeader(page, 5);
             string groupName = AddShipTag(DRILLS);
             string toggleBlock = FirstNameFromGroup(groupName);
             menu.SetButtonKeys(header, "G:" + groupName, DRILLS, ON_OFF, "{DRILL}", toggleBlock);
 
             // Button 6
-            header = ButtonHeader(1, 6);
+            header = ButtonHeader(page, 6);
             groupName = AddShipTag(STONE_GROUP);
             toggleBlock = FirstNameFromGroup(groupName);
             menu.SetButtonKeys(header, "G:" + groupName, "STONE", ON_OFF, JETTISON, toggleBlock);
 
             // Button 7
-            header = ButtonHeader(1, 7);
+            header = ButtonHeader(page, 7);
             groupName = AddShipTag(ICE_GROUP);
             toggleBlock = FirstNameFromGroup(groupName);
             menu.SetButtonKeys(header,"G:" + groupName, "ICE", ON_OFF, JETTISON, toggleBlock);
 
             // Button 8
-            header = ButtonHeader(1, 8);
+            header = ButtonHeader(page, 8);
             string blockName = AddShipTag(USAP);
             menu.SetButtonKeys(header, "P:"+blockName, "UNLOAD", "UNLOAD", JETTISON, "");
         }
 
 
         // LOAD CONSTRUCTOR PROFILE //
-        public void LoadConstructorProfile(Menu menu)
+        public void LoadConstructorProfile(Menu menu, int page)
         {
             // Set Page Title
-            menu.SetPageTitleKey(1, "Construction Systems");
+            menu.SetPageTitleKey(page, "Construction Systems");
 
             // Set Buttons 1 - 4
             SetMainFour(menu);
 
             // Button 5
-            string header = ButtonHeader(1, 5);
+            string header = ButtonHeader(page, 5);
             string groupName = AddShipTag(WELDERS);
             string toggleBlock = FirstNameFromGroup(groupName);
             menu.SetButtonKeys(header, "G:" + groupName, "WELD", ON_OFF, "{WELDER}", toggleBlock);
 
             // Button 6
-            header = ButtonHeader(1, 6);
+            header = ButtonHeader(page, 6);
             groupName = AddShipTag(GRINDERS);
             toggleBlock= FirstNameFromGroup(groupName);
             menu.SetButtonKeys(header, "G:" + groupName, "GRIND", ON_OFF, "{GRINDER}", toggleBlock);
 
             // Button 7
-            header = ButtonHeader(1, 7);
+            header = ButtonHeader(page, 7);
             string blockName = AddShipTag(BOOM_TIMER);
             string delay = GetTimeFromTimer(blockName).ToString();
             menu.SetButtonKeys(header, blockName, "BOOM", TRIGGER, "{DOWN_PISTON}", "", delay);
 
             // Button 8
-            header = ButtonHeader(1, 8);
+            header = ButtonHeader(page, 8);
             blockName = AddShipTag(USAP);
             menu.SetButtonKeys(header, "P:" + blockName, "SUPPLY", "RESUPPLY", "{CYCLE}", "");
         }
 
 
         // LOAD COMBAT PROFILE //
-        public void LoadCombatProfile(Menu menu)
+        public void LoadCombatProfile(Menu menu, int page)
         {
             // Set Page Title
-            menu.SetPageTitleKey(1, "Combat Systems");
+            menu.SetPageTitleKey(page, "Combat Systems");
 
             // Set Buttons 1 - 4
             SetMainFour(menu);
@@ -188,19 +192,19 @@ namespace IngameScript
             // TODO
 
             // Button 5
-            string header = ButtonHeader(1, 5);
+            string header = ButtonHeader(page, 5);
             menu.SetButtonKeys(header, "", "", "", "", "");
 
             // Button 6
-            header = ButtonHeader(1, 6);
+            header = ButtonHeader(page, 6);
             menu.SetButtonKeys(header, "", "", "", "", "");
 
             // Button 7
-            header = ButtonHeader(1, 7);
+            header = ButtonHeader(page, 7);
             menu.SetButtonKeys(header, "", "", "", "", "");
 
             // Button 8
-            header = ButtonHeader(1, 8);
+            header = ButtonHeader(page, 8);
             menu.SetButtonKeys(header, "", "", "", "", "");
         }
 

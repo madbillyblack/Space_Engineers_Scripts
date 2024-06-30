@@ -274,12 +274,14 @@ namespace IngameScript
                     SetKey(MENU_HEAD, PAGE_COUNT, PageCount.ToString());
                 }
 
-                string sourcePageHeader, destPageHeader, sourceMenuHeader, destMenuHeader;
+                string sourcePageHeader, sourceMenuHeader, destMenuHeader;
 
                 sourcePageHeader = PageHeader(sourcePage);
-                destPageHeader = PageHeader(destPage);
+                //destPageHeader = PageHeader(destPage);
 
-                SetKey(destPageHeader, "Title", GetKey(sourcePageHeader, "Title", ""));
+                SetPageTitleKey(destPage, GetKey(sourcePageHeader, "Title", ""));
+
+                //SetKey(destPageHeader, "Title", GetKey(sourcePageHeader, "Title", "");
 
                 for (int i = 1; i <= MaxButtons; i++)
                 {
