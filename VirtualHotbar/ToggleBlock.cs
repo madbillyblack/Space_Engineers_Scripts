@@ -481,13 +481,11 @@ namespace IngameScript
                 if (BlockType != "MyTransponderBlock")
                 {
                     MakeNormal();
-                    _statusMessage += "INVALID BLOCK TYPE:\n" + BlockType + "\n";
                     return;
                 }
 
                 ToggleType = TRANSPONDER;
                 ToggleValue = ParseInt(data,0);
-                _statusMessage += "TOGGLE VALUE = " + ToggleValue + "\n";
             }
 
 

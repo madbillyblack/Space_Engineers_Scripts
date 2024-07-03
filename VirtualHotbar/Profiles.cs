@@ -60,8 +60,7 @@ namespace IngameScript
             {
                 menu.UpdatePageCount(menu.PageCount + 1);
 
-                if (startPage > menu.PageCount)
-                    startPage = menu.PageCount;
+                startPage = menu.PageCount;
 
                 _statusMessage += "Page " + startPage + " added to Menu " + menu.IDNumber + "\n";
             }
