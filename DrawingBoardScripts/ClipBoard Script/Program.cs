@@ -129,7 +129,9 @@ namespace IngameScript
             //List<IMyTerminalAction> actions = new List<IMyTerminalAction>();
             _surface.WriteText("");
 
+            PrintBlockTypes();
 
+            /*
             foreach (IMyTerminalBlock block in _blocks)
             {
                 _surface.WriteText("--- " + block.CustomName + " ---\n", true);
@@ -147,7 +149,7 @@ namespace IngameScript
             }
 
 
-            /*
+
             _runcount++;
             Echo(_runcount.ToString() + ":" + updateSource.ToString());
 

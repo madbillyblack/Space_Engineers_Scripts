@@ -33,6 +33,7 @@ namespace IngameScript
         const string BATTERY = "BATTERY";
         const string CONTROL = "CONTROL";
         const string THRUST = "THRUST";
+        const string TRANSPONDER = "TRANSPONDER";
 
         // TOGGLE BLOCK //
         public class ToggleBlock
@@ -100,6 +101,8 @@ namespace IngameScript
                     default:
                         if (BlockType == "MyThrust")
                             MakeThrust(data);
+                        else if (BlockType == "MyTransponderBlock")
+                            MakeTransponder(data);
                         else
                             MakeActuator(data);
                         break;
@@ -472,6 +475,32 @@ namespace IngameScript
             }
 
 
+            // MAKE TRANSPONDER
+            public void MakeTransponder(string data)
+            {
+                if (BlockType != "MyTransponderBlock")
+                {
+                    MakeNormal();
+                    _statusMessage += "INVALID BLOCK TYPE:\n" + BlockType + "\n";
+                    return;
+                }
+
+                ToggleType = TRANSPONDER;
+                ToggleValue = ParseInt(data,0);
+                _statusMessage += "TOGGLE VALUE = " + ToggleValue + "\n";
+            }
+
+
+            // TRANSPONDER STATE
+            bool TransponderState()
+            {
+                IMyTransponder transponder = Block as IMyTransponder;
+
+                return (transponder.Channel == (int)ToggleValue);
+            }
+
+
+            // IS ACTIVE
             public bool IsActive()
             {
                 bool active;
@@ -510,6 +539,9 @@ namespace IngameScript
                         break;
                     case THRUST:
                         active = ThrusterState();
+                        break;
+                    case TRANSPONDER:
+                        active = TransponderState();
                         break;
                     default:
                         active = IsInverted;
