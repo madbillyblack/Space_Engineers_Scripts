@@ -169,6 +169,23 @@ namespace IngameScript
                 }
             }
 
+
+            // UPDATE PAGE COUNT //
+            public void UpdatePageCount(int count)
+            {
+                PageCount = count;
+
+                if (PageCount > PAGE_LIMIT)
+                {
+                    PageCount = PAGE_LIMIT;
+                    SetKey(MENU_HEAD, PAGE_COUNT, PAGE_LIMIT.ToString());
+                }
+
+                SetKey(MENU_HEAD, PAGE_COUNT, count.ToString());
+            }
+
+
+
             // SET CURRENT PAGE //
             void SetCurrentPage()
             {

@@ -36,6 +36,7 @@ namespace IngameScript
         const string WEAPONS = "Weapons";
         const string STONE_GROUP = "Stone Out";
         const string ICE_GROUP = "Ice Out";
+        const string RELAY = "Action Relay";
 
         // USAP CONSTANTS
         const string USAP = "USAP Program"; // Name of USAP Program Block

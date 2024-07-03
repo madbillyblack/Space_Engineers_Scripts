@@ -27,7 +27,7 @@ namespace IngameScript
         const string ON_OFF = "OnOff";
         const string RECHARGE = "Recharge";
         const string STOCKPILE = "Stockpile";
-        const string TRIGGER = "TriggerNow";       
+        const string TRIGGER = "TriggerNow";
 
         // LOAD PROFILE //
         public void LoadProfile(string arguments)
@@ -48,13 +48,25 @@ namespace IngameScript
             if (args.Length > 2)
                 startPage = ParseInt(args[2], 1);
 
+
             Menu menu = GetMenuByString(menuKey);
             if (MenuNotFound(menu)) return;
 
             // Set button count to 8
             menu.SetButtonLimit(8);
 
-            switch(profile.ToUpper())
+            // Add new page if necessary
+            if (startPage > menu.PageCount)
+            {
+                menu.UpdatePageCount(menu.PageCount + 1);
+
+                if (startPage > menu.PageCount)
+                    startPage = menu.PageCount;
+
+                _statusMessage += "Page " + startPage + " added to Menu " + menu.IDNumber + "\n";
+            }
+
+            switch (profile.ToUpper())
             {
                 case "GENERAL":
                     LoadGeneralProfile(menu, startPage);
@@ -72,7 +84,11 @@ namespace IngameScript
                     break;
                 case "MISSILE":
                 case "LAMP":
-                    LoadMissileProfile(menu);
+                    LoadMissileProfile(menu, startPage);
+                    break;
+                case "RELAY":
+                case "TRANSPONDER":
+                    LoadTransponderProfile(menu, startPage);
                     break;
                 default:
                     _statusMessage += "\nPROFILE \"" + profile + "\" not found.";
@@ -137,12 +153,12 @@ namespace IngameScript
             header = ButtonHeader(page, 7);
             groupName = AddShipTag(ICE_GROUP);
             toggleBlock = FirstNameFromGroup(groupName);
-            menu.SetButtonKeys(header,"G:" + groupName, "ICE", ON_OFF, JETTISON, toggleBlock);
+            menu.SetButtonKeys(header, "G:" + groupName, "ICE", ON_OFF, JETTISON, toggleBlock);
 
             // Button 8
             header = ButtonHeader(page, 8);
             string blockName = AddShipTag(USAP);
-            menu.SetButtonKeys(header, "P:"+blockName, "UNLOAD", "UNLOAD", JETTISON, "");
+            menu.SetButtonKeys(header, "P:" + blockName, "UNLOAD", "UNLOAD", JETTISON, "");
         }
 
 
@@ -164,7 +180,7 @@ namespace IngameScript
             // Button 6
             header = ButtonHeader(page, 6);
             groupName = AddShipTag(GRINDERS);
-            toggleBlock= FirstNameFromGroup(groupName);
+            toggleBlock = FirstNameFromGroup(groupName);
             menu.SetButtonKeys(header, "G:" + groupName, "GRIND", ON_OFF, "{GRINDER}", toggleBlock);
 
             // Button 7
@@ -215,10 +231,58 @@ namespace IngameScript
 
 
         // LOAD MISSILE PROFILE //
-        public void LoadMissileProfile(Menu menu)
+        public void LoadMissileProfile(Menu menu, int page)
         {
             // TODO
         }
+
+
+        // LOAD TRANSPONDER PROFILE //
+        public void LoadTransponderProfile(Menu menu, int page)
+        {
+            // Set Page Title
+            menu.SetPageTitleKey(page, "Action Relay");
+
+            // Button 1
+            string header = ButtonHeader(page, 1);
+            string blockName = AddShipTag(RELAY);
+            menu.SetButtonKeys(header, blockName, "CH-1", "SET 1", "{SIGNAL}", blockName + ";1");
+
+            // Button 2
+            header = ButtonHeader(page, 2);
+            blockName = AddShipTag(RELAY);
+            menu.SetButtonKeys(header, blockName, "CH-2", "SET 2", "{SIGNAL}", blockName + ";2");
+
+            // Button 3
+            header = ButtonHeader(page, 3);
+            blockName = AddShipTag(RELAY);
+            menu.SetButtonKeys(header, blockName, "CH-3", "SET 3", "{SIGNAL}", blockName + ";3");
+
+            // Button 4
+            header = ButtonHeader(page, 4);
+            blockName = AddShipTag(RELAY);
+            menu.SetButtonKeys(header, blockName, "CH-4", "SET 4", "{SIGNAL}", blockName + ";4");
+
+            // Button 5
+            header = ButtonHeader(page, 5);
+            blockName = AddShipTag(RELAY);
+            menu.SetButtonKeys(header, blockName, "CH-5", "SET 5", "{SIGNAL}", blockName + ";5");
+
+            // Button 6
+            header = ButtonHeader(page, 6);
+            blockName = AddShipTag(RELAY);
+            menu.SetButtonKeys(header, blockName, "CH-6", "SET 6", "{SIGNAL}", blockName + ";6");
+
+            // Button 7
+            header = ButtonHeader(page, 7);
+            menu.SetButtonKeys(header, "{AUX}", "CAMERA", "", "{CAMERA}", "");
+
+            // Button 8
+            header = ButtonHeader(page, 8);
+            blockName = AddShipTag(RELAY);
+            menu.SetButtonKeys(header, blockName, "SEND", "SEND", "{BROADCAST}", "");
+        }
+
 
 
         // SET MAIN FOUR // - Sets the first/main 3 buttons for most menus
@@ -293,7 +357,6 @@ namespace IngameScript
                 return name + _shipTag;
             else
                 return _shipTag + name;
-           
         }
     }
 }
