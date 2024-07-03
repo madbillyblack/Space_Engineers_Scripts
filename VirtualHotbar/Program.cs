@@ -32,6 +32,8 @@ namespace IngameScript
         const string DRILLS = "Drills";
         const string WELDERS = "Welders";
         const string GRINDERS = "Grinders";
+        const string TURRETS = "Turrets";
+        const string WEAPONS = "Weapons";
         const string STONE_GROUP = "Stone Out";
         const string ICE_GROUP = "Ice Out";
 

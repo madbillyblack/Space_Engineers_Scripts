@@ -206,6 +206,7 @@ namespace IngameScript
 					DrawPiston(position, scale, iconColor, "RETRACT", true);
 					break;
 				case DOOR_LABEL:
+				case "{DOOR}":
 				case "{OPEN_DOORS}":
 					DrawDoors(position, scale * 0.67f, iconColor, buttonColor);
 					break;
@@ -712,16 +713,6 @@ namespace IngameScript
 			pos = position - new Vector2(scale * 0.25f, 0);
 
 			DrawTexture(SEMI, pos, size * 0.5f, PI * 0.5f, bgColor);
-
-			/*
-			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
-			Vector2 blockScale = new Vector2(scale, scale);
-			position -= new Vector2(scale * 0.5f, scale * 0.3f);
-			DrawTexture(SEMI, position, blockScale, PI * 1.5f, color);
-			DrawTexture(RING, position, blockScale, 0, color);
-			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
-			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
-			*/
 		}
 
 
@@ -744,16 +735,6 @@ namespace IngameScript
 			// Pointer
 			pos = position + new Vector2(scale * 0.145f, scale * 0.125f);
 			DrawTexture(TRIANGLE, pos, size * 0.25f, PI, color);
-
-			/*
-			//Vector2 pos = position + new Vector2(0, scale * 0.4f);
-			Vector2 blockScale = new Vector2(scale, scale);
-			position -= new Vector2(scale * 0.5f, scale * 0.3f);
-			DrawTexture(RING, position, blockScale, 0, color);
-			DrawTexture(RING, position + new Vector2(scale * 0.05f, 0), blockScale * 0.9f, 0, color);
-			DrawTexture(RING, position + new Vector2(scale * 0.075f, 0), blockScale * 0.85f, 0, color);
-			DrawTexture(TRIANGLE, position + new Vector2(scale * 0.67f, -scale * 0.25f), blockScale * 0.5f, PI * 0.75f, color);
-			*/
 		}
 
 
@@ -999,15 +980,7 @@ namespace IngameScript
             // Rectangle Mask
             pos = position - new Vector2(scale * 0.1f, 0);
             DrawTexture(SQUARE, pos, new Vector2(scale * 0.2f, scale * 0.8f), 0, bgColor);
-            /*
-            // Bottom Triangle
-            pos = position - new Vector2(scale * 0.3f, 0);
-            DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.6f, scale * 0.8f), 0, bgColor);
 
-            // Top Triangle
-            pos = position - new Vector2(scale * 0.3f, 0);
-            DrawTexture(TRIANGLE, pos, new Vector2(scale * 0.6f, scale * -0.8f), 0, bgColor);
-			*/
             // 3rd negative circle
             pos = position - new Vector2(scale * 0.15f, 0);
             DrawTexture(CIRCLE, pos, new Vector2(scale * 0.3f, scale * 0.3f), 0, bgColor);

@@ -846,16 +846,23 @@ namespace IngameScript
                 IMyTransponder transponder = button.Blocks[0] as IMyTransponder;
 
                 string[] args = button.Action.Split(' ');
-                if (args.Length < 2)
+                if (args.Length < 1)
                 {
                     _statusMessage += "INVALID TRANSPONDER ACTION:\n " + button.Action + "\n";
                     return;
                 }
 
-                string action = args[0].ToUpper();
-                int channel = ParseInt(args[1], 0);
+                int channel;
+                if (args.Length == 1)
+                {
+                    channel = transponder.Channel;
+                }
+                else
+                {
+                    channel = ParseInt(args[1], 0);
+                }
 
-                
+                string action = args[0].ToUpper();                
 
                 if (action == "SET")
                     transponder.Channel = channel;

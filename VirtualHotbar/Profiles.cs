@@ -193,19 +193,24 @@ namespace IngameScript
 
             // Button 5
             string header = ButtonHeader(page, 5);
-            menu.SetButtonKeys(header, "", "", "", "", "");
+            string groupName = AddShipTag(WEAPONS);
+            string toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:" + groupName, "WEP", ON_OFF, "{TARGET}", toggleBlock);
 
             // Button 6
             header = ButtonHeader(page, 6);
-            menu.SetButtonKeys(header, "", "", "", "", "");
+            groupName = AddShipTag(TURRETS);
+            toggleBlock = FirstNameFromGroup(groupName);
+            menu.SetButtonKeys(header, "G:" + groupName, "TURRET", ON_OFF, "{TURRET}", toggleBlock);
 
             // Button 7
             header = ButtonHeader(page, 7);
-            menu.SetButtonKeys(header, "", "", "", "", "");
+            menu.SetButtonKeys(header, "{AUX}", "CAMERA", "", "{CAMERA}", "");
 
             // Button 8
             header = ButtonHeader(page, 8);
-            menu.SetButtonKeys(header, "", "", "", "", "");
+            string blockName = AddShipTag(USAP);
+            menu.SetButtonKeys(header, "P:" + blockName, "RELOAD", "RELOAD", "{CYCLE}", "");
         }
 
 
