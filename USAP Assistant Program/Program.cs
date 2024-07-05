@@ -685,12 +685,16 @@ namespace IngameScript
             AssignMultiTimers();
 
             AssignDisplayTurrets();
+            AssignDisplayRelays();
 
             AssignDisplays();
             PrintDisplays();
 
             if(_displays.Count < 1)
+            {
                 _turrets.Clear();
+                _transponders.Clear();
+            }
 
             AssignComms();
 

@@ -39,6 +39,7 @@ namespace IngameScript
             bool ShowLandingGear;
             bool ShowParked;
             bool ShowTurrets;
+            bool ShowActionRelays;
 
             public Display(IMyTextSurfaceProvider surfaceProvider, int surfaceIndex, string iniHeader)
             {
@@ -86,6 +87,11 @@ namespace IngameScript
                 if(_turrets.Count > 0)
                 {
                     ShowTurrets = ParseBool(GetKey(block, iniHeader, "Show Turrets", "True"));
+                }
+
+                if(_transponders.Count > 0)
+                {
+                    ShowActionRelays = ParseBool(GetKey(block, iniHeader, "Show Action Relays", "True"));
                 }
             }
 
@@ -157,8 +163,14 @@ namespace IngameScript
                     output += _turretString.Trim() + "\n";
                     p++;
                 }
-                    
-                if(p > 0)
+
+                if (ShowActionRelays)
+                {
+                    output += _relayString.Trim() + "\n";
+                    p++;
+                }
+
+                if (p > 0)
                     Surface.WriteText(output.Trim());
             }
         }
@@ -215,6 +227,7 @@ namespace IngameScript
                 return;
 
             UpdateTurretString();
+            UpdateRelayString();
 
             foreach (Display display in _displays)
                 display.Print();

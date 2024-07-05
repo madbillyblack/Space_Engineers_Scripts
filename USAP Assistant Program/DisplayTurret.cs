@@ -22,14 +22,13 @@ namespace IngameScript
 {
     partial class Program
     {
-        const string TURRET_KEY = "Display as";
+        const string DISPLAY_KEY = "Display as";
         public static string _turretString;
 
         public static List<DisplayTurret> _turrets;
 
         public class DisplayTurret
         {
-            
             public string DisplayName { get; set; }
             MyIniHandler IniHandler {  get; set; }
             public string BlockName { get; set; }
@@ -110,7 +109,7 @@ namespace IngameScript
 
             if (!iniHandler.HasSameGridId()) return;
 
-            string name = iniHandler.GetKey(INI_HEAD, TURRET_KEY, block.CustomName);
+            string name = iniHandler.GetKey(INI_HEAD, DISPLAY_KEY, block.CustomName);
 
             switch(name.Trim().ToUpper())
             {
