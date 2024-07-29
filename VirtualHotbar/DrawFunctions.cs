@@ -80,18 +80,18 @@ namespace IngameScript
 
 		public void DrawMenu(Menu menu)
 		{
-			DrawSurface(menu, menu.Surface);
+			DrawSurface(menu, menu.Surface, menu.Viewport);
 
 			if(menu.Mirrors.Count > 0)
 			{
 				foreach (Mirror mirror in menu.Mirrors)
-					DrawSurface(menu, mirror.Surface, mirror.Alignment);
+					DrawSurface(menu, mirror.Surface, mirror.Viewport, mirror.Alignment);
 			}
 		}
 
 
 		// DRAW MENU //
-		public void DrawSurface(Menu menu, IMyTextSurface surface, string alignment = "")
+		public void DrawSurface(Menu menu, IMyTextSurface surface, RectangleF viewport, string alignment = "")
 		{
 			if (alignment == "")
 				alignment = menu.Alignment;
@@ -101,13 +101,13 @@ namespace IngameScript
 
 			MenuPage page = menu.GetCurrentPage();
 
-			Vector2 center = menu.Viewport.Center;
-			float height = menu.Viewport.Height;
-			float width = menu.Viewport.Width;
+			Vector2 center = viewport.Center;
+			float height = viewport.Height;
+			float width = viewport.Width;
 
 			float fontSize = 0.5f;
 
-			bool bigScreen = menu.Viewport.Width > 500;
+			bool bigScreen = viewport.Width > 500;
 
 			if (bigScreen)
 				fontSize *= 1.5f;
@@ -187,7 +187,7 @@ namespace IngameScript
 			if (widescreen)
 				DrawSingleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, fontSize);
 			else
-				DrawDoubleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, rowCount, fontSize);
+				DrawDoubleButtonRow(menu, page, viewport, topLeft, cellWidth, buttonHeight, rowCount, fontSize);
 
 			_frame.Dispose();
 		}
@@ -216,7 +216,7 @@ namespace IngameScript
 
 
 		// DRAW DOUBLE BUTTON ROW //
-		void DrawDoubleButtonRow(Menu menu, MenuPage page, Vector2 position, float cellWidth, float buttonHeight, int rowCount, float fontSize)
+		void DrawDoubleButtonRow(Menu menu, MenuPage page, RectangleF viewport, Vector2 position, float cellWidth, float buttonHeight, int rowCount, float fontSize)
         {
 			Color labelColor = menu.LabelColor;
 			Color buttonColor = menu.ButtonColor;
@@ -237,7 +237,7 @@ namespace IngameScript
 
 			float heightMod;
 
-			if (menu.Viewport.Width == menu.Viewport.Height)
+			if (viewport.Width == viewport.Height)
 				heightMod = 3.1f;
 			else
 				heightMod = 3.3f;

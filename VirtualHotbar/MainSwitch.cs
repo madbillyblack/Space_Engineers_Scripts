@@ -75,9 +75,13 @@ namespace IngameScript
                         PressButton(cmdArg, 9);
                         break;
                     case "NEXT_MENU":
+                    case "NEXT_PAGE":
                         NextMenuPage(cmdArg);
                         break;
                     case "PREVIOUS_MENU":
+                    case "LAST_MENU":
+                    case "LAST_PAGE":
+                    case "PREVIOUS_PAGE":
                         PreviousMenuPage(cmdArg);
                         break;
                     case "DRAW_MENUS":

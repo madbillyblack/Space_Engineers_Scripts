@@ -62,16 +62,16 @@ namespace IngameScript
 
 
         // MENU //
-        public class Menu
+        public class Menu: IScreen
         {
             public int IDNumber;
             public int PageCount;
             public int CurrentPage;
             public int MaxButtons;
             public IMyTerminalBlock Block;
-            public IMyTextSurface Surface;
-            public RectangleF Viewport;
-            public string Alignment;
+            public IMyTextSurface Surface { get; set; }
+            public RectangleF Viewport { get; set; }
+            public string Alignment { get; set; }
             //public string Decals;
             public Dictionary<int, MenuPage> Pages;
             public List<Mirror> Mirrors;
@@ -498,18 +498,30 @@ namespace IngameScript
 
 
         // MIRRORS //
-        public class Mirror
+        public class Mirror :IScreen
         {
             public IMyTextSurface Surface { get; set; }
             public string Alignment { get; set; }
+            public RectangleF Viewport { get; set; }
 
             public Mirror(IMyTextSurface surface, string alignment)
             {
                 Surface = surface;
                 Alignment = alignment;
                 PrepareTextSurfaceForSprites(Surface);
+                Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
             }
         }
+
+
+        public interface IScreen
+        {
+            IMyTextSurface Surface { get; set; }
+            string Alignment { get; set; }
+            RectangleF Viewport { get; set; }
+
+        }
+
 
         // ASSIGN MENUS //
         void AssignMenus()
