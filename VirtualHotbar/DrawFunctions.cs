@@ -78,10 +78,22 @@ namespace IngameScript
 		}
 
 
-		// DRAW MENU //
 		public void DrawMenu(Menu menu)
 		{
-			_frame = menu.Surface.DrawFrame();
+			DrawSurface(menu, menu.Surface);
+
+			if(menu.Mirrors.Count > 0)
+			{
+				foreach (IMyTextSurface mirror in menu.Mirrors)
+					DrawSurface(menu, mirror);
+			}
+		}
+
+
+		// DRAW MENU //
+		public void DrawSurface(Menu menu, IMyTextSurface surface)
+		{
+			_frame = surface.DrawFrame();
 
 			MenuPage page = menu.GetCurrentPage();
 

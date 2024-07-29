@@ -42,6 +42,7 @@ namespace IngameScript
         const string LABEL_KEY = "Label Color";
         const string PLACE_HOLDER = "{AUX}";
         const string BLINK_LENGTH = "Blink Length";
+        const string SCREEN_KEY = "Screen Index";
 
         const int PAGE_LIMIT = 9;
         const int CHAR_LIMIT = 7;
@@ -73,6 +74,7 @@ namespace IngameScript
             public string Alignment;
             //public string Decals;
             public Dictionary<int, MenuPage> Pages;
+            public List<IMyTextSurface> Mirrors;
 
             public Color BackgroundColor;
             public Color TitleColor;
@@ -86,6 +88,7 @@ namespace IngameScript
             {
                 //_menusAssigned = true;
                 Pages = new Dictionary<int, MenuPage>();
+                Mirrors = new List<IMyTextSurface>();
 
                 // Default value if no ID recorded in INI
                 int idKey = _menus.Count + 1;
@@ -96,7 +99,7 @@ namespace IngameScript
                 IDNumber = ParseInt(GetKey(MENU_HEAD, ID_KEY, idKey.ToString()), idKey);
 
                 // Set Menu Surface
-                int screenIndex = ParseInt(GetKey(MENU_HEAD, "Screen Index", "0"), 0);
+                int screenIndex = ParseInt(GetKey(MENU_HEAD, SCREEN_KEY, "0"), 0);
                 Surface = SurfaceFromBlock(block as IMyTextSurfaceProvider, screenIndex);
                 PrepareTextSurfaceForSprites(Surface);
 
@@ -493,8 +496,6 @@ namespace IngameScript
             }
         }
 
-        
-
 
         // ASSIGN MENUS //
         void AssignMenus()
@@ -529,6 +530,27 @@ namespace IngameScript
         }
 
 
+        // ASSIGN MIRRORS //
+        void AssignMirrors(Menu menu)
+        {
+            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.SearchBlocksOfName("[MENU " + menu.IDNumber + "]", blocks);
+
+            if(blocks.Count > 0)
+            {
+                foreach(IMyTerminalBlock block in blocks)
+                {
+                    IMyTextSurface surface = GetMirror(block);
+                    if(surface != null)
+                    {
+                        PrepareTextSurfaceForSprites(surface);
+                        menu.Mirrors.Add(surface);
+                    }   
+                }
+            }
+        }
+
+
         // INITIALIZE MENU //
         Menu InitializeMenu(IMyTerminalBlock menuBlock)
         {
@@ -540,6 +562,8 @@ namespace IngameScript
             }
 
             menu.UpdateCustomData();
+            AssignMirrors(menu);
+
             return menu;
         }
 
@@ -626,7 +650,7 @@ namespace IngameScript
                         button.IsTransponder = true;
                 }
             }
-            Echo("E");
+
             button.SetBlockLabel(blockLabelString);
 /*
             if (prefix.Contains("T"))
@@ -1208,6 +1232,32 @@ namespace IngameScript
             menu.CopyPage(sourcePage, destPage);
 
             Build();
+        }
+
+        // GET MIRROR //
+        public IMyTextSurface GetMirror(IMyTerminalBlock block)
+        {
+            if (SameGridID(block))
+            {
+                IMyTextSurfaceProvider provider = block as IMyTextSurfaceProvider;
+
+                int index = 0;
+
+                if (provider.SurfaceCount > 1)
+                {
+                    index = ParseInt(GetKey(block, MENU_HEAD, SCREEN_KEY, "0"), 0);
+
+                    if (index >= provider.SurfaceCount || index < 0)
+                    {
+                        _statusMessage += "INVALID MIRROR SCREEN INDEX:\n" + block.CustomName + "\n";
+                        index = 0;
+                    }
+                }
+
+                return provider.GetSurface(index);
+            }
+
+            return null;
         }
     }
 }

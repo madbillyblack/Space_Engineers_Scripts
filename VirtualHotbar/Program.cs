@@ -118,10 +118,13 @@ namespace IngameScript
 
                 Echo("MENU " + menu.IDNumber + DASHES);
                 Echo(" * Pages: " + menu.PageCount);
+                Echo(" * Mirrors: " + menu.Mirrors.Count);
+                /*
                 foreach(int pageKey in menu.Pages.Keys)
                 {
                     MenuPage page = menu.Pages[pageKey];
                 }
+                */
             }
         }
 
