@@ -84,15 +84,19 @@ namespace IngameScript
 
 			if(menu.Mirrors.Count > 0)
 			{
-				foreach (IMyTextSurface mirror in menu.Mirrors)
-					DrawSurface(menu, mirror);
+				foreach (Mirror mirror in menu.Mirrors)
+					DrawSurface(menu, mirror.Surface, mirror.Alignment);
 			}
 		}
 
 
 		// DRAW MENU //
-		public void DrawSurface(Menu menu, IMyTextSurface surface)
+		public void DrawSurface(Menu menu, IMyTextSurface surface, string alignment = "")
 		{
+			if (alignment == "")
+				alignment = menu.Alignment;
+
+
 			_frame = surface.DrawFrame();
 
 			MenuPage page = menu.GetCurrentPage();
@@ -144,7 +148,7 @@ namespace IngameScript
 
 			// Set Starting Top Edge
 			Vector2 topLeft;
-			switch (menu.Alignment.ToUpper())
+			switch (alignment.ToUpper())
 			{
 				case "TOP":
 					topLeft = center - new Vector2(width * 0.5f, height * 0.5f);
