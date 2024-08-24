@@ -18,13 +18,11 @@ using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Game.ObjectBuilders.VisualScripting;
 using VRageMath;
 
 namespace IngameScript
 {
-
-
-
     partial class Program
     {
         const string COMMS_HEADER = "USAP: Comms";
@@ -35,7 +33,7 @@ namespace IngameScript
         const string CONNECT_LABEL = "Connected Color";
         const string DISCONNECT_LABEL = "Disconnected Color";
         const string DISCONNECT_MSG = "||| DISCONNECTED |||";
-        const string UNCONNECT_MSG = "Searching...";
+        const string UNCONNECT_MSG = "Loading...";
 
         const string DF_CONNECT_COLOR = "0,127,0";
         const string DF_DISCONNECT_COLOR = "24,24,24";
@@ -46,7 +44,8 @@ namespace IngameScript
         public static Dictionary<string, ICommsScreen> _receiverScreens;
         public static Dictionary<string, ICommsScreen> _broadcasterScreens;
 
-        List<string> _broadcasterKeys;
+        public static List<string> _broadcasterKeys;
+        public static Dictionary<int, string> _receiverKeys;
 
         public int _currentBcScreen = 0;
         public int _currentRcScreen = 0;
@@ -66,7 +65,7 @@ namespace IngameScript
             public IMyTextSurface TextSurface { get; set; }
             public DateTime LastLcdReceipt { get; set; }
             
-            public IMyBroadcastListener Listener { get; set; }
+            //public IMyBroadcastListener Listener { get; set; }
 
             public string BroadcastTag { get; set; }
 
@@ -77,8 +76,13 @@ namespace IngameScript
             public Color ConnectedColor { get; set; }
             public Color DisconnectColor { get; set; }
 
-            public LcdRecieverScreen(IMyTextSurface textSurface, string broadcastTag, Color connected, Color disconnected)
+            CommsScreenBlock Parent { get; set; }
+
+            int ReceiverKey { get; set; }
+
+            public LcdRecieverScreen(IMyTextSurface textSurface, string broadcastTag, Color connected, Color disconnected, CommsScreenBlock parent, string channels, int receiverKey)
             {
+                
                 TextSurface = textSurface;
                 TextSurface.ContentType = ContentType.TEXT_AND_IMAGE;
                 BroadcastTag = broadcastTag;
@@ -87,9 +91,12 @@ namespace IngameScript
                 TextSurface.FontColor = DisconnectColor;
                 IsConnected = false;
                 LastLcdReceipt = DateTime.MinValue;
+   
                 LoadLastMessage();
-
                 MessageToScreen(LastMessage, true);
+
+                Parent = parent;
+                ReceiverKey = receiverKey;
             }
 
             public bool IsTimedOut()
@@ -128,7 +135,7 @@ namespace IngameScript
                 else
                     status = "Connected";
 
-                LastLcdReceipt = DateTime.Now;
+                //LastLcdReceipt = DateTime.Now;
                 LastMessage = message;
                 TextSurface.WriteText(BroadcastTag + " - " + status + "\n" + LastMessage);
 
@@ -138,6 +145,15 @@ namespace IngameScript
                     TextSurface.FontColor = ConnectedColor;
                     TextSurface.ClearImagesFromSelection();
                 }
+            }
+
+
+            public void Disconnect(string reason)
+            {
+                IsConnected = false;
+                TextSurface.FontColor = DisconnectColor;
+                TextSurface.AddImageToSelection("Danger");
+                TextSurface.WriteText(BroadcastTag + " - " + DISCONNECT_MSG + "\n" + reason + "\n" + LastMessage);
             }
         }
 
@@ -213,12 +229,15 @@ namespace IngameScript
                     }
                     else if (cmd == LISTEN)
                     {
-                        Color connectedColor = ParseColor(IniHandler.GetKey(COMMS_HEADER, CONNECT_LABEL, DF_CONNECT_COLOR));
-                        Color disconnectColor = ParseColor(IniHandler.GetKey(COMMS_HEADER, DISCONNECT_LABEL, DF_DISCONNECT_COLOR));
+                        string screenHeader = COMMS_HEADER + " Screen " + index;
+                        Color connectedColor = ParseColor(IniHandler.GetKey(screenHeader, CONNECT_LABEL, DF_CONNECT_COLOR));
+                        Color disconnectColor = ParseColor(IniHandler.GetKey(screenHeader, DISCONNECT_LABEL, DF_DISCONNECT_COLOR));
+                        string channelList = IniHandler.GetKey(COMMS_HEADER, "Channels", channel);
+                        int receiverKey = ParseInt(IniHandler.GetKey(screenHeader, "Screen " + index + " ID", _receiverKeys.Count().ToString()), _receiverKeys.Count());
+                        _receiverKeys.Add(receiverKey, channel);
 
-                        _receiverScreens.Add(channel, new LcdRecieverScreen(surface, channel, connectedColor, disconnectColor));
-                    }
-                        
+                        _receiverScreens.Add(channel, new LcdRecieverScreen(surface, channel, connectedColor, disconnectColor, this, channelList, receiverKey));
+                    }                        
                 }
                 catch
                 {
@@ -244,7 +263,10 @@ namespace IngameScript
 
         public void AssignComms()
         {
+            AssignChannelListeners();
+
             _receiverScreens = new Dictionary<string, ICommsScreen>();
+            _receiverKeys = new Dictionary<int, string>();
             _broadcasterScreens = new Dictionary<string, ICommsScreen>();
 
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
@@ -270,8 +292,6 @@ namespace IngameScript
                 _broadcastTick = Math.Abs((int)Me.CubeGrid.EntityId) % _breather.Length;
                 _broadcasterKeys = _broadcasterScreens.Keys.ToList();
             }
-
-            RegisterReceivers();
         }
 
         public void ExecuteComms(UpdateType updateSource)
@@ -285,7 +305,7 @@ namespace IngameScript
                 BroadcastCurrentScreen();
             }
 
-            CheckCurrentReceiverConnection();
+            UpdateCurrentReceiver();
         }
 
 
@@ -342,6 +362,7 @@ namespace IngameScript
             }
         }
 
+        /*
         public void RegisterReceiver(LcdRecieverScreen receiver)
         {
             receiver.Listener = IGC.RegisterBroadcastListener(receiver.BroadcastTag);
@@ -356,38 +377,48 @@ namespace IngameScript
 
             foreach(string key in _receiverScreens.Keys)
                 RegisterReceiver(_receiverScreens[key] as LcdRecieverScreen);
-        }
+        }*/
 
 
         public void ReceiveMessages()
         {
-            if( _receiverScreens.Count < 1) return;
+            if( _receiverScreens.Count < 1 || _listeners.Count < 1) return;
 
-            foreach (LcdRecieverScreen screen in _receiverScreens.Values)
+            foreach (ChannelListener channelListener in _listeners.Values)
             {
-                while (screen.Listener.HasPendingMessage)
+                while (channelListener.Listener.HasPendingMessage)
                 {
-                    MyIGCMessage message = screen.Listener.AcceptMessage();
-                    screen.MessageToScreen(message.Data.ToString());
+                    MyIGCMessage message = channelListener.Listener.AcceptMessage();
+                    channelListener.Message = message.Data.ToString();
+                    channelListener.LastReceived = DateTime.Now;
                 }
             }
         }
 
 
-        public void CheckCurrentReceiverConnection()
+        public void UpdateCurrentReceiver()
         {
             if (_receiverScreens.Count < 1) return;
 
-            List<string> keys = _receiverScreens.Keys.ToList();
-            LcdRecieverScreen screen = _receiverScreens[keys[GetCurrentRecieverIndex()]] as LcdRecieverScreen;
+            //List<string> keys = _receiverScreens.Keys.ToList();
+            LcdRecieverScreen screen = _receiverScreens[_receiverKeys[GetCurrentRecieverIndex()]] as LcdRecieverScreen;
 
-            if(screen.IsConnected && screen.IsTimedOut())
+            if(!_listeners.ContainsKey(screen.BroadcastTag))
             {
-                screen.IsConnected = false;
-                screen.TextSurface.FontColor = screen.DisconnectColor;
-                screen.TextSurface.AddImageToSelection("Danger");
-                screen.TextSurface.WriteText(screen.BroadcastTag + " - "+ DISCONNECT_MSG + "\n" + screen.LastMessage);
+                screen.Disconnect("Channel Not Found");
+                return;
             }
+
+            ChannelListener channelListener = _listeners[screen.BroadcastTag];
+
+            if (channelListener.IsTimedOut())
+            {
+                screen.Disconnect("Signal Timed Out");
+                return;
+            }
+                
+            screen.MessageToScreen(channelListener.Message);
         }
+
     }
 }
