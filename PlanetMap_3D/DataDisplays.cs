@@ -158,7 +158,7 @@ namespace IngameScript
 			string GetScrolledPage(List<string> entries)
 			{
 				string output = "";
-
+				
 				if (entries.Count > 0)
 				{
 					// If display is scrolled past the end of the page, set it to the end of the page
@@ -441,10 +441,10 @@ namespace IngameScript
 		// UPDATE PLANET DATA PAGE //
 		void UpdatePlanetDataPage()
         {
-			if (!_planets)
-				return;
-			_planetDataPage = new List<string>();
+            _planetDataPage = new List<string>();
 
+            if (!_planets)
+				return;
 
 			foreach (Planet planet in _planetList)
             {

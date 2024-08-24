@@ -199,7 +199,7 @@ namespace IngameScript
         string _cruiseTag;
         float _cruiseFactor = 1;
         static List<IMyThrust> _cruiseThrusters;
-        readonly static string[] _breather = {"|", "/","--", "\\"};
+        readonly static string[] _breather = {"|", "/","--", "\\", "|", "/", "--", "\\"};
         static Byte _breath;
 
         static bool _autoCycle; // TRUE if script is continuously running. FALSE if single execute.

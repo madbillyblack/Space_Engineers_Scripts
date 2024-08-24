@@ -22,6 +22,9 @@ using VRageMath;
 
 namespace IngameScript
 {
+
+
+
     partial class Program
     {
         const string COMMS_HEADER = "USAP: Comms";
@@ -43,8 +46,11 @@ namespace IngameScript
         public static Dictionary<string, ICommsScreen> _receiverScreens;
         public static Dictionary<string, ICommsScreen> _broadcasterScreens;
 
+        List<string> _broadcasterKeys;
+
         public int _currentBcScreen = 0;
         public int _currentRcScreen = 0;
+        public int _broadcastTick = -1; // Tick on which messages will be broadcast
 
         // ICOMMSSCREEN //
         public interface ICommsScreen
@@ -259,6 +265,12 @@ namespace IngameScript
 
             _commsEnabled = _broadcasterScreens.Count() + _receiverScreens.Count() > 0;
 
+            if (_broadcasterScreens.Count > 0)
+            {
+                _broadcastTick = Math.Abs((int)Me.CubeGrid.EntityId) % _breather.Length;
+                _broadcasterKeys = _broadcasterScreens.Keys.ToList();
+            }
+
             RegisterReceivers();
         }
 
@@ -277,15 +289,16 @@ namespace IngameScript
         }
 
 
-
-
-
         public void ShowBroadcastData()
         {
             if(!_commsEnabled) return;
 
             Echo("Broadcast Screen: " + _broadcasterScreens.Count());
             Echo("Receiver Screens: " + _receiverScreens.Count());
+            Echo("Broadcast Tick:" + _broadcastTick);
+
+            if (_breath == _broadcastTick)
+                Echo("BROADCASTING");
         }
 
         public int GetCurrentBroadCasterIndex()
@@ -310,14 +323,23 @@ namespace IngameScript
 
         public void BroadcastCurrentScreen()
         {
-            List<string> keys = _broadcasterScreens.Keys.ToList();
-            ICommsScreen screen = _broadcasterScreens[keys[GetCurrentBroadCasterIndex()]];
+            try
+            {
+                if (_breath != _broadcastTick)
+                    return;
 
-            StringBuilder stringBuilder = new StringBuilder();
-            screen.TextSurface.ReadText(stringBuilder);
-            string message = stringBuilder.ToString();
+                ICommsScreen screen = _broadcasterScreens[_broadcasterKeys[GetCurrentBroadCasterIndex()]];
 
-            IGC.SendBroadcastMessage(screen.BroadcastTag, message);
+                StringBuilder stringBuilder = new StringBuilder();
+                screen.TextSurface.ReadText(stringBuilder);
+                string message = stringBuilder.ToString();
+
+                IGC.SendBroadcastMessage(screen.BroadcastTag, message);
+            }
+            catch (Exception ex)
+            {
+                _statusMessage += ex.Message + "\n";
+            }
         }
 
         public void RegisterReceiver(LcdRecieverScreen receiver)
