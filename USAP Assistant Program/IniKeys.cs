@@ -25,7 +25,9 @@ namespace IngameScript
         const string SHARED = "Shared Data";
         const string GRID_KEY = "Grid_ID";
         static string _gridID;
-        static MyIni _programIni;
+        //static MyIni _programIni;
+
+        static MyIniHandler _programIniHandler;
 
         public class MyIniHandler
         {
@@ -51,7 +53,7 @@ namespace IngameScript
                 return Ini.Get(header, key).ToString(); ;
             }
 
-            private void EnsureKey(string header, string key, string defaultVal)
+            public void EnsureKey(string header, string key, string defaultVal)
             {
                 if (!Ini.ContainsKey(header, key))
                     SetKey(header, key, defaultVal);
@@ -108,7 +110,7 @@ namespace IngameScript
             return iniOuti;
         }
 
-
+        /*
         // GET PROGRAM KEY //
         static string GetProgramKey(string keyName, string defaultString)
         {
@@ -131,7 +133,7 @@ namespace IngameScript
             if (!_programIni.ContainsKey(INI_HEAD, keyName))
                 SetProgramKey(keyName, defaultString);
         }
-
+        */
 
         // SET GRID ID // Updates Grid ID parameter for all designated blocks in Grid, then rebuilds the grid.
         void SetGridID(string arg)

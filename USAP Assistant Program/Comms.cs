@@ -26,7 +26,7 @@ namespace IngameScript
 {
     partial class Program
     {
-        const string COMMS_HEADER = "USAP: Comms";
+        const string COMMS_HEADER = "USAP Comms";
         const string DF_LCD_COMTAG = "USAP Channel";
         const string LCD_COMMS_LABEL = "LCD Channel";
         const string BROADCAST = "BROADCAST";

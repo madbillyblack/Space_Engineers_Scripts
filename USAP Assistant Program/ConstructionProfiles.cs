@@ -200,7 +200,7 @@ namespace IngameScript
         // ADD PROFILE TO LIST //
         void AddProfileToList(string profileName)
         {
-            string oldList = GetKey(Me, INI_HEAD, "Profiles", PROFILE_LIST);
+            string oldList = _programIniHandler.GetKey(INI_HEAD, "Profiles", PROFILE_LIST);
             string[] profileList = oldList.Split(',');
 
             foreach(string profile in profileList)
@@ -211,7 +211,7 @@ namespace IngameScript
                 }
             }
 
-            SetKey(Me, INI_HEAD, "Profiles", profileName + "," + oldList);
+            _programIniHandler.SetKey(INI_HEAD, "Profiles", profileName + "," + oldList);
         }
     }
 }

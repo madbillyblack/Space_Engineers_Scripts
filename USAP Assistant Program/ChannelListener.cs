@@ -61,8 +61,8 @@ namespace IngameScript
         public void AssignChannelListeners()
         {
             _listeners = new Dictionary<string, ChannelListener>();
-            string [] channels = GetProgramKey(LISTENER_KEY, _defaultChannels).Split('\n');
-            _listenerTimeOut = ParseInt(GetProgramKey("Listener Time Out", _listenerTimeOut.ToString()), _listenerTimeOut);
+            string [] channels = _programIniHandler.GetKey(COMMS_HEADER,LISTENER_KEY, _defaultChannels).Split('\n');
+            _listenerTimeOut = ParseInt(_programIniHandler.GetKey(COMMS_HEADER, "Listener Time Out", _listenerTimeOut.ToString()), _listenerTimeOut);
 
             foreach (string channel in channels)
             {

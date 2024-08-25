@@ -23,6 +23,7 @@ namespace IngameScript
     partial class Program
     {
         const float CRUISE_STEP = 10;
+        const string CRUISE_HEADER = "USAP Cruise Control";
 
         float _totalThrust;
         static float _targetThrottle;
@@ -216,14 +217,7 @@ namespace IngameScript
         void AssignThrusters()
         {
             _cruiseThrusters = new List<IMyThrust>();
-            _cruiseTag = GetKey(Me, INI_HEAD, "Cruise Thrusters", "");
-
-            float[] gains = GainsFromString(GetKey(Me, INI_HEAD, "Cruise Gains", "1,0,0"));
-
-            // Set user gain factors
-            _cruiseFactor = gains[0];
-            _ki = gains[1];
-            _kd = gains[2];        
+            _cruiseTag = _programIniHandler.GetKey(CRUISE_HEADER, "Cruise Thrusters", "");     
 
             if (_cruiseTag == "")
                 return;
@@ -238,6 +232,14 @@ namespace IngameScript
 
             cruiseGroup.GetBlocksOfType<IMyThrust>(_cruiseThrusters);
             _statusMessage += "CRUISE THRUSTERS: " + _cruiseTag + "\nThruster Count: " + _cruiseThrusters.Count + "\n";
+
+            float[] gains = GainsFromString(_programIniHandler.GetKey(CRUISE_HEADER, "Cruise Gains", "1,0,0"));
+
+            // Set user gain factors
+            _cruiseFactor = gains[0];
+            _ki = gains[1];
+            _kd = gains[2];
+
             //AssignThrustDisplay();
         }
 
