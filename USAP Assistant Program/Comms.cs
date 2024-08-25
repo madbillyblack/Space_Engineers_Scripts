@@ -27,7 +27,7 @@ namespace IngameScript
     partial class Program
     {
         const string COMMS_HEADER = "USAP: Comms";
-        const string DF_LCD_COMTAG = "LFS Open Channel";
+        const string DF_LCD_COMTAG = "USAP Channel";
         const string LCD_COMMS_LABEL = "LCD Channel";
         const string BROADCAST = "BROADCAST";
         const string LISTEN = "LISTEN";
@@ -51,6 +51,8 @@ namespace IngameScript
         public int _currentBcScreen = 0;
         public int _currentRcScreen = 0;
         public int _broadcastTick = -1; // Tick on which messages will be broadcast
+
+        public static int _listenerTimeOut = 20;
 
         // ICOMMSSCREEN //
         public interface ICommsScreen
@@ -102,11 +104,6 @@ namespace IngameScript
                 ReceiverKey = receiverKey;
             }
 
-            public bool IsTimedOut()
-            {
-                return DateTime.Now - LastLcdReceipt > TimeSpan.FromSeconds(BROADCAST_TIMEOUT);
-            }
-
             private void LoadLastMessage()
             {
 
@@ -139,8 +136,13 @@ namespace IngameScript
                     status = "Connected";
 
                 //LastLcdReceipt = DateTime.Now;
+                string id = "";
+                if (_receiverScreens.Count > 1)
+                    id = "(" + ReceiverKey + ") ";
+
+
                 LastMessage = message;
-                TextSurface.WriteText(BroadcastTag + " - " + status + "\n" + LastMessage);
+                TextSurface.WriteText(id + BroadcastTag + " - " + status + "\n" + LastMessage);
 
                 if (!IsConnected)
                 {

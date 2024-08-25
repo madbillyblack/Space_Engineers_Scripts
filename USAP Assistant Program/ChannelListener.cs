@@ -26,9 +26,9 @@ namespace IngameScript
         static Dictionary<string, ChannelListener> _listeners;
 
         const string LISTENER_KEY = "Receiver Channels";
-        static string _defaultChannels = DF_LCD_COMTAG + "0\n" +
-                                DF_LCD_COMTAG + "1\n" +
-                                DF_LCD_COMTAG + "2";
+        static string _defaultChannels = DF_LCD_COMTAG + " 0\n" +
+                                DF_LCD_COMTAG + " 1\n" +
+                                DF_LCD_COMTAG + " 2";
 
         public class ChannelListener
         {
@@ -46,7 +46,7 @@ namespace IngameScript
 
             public bool IsTimedOut()
             {
-                return DateTime.Now - LastReceived > TimeSpan.FromSeconds(BROADCAST_TIMEOUT);
+                return DateTime.Now - LastReceived > TimeSpan.FromSeconds(_listenerTimeOut);
             }
         }
 
@@ -62,6 +62,7 @@ namespace IngameScript
         {
             _listeners = new Dictionary<string, ChannelListener>();
             string [] channels = GetProgramKey(LISTENER_KEY, _defaultChannels).Split('\n');
+            _listenerTimeOut = ParseInt(GetProgramKey("Listener Time Out", _listenerTimeOut.ToString()), _listenerTimeOut);
 
             foreach (string channel in channels)
             {
