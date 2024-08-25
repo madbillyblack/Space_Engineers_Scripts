@@ -174,6 +174,13 @@ namespace IngameScript
                     case "CALL_PHASE":
                         CallPhase(cmdArg);
                         break;
+                    case "NEXT_CHANNEL":
+                        CycleReceiverChannel(cmdArg, false);
+                        break;
+                    case "LAST_CHANNEL":
+                    case "PREVIOUS_CHANNEL":
+                        CycleReceiverChannel(cmdArg, true);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;

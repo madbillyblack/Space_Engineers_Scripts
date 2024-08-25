@@ -616,5 +616,40 @@ namespace IngameScript
             if (retractVelocity != "")
                 SetKey(block, INI_HEAD, "Extend Velocity", retractVelocity);
         }
+
+
+        static string CycleListener(string currentChannel, bool previous = false)
+        {
+            if (_listeners.Count < 1)
+                return currentChannel;
+
+            List<string> keys = _listeners.Keys.ToList();
+
+            if (!_listeners.Keys.Contains(currentChannel))
+                return keys[0];
+
+            for (int i = 0; i < _listeners.Count; i++)
+            {
+                if (keys[i] == currentChannel)
+                {
+                    if (previous)
+                    {
+                        i--;
+                        if( i < 0 )
+                            i = keys.Count - 1;
+                    }
+                    else
+                    {
+                        i++;
+                        if (i >= keys.Count)
+                            i = 0;
+                    }
+
+                    return keys[i];
+                }
+            }
+
+            return currentChannel;
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.EntityComponents;
+﻿using Sandbox.Game.Debugging;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI.Ingame;
@@ -41,11 +42,11 @@ namespace IngameScript
         //IMyBroadcastListener _listener;
         bool _commsEnabled;
 
-        public static Dictionary<string, ICommsScreen> _receiverScreens;
+        public static Dictionary<int, ICommsScreen> _receiverScreens;
         public static Dictionary<string, ICommsScreen> _broadcasterScreens;
 
         public static List<string> _broadcasterKeys;
-        public static Dictionary<int, string> _receiverKeys;
+        public static List<int> _receiverKeys;
 
         public int _currentBcScreen = 0;
         public int _currentRcScreen = 0;
@@ -79,8 +80,9 @@ namespace IngameScript
             CommsScreenBlock Parent { get; set; }
 
             int ReceiverKey { get; set; }
+            int ScreenIndex { get; set; }
 
-            public LcdRecieverScreen(IMyTextSurface textSurface, string broadcastTag, Color connected, Color disconnected, CommsScreenBlock parent, string channels, int receiverKey)
+            public LcdRecieverScreen(IMyTextSurface textSurface, string broadcastTag, Color connected, Color disconnected, CommsScreenBlock parent, int receiverKey, int screenIndex)
             {
                 
                 TextSurface = textSurface;
@@ -91,7 +93,8 @@ namespace IngameScript
                 TextSurface.FontColor = DisconnectColor;
                 IsConnected = false;
                 LastLcdReceipt = DateTime.MinValue;
-   
+                ScreenIndex = screenIndex;
+
                 LoadLastMessage();
                 MessageToScreen(LastMessage, true);
 
@@ -147,13 +150,19 @@ namespace IngameScript
                 }
             }
 
-
             public void Disconnect(string reason)
             {
                 IsConnected = false;
                 TextSurface.FontColor = DisconnectColor;
                 TextSurface.AddImageToSelection("Danger");
                 TextSurface.WriteText(BroadcastTag + " - " + DISCONNECT_MSG + "\n" + reason + "\n" + LastMessage);
+            }
+
+
+            public void CycleChannel(bool previous = false)
+            {
+                BroadcastTag = CycleListener(BroadcastTag, previous);
+                Parent.IniHandler.SetKey(COMMS_HEADER, "Screen Channel " + ScreenIndex, LISTEN + ":" + BroadcastTag);
             }
         }
 
@@ -223,6 +232,8 @@ namespace IngameScript
 
                 try
                 {
+
+
                     if (cmd == BROADCAST)
                     {
                         _broadcasterScreens.Add(channel, new LcdBroadcasterScreen(surface, channel));
@@ -232,16 +243,15 @@ namespace IngameScript
                         string screenHeader = COMMS_HEADER + " Screen " + index;
                         Color connectedColor = ParseColor(IniHandler.GetKey(screenHeader, CONNECT_LABEL, DF_CONNECT_COLOR));
                         Color disconnectColor = ParseColor(IniHandler.GetKey(screenHeader, DISCONNECT_LABEL, DF_DISCONNECT_COLOR));
-                        string channelList = IniHandler.GetKey(COMMS_HEADER, "Channels", channel);
-                        int receiverKey = ParseInt(IniHandler.GetKey(screenHeader, "Screen " + index + " ID", _receiverKeys.Count().ToString()), _receiverKeys.Count());
-                        _receiverKeys.Add(receiverKey, channel);
+                        //string channelList = IniHandler.GetKey(COMMS_HEADER, "Channels", channel);
+                        int receiverKey = ParseInt(IniHandler.GetKey(screenHeader, "Screen " + index + " ID", _receiverScreens.Count().ToString()), _receiverScreens.Count());
 
-                        _receiverScreens.Add(channel, new LcdRecieverScreen(surface, channel, connectedColor, disconnectColor, this, channelList, receiverKey));
+                        _receiverScreens.Add(receiverKey, new LcdRecieverScreen(surface, channel, connectedColor, disconnectColor, this, receiverKey, index));
                     }                        
                 }
-                catch
+                catch (Exception ex)
                 {
-                    _statusMessage += "Error Adding "+ Block.CustomName +"\n At: " + channel + "\n";
+                    _statusMessage += "Error Adding "+ Block.CustomName +"\n At: " + channel + "\n" + ex.Message + "\n";
                 }
             }
 
@@ -265,8 +275,7 @@ namespace IngameScript
         {
             AssignChannelListeners();
 
-            _receiverScreens = new Dictionary<string, ICommsScreen>();
-            _receiverKeys = new Dictionary<int, string>();
+            _receiverScreens = new Dictionary<int, ICommsScreen>();
             _broadcasterScreens = new Dictionary<string, ICommsScreen>();
 
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
@@ -285,6 +294,7 @@ namespace IngameScript
                 }
             }
 
+            _receiverKeys = _receiverScreens.Keys.ToList<int>();
             _commsEnabled = _broadcasterScreens.Count() + _receiverScreens.Count() > 0;
 
             if (_broadcasterScreens.Count > 0)
@@ -331,13 +341,13 @@ namespace IngameScript
         }
 
 
-        public int GetCurrentRecieverIndex()
+        public int GetCurrentRecieverKey()
         {
             _currentRcScreen++;
-            if(_currentRcScreen >= _receiverScreens.Count)
+            if(_currentRcScreen >= _receiverKeys.Count)
                 _currentRcScreen = 0;
 
-            return _currentRcScreen;
+            return _receiverKeys[_currentRcScreen];
         }
 
 
@@ -362,23 +372,6 @@ namespace IngameScript
             }
         }
 
-        /*
-        public void RegisterReceiver(LcdRecieverScreen receiver)
-        {
-            receiver.Listener = IGC.RegisterBroadcastListener(receiver.BroadcastTag);
-            receiver.Listener.SetMessageCallback(receiver.BroadcastTag);
-        }
-
-
-        public void RegisterReceivers()
-        {
-            if (_receiverScreens.Count < 1)
-                return;
-
-            foreach(string key in _receiverScreens.Keys)
-                RegisterReceiver(_receiverScreens[key] as LcdRecieverScreen);
-        }*/
-
 
         public void ReceiveMessages()
         {
@@ -400,8 +393,7 @@ namespace IngameScript
         {
             if (_receiverScreens.Count < 1) return;
 
-            //List<string> keys = _receiverScreens.Keys.ToList();
-            LcdRecieverScreen screen = _receiverScreens[_receiverKeys[GetCurrentRecieverIndex()]] as LcdRecieverScreen;
+            LcdRecieverScreen screen = _receiverScreens[GetCurrentRecieverKey()] as LcdRecieverScreen;
 
             if(!_listeners.ContainsKey(screen.BroadcastTag))
             {
@@ -420,5 +412,39 @@ namespace IngameScript
             screen.MessageToScreen(channelListener.Message);
         }
 
+        public LcdRecieverScreen GetReceiver(int receiverId)
+        {
+            if(_receiverScreens.Count < 1) {
+                _statusMessage += "No Recievers Detected!\n";
+                return null;
+            }
+
+            if (receiverId == -1)
+                return _receiverScreens[_receiverScreens.Keys.Min()] as LcdRecieverScreen;
+
+            if (_receiverScreens.Keys.Contains(receiverId))
+                return _receiverScreens[receiverId] as LcdRecieverScreen;
+
+            _statusMessage += "Receiver " + receiverId + " Not Found!\n";
+
+            return null;
+        }
+
+
+        public void CycleReceiverChannel(string receiverId, bool previous)
+        {
+            int id;
+
+            if (receiverId == "")
+                id = -1;
+            else
+                id = ParseInt(receiverId, -2);
+
+            LcdRecieverScreen receiverScreen = GetReceiver(id);
+
+            if (receiverScreen == null) return;
+
+            receiverScreen.CycleChannel(previous);
+        }
     }
 }

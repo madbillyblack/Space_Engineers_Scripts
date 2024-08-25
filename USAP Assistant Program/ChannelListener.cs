@@ -23,7 +23,7 @@ namespace IngameScript
 {
     partial class Program
     {
-        Dictionary<string, ChannelListener> _listeners;
+        static Dictionary<string, ChannelListener> _listeners;
 
         const string LISTENER_KEY = "Receiver Channels";
         static string _defaultChannels = DF_LCD_COMTAG + "0\n" +
