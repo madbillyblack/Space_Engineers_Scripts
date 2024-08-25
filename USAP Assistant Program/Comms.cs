@@ -154,17 +154,25 @@ namespace IngameScript
 
             public void Disconnect(string reason)
             {
+                string id = "";
+                if (_receiverScreens.Count > 1)
+                    id = "(" + ReceiverKey + ") ";
+
                 IsConnected = false;
                 TextSurface.FontColor = DisconnectColor;
                 TextSurface.AddImageToSelection("Danger");
-                TextSurface.WriteText(BroadcastTag + " - " + DISCONNECT_MSG + "\n" + reason + "\n" + LastMessage);
+                TextSurface.WriteText(id + BroadcastTag + " - " + DISCONNECT_MSG + "\n" + reason + "\n" + LastMessage);
             }
 
 
             public void CycleChannel(bool previous = false)
             {
+                string screenLabel = "Screen Channel";
+                if ((Parent.Block as IMyTextSurfaceProvider).SurfaceCount > 1)
+                    screenLabel += " " + ScreenIndex;
+
                 BroadcastTag = CycleListener(BroadcastTag, previous);
-                Parent.IniHandler.SetKey(COMMS_HEADER, "Screen Channel " + ScreenIndex, LISTEN + ":" + BroadcastTag);
+                Parent.IniHandler.SetKey(COMMS_HEADER, screenLabel, LISTEN + ":" + BroadcastTag);
             }
         }
 
