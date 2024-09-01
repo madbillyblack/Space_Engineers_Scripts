@@ -181,6 +181,13 @@ namespace IngameScript
                     case "PREVIOUS_CHANNEL":
                         CycleReceiverChannel(cmdArg, true);
                         break;
+                    case "NEXT_SUBCHANNEL":
+                        CycleReceiverSubChannel(cmdArg, false);
+                        break;
+                    case "LAST_SUBCHANNEL":
+                    case "PREVIOUS_SUBCHANNEL":
+                        CycleReceiverSubChannel(cmdArg, true);
+                        break;
                     default:
                         TriggerCall(argument);
                         break;

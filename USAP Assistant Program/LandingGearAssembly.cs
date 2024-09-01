@@ -620,15 +620,15 @@ namespace IngameScript
 
         static string CycleListener(string currentChannel, bool previous = false)
         {
-            if (_listeners.Count < 1)
+            if (_channels.Count < 1)
                 return currentChannel;
 
-            List<string> keys = _listeners.Keys.ToList();
+            List<string> keys = _channels.Keys.ToList();
 
-            if (!_listeners.Keys.Contains(currentChannel))
+            if (!_channels.Keys.Contains(currentChannel))
                 return keys[0];
 
-            for (int i = 0; i < _listeners.Count; i++)
+            for (int i = 0; i < _channels.Count; i++)
             {
                 if (keys[i] == currentChannel)
                 {

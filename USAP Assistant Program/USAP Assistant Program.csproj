@@ -41,7 +41,7 @@
   <Import Project="MDK/MDK.options.props" />
   <Import Project="MDK/MDK.paths.props" Condition="exists('MDK/MDK.paths.props')" />
   <ItemGroup>
-    <Compile Include="ChannelListener.cs" />
+    <Compile Include="SubChannel.cs" />
     <Compile Include="DisplayRelay.cs" />
     <Compile Include="DisplayTurret.cs" />
     <Compile Include="Comms.cs" />

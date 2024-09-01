@@ -42,9 +42,13 @@ namespace IngameScript
         const string DISPLAY_TAG = "USAP Display"; // Tag used to find blocks to use as LCD displays
 
         const string MENU_TAG = "[MENU]"; // Tag use to assign constext menus to block
-
+      
         //const int BROADCAST_TIMEOUT = 30; // Length of time (in seconds) required to consider broadcast disconnected.
-        const string COMMS_SCREEN_TAG = "[COMMS]"; // Tag to designate screens for sending and receiving data
+        const string COMMS_SCREEN_TAG = "[COMMS"; // Tag to designate screens for sending and receiving data
+        const string RECEIVER_TAG = "-RCV]"; //Tag to designate screens for receiving data
+
+
+        const char COMMS_SEPARATOR = ';'; // Separator for broadcast message data.  Needs to be a character that isn't used in your messages!
 
         const string SLASHES = "///////////////";
         const string DASHES = " ------------------- ";
