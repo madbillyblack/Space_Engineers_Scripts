@@ -814,5 +814,11 @@ namespace IngameScript
             pos = position - new Vector2(scale * 0.1f, 0);
             DrawTexture(CIRCLE, pos, new Vector2(scale * 0.2f, scale * 0.2f), 0, color);
         }
+
+		void DrawItem(Vector2 position, float scale)
+		{
+			DrawTexture("MyObjectBuilder_Component/EngineerPlushie", position - new Vector2(scale*0.5f, 0), new Vector2(scale, scale), 0, Color.White);
+		}
+
     }
 }

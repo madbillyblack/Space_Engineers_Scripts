@@ -26,9 +26,11 @@ namespace IngameScript
         static Dictionary<string, ChannelListener> _listeners;
 
         const string LISTENER_KEY = "Receiver Channels";
-        static string _defaultChannels = DF_LCD_COMTAG + " 0\n" +
-                                DF_LCD_COMTAG + " 1\n" +
-                                DF_LCD_COMTAG + " 2";
+        static string _defaultChannels = DF_LCD_COMTAG + "0\n" +
+                                DF_LCD_COMTAG + "1\n" +
+                                DF_LCD_COMTAG + "2\n" +
+                                DF_LCD_COMTAG + "3\n" +
+                                DF_LCD_COMTAG + "4";
 
         public class ChannelListener
         {

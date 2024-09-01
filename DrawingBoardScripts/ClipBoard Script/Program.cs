@@ -24,6 +24,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         IMyTextSurface _surface;
+
         IMyTextSurface _outbox;
         List<IMyCameraBlock> _cameras;
         string _castData;
@@ -43,6 +44,7 @@ namespace IngameScript
         string _broadCastTag = "MDK IGC EXAMPLE 1";
         const string EXCLUDE = "EXCLUDE";
         IMyBroadcastListener _myBroadcastListener;
+        IMyConveyorSorter _sorter;
 
 
 
@@ -63,13 +65,21 @@ namespace IngameScript
             _ini = GetIni(Me);
             _surface = Me.GetSurface(0);
             _surface.ContentType = ContentType.TEXT_AND_IMAGE;
-            _outbox = GetDefaultSurface();            
+            _outbox = GetDefaultSurface();
+            
+
+            List<IMyConveyorSorter> sorters = new List<IMyConveyorSorter>();
+            GridTerminalSystem.GetBlocksOfType<IMyConveyorSorter>(sorters);
+            if(sorters.Count > 0)
+                _sorter = sorters.First();
+
+
             /*
             // Broadcast INIT
             Echo("Creator");
             _myBroadcastListener = IGC.RegisterBroadcastListener(_broadCastTag);
             _myBroadcastListener.SetMessageCallback(_broadCastTag);
-            */
+
             _blocks = new List<IMyTerminalBlock>();
             _actions = new List<ITerminalAction>();
 
@@ -83,7 +93,7 @@ namespace IngameScript
 
 
 
-            /*
+            
                         _cameras = new List<IMyCameraBlock>();
                         GridTerminalSystem.GetBlocksOfType<IMyCameraBlock>(_cameras);
 
@@ -127,9 +137,49 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             //List<IMyTerminalAction> actions = new List<IMyTerminalAction>();
-            _surface.WriteText("");
+            //_surface.WriteText("");
 
-            PrintBlockTypes();
+            List<MyInventoryItemFilter> filters = new List<MyInventoryItemFilter>();
+
+
+            if (_sorter != null)
+                _sorter.GetFilterList(filters);
+
+
+            if(argument == "ADD_ICE")
+            {
+                filters.Add(new MyInventoryItemFilter("MyObjectBuilder_Ore/Ice"));
+                _sorter.SetFilter(MyConveyorSorterMode.Whitelist, filters);
+            }
+            else if(argument == "REMOVE_ICE")
+            {
+                _sorter.RemoveItem(new MyInventoryItemFilter("MyObjectBuilder_Ore/Ice"));
+            }
+            else if (argument == "ADD_ORE")
+            {
+                filters.Add(new MyInventoryItemFilter("MyObjectBuilder_Ore/(null)"));
+                _sorter.SetFilter(MyConveyorSorterMode.Whitelist, filters);
+            }
+            else if (argument == "REMOVE_ORE")
+            {
+                _sorter.RemoveItem(new MyInventoryItemFilter("MyObjectBuilder_Ore/(null)"));
+            }
+
+            if (filters.Count < 1)
+            {
+                _surface.WriteText("No Filters");
+                return;
+            }
+
+            string output = "";
+
+            foreach(MyInventoryItemFilter filter in filters)
+            {
+                output += filter.ItemType.ToString() + "\n";
+            }
+
+            _surface.WriteText(output);
+            //PrintBlockTypes();
 
             /*
             foreach (IMyTerminalBlock block in _blocks)
