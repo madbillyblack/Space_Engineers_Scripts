@@ -930,12 +930,14 @@ namespace IngameScript
                     channel = ParseInt(args[1], 0);
                 }
 
-                string action = args[0].ToUpper();                
+                string action = args[0].ToUpper();
 
                 if (action == "SET")
                     transponder.Channel = channel;
                 else if (action == "SEND")
                     transponder.SendSignal(channel);
+                else
+                    transponder.GetActionWithName(button.Action).Apply(transponder);
             }
             catch (Exception e)
             {
