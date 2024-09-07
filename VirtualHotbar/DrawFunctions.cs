@@ -183,11 +183,15 @@ namespace IngameScript
 			if (_menus.Count > 1)
 				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.RIGHT, titleColor);
 
-			// Buttons
-			if (widescreen)
-				DrawSingleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, fontSize);
-			else
-				DrawDoubleButtonRow(menu, page, viewport, topLeft, cellWidth, buttonHeight, rowCount, fontSize);
+			
+			if(page.Buttons.Count > 0)
+			{
+                // Buttons
+                if (widescreen)
+                    DrawSingleButtonRow(menu, page, topLeft, cellWidth, buttonHeight, fontSize);
+                else
+                    DrawDoubleButtonRow(menu, page, viewport, topLeft, cellWidth, buttonHeight, rowCount, fontSize);
+            }
 
 			_frame.Dispose();
 		}
@@ -204,7 +208,9 @@ namespace IngameScript
 			Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.175f);
 			//Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
-			for (int i = 1; i < menu.MaxButtons + 1; i++)
+			List<int> keys= page.Buttons.Keys.ToList();
+
+			foreach (int i in keys)
 			{
 				MenuButton button = page.Buttons[i];
 
@@ -222,18 +228,47 @@ namespace IngameScript
 			Color buttonColor = menu.ButtonColor;
 			Color bgColor = menu.BackgroundColor;
 
+			int rowA, rowB;
+
+			if(page.Buttons.Count > rowCount)
+			{
+				rowA = rowCount;
+				rowB = page.Buttons.Count; // Used for the end of for-loop when counting from middle of list
+			}
+			else
+			{
+				rowA = page.Buttons.Count;
+				rowB = 0;
+			}
+
 			// Button Backgrounds
 			Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.33f);
 			//Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
-			for (int i = 1; i < rowCount + 1; i++)
+			List<int> keys = page.Buttons.Keys.ToList();
+
+			try
 			{
-				MenuButton button = page.Buttons[i];
+                for (int i = 0; i < rowA; i++)
+                {
+                    MenuButton button = page.Buttons[keys[i]];
 
-				DrawButton(button, pos, buttonHeight, fontSize, buttonColor, bgColor, labelColor);
+                    DrawButton(button, pos, buttonHeight, fontSize, buttonColor, bgColor, labelColor);
 
-				pos += new Vector2(cellWidth, 0);
-			}
+                    pos += new Vector2(cellWidth, 0);
+                }
+            }
+			catch
+			{
+                _statusMessage += "BLOCK A\n  Button Count: " + page.Buttons.Count
+                        + "\n  rowCount:" + rowCount
+                        + "\n  rowA: " + rowA
+                        + "\n  rowB: " + rowB + "\n";
+            }
+
+
+			if (rowB < 1) return;
+
 
 			float heightMod;
 
@@ -245,18 +280,26 @@ namespace IngameScript
 			pos = position + new Vector2(0, buttonHeight * heightMod);
 
 			// check if the button count is even, offset bottom row if so.
-			if (menu.MaxButtons % 2 > 0)
+			if (page.Buttons.Count % 2 > 0)
 				pos += new Vector2(cellWidth - buttonHeight * 0.5f, 0);
 			else
 				pos += new Vector2((cellWidth - buttonHeight) * 0.5f, 0); // Parentheses matter!
+			try {
+                for (int j = rowA; j < rowB; j++)
+                {
+                    MenuButton button = page.Buttons[keys[j]];
 
-			for (int j = rowCount + 1; j < menu.MaxButtons + 1; j++)
+                    DrawButton(button, pos, buttonHeight, fontSize, buttonColor, bgColor, labelColor);
+
+                    pos += new Vector2(cellWidth, 0);
+                }
+            }
+			catch
 			{
-				MenuButton button = page.Buttons[j];
-
-				DrawButton(button, pos, buttonHeight, fontSize, buttonColor, bgColor, labelColor);
-
-				pos += new Vector2(cellWidth, 0);
+				_statusMessage += "BLOCK B\n  Button Count: " + page.Buttons.Count
+										+ "\n  rowCount:" + rowCount
+										+ "\n  rowA: " + rowA
+										+ "\n  rowB: " + rowB + "\n";
 			}
 		}
 
@@ -265,7 +308,7 @@ namespace IngameScript
 		// DRAW BUTTON //
 		void DrawButton(MenuButton button, Vector2 startPosition, float scale, float fontSize, Color buttonColor, Color backgroundColor, Color labelColor)
         {
-			if (button.IsUnassigned())
+			if (button.IsEmpty)//IsUnassigned())
 				return;
 
 			Color color;

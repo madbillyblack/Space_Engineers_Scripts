@@ -351,6 +351,7 @@ namespace IngameScript
             public bool IsActive;
             public bool IsPlaceHolder;
             public bool IsBlinkButton;
+            public bool IsEmpty;
 
             public string BlockLabel;
             public string [] ActionLabel;
@@ -368,6 +369,7 @@ namespace IngameScript
                 IsProgramButton = false;
                 IsTransponder = false;
                 IsBlinkButton = false;
+                IsEmpty = false;
                 ProgramBlock = null;
                 ActionLabel = new string[] { "#", "" };
                 BlinkDuration = 0;
@@ -485,7 +487,7 @@ namespace IngameScript
                     //_buttonsLit = true;
                 }
             }
-
+            /*
             // IS UNASSIGNED //
             public bool IsUnassigned()
             {
@@ -494,6 +496,7 @@ namespace IngameScript
                 else
                     return true;
             }
+            */
         }
 
 
@@ -605,7 +608,10 @@ namespace IngameScript
 
             for(int i = 1; i < menu.MaxButtons + 1; i++)
             {
-                menuPage.Buttons[i] = InitializeButton(menu, pageNumber, i);
+                MenuButton button = InitializeButton(menu, pageNumber, i);
+
+                if (button != null)
+                    menuPage.Buttons.Add(i, button);
             }
 
             return menuPage;
@@ -615,23 +621,28 @@ namespace IngameScript
         // INITIALIZE BUTTON //
         MenuButton InitializeButton(Menu menu, int pageNumber, int buttonNumber)
         {
-            MenuButton button = new MenuButton(buttonNumber);
-
+            // Get Button Values, or write keys to INI if not present.
             string header = ButtonHeader(pageNumber, buttonNumber);
-            
             string blockString = menu.GetKey(header, BUTTON_BLOCK, ""); // Block #
             string blockLabelString = menu.GetKey(header, BLOCK_LABEL, ""); // Block # Label
-
-            button.Action = menu.GetKey(header, BUTTON_ACTION, ""); // Action #
+            string action = menu.GetKey(header, BUTTON_ACTION, ""); // Action #
             string actionLabelString = menu.GetKey(header, ACTION_LABEL, ""); // Action # Label
+            string toggle = menu.GetKey(header, TOGGLE_KEY, "");
+            string blinkValue = menu.GetKey(header, BLINK_LENGTH, "0");
 
-            AssignToggleBlock(button, menu.GetKey(header, TOGGLE_KEY, "")); // Toggle Block (if any)
+            if (blockString.Trim() == "" || blockString.ToUpper() == "{BLANK}") return null;
 
-            button.SetBlinkDuration(ParseFloat(menu.GetKey(header, BLINK_LENGTH, "0"), 0));
+            MenuButton button = new MenuButton(buttonNumber);
+
+            button.Action = action;
+            
+            AssignToggleBlock(button, toggle); // Toggle Block (if any)
+
+            button.SetBlinkDuration(ParseFloat(blinkValue, 0));
 
             // Get Block Name and Prefix from string
             string[] buttonData = GetBlockDataFromKey(blockString);
-            string blockName = buttonData[0];
+            string blockName = buttonData[0].Trim();
             string prefix = buttonData[1];
 
             // Set Block Group, Program Block or Blocks
@@ -659,6 +670,10 @@ namespace IngameScript
             else if(blockName.ToUpper() == PLACE_HOLDER)
             {
                 button.IsPlaceHolder = true;
+            }
+            else if(blockName.ToUpper() == "{EMPTY}")
+            {
+                button.IsEmpty = true;
             }
             else if(!string.IsNullOrEmpty(blockName))
             {
