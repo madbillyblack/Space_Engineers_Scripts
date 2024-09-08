@@ -175,20 +175,23 @@ namespace IngameScript
 			if (_menus.Count > 1)
 				title += " " + menu.IDNumber;
 
-			string name = page.Name;
-
-			if (name != "")
-				title += ": " + name;
+			//if (name != "")
+			//	title += ": " + name;
 
 			DrawText(title, position, fontSize, TextAlignment.LEFT, titleColor);
 
 			// Menu ID
 			position = topLeft + new Vector2(width - 10, 0);
-			//if (_menus.Count > 1)
-			if(menu.PageCount > 1)
-				DrawText("Page: " + page.Number, position, fontSize, TextAlignment.RIGHT, titleColor);
+            //if (_menus.Count > 1)
 
-			
+            string pageTitle = page.Name;
+
+			if (menu.PageCount > 1)
+				pageTitle += " ("+ page.Number + "/" + menu.PageCount + ")";
+
+
+            DrawText(pageTitle, position, fontSize, TextAlignment.RIGHT, titleColor);
+
 			if(page.Buttons.Count > 0)
 			{
                 // Buttons
