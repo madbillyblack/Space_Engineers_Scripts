@@ -108,7 +108,7 @@ namespace IngameScript
                 SetButtonLimit(ParseInt(GetKey(MENU_HEAD, MAX_BUTTONS, "8"), 8));
 
                 // Vertical Alignment
-                Alignment = GetKey(MENU_HEAD, "Alignment", "BOTTOM");
+                Alignment = GetKey(MENU_HEAD, "Alignment", "CENTER");
 
                 // Decals
                 //Decals = GetKey(MENU_HEAD, "Decals", "").ToUpper();
@@ -572,7 +572,7 @@ namespace IngameScript
                     IMyTextSurface surface = GetMirror(block);
                     if(surface != null)
                     {
-                        string alignment  = GetKey(block, MENU_HEAD, "Alignment", "BOTTOM");
+                        string alignment  = GetKey(block, MENU_HEAD, "Alignment", "CENTER");
                         Mirror mirror = new Mirror(surface, alignment);
                         menu.Mirrors.Add(mirror);
                     }   

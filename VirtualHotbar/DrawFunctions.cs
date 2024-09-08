@@ -115,7 +115,7 @@ namespace IngameScript
 			if (height == width)
 				fontSize *= 2;
 
-			bool widescreen = width >= height * 3;
+			bool widescreen = width >= height * 3 || page.Buttons.Count < 6;
 			
 			Color titleColor = menu.TitleColor;
 
@@ -126,13 +126,13 @@ namespace IngameScript
 
 			if(widescreen)
             {
-				rowCount = menu.MaxButtons;
+				rowCount = page.Buttons.Count;
 				//cellWidth = width * 0.142857f;
 				buttonHeight = height * 0.5f;
 			}
 			else
             {
-				rowCount = (int) Math.Ceiling(menu.MaxButtons * 0.5);
+				rowCount = (int) Math.Ceiling(page.Buttons.Count * 0.5);
 				//cellWidth = (width * 0.25f);
 				buttonHeight = (height * 0.225f);
 			}
@@ -170,7 +170,11 @@ namespace IngameScript
 
 			// Menu Title
 			position = topLeft + new Vector2(10, 0);
-			string title = "MENU " + page.Number;
+			string title = "VHB MENU";//"MENU " + page.Number;
+
+			if (_menus.Count > 1)
+				title += " " + menu.IDNumber;
+
 			string name = page.Name;
 
 			if (name != "")
@@ -180,8 +184,9 @@ namespace IngameScript
 
 			// Menu ID
 			position = topLeft + new Vector2(width - 10, 0);
-			if (_menus.Count > 1)
-				DrawText("ID: " + menu.IDNumber, position, fontSize, TextAlignment.RIGHT, titleColor);
+			//if (_menus.Count > 1)
+			if(menu.PageCount > 1)
+				DrawText("Page: " + page.Number, position, fontSize, TextAlignment.RIGHT, titleColor);
 
 			
 			if(page.Buttons.Count > 0)
@@ -228,6 +233,7 @@ namespace IngameScript
 			Color buttonColor = menu.ButtonColor;
 			Color bgColor = menu.BackgroundColor;
 
+            /*
 			int rowA, rowB;
 
 			if(page.Buttons.Count > rowCount)
@@ -240,16 +246,16 @@ namespace IngameScript
 				rowA = page.Buttons.Count;
 				rowB = 0;
 			}
+			*/
 
-			// Button Backgrounds
-			Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.33f);
+            // Button Backgrounds
+            Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.33f);
 			//Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
 			List<int> keys = page.Buttons.Keys.ToList();
 
-			try
-			{
-                for (int i = 0; i < rowA; i++)
+//			try{
+                for (int i = 0; i < rowCount; i++)
                 {
                     MenuButton button = page.Buttons[keys[i]];
 
@@ -257,17 +263,16 @@ namespace IngameScript
 
                     pos += new Vector2(cellWidth, 0);
                 }
+/*
             }
 			catch
 			{
                 _statusMessage += "BLOCK A\n  Button Count: " + page.Buttons.Count
-                        + "\n  rowCount:" + rowCount
-                        + "\n  rowA: " + rowA
-                        + "\n  rowB: " + rowB + "\n";
+                        + "\n  rowCount:" + rowCount;
             }
+*/
 
-
-			if (rowB < 1) return;
+			//if (rowB < 1) return;
 
 
 			float heightMod;
@@ -284,8 +289,10 @@ namespace IngameScript
 				pos += new Vector2(cellWidth - buttonHeight * 0.5f, 0);
 			else
 				pos += new Vector2((cellWidth - buttonHeight) * 0.5f, 0); // Parentheses matter!
-			try {
-                for (int j = rowA; j < rowB; j++)
+
+
+//			try {
+                for (int j = rowCount; j < page.Buttons.Count; j++)
                 {
                     MenuButton button = page.Buttons[keys[j]];
 
@@ -293,14 +300,11 @@ namespace IngameScript
 
                     pos += new Vector2(cellWidth, 0);
                 }
-            }
-			catch
-			{
+/*            } catch {
 				_statusMessage += "BLOCK B\n  Button Count: " + page.Buttons.Count
-										+ "\n  rowCount:" + rowCount
-										+ "\n  rowA: " + rowA
-										+ "\n  rowB: " + rowB + "\n";
+										+ "\n  rowCount:" + rowCount;
 			}
+*/
 		}
 
 
@@ -323,7 +327,7 @@ namespace IngameScript
 			DrawTexture(SQUARE, position, new Vector2(scale, scale), 0, color);
 
 			// Block Label
-			position += new Vector2(scale * 0.5f, - scale * 0.8f);
+			position += new Vector2(scale * 0.5f, -scale * 0.5f - fontSize * 20);//0.8f);
 			DrawText(button.BlockLabel, position, fontSize * 0.67f, TextAlignment.CENTER, labelColor);
 
 			// Action Label
@@ -331,7 +335,7 @@ namespace IngameScript
 			DrawActionLabel(button, position, scale * 1.25f, fontSize * 1.25f, backgroundColor, color);
 
 			// Number Label
-			position = startPosition + new Vector2(scale * 0.5f, scale * 0.45f);
+			position = startPosition + new Vector2(scale * 0.5f, scale * 0.5f - fontSize * 5);//0.45f);
 			DrawText(button.Number.ToString(), position, fontSize *1.125f, TextAlignment.CENTER, labelColor);
 		}
 
