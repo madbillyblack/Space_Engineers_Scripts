@@ -170,7 +170,7 @@ namespace IngameScript
 
 			// Menu Title
 			position = topLeft + new Vector2(10, 0);
-			string title = "VHB MENU";//"MENU " + page.Number;
+			string title = "VHB";//"MENU " + page.Number;
 
 			if (_menus.Count > 1)
 				title += " " + menu.IDNumber;
@@ -187,8 +187,14 @@ namespace IngameScript
             string pageTitle = page.Name;
 
 			if (menu.PageCount > 1)
-				pageTitle += " ("+ page.Number + "/" + menu.PageCount + ")";
+			{
+				if (pageTitle.Trim() == "")
+					pageTitle = "(Page ";
+				else
+					pageTitle += " (";
 
+                pageTitle += page.Number + "/" + menu.PageCount + ")";
+            }
 
             DrawText(pageTitle, position, fontSize, TextAlignment.RIGHT, titleColor);
 

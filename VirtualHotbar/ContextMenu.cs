@@ -42,6 +42,7 @@ namespace IngameScript
         const string LABEL_KEY = "Label Color";
         const string PLACE_HOLDER = "{AUX}";
         const string BLINK_LENGTH = "Blink Length";
+        const string BUTTON_HEAD = "Buttons";
 
 
         const int PAGE_LIMIT = 9;
@@ -67,7 +68,7 @@ namespace IngameScript
             public int IDNumber;
             public int PageCount;
             public int CurrentPage;
-            public int MaxButtons;
+            //public int MaxButtons;
             public IMyTerminalBlock Block;
             public IMyTextSurface Surface { get; set; }
             public RectangleF Viewport { get; set; }
@@ -75,6 +76,7 @@ namespace IngameScript
             //public string Decals;
             public Dictionary<int, MenuPage> Pages;
             public List<Mirror> Mirrors;
+            public List<int> ButtonList;
 
             public Color BackgroundColor;
             public Color TitleColor;
@@ -82,7 +84,7 @@ namespace IngameScript
             public Color ButtonColor;
 
             public int BlinkCycle;
-            MyIni Ini;
+            public MyIni Ini;
 
             public Menu(IMyTerminalBlock block)
             {
@@ -105,7 +107,9 @@ namespace IngameScript
 
                 SetPageCount();
                 SetCurrentPage();
-                SetButtonLimit(ParseInt(GetKey(MENU_HEAD, MAX_BUTTONS, "8"), 8));
+
+                PopulateButtonList();
+                //SetButtonLimit(ParseInt(GetKey(MENU_HEAD, MAX_BUTTONS, "8"), 8));
 
                 // Vertical Alignment
                 Alignment = GetKey(MENU_HEAD, "Alignment", "CENTER");
@@ -140,7 +144,60 @@ namespace IngameScript
                 ButtonColor = ParseColor(GetKey(MENU_COLOR, BUTTON_KEY, "0,160,160"));
             }
 
+            void PopulateButtonList()
+            {
+                ButtonList = new List<int>();
+                string [] buttonFrags = GetKey(MENU_HEAD, BUTTON_HEAD, "1-8").Trim().Split(',');
 
+                if (buttonFrags.Length < 1) return;
+
+                foreach(string frag in buttonFrags)
+                {
+                    if(frag.Contains('-'))
+                    {
+                        int[] buttons = buttonsFromRange(frag);
+
+                        if(buttons.Length > 0)
+                        {
+                            foreach (int button in buttons)
+                            {
+                                if(!ButtonList.Contains(button))
+                                    ButtonList.Add(button);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int singleButton = ParseInt(frag, -1);
+                        if (singleButton > 0 && singleButton < 10 && !ButtonList.Contains(singleButton))
+                            ButtonList.Add(singleButton);
+                    }
+                }
+            }
+
+            int[] buttonsFromRange(string arg)
+            {
+                string[] args = arg.Split('-');
+                if(args.Length != 2)
+                {
+                    _statusMessage += "Incomplete button arg: " + arg + " for menu " + IDNumber +"\n";
+                    return null;
+                }
+
+                int a = ParseInt(args[0], -1);
+                int b = ParseInt(args[1], -1);
+
+                if(a < 1 || b < 1 || a > 9 || b > 9 || a >= b)
+                {
+                    _statusMessage += "Error parsing buttons " + arg + " for menu " + IDNumber + "\n";
+                    return null;
+                }
+
+                return Enumerable.Range(a, b - a + 1).ToArray();
+            } 
+
+
+            /*
             // SET BUTTON LIMIT //
             public void SetButtonLimit(int buttonLimit)
             {
@@ -151,7 +208,7 @@ namespace IngameScript
                     MaxButtons = 1;
                 else if (MaxButtons > BUTTON_LIMIT)
                     MaxButtons = BUTTON_LIMIT;
-            }
+            }*/
 
 
             // GET CURRENT PAGE //
@@ -230,6 +287,13 @@ namespace IngameScript
                     Ini.SetSectionComment(header, comment);
             }
 
+            public void RemoveSection(string header)
+            {
+                if(Ini.ContainsSection(header))
+                    Ini.DeleteSection(header);
+            }
+
+
             public void SetComment(string header, string key, string comment)
             {
                 if (Ini.ContainsSection(header) && Ini.ContainsKey(header, key))
@@ -303,10 +367,12 @@ namespace IngameScript
 
                 //SetKey(destPageHeader, "Title", GetKey(sourcePageHeader, "Title", "");
 
-                for (int i = 1; i <= MaxButtons; i++)
+                for (int i = 1; i <= ButtonList.Count; i++)
                 {
-                    sourceMenuHeader = ButtonHeader(sourcePage, i);
-                    destMenuHeader = ButtonHeader(destPage, i);
+                    int buttonNumber = ButtonList[i];
+
+                    sourceMenuHeader = ButtonHeader(sourcePage, buttonNumber);
+                    destMenuHeader = ButtonHeader(destPage, buttonNumber);
 
                     SetButtonKeys(destMenuHeader,
                         GetKey(sourceMenuHeader, BUTTON_BLOCK, ""),
@@ -606,12 +672,19 @@ namespace IngameScript
 
             menuPage.Name = menu.GetKey(header, "Title", "");
 
-            for(int i = 1; i < menu.MaxButtons + 1; i++)
+            for(int i = 1; i < 10; i++)
             {
-                MenuButton button = InitializeButton(menu, pageNumber, i);
+                if (menu.ButtonList.Contains(i))
+                {
+                    MenuButton button = InitializeButton(menu, pageNumber, i);
 
-                if (button != null)
-                    menuPage.Buttons.Add(i, button);
+                    if (button != null)
+                        menuPage.Buttons.Add(i, button);
+                }
+                else
+                {
+                    menu.RemoveSection(ButtonHeader(pageNumber, i));
+                }
             }
 
             return menuPage;
@@ -1190,10 +1263,22 @@ namespace IngameScript
                 return;
 
             Menu menu = GetFirstMenu();
-            MenuPage page = menu.Pages[menu.CurrentPage];
+            Echo("MENU " + menu.IDNumber);
 
-            Echo("MENU " + menu.IDNumber + "\n  Page " + menu.CurrentPage + ": " + page.Name + "\n  Buttons:");
+            if(menu.ButtonList.Count > 0)
+            {
+                string buttons = "Buttons:";
+                foreach(int i in menu.ButtonList)
+                {
+                    buttons += " " + i.ToString();
+                }
+                Echo(buttons);
+            }                
 
+            //MenuPage page = menu.Pages[menu.CurrentPage];
+
+            //Echo("MENU " + menu.IDNumber + "\n  Page " + menu.CurrentPage + ": " + page.Name + "\n  Buttons:");
+            /*
             foreach(int key in page.Buttons.Keys)
             {
                 MenuButton button = page.Buttons[key];
@@ -1219,6 +1304,7 @@ namespace IngameScript
                     }
                 }     
             }
+            */
         }
 
         /*

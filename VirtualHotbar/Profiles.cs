@@ -53,7 +53,7 @@ namespace IngameScript
             if (MenuNotFound(menu)) return;
 
             // Set button count to 8
-            menu.SetButtonLimit(8);
+            //menu.SetButtonLimit(8);
 
             // Add new page if necessary
             if (startPage > menu.PageCount)
