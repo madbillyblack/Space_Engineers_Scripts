@@ -703,7 +703,7 @@ namespace IngameScript
             string toggle = menu.GetKey(header, TOGGLE_KEY, "");
             string blinkValue = menu.GetKey(header, BLINK_LENGTH, "0");
 
-            if (blockString.Trim() == "" || blockString.ToUpper() == "{BLANK}") return null;
+            if (blockString.Trim() == "" || blockString.ToUpper() == "{NULL}") return null;
 
             MenuButton button = new MenuButton(buttonNumber);
 
@@ -744,7 +744,7 @@ namespace IngameScript
             {
                 button.IsPlaceHolder = true;
             }
-            else if(blockName.ToUpper() == "{EMPTY}")
+            else if(blockName.ToUpper() == "{BLANK}")
             {
                 button.IsEmpty = true;
             }
