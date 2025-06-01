@@ -62,6 +62,11 @@ namespace IngameScript
             {
                 return GetKey(SHARED, GRID_KEY, _gridID) == _gridID;
             }
+
+            public bool HasKey(string header, string key)
+            {
+                return Ini.ContainsKey(header, key);
+            }
         }
 
 

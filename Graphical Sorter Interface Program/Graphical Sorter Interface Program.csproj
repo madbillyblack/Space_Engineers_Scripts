@@ -38,8 +38,9 @@
   <Import Project="MDK/MDK.options.props" />
   <Import Project="MDK/MDK.paths.props" Condition="exists('MDK/MDK.paths.props')" />
   <ItemGroup>
+    <Compile Include="SorterProfiles.cs" />
     <Compile Include="DisplayBlock.cs" />
-    <Compile Include="SorterDisplay.cs" />
+    <Compile Include="SorterMenu.cs" />
     <Compile Include="GSorter.cs" />
     <Compile Include="IniKeys.cs" />
     <Compile Include="MDK\Bootstrapper.cs" />

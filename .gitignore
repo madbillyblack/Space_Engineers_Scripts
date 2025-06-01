@@ -1,6 +1,8 @@
 #files
 *.suo
+*.vsidx
 
 #directories
 *bin/
 *obj/
+*.vs/

@@ -73,12 +73,12 @@ namespace IngameScript
             if(transponders.Count > 0)
                 _transponder = transponders.First();
 
-            /*
+
             List<IMyConveyorSorter> sorters = new List<IMyConveyorSorter>();
             GridTerminalSystem.GetBlocksOfType<IMyConveyorSorter>(sorters);
             if(sorters.Count > 0)
                 _sorter = sorters.First();
-
+            /*
             // Broadcast INIT
             Echo("Creator");
             _myBroadcastListener = IGC.RegisterBroadcastListener(_broadCastTag);
@@ -103,8 +103,8 @@ namespace IngameScript
 
                         _castData = "";
                         Runtime.UpdateFrequency = UpdateFrequency.Update1;
-
-                        List<IMyTerminalBlock> inventoryBlocks = new List<IMyTerminalBlock>();
+*/
+            List<IMyTerminalBlock> inventoryBlocks = new List<IMyTerminalBlock>();
                         GridTerminalSystem.SearchBlocksOfName("Cargo", inventoryBlocks);
 
                         _blocks = new List<IMyTerminalBlock>();
@@ -127,9 +127,9 @@ namespace IngameScript
                         {
                             _inventory = null;
                         }
-            */
 
-            //Runtime.UpdateFrequency = UpdateFrequency.Update100;
+
+            Runtime.UpdateFrequency = UpdateFrequency.Update100;
         }
 
 
@@ -140,40 +140,42 @@ namespace IngameScript
         #region NEW MAIN
         public void Main(string argument, UpdateType updateSource)
         {
-            if(_transponder == null)
+            _surface.WriteText("");
+            /*
+            if (_inventory == null)
+                return;
+
+            List<MyInventoryItem> items = new List<MyInventoryItem>();
+            _inventory.GetItems(items);
+
+            if (items.Count < 1)
             {
-                _surface.WriteText("No Action Relay Found");
+                _surface.WriteText("<< EMPTY >>");
                 return;
             }
 
-
-            List<ITerminalAction> actions = new List<ITerminalAction>();
-            _transponder.GetActions(actions);
-            _transponder.GetActionWithName
-
-            string output = "Actions:\n";
-
-
-            if(actions.Count > 0)
+            foreach (MyInventoryItem item in items)
             {
-                foreach (ITerminalAction action in actions)
-                {
-                    output += action.Name. + "\n";
-                }
+                _surface.WriteText(item.Type.SubtypeId.ToString() + "\n", true);
             }
 
-            _surface.WriteText(output);
 
 
-            /*
             //List<IMyTerminalAction> actions = new List<IMyTerminalAction>();
             //_surface.WriteText("");
+                        */
+
+            if(_sorter == null)
+            {
+                _surface.WriteText("NO SORTERS FOUND");
+                return;
+            }
+
+            _surface.WriteText("Mode: " + _sorter.Mode.ToString() +
+                              "\nPull: " + _sorter.DrainAll.ToString());
 
             List<MyInventoryItemFilter> filters = new List<MyInventoryItemFilter>();
-
-
-            if (_sorter != null)
-                _sorter.GetFilterList(filters);
+            _sorter.GetFilterList(filters);
 
 
             if(argument == "ADD_ICE")
@@ -205,11 +207,11 @@ namespace IngameScript
 
             foreach(MyInventoryItemFilter filter in filters)
             {
-                output += filter.ItemType.ToString() + "\n";
+                output += "\n" + filter.ItemType.ToString();
             }
 
-            _surface.WriteText(output);
-            */
+            _surface.WriteText(output, true);
+
             //PrintBlockTypes();
 
             /*

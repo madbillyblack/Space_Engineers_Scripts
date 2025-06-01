@@ -30,6 +30,7 @@ namespace IngameScript
         const string CMP_TAG = "CMP";
         const string TOOL_TAG = "TOOL";
         const string AMMO_TAG = "AMMO";
+        const string LIST_KEY = "FilterList";
 
         public Dictionary<string, GSorter> _sorters;
 
@@ -37,15 +38,31 @@ namespace IngameScript
         public class GSorter
         {
             public IMyConveyorSorter Sorter { get; set; }
-            public List<SorterDisplay> Displays { get; set; }
+            public List<SorterMenu> Displays { get; set; }
 
             public string Tag { get; set; }
 
+            public MyIniHandler IniHandler { get; set; }
+
             public GSorter(IMyConveyorSorter sorter, string tag)
             { 
-                Displays = new List<SorterDisplay>();
+                Displays = new List<SorterMenu>();
                 Sorter = sorter;
                 Tag = tag;
+
+                IniHandler = new MyIniHandler(sorter);
+
+                string filterList;
+
+                if(!IniHandler.HasKey(MAIN_HEADER, LIST_KEY))
+                {
+                    filterList = GetDefaultList(tag);
+                    IniHandler.SetKey(MAIN_HEADER, LIST_KEY, filterList);
+                }
+                else
+                {
+                    filterList = IniHandler.GetKey(MAIN_HEADER, LIST_KEY, "");
+                }
             }
         }
 
@@ -65,6 +82,8 @@ namespace IngameScript
             {
                 string sorterTag = GetSorterTag(sorter.CustomName);
                 if (string.IsNullOrEmpty(sorterTag)) { continue; }
+
+                if (!SameGridID(sorter)) { continue; }
 
                 if (_sorters.ContainsKey(sorterTag))
                 {
@@ -89,6 +108,31 @@ namespace IngameScript
             {
                 string endstring = input.Substring(sortEnd + sort.Length);
                 return endstring.Split(']')[0];
+            }
+
+            return "";
+        }
+
+
+        // GET DEFAULT LIST
+        public static string GetDefaultList(string tag)
+        {
+            string type = tag.Split('_')[0].Trim();
+
+            switch(type.ToUpper())
+            {
+                case "ORE":
+                    return SorterProfiles.OreList;
+                case "IGT":
+                    return SorterProfiles.IngotList;
+                case "CMP":
+                    return SorterProfiles.ComponentList;
+                case "AMMO":
+                    return SorterProfiles.AmmoList;
+                case "WEP":
+                    return SorterProfiles.WeaponList;
+                case "MISC":
+                    return SorterProfiles.MiscList;
             }
 
             return "";

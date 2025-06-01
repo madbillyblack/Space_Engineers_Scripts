@@ -8,6 +8,12 @@ MyObjectBuilder_AmmoMagazine/LargeRailgunAmmo
 MyObjectBuilder_AmmoMagazine/SmallRailgunAmmo
 MyObjectBuilder_AmmoMagazine/NATO_25x184mm
 MyObjectBuilder_AmmoMagazine/Missile200mm
+MyObjectBuilder_AmmoMagazine/FireworksBoxBlue
+MyObjectBuilder_AmmoMagazine/FireworksBoxGreen
+MyObjectBuilder_AmmoMagazine/FireworksBoxPink
+MyObjectBuilder_AmmoMagazine/FireworksBoxRainbow
+MyObjectBuilder_AmmoMagazine/FireworksBoxRed
+MyObjectBuilder_AmmoMagazine/FireworksBoxYellow
 
 CHARACTER AMMO:
 MyObjectBuilder_AmmoMagazine/NATO_5p56x45mm
@@ -15,10 +21,10 @@ MyObjectBuilder_AmmoMagazine/AutomaticRifleGun_Mag_20rd
 MyObjectBuilder_AmmoMagazine/RapidFireAutomaticRifleGun_Mag_50rd
 MyObjectBuilder_AmmoMagazine/UltimateAutomaticRifleGun_Mag_30rd
 MyObjectBuilder_AmmoMagazine/PreciseAutomaticRifleGun_Mag_5rd
-
 MyObjectBuilder_AmmoMagazine/SemiAutoPistolMagazine
 MyObjectBuilder_AmmoMagazine/ElitePistolMagazine
 MyObjectBuilder_AmmoMagazine/FullAutoPistolMagazine
+MyObjectBuilder_AmmoMagazine/FlareClip
 
 
 CHARACTER WEAPONS:
@@ -31,6 +37,12 @@ MyObjectBuilder_PhysicalGunObject/BasicHandHeldLauncherItem
 MyObjectBuilder_PhysicalGunObject/SemiAutoPistolItem
 MyObjectBuilder_PhysicalGunObject/ElitePistolItem
 MyObjectBuilder_PhysicalGunObject/FullAutoPistolItem
+MyObjectBuilder_PhysicalGunObject/FlareGunItem
+
+
+
+
+
 
 CHARACTER TOOLS:
 MyObjectBuilder_PhysicalGunObject/AngleGrinder4Item
@@ -52,7 +64,6 @@ Missile Cargo
 
 
 CHARACTER MISC:
-MyObjectBuilder_Component/Canvas
 MyObjectBuilder_ConsumableItem/ClangCola
 MyObjectBuilder_ConsumableItem/CosmicCoffee
 MyObjectBuilder_Datapad/Datapad
@@ -84,7 +95,17 @@ MyObjectBuilder_Component/SolarCell
 MyObjectBuilder_Component/SteelPlate
 MyObjectBuilder_Component/Superconductor
 MyObjectBuilder_Component/Thrust
+MyObjectBuilder_Component/Canvas
 
+MyObjectBuilder_Component/PrototechCircuitry
+MyObjectBuilder_Component/PrototechCapacitor
+MyObjectBuilder_Component/PrototechCoolingUnit
+MyObjectBuilder_Component/PrototechFrame
+MyObjectBuilder_Component/PrototechMachinery
+MyObjectBuilder_Component/PrototechPanel
+MyObjectBuilder_Component/PrototechPropulsionUnit
+MyObjectBuilder_Component/EngineerPlushie
+MyObjectBuilder_Component/SabiroidPlushie
 
 INGOTS:
 MyObjectBuilder_Ingot/Cobalt
@@ -97,6 +118,7 @@ MyObjectBuilder_Ingot/Platinum
 MyObjectBuilder_Ingot/Silicon
 MyObjectBuilder_Ingot/Silver
 MyObjectBuilder_Ingot/Uranium
+MyObjectBuilder_Ingot/PrototechScrap
 
 ORES:
 MyObjectBuilder_Ore/Cobalt
@@ -107,7 +129,8 @@ MyObjectBuilder_Ore/Magnesium
 MyObjectBuilder_Ore/Nickel
 MyObjectBuilder_Ore/Organic
 MyObjectBuilder_Ore/Platinum
-MyObjectBuilder_Ore/Scrap
+MyObjectBuilder_Ore/Scrap	----> Regular Scrap
+MyObjectBuilder_Ingot/Scrap 	----> Old Scrap
 MyObjectBuilder_Ore/Silicon
 MyObjectBuilder_Ore/Silver
 MyObjectBuilder_Ore/Stone
