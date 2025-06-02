@@ -37,32 +37,41 @@ namespace IngameScript
 
         public class GSorter
         {
-            public IMyConveyorSorter Sorter { get; set; }
+            public IMyConveyorSorter SorterBlock { get; set; }
             public List<SorterMenu> Displays { get; set; }
 
             public string Tag { get; set; }
+
+            public string[] Filters { get; set; }
 
             public MyIniHandler IniHandler { get; set; }
 
             public GSorter(IMyConveyorSorter sorter, string tag)
             { 
                 Displays = new List<SorterMenu>();
-                Sorter = sorter;
+                SorterBlock = sorter;
                 Tag = tag;
 
                 IniHandler = new MyIniHandler(sorter);
 
+                AddFilters();
+            }
+
+            private void AddFilters()
+            {
                 string filterList;
 
-                if(!IniHandler.HasKey(MAIN_HEADER, LIST_KEY))
+                if (!IniHandler.HasKey(MAIN_HEADER, LIST_KEY))
                 {
-                    filterList = GetDefaultList(tag);
+                    filterList = GetDefaultList(Tag);
                     IniHandler.SetKey(MAIN_HEADER, LIST_KEY, filterList);
                 }
                 else
                 {
                     filterList = IniHandler.GetKey(MAIN_HEADER, LIST_KEY, "");
                 }
+
+                Filters = filterList.Split('\n');
             }
         }
 
@@ -88,7 +97,7 @@ namespace IngameScript
                 if (_sorters.ContainsKey(sorterTag))
                 {
                     _statusMessage += "WARNING: Sorter Key already in use: " + sorterTag
-                        + "\n* Block: " + sorter.CustomName;
+                        + "\n* Block: " + sorter.CustomName + "\n";
 
                     continue;
                 }

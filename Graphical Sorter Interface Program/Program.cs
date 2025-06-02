@@ -102,7 +102,15 @@ namespace IngameScript
             {
                 foreach (string key in _sorters.Keys)
                 {
-                    data += "\n* " + _sorters[key].Sorter.CustomName;
+                    GSorter sorter = _sorters[key];
+                    data += "\n* " + sorter.SorterBlock.CustomName;
+
+                    if(sorter.Filters.Length < 1) { continue; }
+
+                    for(int i = 0; i < sorter.Filters.Length; i++)
+                    {
+                        data += "\n  - " + sorter.Filters[i]; 
+                    }
                 }
             }
 
