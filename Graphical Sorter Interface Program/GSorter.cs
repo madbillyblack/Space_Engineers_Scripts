@@ -32,7 +32,7 @@ namespace IngameScript
         const string AMMO_TAG = "AMMO";
         const string LIST_KEY = "FilterList";
 
-        public Dictionary<string, GSorter> _sorters;
+        public static Dictionary<string, GSorter> _sorters;
 
 
         public class GSorter

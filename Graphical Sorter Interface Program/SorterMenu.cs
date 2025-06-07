@@ -22,14 +22,10 @@ namespace IngameScript
 {
     partial class Program
     {
-        const string MENU_HEADER = "GSIP - Menu";
-        const string SCREEN_KEY = "ScreenIndex";
-        const string BUTTON_KEY = "ButtonsPerPage";
-
         public class SorterMenu
         {
-            public MyIniHandler IniHandler {  get; set; }
-            public IMyTerminalBlock Block {  get; set; }
+            public MyIniHandler IniHandler { get; set; }
+            public IMyTerminalBlock Block { get; set; }
             public string Tag {  get; set; }
             public IMyTextSurface Surface { get; set; }
             public int PageCount { get; set; }
@@ -38,7 +34,7 @@ namespace IngameScript
 
             public Dictionary<int, MenuPage> Pages { get; set; }
 
-            public SorterMenu(IMyTerminalBlock block, string tag)
+            public SorterMenu(IMyTerminalBlock block, string tag, GSorter sorter)
             {
                 Block = block;
                 Tag = tag;
@@ -46,6 +42,7 @@ namespace IngameScript
 
                 AddSurface();
                 SetButtonCount();
+                AddPages(sorter);
                 
             }
 
@@ -88,7 +85,7 @@ namespace IngameScript
 
 
 
-            private void AddPages()
+            private void AddPages(GSorter sorter)
             {
 
             }
@@ -137,5 +134,28 @@ namespace IngameScript
                 else Filter = SorterProfiles.Lookup[filter];
             }
         }
+
+        /*
+        public void AddMenus()
+        {
+            if(_sorters.Count < 1) return;
+
+            foreach(string key in _sorters.Keys)
+            {
+                GSorter sorter = _sorters[key];
+
+                List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+                GridTerminalSystem.SearchBlocksOfName("SRT_" + key, blocks);       
+
+                foreach (IMyTerminalBlock block in blocks)
+                {
+                    if((block as IMyTextSurfaceProvider).SurfaceCount > 0)
+                        
+
+                    
+                }
+            }
+        }
+        */
     }
 }

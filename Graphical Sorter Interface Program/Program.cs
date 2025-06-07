@@ -57,7 +57,7 @@ namespace IngameScript
 
             AddDataScreen();
             AddSorters();
-
+            AddMenuViewers();
             // TODO
 
             // TODONE
@@ -116,10 +116,7 @@ namespace IngameScript
 
             Echo(data);
 
-            if (_dataScreen != null)
-            {
-                _dataScreen.WriteText(data);
-            }
+            _dataScreen?.WriteText(data);
         }
     }
 }
