@@ -96,8 +96,8 @@ namespace IngameScript
 
                 if (_sorters.ContainsKey(sorterTag))
                 {
-                    _statusMessage += "WARNING: Sorter Key already in use: " + sorterTag
-                        + "\n* Block: " + sorter.CustomName + "\n";
+                    _logger.LogWarning("Sorter Key already in use: " + sorterTag
+                        + "\n* Block: " + sorter.CustomName);
 
                     continue;
                 }

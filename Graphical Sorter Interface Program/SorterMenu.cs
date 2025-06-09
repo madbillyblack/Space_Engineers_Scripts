@@ -60,8 +60,7 @@ namespace IngameScript
                     index = ParseInt(IniHandler.GetKey(MENU_HEADER, SCREEN_KEY, "0"), 0);
                     if(index >= surfaceCount)
                     {
-                        _statusMessage += "\nWARNING: Screen Index " + index + " is to large for block:\n  "
-                                            + Block.CustomName +"\n";
+                        _logger.LogWarning("Screen Index " + index + " is too large for block:\n" + Block.CustomName);
                         index = 0;
                     }
                 }
@@ -135,27 +134,6 @@ namespace IngameScript
             }
         }
 
-        /*
-        public void AddMenus()
-        {
-            if(_sorters.Count < 1) return;
 
-            foreach(string key in _sorters.Keys)
-            {
-                GSorter sorter = _sorters[key];
-
-                List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-                GridTerminalSystem.SearchBlocksOfName("SRT_" + key, blocks);       
-
-                foreach (IMyTerminalBlock block in blocks)
-                {
-                    if((block as IMyTextSurfaceProvider).SurfaceCount > 0)
-                        
-
-                    
-                }
-            }
-        }
-        */
     }
 }

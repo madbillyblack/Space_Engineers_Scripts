@@ -28,11 +28,11 @@ namespace IngameScript
 
         static IMyProgrammableBlock _me;
 
-        //const string SLASHES = "///////////////";
-        const string DASHES = " ------------------- ";
+        const string SLASHES = "///////////////";
+        const string DASHES = "-------------------";
 
-        static string _statusMessage;
         IMyTextSurface _dataScreen;
+        static Logger _logger;
 
 
         public Program()
@@ -44,15 +44,16 @@ namespace IngameScript
 
         public void Main(string argument, UpdateType updateSource)
         {
+            MainSwitch(argument);
             ShowData();
         }
 
         public void Build()
         {
+            _logger = new Logger();
             _me = Me;
             _programIni = new MyIniHandler(Me);
 
-            _statusMessage = "";
             _gridID = _programIni.GetKey(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 
             AddDataScreen();
@@ -91,13 +92,22 @@ namespace IngameScript
         // SHOW DATA //
         public void ShowData()
         {
-            string data = "-- GSIP " + DASHES ;
+            string data = "// GSIP " + SLASHES + SLASHES + "\n";
 
-            if (_statusMessage != "")
-                data += "\n" + _statusMessage;
+            data += "   Sorter Count: " + _sorters.Count + "\n"
+                  + "   Viewer Count: " + _menuViewers.Count;
 
-            data += "\n" + "Sorter Count: " + _sorters.Count;
+            if(_menuViewers.Count > 0)
+            {
+                data += "\nMENU VIEWERS:";
+                foreach(int key in _menuViewers.Keys)
+                {
+                    data += "\n   " + key + ": viewing sorter " + _menuViewers[key].GSorter.Tag; 
+                }
+            }
 
+
+            /*
             if (_sorters.Count > 0)
             {
                 foreach (string key in _sorters.Keys)
@@ -113,10 +123,13 @@ namespace IngameScript
                     }
                 }
             }
+            */
+
+            data += "\n" + _logger.PrintMessages();
 
             Echo(data);
 
-            _dataScreen?.WriteText(data);
+            _dataScreen.WriteText(data);
         }
     }
 }

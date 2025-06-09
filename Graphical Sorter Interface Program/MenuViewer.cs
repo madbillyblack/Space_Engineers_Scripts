@@ -69,7 +69,7 @@ namespace IngameScript
                 }
             }
 
-            void CycleSorter(bool cycleLast = false)
+            public void CycleSorter(bool cycleLast = false)
             {
                 if (_sorters.Count < 2) return;
 
@@ -161,6 +161,38 @@ namespace IngameScript
             }
 
             return menuId;
+        }
+
+
+        public MenuViewer GetMenuViewer(string menuId)
+        {
+            if (_menuViewers.Count < 1)
+            {
+                _logger.LogError("NO MENU VIEWERS DETECTED\nPlease include " + VIEWER_TAG + "in the name of an LCD block that you wish to configure as a Menu Viewer.");
+                return null;
+            }
+
+            int id;
+            
+            // If no viewer specified get default
+            if(menuId == "")
+                id = 0;
+            else
+                id = ParseInt(menuId, -1);
+
+            if(id < 0)
+            {
+                _logger.LogError("Failed to parse Menu ID: '" + menuId + "'");
+                return null;
+            }
+
+            if (!_menuViewers.ContainsKey(id))
+            {
+                _logger.LogError("Could not find Menu with ID: '" + menuId + "'");
+                return null;
+            }
+
+            return _menuViewers[id];
         }
     }
 }
