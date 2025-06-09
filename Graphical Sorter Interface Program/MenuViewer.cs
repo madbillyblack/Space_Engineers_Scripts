@@ -35,6 +35,7 @@ namespace IngameScript
         {
             public IMyTextSurface Surface {  get; set; }
             public MyIniHandler IniHandler { get; set; }
+            public MenuPage MenuPage { get; set; }
             public int ScreenIndex { get; set; }
             public int Id { get; set; }
             public int ButtonCount {  get; set; }
@@ -85,6 +86,8 @@ namespace IngameScript
 
                 if (CurrentPage > PageCount)
                     SetCurrentPage(1);
+
+                SetMenuPage();
             }
 
             public void CycleSorter(bool cycleLast = false)
@@ -122,6 +125,8 @@ namespace IngameScript
                     CurrentPage = 1;
 
                 IniHandler.SetKey(Header, PAGE_KEY, CurrentPage.ToString());
+
+                SetMenuPage();
             }
 
             void SetPageCount()
@@ -139,6 +144,40 @@ namespace IngameScript
             {
                 CurrentPage = page;
                 IniHandler.SetKey(Header, PAGE_KEY, page.ToString());
+            }
+
+
+            void SetMenuPage()
+            {
+                MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock);
+            }
+
+
+            string[] FiltersFromPageNumber()
+            {
+                string[] filterArray = new string[ButtonCount];
+
+                int startIndex =  (CurrentPage - 1) * ButtonCount;
+
+                int endIndex;
+                if(CurrentPage == PageCount)
+                {
+                    // If final page set last two buttons to "drain" and "bw"
+                    endIndex = GSorter.Filters.Count() % ButtonCount;
+                    filterArray[ButtonCount - 1] = "drain";
+                    filterArray[ButtonCount - 2] = "bw";
+                }
+                else
+                {
+                    endIndex = ButtonCount;
+                }
+
+                for(int i = 0; i < endIndex; i++)
+                {
+                    filterArray[i] = GSorter.Filters[startIndex + i];
+                }
+
+                return filterArray;
             }
         }
 

@@ -104,8 +104,16 @@ namespace IngameScript
                 foreach(int key in _menuViewers.Keys)
                 {
                     MenuViewer viewer = _menuViewers[key];
-                    data += "\n   " + key + ": viewing sorter " + viewer.GSorter.Tag
-                        + "\n     Page " + viewer.CurrentPage + " of " + viewer.PageCount;
+                    data += "\n   " + key + ": viewing sorter " + viewer.GSorter.Tag + " - Page " + viewer.CurrentPage + " of " + viewer.PageCount;
+
+                    if (viewer.MenuPage == null || viewer.MenuPage.Buttons.Count == 0) continue;
+
+                    for (int i = 0; i < viewer.ButtonCount; i++)
+                    {
+                        MenuButton button = viewer.MenuPage.Buttons[i];
+                        string active = button.Active ? "On " : "Off ";
+                        data += "\n    [" + (i + 1) + "] " + active + button.Filter;
+                    }
                 }
             }
 

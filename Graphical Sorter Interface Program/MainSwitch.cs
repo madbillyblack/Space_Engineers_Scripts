@@ -91,8 +91,6 @@ namespace IngameScript
                     _logger.LogError("\nUNRECOGNIZED COMMAND:\n" + argument);
                     break;
             }
-
-
         }
 
 

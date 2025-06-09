@@ -58,7 +58,7 @@ namespace IngameScript
 
             public static string MiscList = "TODO";
 
-            public static Dictionary<string, string> Lookup = new Dictionary<string, string>
+            public static readonly Dictionary<string, string> Lookup = new Dictionary<string, string>
             {
                 // ORES
                 { "ore/iron","Ore/Iron" },
@@ -99,6 +99,17 @@ namespace IngameScript
 
                 // MISC - TODO
             };
+
+            public static string LookupItem(string item)
+            {
+                if (Lookup.ContainsKey(item))
+                {
+                    //_logger.LogInfo("Retrieved item filter: " + Lookup[item]);
+                    return "MyObjectBuilder_" + Lookup[item];
+                }
+                    
+                return item;
+            }
         }
     }
 }

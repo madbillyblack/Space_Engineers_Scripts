@@ -38,7 +38,7 @@ namespace IngameScript
         public class GSorter
         {
             public IMyConveyorSorter SorterBlock { get; set; }
-            public List<SorterMenu> Displays { get; set; }
+            //public List<SorterMenu> Displays { get; set; }
 
             public string Tag { get; set; }
 
@@ -48,7 +48,7 @@ namespace IngameScript
 
             public GSorter(IMyConveyorSorter sorter, string tag)
             { 
-                Displays = new List<SorterMenu>();
+                //Displays = new List<SorterMenu>();
                 SorterBlock = sorter;
                 Tag = tag;
 
@@ -72,6 +72,14 @@ namespace IngameScript
                 }
 
                 Filters = filterList.Split('\n');
+
+                if (Filters.Length < 1) return;
+
+                // Trim entries of leading white space
+                for(int i = 0; i < Filters.Length; i++)
+                {
+                    Filters[i] = Filters[i].Trim();
+                }
             }
         }
 

@@ -22,6 +22,7 @@ namespace IngameScript
 {
     partial class Program
     {
+        /*
         public class SorterMenu
         {
             public MyIniHandler IniHandler { get; set; }
@@ -88,52 +89,7 @@ namespace IngameScript
             {
 
             }
-
-
-            private void AddButtonsToPage(MenuPage page, MenuButton[] buttons)
-            {
-
-            }
         }
-
-
-        public class MenuPage
-        {
-            public Dictionary<int, MenuButton> Buttons { get; set; }
-
-            public MenuPage(string[] filters)
-            {
-                Buttons = new Dictionary<int, MenuButton>();
-
-                if(filters.Length > 0)
-                {
-                    for (int i = 0; i < filters.Length; i++)
-                    {
-                        if (string.IsNullOrEmpty(filters[i])) { continue; }
-
-                        Buttons.Add(i, new MenuButton(filters[i]));
-                    }
-                }
-            }
-        }
-
-
-        public class MenuButton
-        {
-            public string Filter { get; set; }
-            public bool Active { get; set; }
-            public enum ButtonType { ITEM, BW_LIST, DRAIN }
-
-            public MenuButton(string filter)
-            {
-                // If Filter Is not contained in the lookup, use entire provided filter.
-                // For custom/missing item types
-                if(!SorterProfiles.Lookup.ContainsKey(filter))
-                    Filter = filter;
-                else Filter = SorterProfiles.Lookup[filter];
-            }
-        }
-
-
+        */
     }
 }
