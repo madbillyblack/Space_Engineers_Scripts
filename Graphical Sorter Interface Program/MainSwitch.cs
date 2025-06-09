@@ -118,7 +118,7 @@ namespace IngameScript
             MenuViewer viewer = GetMenuViewer(menuId);
             if (viewer == null) return;
 
-            // TODO
+            viewer.CyclePages(previous);
         }
     }
 }

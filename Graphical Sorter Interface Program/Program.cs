@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -102,7 +103,9 @@ namespace IngameScript
                 data += "\nMENU VIEWERS:";
                 foreach(int key in _menuViewers.Keys)
                 {
-                    data += "\n   " + key + ": viewing sorter " + _menuViewers[key].GSorter.Tag; 
+                    MenuViewer viewer = _menuViewers[key];
+                    data += "\n   " + key + ": viewing sorter " + viewer.GSorter.Tag
+                        + "\n     Page " + viewer.CurrentPage + " of " + viewer.PageCount;
                 }
             }
 

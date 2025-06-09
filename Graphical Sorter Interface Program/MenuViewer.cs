@@ -28,6 +28,7 @@ namespace IngameScript
         const string SCREEN_HEADER = "GSIP Screen ";
         const string SCREEN_KEY = "ScreenIndex";
         const string BUTTON_KEY = "ButtonsPerPage";
+        const string PAGE_KEY = "CurrentPage";
         const string ID_KEY = "Menu ID";
 
         public class MenuViewer
@@ -37,16 +38,21 @@ namespace IngameScript
             public int ScreenIndex { get; set; }
             public int Id { get; set; }
             public int ButtonCount {  get; set; }
+            public int PageCount { get; set; }
             public int CurrentPage { get; set; }
             public GSorter GSorter { get; set; }
+            public string Header { get; set; }
 
-            public MenuViewer(MyIniHandler iniHandler, int index)
+            public MenuViewer(MyIniHandler iniHandler, int id, int index)
             {
                 IniHandler = iniHandler;
+                Id = id;
                 ScreenIndex = index;
+                Header = SCREEN_HEADER + ScreenIndex;
                 Surface = (IniHandler.Block as IMyTextSurfaceProvider).GetSurface(ScreenIndex);
                 Surface.ContentType = ContentType.SCRIPT;
                 InitSorter();
+                InitPage();
             }
 
             void InitSorter()
@@ -57,16 +63,28 @@ namespace IngameScript
                 }
                 else
                 {
-                    string key = IniHandler.GetKey(SCREEN_HEADER + ScreenIndex, "Sorter", _sorters.Keys.FirstOrDefault());
+                    string key = IniHandler.GetKey(Header, "Sorter", _sorters.Keys.FirstOrDefault());
 
                     if (!_sorters.ContainsKey(key))
                     {
                         key = _sorters.Keys.FirstOrDefault();
-                        IniHandler.SetKey(SCREEN_HEADER + ScreenIndex, "Sorter", key);
+                        IniHandler.SetKey(Header, "Sorter", key);
                     }
 
                     GSorter = _sorters[key];
+                    SetPageCount();
                 }
+            }
+
+            void InitPage()
+            {
+                ButtonCount = ParseInt(IniHandler.GetKey(Header, BUTTON_KEY, "7"), 7);
+                SetPageCount();
+                // Index Pages from 1
+                CurrentPage = ParseInt(IniHandler.GetKey(Header, PAGE_KEY, "1"), 1);
+
+                if (CurrentPage > PageCount)
+                    SetCurrentPage(1);
             }
 
             public void CycleSorter(bool cycleLast = false)
@@ -77,23 +95,52 @@ namespace IngameScript
                 int index = keys.IndexOf(GSorter.Tag);
 
                 if (cycleLast)
-                {
                     index--;
-                    if (index < 0)
-                        index = keys.Count - 1;
-                }
                 else
-                {
                     index++;
-                    if (index >= keys.Count)
-                        index = 0;
-                }
+
+                if (index < 0)
+                    index = keys.Count - 1;
+                else if (index >= keys.Count)
+                    index = 0;
 
                 GSorter = _sorters[keys[index]];
-                IniHandler.SetKey(SCREEN_HEADER + ScreenIndex, "Sorter", GSorter.Tag);
+                IniHandler.SetKey(Header, "Sorter", GSorter.Tag);
+                SetPageCount();
+            }
+
+            public void CyclePages(bool cycleLast = false)
+            {
+                if (cycleLast)
+                    CurrentPage--;
+                else
+                    CurrentPage++;
+
+                if(CurrentPage < 1)
+                    CurrentPage = PageCount;
+                else if(CurrentPage > PageCount)
+                    CurrentPage = 1;
+
+                IniHandler.SetKey(Header, PAGE_KEY, CurrentPage.ToString());
+            }
+
+            void SetPageCount()
+            {
+                if(ButtonCount > 0)
+                {
+                    float pages = (GSorter.Filters.Count() + 2.0f) / ButtonCount;
+
+                    PageCount = (int)Math.Ceiling(pages);
+                }
+                else { PageCount = -1; }
+            }
+
+            void SetCurrentPage(int page)
+            {
+                CurrentPage = page;
+                IniHandler.SetKey(Header, PAGE_KEY, page.ToString());
             }
         }
-
 
         public void AddMenuViewers()
         {
@@ -121,23 +168,22 @@ namespace IngameScript
             if(surfaceCount == 1)
             {
                 menuId = SelectMenuId(ini, 0);
-                _menuViewers.Add(menuId, new MenuViewer(ini, 0));
+                _menuViewers.Add(menuId, new MenuViewer(ini, menuId, 0));
             }
             else
             {
                 if (ShowOnScreen(ini, 0, true))
                 {
                     menuId = SelectMenuId(ini, 0);
-                    _menuViewers.Add(menuId, new MenuViewer(ini, 0));
+                    _menuViewers.Add(menuId, new MenuViewer(ini, menuId, 0));
                 }
                     
-
                 for(int i = 1; i < surfaceCount; i++)
                 {
                     if(ShowOnScreen(ini, i))
                     {
                         menuId = SelectMenuId(ini, i);
-                        _menuViewers.Add(menuId, new MenuViewer(ini, i));
+                        _menuViewers.Add(menuId, new MenuViewer(ini, menuId, i));
                     }  
                 }
             }
