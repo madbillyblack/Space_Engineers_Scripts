@@ -108,15 +108,14 @@ namespace IngameScript
 
                     if (viewer.MenuPage == null || viewer.MenuPage.Buttons.Count == 0) continue;
 
-                    for (int i = 0; i < viewer.ButtonCount; i++)
+                    for (int i = 1; i <= viewer.ButtonCount; i++)
                     {
                         MenuButton button = viewer.MenuPage.Buttons[i];
                         string active = button.Active ? "On " : "Off ";
-                        data += "\n    [" + (i + 1) + "] " + active + button.Filter;
+                        data += "\n    [" + (i) + "] " + active + button.Filter;
                     }
                 }
             }
-
 
             /*
             if (_sorters.Count > 0)

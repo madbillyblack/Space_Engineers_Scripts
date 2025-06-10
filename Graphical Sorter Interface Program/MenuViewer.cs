@@ -90,6 +90,34 @@ namespace IngameScript
                 SetMenuPage();
             }
 
+            public void PressButton(int buttonNumber)
+            {
+                if(buttonNumber > ButtonCount)
+                {
+                    _logger.LogError("Invalid Button " + buttonNumber + " for Menu " + Id);
+                    return;
+                }
+
+                MenuButton button = MenuPage.Buttons[buttonNumber];
+
+                switch(button.Type)
+                {
+                    case MenuButton.ButtonType.EMPTY:
+                        break;                        
+                    case MenuButton.ButtonType.DRAIN:
+                        button.ToggleDrainAll();
+                        break;
+                    case MenuButton.ButtonType.BW_LIST:
+                        button.ToggleWhiteList();
+                        break;
+                    case MenuButton.ButtonType.ITEM:
+                        button.ToggleItem();
+                        break;
+
+                }
+            }
+
+
             public void CycleSorter(bool cycleLast = false)
             {
                 if (_sorters.Count < 2) return;

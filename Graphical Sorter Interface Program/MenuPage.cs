@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -43,7 +44,7 @@ namespace IngameScript
                         MenuButton button = new MenuButton(filter, sorter);
                         button.Initialize(currentFilters);
 
-                        Buttons.Add(i, button);
+                        Buttons.Add(i + 1, button);
                     }
                 }
             }
@@ -122,6 +123,58 @@ namespace IngameScript
                     
                     _logger.LogError("Could not parse filter " + item);
                     return false;
+                }
+            }
+
+            public void ToggleDrainAll()
+            {
+                if (Sorter.DrainAll)
+                {
+                    Sorter.DrainAll = false;
+                    Active = false;
+                }
+                else
+                {
+                    Sorter.DrainAll = true;
+                    Active = true;
+                }
+            }
+
+            public void ToggleWhiteList()
+            {
+                List<MyInventoryItemFilter> filters = new List<MyInventoryItemFilter>();
+                Sorter.GetFilterList(filters);
+
+                if(Sorter.Mode == MyConveyorSorterMode.Whitelist)
+                {
+                    Sorter.SetFilter(MyConveyorSorterMode.Blacklist, filters);
+                    Active = false;
+                }
+                else
+                {
+                    Sorter.SetFilter(MyConveyorSorterMode.Whitelist, filters);
+                    Active = true;
+                }
+            }
+
+            public void ToggleItem()
+            {
+                List<MyInventoryItemFilter> filters = new List<MyInventoryItemFilter>();
+                Sorter.GetFilterList(filters);
+
+                string item = SorterProfiles.LookupItem(Filter);
+                MyDefinitionId defId = MyDefinitionId.Parse(item);
+                MyInventoryItemFilter itemFilter = new MyInventoryItemFilter(defId);
+
+                if (filters.Contains(itemFilter))
+                {
+                    Sorter.RemoveItem(itemFilter);
+                    Active = false;
+                }
+                else
+                {
+                    Sorter.AddItem(itemFilter);
+                    Active = true;
                 }
             }
         }

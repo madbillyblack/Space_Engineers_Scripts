@@ -87,20 +87,21 @@ namespace IngameScript
                 case "LAST_LOG":
                     _logger.Scroll(true);
                     break;
+                case "CLEAR":
+                    _logger.Clear();
+                    break;
                 default:
                     _logger.LogError("\nUNRECOGNIZED COMMAND:\n" + argument);
                     break;
             }
         }
 
-
         public void PressButton(int button, string menuId)
         {
             MenuViewer viewer = GetMenuViewer(menuId);
             if (viewer == null) return;
 
-
-            // TODO
+            viewer.PressButton(button);
         }
 
         public void CycleSorter(string menuId, bool previous = false)

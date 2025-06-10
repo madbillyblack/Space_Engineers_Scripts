@@ -62,6 +62,13 @@ namespace IngameScript
                 Messages.Add(prefix + message);
             }
 
+
+            public void Clear()
+            {
+                Messages.Clear();
+            }
+
+
             public void Scroll(bool scrollBack = false)
             {
                 if (Messages.Count < 2) return;
