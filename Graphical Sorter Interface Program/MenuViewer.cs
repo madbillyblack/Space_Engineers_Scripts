@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -31,9 +32,15 @@ namespace IngameScript
         const string PAGE_KEY = "CurrentPage";
         const string ID_KEY = "Menu ID";
 
+        const string DF_BG = "0,32,0";
+        const string DF_TITLE = "32,32,0";
+        const string DF_LABEL = "32,32,32";
+
+
         public class MenuViewer
         {
             public IMyTextSurface Surface {  get; set; }
+            public RectangleF Viewport { get; set; }
             public MyIniHandler IniHandler { get; set; }
             public MenuPage MenuPage { get; set; }
             public int ScreenIndex { get; set; }
@@ -44,16 +51,29 @@ namespace IngameScript
             public GSorter GSorter { get; set; }
             public string Header { get; set; }
 
+            public Color BackgroundColor { get; set; }
+            public Color TitleColor { get; set; }
+            public Color LabelColor { get; set; }
+            public Color ButtonColor { get; set; }
+
             public MenuViewer(MyIniHandler iniHandler, int id, int index)
             {
                 IniHandler = iniHandler;
                 Id = id;
                 ScreenIndex = index;
                 Header = SCREEN_HEADER + ScreenIndex;
+
                 Surface = (IniHandler.Block as IMyTextSurfaceProvider).GetSurface(ScreenIndex);
-                Surface.ContentType = ContentType.SCRIPT;
+                Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
+
+                //Surface.ContentType = ContentType.SCRIPT;
+                PrepareTextSurfaceForSprites(Surface);
+
                 InitSorter();
                 InitPage();
+                InitColors();
+
+                DrawSurface();
             }
 
             void InitSorter()
@@ -88,6 +108,14 @@ namespace IngameScript
                     SetCurrentPage(1);
 
                 SetMenuPage();
+            }
+
+            void InitColors()
+            {
+                BackgroundColor = ParseColor(IniHandler.GetKey(Header, "BackgroundColor", DF_BG));
+                ButtonColor = BackgroundColor * 1.25f;
+                TitleColor = ParseColor(IniHandler.GetKey(Header, "TitleColor", DF_TITLE));
+                LabelColor = ParseColor(IniHandler.GetKey(Header, "LabelColor", DF_LABEL));
             }
 
             public void PressButton(int buttonNumber)
@@ -207,6 +235,48 @@ namespace IngameScript
 
                 return filterArray;
             }
+
+            // DRAW SURFACE //
+            public void DrawSurface()
+            {
+
+
+                _frame = Surface.DrawFrame();
+
+                Vector2 center = Viewport.Center;
+                float height = Viewport.Height;
+                float width = Viewport.Width;
+
+                float fontSize = 0.5f;
+
+                bool bigScreen = Viewport.Width > 500;
+
+                if (bigScreen)
+                    fontSize *= 1.5f;
+
+                if (height == width)
+                    fontSize *= 2;
+
+                // Background
+                Vector2 position = center - new Vector2(width * 0.5f, 0);
+                DrawTexture(SQUARE, position, new Vector2(width, height), 0, BackgroundColor);
+
+                //TEST (DELETE LATER)
+                DrawTexture(CIRCLE, position, new Vector2(height, height), 0, ButtonColor);
+                DrawText("Left", position - new Vector2(width * 0.25f, 0), fontSize, TextAlignment.CENTER, TitleColor);
+                DrawText("Right", position + new Vector2(width * 0.25f, 0), fontSize, TextAlignment.CENTER, LabelColor);
+
+                // TODO
+
+
+
+
+
+                // TODONE
+
+                _frame.Dispose();
+            }
+
         }
 
         public void AddMenuViewers()

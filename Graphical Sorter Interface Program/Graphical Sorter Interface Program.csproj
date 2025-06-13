@@ -38,6 +38,7 @@
   <Import Project="MDK/MDK.options.props" />
   <Import Project="MDK/MDK.paths.props" Condition="exists('MDK/MDK.paths.props')" />
   <ItemGroup>
+    <Compile Include="DrawFunctions.cs" />
     <Compile Include="MenuPage.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MainSwitch.cs" />
