@@ -55,6 +55,7 @@ namespace IngameScript
         {
             public int Id { get; set; }
             public string Filter { get; set; }
+            public string Label { get; set; }
             public bool Active { get; set; }
             public enum ButtonType { ITEM, BW_LIST, DRAIN, EMPTY }
             public ButtonType Type { get; set; }
@@ -85,7 +86,9 @@ namespace IngameScript
 
                 // If Filter Is not contained in the lookup, use entire provided filter.
                 // For custom/missing item types
-                Filter = SorterProfiles.LookupItem(filter);
+                string [] lookup = SorterProfiles.LookupItem(filter);
+                Filter = lookup[0];
+                Label = lookup[1];
             }
 
             public void Initialize(List<MyInventoryItemFilter> filterList)
@@ -111,11 +114,11 @@ namespace IngameScript
             bool IsFilterActive(List<MyInventoryItemFilter> filterList)
             {
 
-                string item = SorterProfiles.LookupItem(Filter);
+                //string item = SorterProfiles.LookupItem(Filter);
 
                 try
                 {
-                    MyDefinitionId defId = MyDefinitionId.Parse(item);
+                    MyDefinitionId defId = MyDefinitionId.Parse(Filter);
                     MyInventoryItemFilter itemFilter = new MyInventoryItemFilter(defId);
 
                     return filterList.Contains(itemFilter);
@@ -123,7 +126,7 @@ namespace IngameScript
                 catch
                 {
                     
-                    _logger.LogError("Could not parse filter " + item);
+                    _logger.LogError("Could not parse filter " + Filter);
                     return false;
                 }
             }
@@ -164,8 +167,8 @@ namespace IngameScript
                 List<MyInventoryItemFilter> filters = new List<MyInventoryItemFilter>();
                 Sorter.GetFilterList(filters);
 
-                string item = SorterProfiles.LookupItem(Filter);
-                MyDefinitionId defId = MyDefinitionId.Parse(item);
+                //string item = SorterProfiles.LookupItem(Filter);
+                MyDefinitionId defId = MyDefinitionId.Parse(Filter);
                 MyInventoryItemFilter itemFilter = new MyInventoryItemFilter(defId);
 
                 if (filters.Contains(itemFilter))

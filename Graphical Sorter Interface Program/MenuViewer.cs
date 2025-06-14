@@ -313,6 +313,10 @@ namespace IngameScript
                 Vector2 position = center - new Vector2(width * 0.5f, 0);
                 DrawTexture(SQUARE, position, new Vector2(width, height), 0, BackgroundColor);
 
+                // Grid
+                float gridHeight = width > height ? width : height;
+                DrawTexture("Grid", position, new Vector2(gridHeight, gridHeight), 0, LabelColor);
+
                 // Set Starting Top Edge
                 Vector2 topLeft;
                 switch (Alignment)
@@ -348,9 +352,12 @@ namespace IngameScript
             
             void DrawTitles(Vector2 topLeft, float width, float fontSize)
             {
+                // Title Bar
+                Vector2 position = topLeft + new Vector2(0, fontSize * 15);
+                DrawTexture(SQUARE, position, new Vector2(width, fontSize * 40), 0, ButtonColor * 1.1f);
 
                 // Menu Title
-                Vector2 position = topLeft + new Vector2(10, 0);
+                position = topLeft + new Vector2(10, 0);
                 string title = "Menu " + Id;
                 DrawText(title, position, fontSize, TextAlignment.LEFT, LabelColor);
 
@@ -401,17 +408,6 @@ namespace IngameScript
 
                     pos += new Vector2(cellWidth, 0);
                 }
-                /*
-                            }
-                            catch
-                            {
-                                _statusMessage += "BLOCK A\n  Button Count: " + page.Buttons.Count
-                                        + "\n  rowCount:" + rowCount;
-                            }
-                */
-
-                //if (rowB < 1) return;
-
 
                 float heightMod;
 
@@ -446,11 +442,12 @@ namespace IngameScript
 
                 Vector2 position = startPosition;
                 Color highlightColor;
+                bool whiteList = GSorter.SorterBlock.Mode == MyConveyorSorterMode.Whitelist;
 
                 if (button.Active)
                 {
-                    if (GSorter.SorterBlock.Mode == MyConveyorSorterMode.Whitelist)
-                        highlightColor = Color.White;
+                    if (whiteList)
+                        highlightColor = Color.LightGray;
                     else
                         highlightColor = Color.Black;
                 }
@@ -459,23 +456,89 @@ namespace IngameScript
                     if(button.Type == MenuButton.ButtonType.BW_LIST)
                         highlightColor = Color.Black;
                     else
-                        highlightColor = ButtonColor;
+                        highlightColor = ButtonColor * 1.1f;
                 }
 
                 DrawTexture(SQUARE, position, new Vector2(scale, scale), 0, highlightColor);
 
-                if(button.Type == MenuButton.ButtonType.ITEM)
+                switch (button.Type)
                 {
-                    DrawTexture(SQUARE, position + new Vector2(scale * 0.1f, 0), new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
-                    DrawTexture(button.Filter, position + new Vector2(scale * 0.1f, 0), new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+                    case MenuButton.ButtonType.ITEM:
+                        DrawItem(button, position, scale, fontSize);
+                        break;
+                    case MenuButton.ButtonType.BW_LIST:
+                        DrawBwToggle(position, scale, fontSize, whiteList);
+                        break;
+                    case MenuButton.ButtonType.DRAIN:
+                        DrawDrain(position, scale, fontSize);
+                        break;
                 }
-                    
 
                 // Number Label
                 position = startPosition + new Vector2(scale * 0.5f, scale * 0.5f - fontSize * 5);//0.45f);
                 DrawText(button.Id.ToString(), position, fontSize * 1.125f, TextAlignment.CENTER, LabelColor);
             }
+
+            void DrawItem(MenuButton button, Vector2 startPosition, float scale, float fontSize)
+            {
+                Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
+
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+                DrawTexture(button.Filter, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+
+                position = startPosition + new Vector2(scale * 0.8f, scale * -0.4f);
+                DrawText(button.Label, position, fontSize * 0.67f, TextAlignment.RIGHT, LabelColor);
+            }
+
+            void DrawDrain(Vector2 startPosition, float scale, float fontSize)
+            {
+                Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
+
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+                DrawTexture("AH_PullUp", position, new Vector2(scale * 0.8f, scale * -0.8f), 0, ButtonColor);
+
+                position = startPosition + new Vector2(scale * 0.9f, scale * -0.4f);
+                DrawText("Drain All", position, fontSize * 0.6f, TextAlignment.RIGHT, LabelColor);
+            }
+
+            void DrawBwToggle(Vector2 startPosition, float scale, float fontSize, bool whiteList)
+            {
+                string topText;
+                Color textColor, buttonColor;
+
+                if (whiteList)
+                {
+                    topText = "WHITE";
+                    buttonColor = Color.LightGray;
+                    textColor = Color.Black;
+                }
+                else
+                {
+                    topText = "BLACK";
+                    buttonColor = Color.Black;
+                    textColor = Color.LightGray;
+                }
+
+                Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, textColor);
+
+                position += new Vector2(scale * 0.05f, 0);
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.7f, scale * 0.7f), 0, buttonColor);
+
+                // Top Text
+                position = startPosition + new Vector2(scale * 0.5f, scale * -0.25f);
+                DrawText(topText, position, fontSize* 0.5f, TextAlignment.CENTER, textColor, "Monospace");
+
+                // Bottom Text
+                position += new Vector2(0, scale * 0.3f);
+                DrawText("LIST", position, fontSize * 0.5f, TextAlignment.CENTER, textColor, "Monospace");
+            }
+
         }
+
+
+
+
 
         public void AddMenuViewers()
         {

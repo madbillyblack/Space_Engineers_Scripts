@@ -58,36 +58,36 @@ namespace IngameScript
 
             public static string MiscList = "TODO";
 
-            public static readonly Dictionary<string, string> Lookup = new Dictionary<string, string>
+            public static readonly Dictionary<string, string[]> Lookup = new Dictionary<string, string[]>
             {
                 // ORES
-                { "ore/iron","Ore/Iron" },
-                { "ore/nickel","Ore/Nickel" },
-                { "ore/silicon","Ore/Silicon" },
-                { "ore/cobalt","Ore/Cobalt" },
-                { "ore/magnesium","Ore/Magnesium" },
-                { "ore/silver","Ore/Silver" },
-                { "ore/gold","Ore/Gold" },
-                { "ore/platinum","Ore/Platinum" },
-                { "ore/uranium","Ore/Uranium" },
-                { "ice","Ore/Ice"},
-                { "stone","Ore/Stone" },
-                { "scrap","Ore/Scrap" },
-                { "oldscrap","Ingot/Scrap"},
-                { "organic","Ore/Organic" },
+                {"ore/iron",new[]{"Ore/Iron","Fe"}},
+                {"ore/nickel",new[]{"Ore/Nickel","Ni" }},
+                {"ore/silicon",new[]{"Ore/Silicon","Si"}},
+                {"ore/cobalt",new[]{"Ore/Cobalt","Co" }},
+                {"ore/magnesium",new[]{"Ore/Magnesium","Mg"}},
+                {"ore/silver",new[]{"Ore/Silver","Ag"}},
+                {"ore/gold",new[]{"Ore/Gold","Au"}},
+                {"ore/platinum",new[]{"Ore/Platinum","Pt"}},
+                {"ore/uranium",new[]{"Ore/Uranium","U" }},
+                {"ice",new[]{"Ore/Ice","Ice"}},
+                {"stone",new[]{"Ore/Stone","Stone"}},
+                {"scrap",new[]{"Ore/Scrap","Scrap"}},
+                {"oldscrap",new[]{"Ingot/Scrap","Old"}},
+                {"organic",new[]{"Ore/Organic","Organic"}},
 
                 // INGOTS
-                { "ingot/iron","Ingot/Iron" },
-                { "ingot/nickel","Ingot/Nickel" },
-                { "ingot/silicon","Ingot/Silicon" },
-                { "ingot/cobalt","Ingot/Cobalt" },
-                { "ingot/magnesium","Ingot/Magnesium" },
-                { "ingot/silver","Ingot/Silver" },
-                { "ingot/gold","Ingot/Gold" },
-                { "ingot/platinum","Ingot/Platinum" },
-                { "ingot/uranium","Ingot/Uranium" },
-                { "gravel", "Ingot/Stone" },
-                { "prototechscrap", "Ingot/PrototechScrap"}
+                {"ingot/iron",new[]{"Ingot/Iron","Fe"}},
+                {"ingot/nickel",new[]{"Ingot/Nickel","Ni"}},
+                {"ingot/silicon",new[]{"Ingot/Silicon","Si"}},
+                {"ingot/cobalt",new[]{"Ingot/Cobalt","Co"}},
+                {"ingot/magnesium",new[]{"Ingot/Magnesium","Mg"}},
+                {"ingot/silver",new[]{"Ingot/Silver","Ag"}},
+                {"ingot/gold",new[]{"Ingot/Gold","Au"}},
+                {"ingot/platinum",new[]{"Ingot/Platinum","Pt"}},
+                {"ingot/uranium",new[]{"Ingot/Uranium","U"}},
+                {"gravel",new[]{"Ingot/Stone","Gravel"}},
+                {"prototechscrap",new[]{"Ingot/PrototechScrap","pScrap"}}
 
                 // COMPONENTS - TODO
 
@@ -100,15 +100,15 @@ namespace IngameScript
                 // MISC - TODO
             };
 
-            public static string LookupItem(string item)
+            public static string[] LookupItem(string item)
             {
                 if (Lookup.ContainsKey(item))
                 {
-                    //_logger.LogInfo("Retrieved item filter: " + Lookup[item]);
-                    return "MyObjectBuilder_" + Lookup[item];
+                    string [] arr = Lookup[item];
+                    return new string[] {"MyObjectBuilder_" + arr[0], arr[1]};
                 }
-                    
-                return item;
+
+                return new string []{ item, "" };
             }
         }
     }

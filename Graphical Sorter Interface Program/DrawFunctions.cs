@@ -49,7 +49,7 @@ namespace IngameScript
         }
 
         // DRAW TEXT //
-        static void DrawText(string text, Vector2 position, float scale, TextAlignment alignment, Color color)
+        static void DrawText(string text, Vector2 position, float scale, TextAlignment alignment, Color color, string font = "White")
         {
             var sprite = new MySprite()
             {
@@ -59,7 +59,7 @@ namespace IngameScript
                 RotationOrScale = scale,
                 Color = color,
                 Alignment = alignment,
-                FontId = "White"
+                FontId = font
             };
             _frame.Add(sprite);
         }
