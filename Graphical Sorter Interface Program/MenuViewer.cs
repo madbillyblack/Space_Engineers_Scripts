@@ -18,12 +18,13 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
+using VRageRender;
 
 namespace IngameScript
 {
     partial class Program
     {
-        public Dictionary<int, MenuViewer> _menuViewers;
+        public static Dictionary<int, MenuViewer> _menuViewers;
         const string VIEWER_TAG = "[GSIP_MENU]";
         const string MENU_HEADER = "GSIP - Menu";
         const string SCREEN_HEADER = "GSIP Screen ";
@@ -32,15 +33,22 @@ namespace IngameScript
         const string PAGE_KEY = "CurrentPage";
         const string ID_KEY = "Menu ID";
 
-        const string DF_BG = "0,32,0";
-        const string DF_TITLE = "32,32,0";
-        const string DF_LABEL = "32,32,32";
+        const string DF_BG = "0,88,151";
+        const string DF_TITLE = "192,192,0";
+        const string DF_LABEL = "179,237,255";
+
+        const string CENTER = "CENTER";
+        const string BOTTOM = "BOTTOM";
+        const string TOP = "TOP";
 
 
         public class MenuViewer
         {
             public IMyTextSurface Surface {  get; set; }
             public RectangleF Viewport { get; set; }
+            public bool BigScreen { get; set; }
+            public bool WideScreen { get; set; }
+            public string Alignment { get; set; }
             public MyIniHandler IniHandler { get; set; }
             public MenuPage MenuPage { get; set; }
             public int ScreenIndex { get; set; }
@@ -65,15 +73,18 @@ namespace IngameScript
 
                 Surface = (IniHandler.Block as IMyTextSurfaceProvider).GetSurface(ScreenIndex);
                 Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
+                BigScreen = Viewport.Width > 500;
+                WideScreen = Viewport.Width >= Viewport.Height * 3 || ButtonCount < 6;
 
                 //Surface.ContentType = ContentType.SCRIPT;
                 PrepareTextSurfaceForSprites(Surface);
 
                 InitSorter();
                 InitPage();
+                SetAlignment();
                 InitColors();
 
-                DrawSurface();
+                //DrawSurface();
             }
 
             void InitSorter()
@@ -110,6 +121,11 @@ namespace IngameScript
                 SetMenuPage();
             }
 
+            void SetAlignment()
+            {
+                Alignment = IniHandler.GetKey(Header, "Alignment", CENTER).ToUpper();
+            }
+
             void InitColors()
             {
                 BackgroundColor = ParseColor(IniHandler.GetKey(Header, "BackgroundColor", DF_BG));
@@ -143,12 +159,16 @@ namespace IngameScript
                         break;
 
                 }
+
+                DrawSurface();
             }
 
 
             public void CycleSorter(bool cycleLast = false)
             {
                 if (_sorters.Count < 2) return;
+
+                SetCurrentPage(1);
 
                 List<string> keys = _sorters.Keys.ToList();
                 int index = keys.IndexOf(GSorter.Tag);
@@ -166,6 +186,7 @@ namespace IngameScript
                 GSorter = _sorters[keys[index]];
                 IniHandler.SetKey(Header, "Sorter", GSorter.Tag);
                 SetPageCount();
+                DrawSurface();
             }
 
             public void CyclePages(bool cycleLast = false)
@@ -183,6 +204,7 @@ namespace IngameScript
                 IniHandler.SetKey(Header, PAGE_KEY, CurrentPage.ToString());
 
                 SetMenuPage();
+                DrawSurface();
             }
 
             void SetPageCount()
@@ -214,23 +236,33 @@ namespace IngameScript
                 string[] filterArray = new string[ButtonCount];
 
                 int startIndex =  (CurrentPage - 1) * ButtonCount;
-
                 int endIndex;
-                if(CurrentPage == PageCount)
+                int remainder = GSorter.Filters.Count() % ButtonCount;
+                bool oneShort = remainder == ButtonCount - 1;
+
+                if (CurrentPage == PageCount)
                 {
                     // If final page set last two buttons to "drain" and "bw"
-                    endIndex = GSorter.Filters.Count() % ButtonCount;
+                    endIndex = remainder;
                     filterArray[ButtonCount - 1] = "drain";
                     filterArray[ButtonCount - 2] = "bw";
+
+                    if(oneShort) return filterArray;
                 }
                 else
                 {
-                    endIndex = ButtonCount;
+                    if (oneShort)
+                        endIndex = remainder;
+                    else
+                        endIndex = ButtonCount;
                 }
 
-                for(int i = 0; i < endIndex; i++)
+                _dataScreen.WriteText("Index: " + startIndex + "\n");
+                for (int i = 0; i < endIndex; i++)
                 {
+                    _dataScreen.WriteText("[" + i + "]", true);
                     filterArray[i] = GSorter.Filters[startIndex + i];
+                    _dataScreen.WriteText(filterArray[i] + "\n", true);
                 }
 
                 return filterArray;
@@ -239,8 +271,6 @@ namespace IngameScript
             // DRAW SURFACE //
             public void DrawSurface()
             {
-
-
                 _frame = Surface.DrawFrame();
 
                 Vector2 center = Viewport.Center;
@@ -249,22 +279,84 @@ namespace IngameScript
 
                 float fontSize = 0.5f;
 
-                bool bigScreen = Viewport.Width > 500;
-
-                if (bigScreen)
+                if (BigScreen)
                     fontSize *= 1.5f;
 
                 if (height == width)
                     fontSize *= 2;
 
+                int rowCount;
+                float cellWidth;
+                float buttonHeight;
+
+                if (WideScreen)
+                {
+                    rowCount = ButtonCount;
+                    //cellWidth = width * 0.142857f;
+                    buttonHeight = height * 0.5f;
+                }
+                else
+                {
+                    rowCount = (int)Math.Ceiling(ButtonCount * 0.5);
+                    //cellWidth = (width * 0.25f);
+                    buttonHeight = (height * 0.225f);
+                }
+
+                cellWidth = width / rowCount;
+
+                if (buttonHeight > cellWidth)
+                    buttonHeight = cellWidth - 4;
+
                 // Background
                 Vector2 position = center - new Vector2(width * 0.5f, 0);
                 DrawTexture(SQUARE, position, new Vector2(width, height), 0, BackgroundColor);
 
+                // Set Starting Top Edge
+                Vector2 topLeft;
+                switch (Alignment)
+                {
+                    case TOP:
+                        topLeft = center - new Vector2(width * 0.5f, height * 0.5f);
+                        break;
+                    case BOTTOM:
+                        if (WideScreen)
+                            topLeft = center - new Vector2(width * 0.5f, height * -0.5f + buttonHeight * 2);
+                        else
+                            topLeft = center - new Vector2(width * 0.5f, height * -0.5f + buttonHeight * 4);
+                        break;
+                    case CENTER:
+                    default:
+                        if (WideScreen)
+                            topLeft = center - new Vector2(width * 0.5f, buttonHeight);
+                        else
+                            topLeft = center - new Vector2(width * 0.5f, buttonHeight * 2);
+                        break;
+                }
+
+                // Menu Title
+                position = topLeft + new Vector2(10, 0);
+                string title = "Menu " + Id;
+                DrawText(title, position, fontSize, TextAlignment.LEFT, LabelColor);
+
+                // Current Sorter
+                position = topLeft + new Vector2(width * 0.5f, 0);
+                string sortTitle = "Sorter: " + GSorter.Tag;
+                DrawText(sortTitle, position, fontSize, TextAlignment.CENTER, TitleColor);
+
+                // Pages
+                position = topLeft + new Vector2(width - 10, 0);
+                string pageTitle = "Page " + CurrentPage + " of " + PageCount;
+                DrawText(pageTitle, position, fontSize, TextAlignment.RIGHT, LabelColor);
+
+
+                /*
                 //TEST (DELETE LATER)
-                DrawTexture(CIRCLE, position, new Vector2(height, height), 0, ButtonColor);
+                position = Viewport.Center;
+                DrawTexture(CIRCLE, position - new Vector2(height * 0.5f, 0), new Vector2(height, height), 0, ButtonColor);
                 DrawText("Left", position - new Vector2(width * 0.25f, 0), fontSize, TextAlignment.CENTER, TitleColor);
                 DrawText("Right", position + new Vector2(width * 0.25f, 0), fontSize, TextAlignment.CENTER, LabelColor);
+                */
+
 
                 // TODO
 
@@ -376,6 +468,16 @@ namespace IngameScript
             }
 
             return _menuViewers[id];
+        }
+
+
+        public void DrawAllMenus()
+        {
+            if (_menuViewers.Count < 1) return;
+
+            foreach(int key in _menuViewers.Keys) {
+                _menuViewers[key].DrawSurface();
+            }
         }
     }
 }

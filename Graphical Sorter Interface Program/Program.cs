@@ -32,7 +32,7 @@ namespace IngameScript
         const string SLASHES = "///////////////";
         const string DASHES = "-------------------";
 
-        IMyTextSurface _dataScreen;
+        static IMyTextSurface _dataScreen;
         static Logger _logger;
 
 
@@ -60,6 +60,7 @@ namespace IngameScript
             AddDataScreen();
             AddSorters();
             AddMenuViewers();
+            DrawAllMenus();
             // TODO
 
             // TODONE
