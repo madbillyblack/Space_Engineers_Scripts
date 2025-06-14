@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
+using System.Runtime.Serialization.Formatters;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -74,7 +75,6 @@ namespace IngameScript
                 Surface = (IniHandler.Block as IMyTextSurfaceProvider).GetSurface(ScreenIndex);
                 Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
                 BigScreen = Viewport.Width > 500;
-                WideScreen = Viewport.Width >= Viewport.Height * 3 || ButtonCount < 6;
 
                 //Surface.ContentType = ContentType.SCRIPT;
                 PrepareTextSurfaceForSprites(Surface);
@@ -111,6 +111,7 @@ namespace IngameScript
             void InitPage()
             {
                 ButtonCount = ParseInt(IniHandler.GetKey(Header, BUTTON_KEY, "7"), 7);
+                WideScreen = Viewport.Width >= Viewport.Height * 3 || ButtonCount < 6;
                 SetPageCount();
                 // Index Pages from 1
                 CurrentPage = ParseInt(IniHandler.GetKey(Header, PAGE_KEY, "1"), 1);
@@ -129,7 +130,7 @@ namespace IngameScript
             void InitColors()
             {
                 BackgroundColor = ParseColor(IniHandler.GetKey(Header, "BackgroundColor", DF_BG));
-                ButtonColor = BackgroundColor * 1.25f;
+                ButtonColor = BackgroundColor * 1.12f;
                 TitleColor = ParseColor(IniHandler.GetKey(Header, "TitleColor", DF_TITLE));
                 LabelColor = ParseColor(IniHandler.GetKey(Header, "LabelColor", DF_LABEL));
             }
@@ -186,6 +187,7 @@ namespace IngameScript
                 GSorter = _sorters[keys[index]];
                 IniHandler.SetKey(Header, "Sorter", GSorter.Tag);
                 SetPageCount();
+                SetMenuPage();
                 DrawSurface();
             }
 
@@ -251,7 +253,7 @@ namespace IngameScript
                 }
                 else
                 {
-                    if (oneShort)
+                    if (oneShort && CurrentPage == PageCount - 1)
                         endIndex = remainder;
                     else
                         endIndex = ButtonCount;
@@ -333,8 +335,22 @@ namespace IngameScript
                         break;
                 }
 
+                DrawTitles(topLeft, width, fontSize);
+
+                if (WideScreen)
+                    DrawSingleRow(topLeft, cellWidth, buttonHeight, fontSize);
+                else
+                    DrawDoubleRow(topLeft, cellWidth, buttonHeight, rowCount, fontSize);
+
+                _frame.Dispose();
+            }
+
+            
+            void DrawTitles(Vector2 topLeft, float width, float fontSize)
+            {
+
                 // Menu Title
-                position = topLeft + new Vector2(10, 0);
+                Vector2 position = topLeft + new Vector2(10, 0);
                 string title = "Menu " + Id;
                 DrawText(title, position, fontSize, TextAlignment.LEFT, LabelColor);
 
@@ -347,28 +363,118 @@ namespace IngameScript
                 position = topLeft + new Vector2(width - 10, 0);
                 string pageTitle = "Page " + CurrentPage + " of " + PageCount;
                 DrawText(pageTitle, position, fontSize, TextAlignment.RIGHT, LabelColor);
-
-
-                /*
-                //TEST (DELETE LATER)
-                position = Viewport.Center;
-                DrawTexture(CIRCLE, position - new Vector2(height * 0.5f, 0), new Vector2(height, height), 0, ButtonColor);
-                DrawText("Left", position - new Vector2(width * 0.25f, 0), fontSize, TextAlignment.CENTER, TitleColor);
-                DrawText("Right", position + new Vector2(width * 0.25f, 0), fontSize, TextAlignment.CENTER, LabelColor);
-                */
-
-
-                // TODO
-
-
-
-
-
-                // TODONE
-
-                _frame.Dispose();
             }
 
+
+            void DrawSingleRow(Vector2 position, float cellWidth, float buttonHeight, float fontSize)
+            {
+                // Button Backgrounds
+                Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.175f);
+                //Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
+
+                List<int> keys = MenuPage.Buttons.Keys.ToList();
+
+                foreach (int i in keys)
+                {
+                    MenuButton button = MenuPage.Buttons[i];
+
+                    DrawButton(button, pos, buttonHeight, fontSize);
+
+                    pos += new Vector2(cellWidth, 0);
+                }
+            }
+
+
+            void DrawDoubleRow(Vector2 position, float cellWidth, float buttonHeight, int rowCount, float fontSize)
+            {
+                Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.33f);
+                //Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
+
+                List<int> keys = MenuPage.Buttons.Keys.ToList();
+
+                //			try{
+                for (int i = 0; i < rowCount; i++)
+                {
+                    MenuButton button = MenuPage.Buttons[keys[i]];
+
+                    DrawButton(button, pos, buttonHeight, fontSize);
+
+                    pos += new Vector2(cellWidth, 0);
+                }
+                /*
+                            }
+                            catch
+                            {
+                                _statusMessage += "BLOCK A\n  Button Count: " + page.Buttons.Count
+                                        + "\n  rowCount:" + rowCount;
+                            }
+                */
+
+                //if (rowB < 1) return;
+
+
+                float heightMod;
+
+                if (Viewport.Width == Viewport.Height)
+                    heightMod = 3.1f;
+                else
+                    heightMod = 3.3f;
+
+                pos = position + new Vector2(0, buttonHeight * heightMod);
+
+                // check if the button count is even, offset bottom row if so.
+                if (MenuPage.Buttons.Count % 2 > 0)
+                    pos += new Vector2(cellWidth - buttonHeight * 0.5f, 0);
+                else
+                    pos += new Vector2((cellWidth - buttonHeight) * 0.5f, 0); // Parentheses matter!
+
+
+                //			try {
+                for (int j = rowCount; j < MenuPage.Buttons.Count; j++)
+                {
+                    MenuButton button = MenuPage.Buttons[keys[j]];
+
+                    DrawButton(button, pos, buttonHeight, fontSize);
+
+                    pos += new Vector2(cellWidth, 0);
+                }
+            }
+
+            void DrawButton(MenuButton button, Vector2 startPosition, float scale, float fontSize)
+            {
+                if (button.Type == MenuButton.ButtonType.EMPTY) return;
+
+                Vector2 position = startPosition;
+                Color highlightColor;
+
+                if (button.Active)
+                {
+                    if (GSorter.SorterBlock.Mode == MyConveyorSorterMode.Whitelist)
+                        highlightColor = Color.White;
+                    else
+                        highlightColor = Color.Black;
+                }
+                else
+                {
+                    if(button.Type == MenuButton.ButtonType.BW_LIST)
+                        highlightColor = Color.Black;
+                    else
+                        highlightColor = ButtonColor;
+                }
+
+                DrawTexture(SQUARE, position, new Vector2(scale, scale), 0, highlightColor);
+
+                if(button.Type == MenuButton.ButtonType.ITEM)
+                {
+                    DrawTexture(SQUARE, position + new Vector2(scale * 0.1f, 0), new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+                    DrawTexture(button.Filter, position + new Vector2(scale * 0.1f, 0), new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+                }
+                    
+
+                // Number Label
+                position = startPosition + new Vector2(scale * 0.5f, scale * 0.5f - fontSize * 5);//0.45f);
+                DrawText(button.Id.ToString(), position, fontSize * 1.125f, TextAlignment.CENTER, LabelColor);
+            }
         }
 
         public void AddMenuViewers()

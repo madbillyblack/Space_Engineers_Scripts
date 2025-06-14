@@ -41,7 +41,7 @@ namespace IngameScript
                         if (String.IsNullOrEmpty(filter))
                             filter = "";
 
-                        MenuButton button = new MenuButton(filter, sorter);
+                        MenuButton button = new MenuButton(filter, sorter, i+1);
                         button.Initialize(currentFilters);
 
                         Buttons.Add(i + 1, button);
@@ -53,6 +53,7 @@ namespace IngameScript
 
         public class MenuButton
         {
+            public int Id { get; set; }
             public string Filter { get; set; }
             public bool Active { get; set; }
             public enum ButtonType { ITEM, BW_LIST, DRAIN, EMPTY }
@@ -60,8 +61,9 @@ namespace IngameScript
 
             public IMyConveyorSorter Sorter { get; set; }
 
-            public MenuButton(string filter, IMyConveyorSorter sorter)
+            public MenuButton(string filter, IMyConveyorSorter sorter, int buttonNumber)
             {
+                Id = buttonNumber;
                 Sorter = sorter;
 
                 switch (filter)
