@@ -102,6 +102,15 @@ namespace IngameScript
             if (viewer == null) return;
 
             viewer.PressButton(button);
+
+            // Update display for every Menu associated with the same sorter
+            string tag = viewer.GSorter.Tag;
+            foreach(int key in _menuViewers.Keys)
+            {
+                MenuViewer menu = _menuViewers[key];
+                if (menu.Id != viewer.Id && menu.GSorter.Tag == tag)
+                    menu.UpdateActive();
+            }
         }
 
         public void CycleSorter(string menuId, bool previous = false)

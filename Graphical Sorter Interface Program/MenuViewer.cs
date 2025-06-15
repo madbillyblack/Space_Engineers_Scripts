@@ -209,6 +209,12 @@ namespace IngameScript
                 DrawSurface();
             }
 
+            public void UpdateActive()
+            {
+                SetMenuPage();
+                DrawSurface();
+            }
+
             void SetPageCount()
             {
                 if(ButtonCount > 0)
@@ -231,7 +237,6 @@ namespace IngameScript
             {
                 MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock);
             }
-
 
             string[] FiltersFromPageNumber()
             {
@@ -533,7 +538,6 @@ namespace IngameScript
                 position += new Vector2(0, scale * 0.3f);
                 DrawText("LIST", position, fontSize * 0.5f, TextAlignment.CENTER, textColor, "Monospace");
             }
-
         }
 
 
