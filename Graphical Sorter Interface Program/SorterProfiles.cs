@@ -97,13 +97,50 @@ namespace IngameScript
                                         + " fireworkspink\n"
                                         + " fireworksrainbow";
 
-            public static string WeaponList = "TODO\n"
-                                        + " \n"
-                                        + " ";
+            public static string WeaponList = " mr-20\n"
+                                        + " mr-20mag\n"
+                                        + " mr-50a\n"
+                                        + " mr-50amag\n"
+                                        + " mr-8p\n"
+                                        + " mr-8pmag\n"
+                                        + " mr-30e\n"
+                                        + " mr-30emag\n"
+                                        + " s-10\n"
+                                        + " s-10mag\n"
+                                        + " s-20a\n"
+                                        + " s-20amag\n"
+                                        + " s-10e\n"
+                                        + " s-10emag\n"
+                                        + " ro-1\n"
+                                        + " pro-1\n"
+                                        + " missile\n"
+                                        + " flaregun\n"
+                                        + " flareclip\n"
+                                        + " 5.56x45mm";
 
-            public static string MiscList = "TODO\n"
-                                        + " \n"
-                                        + " ";
+            public static string ToolList = " anglegrinderitem\n"
+                                        + " anglegrinder2item\n"
+                                        + " anglegrinder3item\n"
+                                        + " anglegrinder4item\n"
+                                        + " welderitem\n"
+                                        + " welder2item\n"
+                                        + " welder3item\n"
+                                        + " welder4item\n"
+                                        + " handdrillitem\n"
+                                        + " handdrill2item\n"
+                                        + " handdrill3item\n"
+                                        + " handdrill4item\n"
+                                        + " hydrogenbottle\n"
+                                        + " oxygenbottle";
+
+            public static string MiscList = " medkit\n"
+                                        + " powerkit\n"
+                                        + " clangcola\n"
+                                        + " cosmiccoffee\n"
+                                        + " datapad\n"
+                                        + " spacecredit\n"
+                                        + " package\n"
+                                        + " zonechip";
 
             public static readonly Dictionary<string, string[]> Lookup = new Dictionary<string, string[]>
             {
@@ -169,29 +206,69 @@ namespace IngameScript
                 {"ptpanel",new[]{"Component/PrototechPanel","pPanel"}},
                 {"ptpropulsion",new[]{"Component/PrototechPropulsionUnit","pProp."}},
 
-                // AMMO - TODO
+                // SHIP AMMO
                 {"gatlingammo",new[]{"AmmoMagazine/NATO_25x184mm","25mm"}},
                 {"autocannonmag",new[]{"AmmoMagazine/AutocannonClip","40mm"}},
                 {"assaultcannonshell",new[]{"AmmoMagazine/MediumCalibreAmmo","55mm"}},
                 {"artilleryshell",new[]{"AmmoMagazine/LargeCalibreAmmo","125mm"}},
                 {"srailgunsabot",new[]{"AmmoMagazine/SmallRailgunAmmo","smRail"}},
                 {"lrailgunsabot",new[]{"AmmoMagazine/LargeRailgunAmmo","lgRail"}},
-                {"missile",new[]{"AmmoMagazine/Missile200mm","Missile"}},
+                {"missile",new[]{"AmmoMagazine/Missile200mm","Missile","96,96,0"}},
                 {"fireworksred",new[]{"AmmoMagazine/FireworksBoxRed","Fw:Red","255,64,64"}},
                 {"fireworksyellow",new[]{"AmmoMagazine/FireworksBoxYellow","FwYellow","255,255,64"}},
                 {"fireworksgreen",new[]{"AmmoMagazine/FireworksBoxGreen","Fw:Green","64,127,64"}},
                 {"fireworksblue",new[]{"AmmoMagazine/FireworksBoxBlue","Fw:Blue","64,64,255"}},
                 {"fireworkspink",new[]{"AmmoMagazine/FireworksBoxPink","Fw:Pink","255,96,127"}},
-                {"fireworksrainbow",new[]{"AmmoMagazine/FireworksBoxRainbow", "Fw:Multi", "192,144,255"}}
+                {"fireworksrainbow",new[]{"AmmoMagazine/FireworksBoxRainbow","Fw:Multi","192,144,255"}},
 
-                // WEAPONS - TODO
+                // PERSONAL AMMO
+                {"5.56x45mm",new[]{"AmmoMagazine/NATO_5p56x45mm","5.56x45mm","84,84,84"}},
+                {"mr-20mag",new[]{"AmmoMagazine/AutomaticRifleGun_Mag_20rd","mr-20","84,84,84"}},
+                {"mr-50amag",new[]{"AmmoMagazine/RapidFireAutomaticRifleGun_Mag_50rd","mr-50a","138,137,107"}},
+                {"mr-8pmag",new[]{"AmmoMagazine/PreciseAutomaticRifleGun_Mag_5rd","mr-8p","72,84,96"}},
+                {"mr-30emag",new[]{"AmmoMagazine/UltimateAutomaticRifleGun_Mag_30rd","mr-30e","137,136,106"}},
+                {"s-10mag",new[]{"AmmoMagazine/SemiAutoPistolMagazine","s-10","84,84,84"}},
+                {"s-20amag",new[]{"AmmoMagazine/FullAutoPistolMagazine","s-20a","96,84,84"}},
+                {"s-10emag",new[]{"AmmoMagazine/ElitePistolMagazine","s-10e","96,96,84"}},
+                {"flareclip",new[]{"AmmoMagazine/FlareClip","flares","176,80,56"}},
 
-                // TOOLS - TODO
+                // WEAPONS
+                {"mr-20",new[]{"PhysicalGunObject/AutomaticRifleItem","mr-20","84,84,84"}},
+                {"mr-50a",new[]{"PhysicalGunObject/RapidFireAutomaticRifleItem","mr-50","138,137,107"}},
+                {"mr-8p",new[]{"PhysicalGunObject/PreciseAutomaticRifleItem","mr-8p","72,84,96"}},
+                {"mr-30e",new[]{"PhysicalGunObject/UltimateAutomaticRifleItem","mr-30e","137,136,106"}},
+                {"s-10",new[]{"PhysicalGunObject/SemiAutoPistolItem","s-10","84,84,84"}},
+                {"s-20a",new[]{"PhysicalGunObject/FullAutoPistolItem","s-20a","96,84,84"}},
+                {"s-10e",new[]{"PhysicalGunObject/ElitePistolItem","s-10e","96,96,84"}},
+                {"ro-1",new[]{"PhysicalGunObject/BasicHandHeldLauncherItem","ro-1","112,110,120"}},
+                {"pro-1",new[]{"PhysicalGunObject/AdvancedHandHeldLauncherItem","pro-1","118,121,102"}},
+                {"flaregun",new[]{"PhysicalGunObject/FlareGunItem","flaregun","176,80,56"}},
 
-                // PROTOTECH - TODO
+                // TOOLS
+                {"anglegrinderitem",new[]{"PhysicalGunObject/AngleGrinderItem",""}},
+                {"anglegrinder2item",new[]{"PhysicalGunObject/AngleGrinder2Item",""}},
+                {"anglegrinder3item",new[]{"PhysicalGunObject/AngleGrinder3Item",""}},
+                {"anglegrinder4item",new[]{"PhysicalGunObject/AngleGrinder4Item",""}},
+                {"welderitem",new[]{"PhysicalGunObject/WelderItem",""}},
+                {"welder2item",new[]{"PhysicalGunObject/Welder2Item",""}},
+                {"welder3item",new[]{"PhysicalGunObject/Welder3Item",""}},
+                {"welder4item",new[]{"PhysicalGunObject/Welder4Item",""}},
+                {"handdrillitem",new[]{"PhysicalGunObject/HandDrillItem",""}},
+                {"handdrill2item",new[]{"PhysicalGunObject/HandDrill2Item",""}},
+                {"handdrill3item",new[]{"PhysicalGunObject/HandDrill3Item",""}},
+                {"handdrill4item",new[]{"PhysicalGunObject/HandDrill4Item",""}},
+                {"hydrogenbottle",new[]{"GasContainerObject/HydrogenBottle",""}},
+                {"oxygenbottle",new[]{"OxygenContainerObject/OxygenBottle",""}},
 
                 // MISC - TODO
-                //{"",new[]{"",""}},
+                {"medkit",new[]{"ConsumableItem/Medkit","Medkit"}},
+                {"powerkit",new[]{"ConsumableItem/Powerkit","PwrKit"}},
+                {"clangcola",new[]{"ConsumableItem/ClangCola","CLANG!"}},
+                {"cosmiccoffee",new[]{"ConsumableItem/CosmicCoffee","Coffee"}},
+                {"datapad",new[]{"Datapad/Datapad","DataPad"}},
+                {"spacecredit",new[]{"PhysicalObject/SpaceCredit","Credits"}},
+                {"package",new[]{"Package/Package","Package"}},
+                {"zonechip",new[]{"Component/ZoneChip","ZoneChip"}}
             };
 
             public static string[] LookupItem(string item)

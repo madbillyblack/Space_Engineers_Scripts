@@ -477,7 +477,7 @@ namespace IngameScript
                         DrawBwToggle(position, scale, fontSize, whiteList);
                         break;
                     case MenuButton.ButtonType.DRAIN:
-                        DrawDrain(position, scale, fontSize);
+                        DrawDrain(position, scale, fontSize, button.Active);
                         break;
                 }
 
@@ -506,7 +506,13 @@ namespace IngameScript
                     labelColor = LabelColor;
                 }
 
-                DrawTexture(button.Filter, position + new Vector2(0, scale * 0.07f), new Vector2(scale * 0.8f, scale * 0.8f), 0, itemColor);//ButtonColor * 1.75f);
+                Vector2 vertOffset;
+                if (String.IsNullOrEmpty(button.Label))
+                    vertOffset = Vector2.Zero;
+                else
+                    vertOffset = new Vector2(0, scale * 0.07f);
+
+                DrawTexture(button.Filter, position + vertOffset, new Vector2(scale * 0.8f, scale * 0.8f), 0, itemColor);//ButtonColor * 1.75f);
 
                 // Scale Down Longer Text labels, and move further right
                 float offsetMod,fontMod;
@@ -525,15 +531,21 @@ namespace IngameScript
                 DrawText(button.Label, position, fontSize * fontMod, TextAlignment.RIGHT, labelColor);
             }
 
-            void DrawDrain(Vector2 startPosition, float scale, float fontSize)
+            void DrawDrain(Vector2 startPosition, float scale, float fontSize, bool active)
             {
                 Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
 
                 DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
                 DrawTexture("AH_PullUp", position, new Vector2(scale * 0.8f, scale * -0.8f), 0, ButtonColor);
 
+                Color labelColor;
+                if (active)
+                    labelColor = TitleColor;
+                else
+                    labelColor = LabelColor;
+
                 position = startPosition + new Vector2(scale * 0.9f, scale * -0.4f);
-                DrawText("Drain All", position, fontSize * 0.6f, TextAlignment.RIGHT, LabelColor);
+                DrawText("Drain All", position, fontSize * 0.6f, TextAlignment.RIGHT, labelColor);
             }
 
             void DrawBwToggle(Vector2 startPosition, float scale, float fontSize, bool whiteList)

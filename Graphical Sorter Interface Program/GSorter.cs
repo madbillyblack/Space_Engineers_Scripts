@@ -149,6 +149,8 @@ namespace IngameScript
                     return SorterProfiles.AmmoList;
                 case WEP_TAG:
                     return SorterProfiles.WeaponList;
+                case TOOL_TAG:
+                    return SorterProfiles.ToolList;
                 case MSC_TAG:
                     return SorterProfiles.MiscList;
             }

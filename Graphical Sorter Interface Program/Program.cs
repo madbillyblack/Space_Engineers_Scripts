@@ -95,13 +95,22 @@ namespace IngameScript
             data += "   Sorter Count: " + _sorters.Count + "\n"
                   + "   Viewer Count: " + _menuViewers.Count;
 
+            if(_sorters.Count > 0)
+            {
+                data += "\nSORTERS:";
+                foreach(string key in _sorters.Keys)
+                {
+                    data += "\n * " + key + " - " +_sorters[key].SorterBlock.CustomName;
+                }
+            }
+
             if(_menuViewers.Count > 0)
             {
                 data += "\nMENU VIEWERS:";
                 foreach(int key in _menuViewers.Keys)
                 {
                     MenuViewer viewer = _menuViewers[key];
-                    data += "\n   " + key + ": viewing sorter " + viewer.GSorter.Tag + " - Page " + viewer.CurrentPage + " of " + viewer.PageCount;
+                    data += "\n * " + key + ": viewing sorter " + viewer.GSorter.Tag + " - Page " + viewer.CurrentPage + " of " + viewer.PageCount;
                     data += "\n   " + viewer.Viewport.Width + " x " + viewer.Viewport.Height + " - ";
 
                     /*

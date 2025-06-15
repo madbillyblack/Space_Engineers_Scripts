@@ -60,13 +60,13 @@ MyObjectBuilder_OxygenContainerObject/OxygenBottle			oxygenbottle
 
 
 CHARACTER MISC:
+MyObjectBuilder_ConsumableItem/Medkit					(medkit)
+MyObjectBuilder_ConsumableItem/Powerkit					(powerkit)
+MyObjectBuilder_Datapad/Datapad						(datapad)
+MyObjectBuilder_PhysicalObject/SpaceCredit				spacecredit
 MyObjectBuilder_ConsumableItem/ClangCola				(clangcola)
 MyObjectBuilder_ConsumableItem/CosmicCoffee				(cosmiccoffee)
-MyObjectBuilder_Datapad/Datapad						(datapad)
-MyObjectBuilder_ConsumableItem/Medkit					(medkit)
 MyObjectBuilder_Package/Package						(package)
-MyObjectBuilder_ConsumableItem/Powerkit					(powerkit)
-MyObjectBuilder_PhysicalObject/SpaceCredit				spacecredit
 MyObjectBuilder_Component/ZoneChip					(zonechip)
 
 COMPONENTS:
