@@ -80,10 +80,10 @@ namespace IngameScript
                 PrepareTextSurfaceForSprites(Surface);
 
                 InitSorter();
+                InitColors();
                 InitPage();
                 SetAlignment();
-                InitColors();
-
+                
                 //DrawSurface();
             }
 
@@ -129,10 +129,12 @@ namespace IngameScript
 
             void InitColors()
             {
-                BackgroundColor = ParseColor(IniHandler.GetKey(Header, "BackgroundColor", DF_BG));
+                string cHeader = Header + " Colors";
+
+                BackgroundColor = ParseColor(IniHandler.GetKey(cHeader, "BackgroundColor", DF_BG));
                 ButtonColor = BackgroundColor * 1.12f;
-                TitleColor = ParseColor(IniHandler.GetKey(Header, "TitleColor", DF_TITLE));
-                LabelColor = ParseColor(IniHandler.GetKey(Header, "LabelColor", DF_LABEL));
+                TitleColor = ParseColor(IniHandler.GetKey(cHeader, "TitleColor", DF_TITLE));
+                LabelColor = ParseColor(IniHandler.GetKey(cHeader, "LabelColor", DF_LABEL));
             }
 
             public void PressButton(int buttonNumber)
@@ -235,7 +237,7 @@ namespace IngameScript
 
             void SetMenuPage()
             {
-                MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock);
+                MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock, LabelColor * 0.9f);
             }
 
             string[] FiltersFromPageNumber()
@@ -489,10 +491,23 @@ namespace IngameScript
                 Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
 
                 DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
-                DrawTexture(button.Filter, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+                DrawTexture(button.Filter, position + new Vector2(0, scale * 0.07f), new Vector2(scale * 0.8f, scale * 0.8f), 0, button.Color);//ButtonColor * 1.75f);
 
-                position = startPosition + new Vector2(scale * 0.8f, scale * -0.4f);
-                DrawText(button.Label, position, fontSize * 0.67f, TextAlignment.RIGHT, LabelColor);
+                // Scale Down Longer Text labels, and move further right
+                float offsetMod,fontMod;
+                if(button.Label.Length > 6)
+                {
+                    offsetMod = 0.9f;
+                    fontMod = 0.6f;
+                }
+                else
+                {
+                    offsetMod = 0.85f;
+                    fontMod = 0.67f;
+                }
+
+                position = startPosition + new Vector2(scale * offsetMod, scale * -0.4f);
+                DrawText(button.Label, position, fontSize * fontMod, TextAlignment.RIGHT, TitleColor);
             }
 
             void DrawDrain(Vector2 startPosition, float scale, float fontSize)

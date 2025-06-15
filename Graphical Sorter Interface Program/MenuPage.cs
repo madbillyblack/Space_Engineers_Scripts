@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Security.Policy;
 using System.Text;
 using VRage;
@@ -27,7 +28,7 @@ namespace IngameScript
         {
             public Dictionary<int, MenuButton> Buttons { get; set; }
 
-            public MenuPage(string[] filters, IMyConveyorSorter sorter)
+            public MenuPage(string[] filters, IMyConveyorSorter sorter, Color iconColor)
             {
                 Buttons = new Dictionary<int, MenuButton>();
                 List<MyInventoryItemFilter> currentFilters = new List<MyInventoryItemFilter>();
@@ -41,7 +42,18 @@ namespace IngameScript
                         if (String.IsNullOrEmpty(filter))
                             filter = "";
 
-                        MenuButton button = new MenuButton(filter, sorter, i+1);
+                        // If Filter Is not contained in the lookup, use entire provided filter.
+                        // For custom/missing item types
+                        string[] lookup = SorterProfiles.LookupItem(filter);
+
+                        Color color;
+
+                        if (string.IsNullOrEmpty(lookup[2]))
+                            color = iconColor;
+                        else
+                            color = ParseColor(lookup[2]);
+
+                        MenuButton button = new MenuButton(lookup[0], sorter, i+1, lookup[1], color);
                         button.Initialize(currentFilters);
 
                         Buttons.Add(i + 1, button);
@@ -59,15 +71,19 @@ namespace IngameScript
             public bool Active { get; set; }
             public enum ButtonType { ITEM, BW_LIST, DRAIN, EMPTY }
             public ButtonType Type { get; set; }
-
             public IMyConveyorSorter Sorter { get; set; }
+            public Color Color { get; set; }
 
-            public MenuButton(string filter, IMyConveyorSorter sorter, int buttonNumber)
+
+            public MenuButton(string filter, IMyConveyorSorter sorter, int buttonNumber, string label, Color color)
             {
                 Id = buttonNumber;
                 Sorter = sorter;
+                Filter = filter;
+                Label = label;
+                Color = color;
 
-                switch (filter)
+                switch (Filter)
                 {
                     case "":
                         Type = ButtonType.EMPTY;
@@ -83,12 +99,13 @@ namespace IngameScript
                         break;
                 }
 
-
+                /*
                 // If Filter Is not contained in the lookup, use entire provided filter.
                 // For custom/missing item types
                 string [] lookup = SorterProfiles.LookupItem(filter);
                 Filter = lookup[0];
                 Label = lookup[1];
+                */
             }
 
             public void Initialize(List<MyInventoryItemFilter> filterList)

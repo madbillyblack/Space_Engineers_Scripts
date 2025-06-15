@@ -90,6 +90,9 @@ namespace IngameScript
                 case "CLEAR":
                     _logger.Clear();
                     break;
+                case "REFRESH":
+                    Build();
+                    break;
                 default:
                     _logger.LogError("\nUNRECOGNIZED COMMAND:\n" + argument);
                     break;

@@ -61,10 +61,6 @@ namespace IngameScript
             AddSorters();
             AddMenuViewers();
             DrawAllMenus();
-            // TODO
-
-            // TODONE
-
             ShowData();
         }
 
@@ -106,15 +102,15 @@ namespace IngameScript
                 {
                     MenuViewer viewer = _menuViewers[key];
                     data += "\n   " + key + ": viewing sorter " + viewer.GSorter.Tag + " - Page " + viewer.CurrentPage + " of " + viewer.PageCount;
-
                     data += "\n   " + viewer.Viewport.Width + " x " + viewer.Viewport.Height + " - ";
 
+                    /*
                     if (viewer.WideScreen)
                         data += "Widescreen\n";
                     else
                         data += "Fullscreen\n";
 
-                    /*
+                    
                     if (viewer.MenuPage == null || viewer.MenuPage.Buttons.Count == 0) continue;
 
                     for (int i = 1; i <= viewer.ButtonCount; i++)

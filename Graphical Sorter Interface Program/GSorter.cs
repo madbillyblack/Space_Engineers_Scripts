@@ -30,6 +30,7 @@ namespace IngameScript
         const string CMP_TAG = "CMP";
         const string TOOL_TAG = "TOOL";
         const string AMMO_TAG = "AMMO";
+        const string MSC_TAG = "MISC";
         const string LIST_KEY = "FilterList";
 
         public static Dictionary<string, GSorter> _sorters;
@@ -138,17 +139,17 @@ namespace IngameScript
 
             switch(type.ToUpper())
             {
-                case "ORE":
+                case ORE_TAG:
                     return SorterProfiles.OreList;
-                case "IGT":
+                case INGOT_TAG:
                     return SorterProfiles.IngotList;
-                case "CMP":
+                case CMP_TAG:
                     return SorterProfiles.ComponentList;
-                case "AMMO":
+                case AMMO_TAG:
                     return SorterProfiles.AmmoList;
-                case "WEP":
+                case WEP_TAG:
                     return SorterProfiles.WeaponList;
-                case "MISC":
+                case MSC_TAG:
                     return SorterProfiles.MiscList;
             }
 
