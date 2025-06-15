@@ -471,7 +471,7 @@ namespace IngameScript
                 switch (button.Type)
                 {
                     case MenuButton.ButtonType.ITEM:
-                        DrawItem(button, position, scale, fontSize);
+                        DrawItem(button, position, scale, fontSize, whiteList);
                         break;
                     case MenuButton.ButtonType.BW_LIST:
                         DrawBwToggle(position, scale, fontSize, whiteList);
@@ -486,12 +486,27 @@ namespace IngameScript
                 DrawText(button.Id.ToString(), position, fontSize * 1.125f, TextAlignment.CENTER, LabelColor);
             }
 
-            void DrawItem(MenuButton button, Vector2 startPosition, float scale, float fontSize)
+            void DrawItem(MenuButton button, Vector2 startPosition, float scale, float fontSize, bool whiteList)
             {
                 Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
 
                 DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
-                DrawTexture(button.Filter, position + new Vector2(0, scale * 0.07f), new Vector2(scale * 0.8f, scale * 0.8f), 0, button.Color);//ButtonColor * 1.75f);
+
+                Color itemColor, labelColor;
+
+                // Set Colors based if the item should pass through the filter
+                if (button.Active && whiteList || !button.Active && !whiteList)
+                {
+                    itemColor = button.Color;
+                    labelColor = TitleColor;
+                }  
+                else
+                {
+                    itemColor = ButtonColor * 0.85f;
+                    labelColor = LabelColor;
+                }
+
+                DrawTexture(button.Filter, position + new Vector2(0, scale * 0.07f), new Vector2(scale * 0.8f, scale * 0.8f), 0, itemColor);//ButtonColor * 1.75f);
 
                 // Scale Down Longer Text labels, and move further right
                 float offsetMod,fontMod;
@@ -507,7 +522,7 @@ namespace IngameScript
                 }
 
                 position = startPosition + new Vector2(scale * offsetMod, scale * -0.4f);
-                DrawText(button.Label, position, fontSize * fontMod, TextAlignment.RIGHT, TitleColor);
+                DrawText(button.Label, position, fontSize * fontMod, TextAlignment.RIGHT, labelColor);
             }
 
             void DrawDrain(Vector2 startPosition, float scale, float fontSize)

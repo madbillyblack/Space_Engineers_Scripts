@@ -108,20 +108,20 @@ namespace IngameScript
             public static readonly Dictionary<string, string[]> Lookup = new Dictionary<string, string[]>
             {
                 // ORES
-                {"ore/iron",new[]{"Ore/Iron","Fe","127,96,96"}},
-                {"ore/nickel",new[]{"Ore/Nickel","Ni" }},
-                {"ore/silicon",new[]{"Ore/Silicon","Si"}},
-                {"ore/cobalt",new[]{"Ore/Cobalt","Co" }},
-                {"ore/magnesium",new[]{"Ore/Magnesium","Mg"}},
-                {"ore/silver",new[]{"Ore/Silver","Ag"}},
-                {"ore/gold",new[]{"Ore/Gold","Au"}},
-                {"ore/platinum",new[]{"Ore/Platinum","Pt"}},
-                {"ore/uranium",new[]{"Ore/Uranium","U" }},
-                {"ice",new[]{"Ore/Ice","Ice"}},
-                {"stone",new[]{"Ore/Stone","Stone"}},
-                {"scrap",new[]{"Ore/Scrap","Scrap"}},
-                {"oldscrap",new[]{"Ingot/Scrap","OldScrap"}},
-                {"organic",new[]{"Ore/Organic","Organic"}},
+                {"ore/iron",new[]{"Ore/Iron","Fe","170,108,93"}},//"127,96,96"}},
+                {"ore/nickel",new[]{"Ore/Nickel","Ni","145,144,124"}},
+                {"ore/silicon",new[]{"Ore/Silicon","Si","87,88,83"}},
+                {"ore/cobalt",new[]{"Ore/Cobalt","Co","96,194,255"}},//"73,162,194"
+                {"ore/magnesium",new[]{"Ore/Magnesium","Mg","55,120,150"}},//"55,93,114"
+                {"ore/silver",new[]{"Ore/Silver","Ag","201,199,176"}},
+                {"ore/gold",new[]{"Ore/Gold","Au","194,175,96"}},
+                {"ore/platinum",new[]{"Ore/Platinum","Pt","189,190,172"}},
+                {"ore/uranium",new[]{"Ore/Uranium","U","73,66,60"}},
+                {"ice",new[]{"Ore/Ice","Ice","75,110,130"}},
+                {"stone",new[]{"Ore/Stone","Stone","127,127,127"}},
+                {"scrap",new[]{"Ore/Scrap","Scrap","127,127,127"}},
+                {"oldscrap",new[]{"Ingot/Scrap","OldScrap","127,96,72"}},
+                {"organic",new[]{"Ore/Organic","Organic","127,164,88"}},
 
                 // INGOTS
                 {"ingot/iron",new[]{"Ingot/Iron","Fe","192,127,127"}},

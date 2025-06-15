@@ -1,111 +1,109 @@
 List of item.Type.ToString()
 
 SHIP AMMO:
-MyObjectBuilder_AmmoMagazine/LargeCalibreAmmo
-MyObjectBuilder_AmmoMagazine/MediumCalibreAmmo
-MyObjectBuilder_AmmoMagazine/AutocannonClip
-MyObjectBuilder_AmmoMagazine/LargeRailgunAmmo
-MyObjectBuilder_AmmoMagazine/SmallRailgunAmmo
-MyObjectBuilder_AmmoMagazine/NATO_25x184mm
-MyObjectBuilder_AmmoMagazine/Missile200mm
-MyObjectBuilder_AmmoMagazine/FireworksBoxBlue
-MyObjectBuilder_AmmoMagazine/FireworksBoxGreen
-MyObjectBuilder_AmmoMagazine/FireworksBoxPink
-MyObjectBuilder_AmmoMagazine/FireworksBoxRainbow
-MyObjectBuilder_AmmoMagazine/FireworksBoxRed
-MyObjectBuilder_AmmoMagazine/FireworksBoxYellow
+MyObjectBuilder_AmmoMagazine/NATO_25x184mm				gatlingammo		25mm
+MyObjectBuilder_AmmoMagazine/AutocannonClip				autocannonmag		40mm
+MyObjectBuilder_AmmoMagazine/MediumCalibreAmmo				assaultcannonshell	55mm
+MyObjectBuilder_AmmoMagazine/LargeCalibreAmmo				artilleryshell		125mm
+MyObjectBuilder_AmmoMagazine/SmallRailgunAmmo				srailgunsabot
+MyObjectBuilder_AmmoMagazine/LargeRailgunAmmo				lrailgunsabot
+MyObjectBuilder_AmmoMagazine/Missile200mm				(missile) rockets
+
+MyObjectBuilder_AmmoMagazine/FireworksBoxRed				(fireworksred)
+MyObjectBuilder_AmmoMagazine/FireworksBoxYellow				(fireworksyellow)
+MyObjectBuilder_AmmoMagazine/FireworksBoxGreen				(fireworksgreen)
+MyObjectBuilder_AmmoMagazine/FireworksBoxBlue				(fireworksblue)
+MyObjectBuilder_AmmoMagazine/FireworksBoxPink				(fireworkspink)
+MyObjectBuilder_AmmoMagazine/FireworksBoxRainbow			(fireworksrainbow)
+
 
 CHARACTER AMMO:
-MyObjectBuilder_AmmoMagazine/NATO_5p56x45mm
-MyObjectBuilder_AmmoMagazine/AutomaticRifleGun_Mag_20rd
-MyObjectBuilder_AmmoMagazine/RapidFireAutomaticRifleGun_Mag_50rd
-MyObjectBuilder_AmmoMagazine/UltimateAutomaticRifleGun_Mag_30rd
-MyObjectBuilder_AmmoMagazine/PreciseAutomaticRifleGun_Mag_5rd
-MyObjectBuilder_AmmoMagazine/SemiAutoPistolMagazine
-MyObjectBuilder_AmmoMagazine/ElitePistolMagazine
-MyObjectBuilder_AmmoMagazine/FullAutoPistolMagazine
-MyObjectBuilder_AmmoMagazine/FlareClip
+MyObjectBuilder_AmmoMagazine/NATO_5p56x45mm				5.56x45mm
+MyObjectBuilder_AmmoMagazine/AutomaticRifleGun_Mag_20rd			mr-20mag
+MyObjectBuilder_AmmoMagazine/RapidFireAutomaticRifleGun_Mag_50rd	mr-50amag	
+MyObjectBuilder_AmmoMagazine/PreciseAutomaticRifleGun_Mag_5rd		mr-8pmag
+MyObjectBuilder_AmmoMagazine/UltimateAutomaticRifleGun_Mag_30rd		mr-30emag
+MyObjectBuilder_AmmoMagazine/SemiAutoPistolMagazine			s-10mag
+MyObjectBuilder_AmmoMagazine/FullAutoPistolMagazine			s-20amag
+MyObjectBuilder_AmmoMagazine/ElitePistolMagazine			s-10emag
 
+MyObjectBuilder_AmmoMagazine/FlareClip					(flareclip)
 
 CHARACTER WEAPONS:
-MyObjectBuilder_PhysicalGunObject/AutomaticRifleItem
-MyObjectBuilder_PhysicalGunObject/UltimateAutomaticRifleItem
-MyObjectBuilder_PhysicalGunObject/RapidFireAutomaticRifleItem
-MyObjectBuilder_PhysicalGunObject/PreciseAutomaticRifleItem
-MyObjectBuilder_PhysicalGunObject/AdvancedHandHeldLauncherItem
-MyObjectBuilder_PhysicalGunObject/BasicHandHeldLauncherItem
-MyObjectBuilder_PhysicalGunObject/SemiAutoPistolItem
-MyObjectBuilder_PhysicalGunObject/ElitePistolItem
-MyObjectBuilder_PhysicalGunObject/FullAutoPistolItem
-MyObjectBuilder_PhysicalGunObject/FlareGunItem
-
-
-
-
-
+MyObjectBuilder_PhysicalGunObject/AutomaticRifleItem			mr-20
+MyObjectBuilder_PhysicalGunObject/RapidFireAutomaticRifleItem		mr-50a
+MyObjectBuilder_PhysicalGunObject/PreciseAutomaticRifleItem		mr-8p
+MyObjectBuilder_PhysicalGunObject/UltimateAutomaticRifleItem		mr-30e
+MyObjectBuilder_PhysicalGunObject/SemiAutoPistolItem			s-10
+MyObjectBuilder_PhysicalGunObject/FullAutoPistolItem			s-20a
+MyObjectBuilder_PhysicalGunObject/ElitePistolItem			s-10e
+MyObjectBuilder_PhysicalGunObject/BasicHandHeldLauncherItem		ro-1
+MyObjectBuilder_PhysicalGunObject/AdvancedHandHeldLauncherItem		pro-1
+MyObjectBuilder_PhysicalGunObject/FlareGunItem				(flaregun)
 
 CHARACTER TOOLS:
-MyObjectBuilder_PhysicalGunObject/AngleGrinder4Item
-MyObjectBuilder_PhysicalGunObject/HandDrill4Item
-MyObjectBuilder_PhysicalGunObject/Welder4Item
-MyObjectBuilder_PhysicalGunObject/AngleGrinder3Item
-MyObjectBuilder_PhysicalGunObject/HandDrill3Item
-MyObjectBuilder_PhysicalGunObject/Welder3Item
-MyObjectBuilder_PhysicalGunObject/AngleGrinder2Item
-MyObjectBuilder_PhysicalGunObject/HandDrill2Item
-MyObjectBuilder_PhysicalGunObject/Welder2Item
-MyObjectBuilder_PhysicalGunObject/AngleGrinderItem
-MyObjectBuilder_PhysicalGunObject/HandDrillItem
-MyObjectBuilder_PhysicalGunObject/WelderItem
-MyObjectBuilder_GasContainerObject/HydrogenBottle
-MyObjectBuilder_OxygenContainerObject/OxygenBottle
+MyObjectBuilder_PhysicalGunObject/AngleGrinderItem			anglegrinderitem
+MyObjectBuilder_PhysicalGunObject/AngleGrinder2Item			anglegrinder2item
+MyObjectBuilder_PhysicalGunObject/AngleGrinder3Item			anglegrinder3item
+MyObjectBuilder_PhysicalGunObject/AngleGrinder4Item			anglegrinder4item
+MyObjectBuilder_PhysicalGunObject/WelderItem				welderitem
+MyObjectBuilder_PhysicalGunObject/Welder2Item				welder2item
+MyObjectBuilder_PhysicalGunObject/Welder3Item				welder3item
+MyObjectBuilder_PhysicalGunObject/Welder4Item				welder4item
+MyObjectBuilder_PhysicalGunObject/HandDrillItem				handdrillitem
+MyObjectBuilder_PhysicalGunObject/HandDrill2Item			handdrill2item
+MyObjectBuilder_PhysicalGunObject/HandDrill3Item			handdrill3item
+MyObjectBuilder_PhysicalGunObject/HandDrill4Item			handdrill4item
 
-Missile Cargo
+MyObjectBuilder_GasContainerObject/HydrogenBottle			hydrogenbottle
+MyObjectBuilder_OxygenContainerObject/OxygenBottle			oxygenbottle
 
 
 CHARACTER MISC:
-MyObjectBuilder_ConsumableItem/ClangCola
-MyObjectBuilder_ConsumableItem/CosmicCoffee
-MyObjectBuilder_Datapad/Datapad
-MyObjectBuilder_ConsumableItem/Medkit
-MyObjectBuilder_Package/Package
-MyObjectBuilder_ConsumableItem/Powerkit
-MyObjectBuilder_PhysicalObject/SpaceCredit
-MyObjectBuilder_Component/ZoneChip
+MyObjectBuilder_ConsumableItem/ClangCola				(clangcola)
+MyObjectBuilder_ConsumableItem/CosmicCoffee				(cosmiccoffee)
+MyObjectBuilder_Datapad/Datapad						(datapad)
+MyObjectBuilder_ConsumableItem/Medkit					(medkit)
+MyObjectBuilder_Package/Package						(package)
+MyObjectBuilder_ConsumableItem/Powerkit					(powerkit)
+MyObjectBuilder_PhysicalObject/SpaceCredit				spacecredit
+MyObjectBuilder_Component/ZoneChip					(zonechip)
 
 COMPONENTS:
-MyObjectBuilder_Component/BulletproofGlass
-MyObjectBuilder_Component/Computer
-MyObjectBuilder_Component/Construction
-MyObjectBuilder_Component/Detector
-MyObjectBuilder_Component/Display
-MyObjectBuilder_Component/Explosives
-MyObjectBuilder_Component/Girder
-MyObjectBuilder_Component/GravityGenerator
-MyObjectBuilder_Component/InteriorPlate
-MyObjectBuilder_Component/LargeTube
-MyObjectBuilder_Component/Medical
-MyObjectBuilder_Component/MetalGrid
-MyObjectBuilder_Component/Motor
-MyObjectBuilder_Component/PowerCell
-MyObjectBuilder_Component/RadioCommunication
-MyObjectBuilder_Component/Reactor
-MyObjectBuilder_Component/SmallTube
-MyObjectBuilder_Component/SolarCell
-MyObjectBuilder_Component/SteelPlate
-MyObjectBuilder_Component/Superconductor
-MyObjectBuilder_Component/Thrust
-MyObjectBuilder_Component/Canvas
+MyObjectBuilder_Component/BulletproofGlass				bpglass
+MyObjectBuilder_Component/Computer					computer
+MyObjectBuilder_Component/Construction					construction
+MyObjectBuilder_Component/Detector					detector
+MyObjectBuilder_Component/Display					display
+MyObjectBuilder_Component/Explosives					explosives
+MyObjectBuilder_Component/Girder					girder
+MyObjectBuilder_Component/GravityGenerator				gravgen
+MyObjectBuilder_Component/InteriorPlate					interiorplate
+MyObjectBuilder_Component/LargeTube					largetube
+MyObjectBuilder_Component/Medical					medical
+MyObjectBuilder_Component/MetalGrid					metalgrid
+MyObjectBuilder_Component/Motor						motor
+MyObjectBuilder_Component/PowerCell					powercell
+MyObjectBuilder_Component/RadioCommunication				radio
+MyObjectBuilder_Component/Reactor					reactor
+MyObjectBuilder_Component/SmallTube					smalltube
+MyObjectBuilder_Component/SolarCell					solarcell
+MyObjectBuilder_Component/SteelPlate					steelplate
+MyObjectBuilder_Component/Superconductor				superconductor
+MyObjectBuilder_Component/Thrust					thruster
+MyObjectBuilder_Component/Canvas					canvas
 
-MyObjectBuilder_Component/PrototechCircuitry
-MyObjectBuilder_Component/PrototechCapacitor
-MyObjectBuilder_Component/PrototechCoolingUnit
-MyObjectBuilder_Component/PrototechFrame
-MyObjectBuilder_Component/PrototechMachinery
-MyObjectBuilder_Component/PrototechPanel
-MyObjectBuilder_Component/PrototechPropulsionUnit
-MyObjectBuilder_Component/EngineerPlushie
-MyObjectBuilder_Component/SabiroidPlushie
+MyObjectBuilder_Component/EngineerPlushie				engineerplushie
+MyObjectBuilder_Component/SabiroidPlushie				sabiroidplushie
+
+MyObjectBuilder_Component/PrototechCircuitry				(ptcircuitry)
+MyObjectBuilder_Component/PrototechCapacitor				(ptcapacitor)
+MyObjectBuilder_Component/PrototechCoolingUnit				(ptcooling)
+MyObjectBuilder_Component/PrototechFrame				(ptframe)
+MyObjectBuilder_Component/PrototechMachinery				(ptmachinery)
+MyObjectBuilder_Component/Produktenhandel				(ptpanel)
+MyObjectBuilder_Component/PrototechPropulsionUnit			(ptpropulsion)
+
 
 INGOTS:
 MyObjectBuilder_Ingot/Cobalt
@@ -121,17 +119,26 @@ MyObjectBuilder_Ingot/Uranium
 MyObjectBuilder_Ingot/PrototechScrap
 
 ORES:
-MyObjectBuilder_Ore/Cobalt
-MyObjectBuilder_Ore/Gold
-MyObjectBuilder_Ore/Ice
-MyObjectBuilder_Ore/Iron
-MyObjectBuilder_Ore/Magnesium
-MyObjectBuilder_Ore/Nickel
-MyObjectBuilder_Ore/Organic
-MyObjectBuilder_Ore/Platinum
-MyObjectBuilder_Ore/Scrap	----> Regular Scrap
-MyObjectBuilder_Ingot/Scrap 	----> Old Scrap
-MyObjectBuilder_Ore/Silicon
-MyObjectBuilder_Ore/Silver
-MyObjectBuilder_Ore/Stone
-MyObjectBuilder_Ore/Uranium
+MyObjectBuilder_Ore/Iron		170,108,93
+MyObjectBuilder_Ore/Nickel		145,144,124
+MyObjectBuilder_Ore/Silicon		87,88,83
+MyObjectBuilder_Ore/Cobalt		73,162,194
+MyObjectBuilder_Ore/Magnesium		55,93,114
+MyObjectBuilder_Ore/Silver		201,199,176
+MyObjectBuilder_Ore/Gold		194,175,96
+MyObjectBuilder_Ore/Platinum		189,190,172
+MyObjectBuilder_Ore/Uranium		73,66,60
+
+MyObjectBuilder_Ore/Ice			75,110,130
+MyObjectBuilder_Ore/Stone		127,127,127
+
+MyObjectBuilder_Ore/Scrap		127,127,127		----> Regular Scrap
+MyObjectBuilder_Ingot/Scrap 		127,108,96		----> Old Scrap
+
+MyObjectBuilder_Ore/Organic		127,199,88
+
+			
+
+
+
+
