@@ -64,6 +64,7 @@ namespace IngameScript
             public Color TitleColor { get; set; }
             public Color LabelColor { get; set; }
             public Color ButtonColor { get; set; }
+            public bool ColorMode { get; set; }
 
             public MenuViewer(MyIniHandler iniHandler, int id, int index)
             {
@@ -71,6 +72,7 @@ namespace IngameScript
                 Id = id;
                 ScreenIndex = index;
                 Header = SCREEN_HEADER + ScreenIndex;
+                ColorMode = ParseBool(IniHandler.GetKey(Header, "ColorMode", "true"));
 
                 Surface = (IniHandler.Block as IMyTextSurfaceProvider).GetSurface(ScreenIndex);
                 Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
@@ -237,7 +239,7 @@ namespace IngameScript
 
             void SetMenuPage()
             {
-                MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock, LabelColor * 0.9f);
+                MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock, LabelColor * 0.9f, ColorMode);
             }
 
             string[] FiltersFromPageNumber()

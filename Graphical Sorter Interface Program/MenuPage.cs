@@ -28,7 +28,7 @@ namespace IngameScript
         {
             public Dictionary<int, MenuButton> Buttons { get; set; }
 
-            public MenuPage(string[] filters, IMyConveyorSorter sorter, Color iconColor)
+            public MenuPage(string[] filters, IMyConveyorSorter sorter, Color iconColor, bool colorMode)
             {
                 Buttons = new Dictionary<int, MenuButton>();
                 List<MyInventoryItemFilter> currentFilters = new List<MyInventoryItemFilter>();
@@ -48,7 +48,7 @@ namespace IngameScript
 
                         Color color;
 
-                        if (string.IsNullOrEmpty(lookup[2]))
+                        if (!colorMode || string.IsNullOrEmpty(lookup[2]))
                             color = iconColor;
                         else
                             color = ParseColor(lookup[2]);
