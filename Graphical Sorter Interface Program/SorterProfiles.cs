@@ -207,12 +207,12 @@ namespace IngameScript
                 {"ptpropulsion",new[]{"Component/PrototechPropulsionUnit","pProp.","192,192,192"}},
 
                 // SHIP AMMO
-                {"gatlingammo",new[]{"AmmoMagazine/NATO_25x184mm","25mm"}},
-                {"autocannonmag",new[]{"AmmoMagazine/AutocannonClip","40mm"}},
-                {"assaultcannonshell",new[]{"AmmoMagazine/MediumCalibreAmmo","55mm"}},
-                {"artilleryshell",new[]{"AmmoMagazine/LargeCalibreAmmo","125mm"}},
-                {"srailgunsabot",new[]{"AmmoMagazine/SmallRailgunAmmo","smRail"}},
-                {"lrailgunsabot",new[]{"AmmoMagazine/LargeRailgunAmmo","lgRail"}},
+                {"gatlingammo",new[]{"AmmoMagazine/NATO_25x184mm","25mm","120,170,120"}},
+                {"autocannonmag",new[]{"AmmoMagazine/AutocannonClip","40mm","140,170,120"}},
+                {"assaultcannonshell",new[]{"AmmoMagazine/MediumCalibreAmmo","55mm","150,150,150"}},
+                {"artilleryshell",new[]{"AmmoMagazine/LargeCalibreAmmo","125mm","150,150,150"}},
+                {"srailgunsabot",new[]{"AmmoMagazine/SmallRailgunAmmo","smRail","150,150,150"}},
+                {"lrailgunsabot",new[]{"AmmoMagazine/LargeRailgunAmmo","lgRail","150,150,150"}},
                 {"missile",new[]{"AmmoMagazine/Missile200mm","Missile","96,96,0"}},
                 {"fireworksred",new[]{"AmmoMagazine/FireworksBoxRed","Fw:Red","255,64,64"}},
                 {"fireworksyellow",new[]{"AmmoMagazine/FireworksBoxYellow","FwYellow","255,255,64"}},
@@ -245,20 +245,20 @@ namespace IngameScript
                 {"flaregun",new[]{"PhysicalGunObject/FlareGunItem","flaregun","176,80,56"}},
 
                 // TOOLS
-                {"anglegrinderitem",new[]{"PhysicalGunObject/AngleGrinderItem",""}},
-                {"anglegrinder2item",new[]{"PhysicalGunObject/AngleGrinder2Item",""}},
-                {"anglegrinder3item",new[]{"PhysicalGunObject/AngleGrinder3Item",""}},
-                {"anglegrinder4item",new[]{"PhysicalGunObject/AngleGrinder4Item",""}},
-                {"welderitem",new[]{"PhysicalGunObject/WelderItem",""}},//,"180,180,150" "176,144,69"
-                {"welder2item",new[]{"PhysicalGunObject/Welder2Item",""}},//,"200,150,150" "185,69,78"
-                {"welder3item",new[]{"PhysicalGunObject/Welder3Item",""}},//,"180,150,200" "161,76,179"  DF_LABEL = "179,237,255"
-                {"welder4item",new[]{"PhysicalGunObject/Welder4Item",""}},//,"180,200,150" "126,156,58"
-                {"handdrillitem",new[]{"PhysicalGunObject/HandDrillItem",""}},
-                {"handdrill2item",new[]{"PhysicalGunObject/HandDrill2Item",""}},
-                {"handdrill3item",new[]{"PhysicalGunObject/HandDrill3Item",""}},
-                {"handdrill4item",new[]{"PhysicalGunObject/HandDrill4Item",""}},
-                {"hydrogenbottle",new[]{"GasContainerObject/HydrogenBottle","H2","255,140,80"}},
-                {"oxygenbottle",new[]{"OxygenContainerObject/OxygenBottle","O2","100,200,237"}},
+                {"anglegrinderitem",new[]{"PhysicalGunObject/AngleGrinderItem","","175,150,150"}},
+                {"anglegrinder2item",new[]{"PhysicalGunObject/AngleGrinder2Item","","160,160,150"}},
+                {"anglegrinder3item",new[]{"PhysicalGunObject/AngleGrinder3Item","","150,175,150"}},
+                {"anglegrinder4item",new[]{"PhysicalGunObject/AngleGrinder4Item","","150,150,175"}},
+                {"welderitem",new[]{"PhysicalGunObject/WelderItem","","175,150,150"}},//,"180,180,150" "176,144,69"
+                {"welder2item",new[]{"PhysicalGunObject/Welder2Item","","160,160,150"}},//,"200,150,150" "185,69,78"
+                {"welder3item",new[]{"PhysicalGunObject/Welder3Item","","150,175,150"}},//,"180,150,200" "161,76,179"  DF_LABEL = "179,237,255"
+                {"welder4item",new[]{"PhysicalGunObject/Welder4Item","","150,150,175"}},//,"180,200,150" "126,156,58"
+                {"handdrillitem",new[]{"PhysicalGunObject/HandDrillItem","","175,150,150"}},
+                {"handdrill2item",new[]{"PhysicalGunObject/HandDrill2Item","","160,160,150"}},
+                {"handdrill3item",new[]{"PhysicalGunObject/HandDrill3Item","","150,175,150"}},
+                {"handdrill4item",new[]{"PhysicalGunObject/HandDrill4Item","","150,150,175"}},
+                {"hydrogenbottle",new[]{"GasContainerObject/HydrogenBottle","H2","160,105,60"}},//,"255,140,80"}},
+                {"oxygenbottle",new[]{"OxygenContainerObject/OxygenBottle","O2","100,200,237"}},//,"100,200,237"}},
 
                 // MISC - TODO
                 {"medkit",new[]{"ConsumableItem/Medkit","Medkit"}},
