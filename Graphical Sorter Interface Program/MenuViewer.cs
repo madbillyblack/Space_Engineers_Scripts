@@ -26,7 +26,7 @@ namespace IngameScript
     partial class Program
     {
         public static Dictionary<int, MenuViewer> _menuViewers;
-        const string VIEWER_TAG = "[GSIP_MENU]";
+        const string VIEWER_TAG = "[GSIP]";
         const string MENU_HEADER = "GSIP - Menu";
         const string SCREEN_HEADER = "GSIP Screen ";
         const string SCREEN_KEY = "ScreenIndex";

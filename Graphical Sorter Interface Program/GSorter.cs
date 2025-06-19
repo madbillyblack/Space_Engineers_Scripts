@@ -25,7 +25,6 @@ namespace IngameScript
     {
         const string ORE_TAG = "ORE";
         const string INGOT_TAG = "IGT";
-        const string EMPTY_TAG = "SRT";
         const string WEP_TAG = "WEP";
         const string CMP_TAG = "CMP";
         const string TOOL_TAG = "TOOL";

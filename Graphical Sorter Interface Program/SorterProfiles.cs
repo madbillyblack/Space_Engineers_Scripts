@@ -151,7 +151,7 @@ namespace IngameScript
                 {"ore/cobalt",new[]{"Ore/Cobalt","Co","96,194,255"}},//"73,162,194"
                 {"ore/magnesium",new[]{"Ore/Magnesium","Mg","55,120,150"}},//"55,93,114"
                 {"ore/silver",new[]{"Ore/Silver","Ag","201,199,176"}},
-                {"ore/gold",new[]{"Ore/Gold","Au","194,175,96"}},
+                {"ore/gold",new[]{"Ore/Gold","Au","168,147,1"}},
                 {"ore/platinum",new[]{"Ore/Platinum","Pt","189,190,172"}},
                 {"ore/uranium",new[]{"Ore/Uranium","U","73,66,60"}},
                 {"ice",new[]{"Ore/Ice","Ice","75,110,130"}},
@@ -161,17 +161,17 @@ namespace IngameScript
                 {"organic",new[]{"Ore/Organic","Organic","127,164,88"}},
 
                 // INGOTS
-                {"ingot/iron",new[]{"Ingot/Iron","Fe","192,127,127"}},
-                {"ingot/nickel",new[]{"Ingot/Nickel","Ni"}},
-                {"ingot/silicon",new[]{"Ingot/Silicon","Si"}},
-                {"ingot/cobalt",new[]{"Ingot/Cobalt","Co"}},
-                {"ingot/magnesium",new[]{"Ingot/Magnesium","Mg"}},
-                {"ingot/silver",new[]{"Ingot/Silver","Ag"}},
-                {"ingot/gold",new[]{"Ingot/Gold","Au"}},
-                {"ingot/platinum",new[]{"Ingot/Platinum","Pt"}},
-                {"ingot/uranium",new[]{"Ingot/Uranium","U"}},
-                {"gravel",new[]{"Ingot/Stone","Gravel"}},
-                {"ptscrap",new[]{"Ingot/PrototechScrap","PT Scrap"}},
+                {"ingot/iron",new[]{"Ingot/Iron","Fe","150,127,127"}},
+                {"ingot/nickel",new[]{"Ingot/Nickel","Ni","106,119,125"}},
+                {"ingot/silicon",new[]{"Ingot/Silicon","Si","55,70,89"}},
+                {"ingot/cobalt",new[]{"Ingot/Cobalt","Co","120,111,114"}},
+                {"ingot/magnesium",new[]{"Ingot/Magnesium","Mg","110,128,142"}},
+                {"ingot/silver",new[]{"Ingot/Silver","Ag","136,159,173"}},
+                {"ingot/gold",new[]{"Ingot/Gold","Au","168,147,1"}},
+                {"ingot/platinum",new[]{"Ingot/Platinum","Pt","107,127,138"}},
+                {"ingot/uranium",new[]{"Ingot/Uranium","U","59,65,65"}},
+                {"gravel",new[]{"Ingot/Stone","Gravel","150,150,150"}},
+                {"ptscrap",new[]{"Ingot/PrototechScrap","PT Scrap","168,147,1"}},
 
                 // COMPONENTS
                 {"bpglass",new[]{"Component/BulletproofGlass", "Glass","150,150,255"}},
@@ -198,13 +198,13 @@ namespace IngameScript
                 {"canvas",new[]{"Component/Canvas","Canvas","192,32,32"}},
                 {"engineerplushie",new[]{"Component/EngineerPlushie","Plush","180,120,200"}},
                 {"sabiroidplushie",new[]{"Component/SabiroidPlushie","SPlush","137,136,106"}},
-                {"ptcircuitry",new[]{"Component/PrototechCircuitry","pCircuit","220,175,96"}},
-                {"ptcapacitor",new[]{"Component/PrototechCapacitor","pCpctr","192,192,192"}},
-                {"ptcooling",new[]{"Component/PrototechCoolingUnit","pCooling","192,192,192"}},
-                {"ptframe",new[]{"Component/PrototechFrame","pFrame","192,192,192"}},
-                {"ptmachinery",new[]{"Component/PrototechMachinery","pMach.","192,192,192"}},
-                {"ptpanel",new[]{"Component/PrototechPanel","pPanel","192,192,192"}},
-                {"ptpropulsion",new[]{"Component/PrototechPropulsionUnit","pProp.","192,192,192"}},
+                {"ptcircuitry",new[]{"Component/PrototechCircuitry","pCircuit","168,147,1"}},
+                {"ptcapacitor",new[]{"Component/PrototechCapacitor","pCpctr","192,192,150"}},
+                {"ptcooling",new[]{"Component/PrototechCoolingUnit","pCooling","192,192,150"}},
+                {"ptframe",new[]{"Component/PrototechFrame","pFrame","192,192,150"}},
+                {"ptmachinery",new[]{"Component/PrototechMachinery","pMach.","192,192,150"}},
+                {"ptpanel",new[]{"Component/PrototechPanel","pPanel","192,192,150"}},
+                {"ptpropulsion",new[]{"Component/PrototechPropulsionUnit","pProp.","192,192,150"}},
 
                 // SHIP AMMO
                 {"gatlingammo",new[]{"AmmoMagazine/NATO_25x184mm","25mm","120,170,120"}},
@@ -223,25 +223,25 @@ namespace IngameScript
 
                 // PERSONAL AMMO
                 {"5.56x45mm",new[]{"AmmoMagazine/NATO_5p56x45mm","5.56x45mm","84,84,84"}},
-                {"mr-20mag",new[]{"AmmoMagazine/AutomaticRifleGun_Mag_20rd","mr-20","84,84,84"}},
-                {"mr-50amag",new[]{"AmmoMagazine/RapidFireAutomaticRifleGun_Mag_50rd","mr-50a","138,137,107"}},
-                {"mr-8pmag",new[]{"AmmoMagazine/PreciseAutomaticRifleGun_Mag_5rd","mr-8p","72,84,96"}},
-                {"mr-30emag",new[]{"AmmoMagazine/UltimateAutomaticRifleGun_Mag_30rd","mr-30e","137,136,106"}},
-                {"s-10mag",new[]{"AmmoMagazine/SemiAutoPistolMagazine","s-10","84,84,84"}},
-                {"s-20amag",new[]{"AmmoMagazine/FullAutoPistolMagazine","s-20a","96,84,84"}},
-                {"s-10emag",new[]{"AmmoMagazine/ElitePistolMagazine","s-10e","96,96,84"}},
+                {"mr-20mag",new[]{"AmmoMagazine/AutomaticRifleGun_Mag_20rd","mr-20","175,150,150"}},
+                {"mr-50amag",new[]{"AmmoMagazine/RapidFireAutomaticRifleGun_Mag_50rd","mr-50a","160,160,150"}},
+                {"mr-8pmag",new[]{"AmmoMagazine/PreciseAutomaticRifleGun_Mag_5rd","mr-8p","150,175,150"}},
+                {"mr-30emag",new[]{"AmmoMagazine/UltimateAutomaticRifleGun_Mag_30rd","mr-30e","150,150,175"}},
+                {"s-10mag",new[]{"AmmoMagazine/SemiAutoPistolMagazine","s-10","175,150,150"}},
+                {"s-20amag",new[]{"AmmoMagazine/FullAutoPistolMagazine","s-20a","160,160,150"}},
+                {"s-10emag",new[]{"AmmoMagazine/ElitePistolMagazine","s-10e","150,175,150"}},
                 {"flareclip",new[]{"AmmoMagazine/FlareClip","flares","176,80,56"}},
 
                 // WEAPONS
-                {"mr-20",new[]{"PhysicalGunObject/AutomaticRifleItem","mr-20","84,84,84"}},
-                {"mr-50a",new[]{"PhysicalGunObject/RapidFireAutomaticRifleItem","mr-50","138,137,107"}},
-                {"mr-8p",new[]{"PhysicalGunObject/PreciseAutomaticRifleItem","mr-8p","72,84,96"}},
-                {"mr-30e",new[]{"PhysicalGunObject/UltimateAutomaticRifleItem","mr-30e","137,136,106"}},
-                {"s-10",new[]{"PhysicalGunObject/SemiAutoPistolItem","s-10","84,84,84"}},
-                {"s-20a",new[]{"PhysicalGunObject/FullAutoPistolItem","s-20a","96,84,84"}},
-                {"s-10e",new[]{"PhysicalGunObject/ElitePistolItem","s-10e","96,96,84"}},
-                {"ro-1",new[]{"PhysicalGunObject/BasicHandHeldLauncherItem","ro-1","112,110,120"}},
-                {"pro-1",new[]{"PhysicalGunObject/AdvancedHandHeldLauncherItem","pro-1","118,121,102"}},
+                {"mr-20",new[]{"PhysicalGunObject/AutomaticRifleItem","mr-20","175,150,150"}},
+                {"mr-50a",new[]{"PhysicalGunObject/RapidFireAutomaticRifleItem","mr-50","160,160,150"}},
+                {"mr-8p",new[]{"PhysicalGunObject/PreciseAutomaticRifleItem","mr-8p","150,175,150"}},
+                {"mr-30e",new[]{"PhysicalGunObject/UltimateAutomaticRifleItem","mr-30e","150,150,175"}},
+                {"s-10",new[]{"PhysicalGunObject/SemiAutoPistolItem","s-10","175,150,150"}},
+                {"s-20a",new[]{"PhysicalGunObject/FullAutoPistolItem","s-20a","160,160,150"}},
+                {"s-10e",new[]{"PhysicalGunObject/ElitePistolItem","s-10e","150,175,150"}},
+                {"ro-1",new[]{"PhysicalGunObject/BasicHandHeldLauncherItem","ro-1","175,150,150"}},
+                {"pro-1",new[]{"PhysicalGunObject/AdvancedHandHeldLauncherItem","pro-1","150,150,175"}},
                 {"flaregun",new[]{"PhysicalGunObject/FlareGunItem","flaregun","176,80,56"}},
 
                 // TOOLS
@@ -261,14 +261,14 @@ namespace IngameScript
                 {"oxygenbottle",new[]{"OxygenContainerObject/OxygenBottle","O2","100,200,237"}},//,"100,200,237"}},
 
                 // MISC - TODO
-                {"medkit",new[]{"ConsumableItem/Medkit","Medkit"}},
-                {"powerkit",new[]{"ConsumableItem/Powerkit","PwrKit"}},
-                {"clangcola",new[]{"ConsumableItem/ClangCola","CLANG!"}},
-                {"cosmiccoffee",new[]{"ConsumableItem/CosmicCoffee","Coffee"}},
-                {"datapad",new[]{"Datapad/Datapad","DataPad"}},
-                {"spacecredit",new[]{"PhysicalObject/SpaceCredit","Credits"}},
-                {"package",new[]{"Package/Package","Package"}},
-                {"zonechip",new[]{"Component/ZoneChip","ZoneChip"}}
+                {"medkit",new[]{"ConsumableItem/Medkit","Medkit","255,192,192"}},
+                {"powerkit",new[]{"ConsumableItem/Powerkit","PwrKit","150,150,150"}},
+                {"clangcola",new[]{"ConsumableItem/ClangCola","CLANG!","192,72,72"}},
+                {"cosmiccoffee",new[]{"ConsumableItem/CosmicCoffee","Coffee","120,90,60"}},
+                {"datapad",new[]{"Datapad/Datapad","DataPad","150,150,150"}},
+                {"spacecredit",new[]{"PhysicalObject/SpaceCredit","Credits","150,150,150"}},
+                {"package",new[]{"Package/Package","Package","127,127,127"}},
+                {"zonechip",new[]{"Component/ZoneChip","ZoneChip","64,127,100"}}
             };
 
             public static string[] LookupItem(string item)
