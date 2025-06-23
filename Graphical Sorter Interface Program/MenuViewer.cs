@@ -490,9 +490,9 @@ namespace IngameScript
 
             void DrawItem(MenuButton button, Vector2 startPosition, float scale, float fontSize, bool whiteList)
             {
-                Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
+                Vector2 position = startPosition + new Vector2(scale * 0.05f, 0);
 
-                DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.9f, scale * 0.9f), 0, ButtonColor);
 
                 Color itemColor, labelColor;
 
@@ -512,33 +512,33 @@ namespace IngameScript
                 if (String.IsNullOrEmpty(button.Label))
                     vertOffset = Vector2.Zero;
                 else
-                    vertOffset = new Vector2(0, scale * 0.07f);
+                    vertOffset = new Vector2(0, scale * 0.035f);
 
-                DrawTexture(button.Filter, position + vertOffset, new Vector2(scale * 0.8f, scale * 0.8f), 0, itemColor);//ButtonColor * 1.75f);
+                DrawTexture(button.Filter, position + vertOffset, new Vector2(scale * 0.9f, scale * 0.9f), 0, itemColor);//ButtonColor * 1.75f);
 
                 // Scale Down Longer Text labels, and move further right
                 float offsetMod,fontMod;
                 if(button.Label.Length > 6)
                 {
-                    offsetMod = 0.9f;
+                    offsetMod = 0.95f;
                     fontMod = 0.6f;
                 }
                 else
                 {
-                    offsetMod = 0.85f;
+                    offsetMod = 0.9f;
                     fontMod = 0.67f;
                 }
 
-                position = startPosition + new Vector2(scale * offsetMod, scale * -0.4f);
+                position = startPosition + new Vector2(scale * offsetMod, scale * -0.45f);
                 DrawText(button.Label, position, fontSize * fontMod, TextAlignment.RIGHT, labelColor);
             }
 
             void DrawDrain(Vector2 startPosition, float scale, float fontSize, bool active)
             {
-                Vector2 position = startPosition + new Vector2(scale * 0.1f, 0);
+                Vector2 position = startPosition + new Vector2(scale * 0.05f, 0);
 
-                DrawTexture(SQUARE, position, new Vector2(scale * 0.8f, scale * 0.8f), 0, ButtonColor);
-                DrawTexture("AH_PullUp", position, new Vector2(scale * 0.8f, scale * -0.8f), 0, ButtonColor);
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.9f, scale * 0.9f), 0, ButtonColor);
+                DrawTexture("AH_PullUp", position, new Vector2(scale * 0.9f, scale * -0.9f), 0, ButtonColor);
 
                 Color labelColor;
                 if (active)
