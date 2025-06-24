@@ -288,17 +288,22 @@ namespace IngameScript
                 float height = Viewport.Height;
                 float width = Viewport.Width;
 
+
+                int rowCount;
+                float cellWidth, buttonHeight, titleSize;
+
                 float fontSize = 0.5f;
 
                 if (BigScreen)
                     fontSize *= 1.5f;
 
+                titleSize = fontSize;
+
                 if (height == width)
                     fontSize *= 2;
+                    
 
-                int rowCount;
-                float cellWidth;
-                float buttonHeight;
+
 
                 if (WideScreen)
                 {
@@ -348,12 +353,12 @@ namespace IngameScript
                         break;
                 }
 
-                DrawTitles(topLeft, width, fontSize);
+                DrawTitles(topLeft, width, titleSize);
 
                 if (WideScreen)
                     DrawSingleRow(topLeft, cellWidth, buttonHeight, fontSize);
                 else
-                    DrawDoubleRow(topLeft, cellWidth, rowCount, fontSize);
+                    DrawDoubleRow(topLeft, cellWidth, buttonHeight, rowCount, fontSize);
 
                 _frame.Dispose();
             }
@@ -401,11 +406,9 @@ namespace IngameScript
             }
 
 
-            void DrawDoubleRow(Vector2 position, float cellWidth, int rowCount, float fontSize)
+            void DrawDoubleRow(Vector2 position, float cellWidth, float buttonHeight, int rowCount, float fontSize)
             {
-                float buttonHeight = cellWidth * 0.775f;
-
-                Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 0.85f);
+                Vector2 pos = position + new Vector2((cellWidth - buttonHeight) * 0.5f, buttonHeight * 1.33f);
                 //Vector2 buttonScale = new Vector2(buttonHeight, buttonHeight);
 
                 List<int> keys = MenuPage.Buttons.Keys.ToList();
@@ -416,7 +419,6 @@ namespace IngameScript
                     MenuButton button = MenuPage.Buttons[keys[i]];
 
                     DrawButton(button, pos, buttonHeight, fontSize);
-                    //DrawButton(button, pos, cellWidth * 0.8f, fontSize);
 
                     pos += new Vector2(cellWidth, 0);
                 }
@@ -424,9 +426,9 @@ namespace IngameScript
                 float heightMod;
 
                 if (Viewport.Width == Viewport.Height)
-                    heightMod = 2.1f;//3.1f;
+                    heightMod = 3.1f;
                 else
-                    heightMod = 2.1f;//3.3f;
+                    heightMod = 3.3f;
 
                 pos = position + new Vector2(0, buttonHeight * heightMod);
 
