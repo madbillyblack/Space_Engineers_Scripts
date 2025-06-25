@@ -38,6 +38,8 @@ namespace IngameScript
 
         public Program()
         {
+            _defBgColor = ParseColor(DF_BG);
+            _defButtonColor = _defBgColor * 1.12f;
             Build();
         }
 

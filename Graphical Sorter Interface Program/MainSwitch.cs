@@ -81,6 +81,9 @@ namespace IngameScript
                 case "LAST_SORTER":
                     CycleSorter(cmdArg, true);
                     break;
+                case "TOGGLE_COLOR":
+                    ToggleColor(cmdArg);
+                    break;
                 case "NEXT_LOG":
                     _logger.Scroll();
                     break;
@@ -130,6 +133,14 @@ namespace IngameScript
             if (viewer == null) return;
 
             viewer.CyclePages(previous);
+        }
+
+        public void ToggleColor(string menuId)
+        {
+            MenuViewer viewer = GetMenuViewer(menuId);
+            if (viewer == null) return;
+
+            viewer.ToggleColor();
         }
     }
 }

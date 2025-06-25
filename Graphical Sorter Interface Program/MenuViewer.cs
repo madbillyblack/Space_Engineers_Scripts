@@ -34,10 +34,6 @@ namespace IngameScript
         const string PAGE_KEY = "CurrentPage";
         const string ID_KEY = "Menu ID";
 
-        const string DF_BG = "0,88,151";
-        const string DF_TITLE = "192,192,0";
-        const string DF_LABEL = "179,237,255";
-
         const string CENTER = "CENTER";
         const string BOTTOM = "BOTTOM";
         const string TOP = "TOP";
@@ -59,11 +55,6 @@ namespace IngameScript
             public int CurrentPage { get; set; }
             public GSorter GSorter { get; set; }
             public string Header { get; set; }
-
-            public Color BackgroundColor { get; set; }
-            public Color TitleColor { get; set; }
-            public Color LabelColor { get; set; }
-            public Color ButtonColor { get; set; }
             public bool ColorMode { get; set; }
 
             public MenuViewer(MyIniHandler iniHandler, int id, int index)
@@ -78,15 +69,11 @@ namespace IngameScript
                 Viewport = new RectangleF((Surface.TextureSize - Surface.SurfaceSize) / 2f, Surface.SurfaceSize);
                 BigScreen = Viewport.Width > 500;
 
-                //Surface.ContentType = ContentType.SCRIPT;
                 PrepareTextSurfaceForSprites(Surface);
 
                 InitSorter();
-                InitColors();
                 InitPage();
                 SetAlignment();
-                
-                //DrawSurface();
             }
 
             void InitSorter()
@@ -129,16 +116,6 @@ namespace IngameScript
                 Alignment = IniHandler.GetKey(Header, "Alignment", CENTER).ToUpper();
             }
 
-            void InitColors()
-            {
-                string cHeader = Header + " Colors";
-
-                BackgroundColor = ParseColor(IniHandler.GetKey(cHeader, "BackgroundColor", DF_BG));
-                ButtonColor = BackgroundColor * 1.12f;
-                TitleColor = ParseColor(IniHandler.GetKey(cHeader, "TitleColor", DF_TITLE));
-                LabelColor = ParseColor(IniHandler.GetKey(cHeader, "LabelColor", DF_LABEL));
-            }
-
             public void PressButton(int buttonNumber)
             {
                 if(buttonNumber > ButtonCount)
@@ -168,6 +145,17 @@ namespace IngameScript
                 DrawSurface();
             }
 
+            public void ToggleColor()
+            {
+                if(ColorMode)
+                    ColorMode = false;
+                else
+                    ColorMode = true;
+
+                IniHandler.SetKey(Header, "ColorMode", ColorMode.ToString());
+                SetMenuPage();
+                DrawSurface();
+            }
 
             public void CycleSorter(bool cycleLast = false)
             {
@@ -239,7 +227,7 @@ namespace IngameScript
 
             void SetMenuPage()
             {
-                MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock, LabelColor * 0.9f, ColorMode);
+                MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock, GSorter.LabelColor * 0.9f, ColorMode);
             }
 
             string[] FiltersFromPageNumber()
@@ -325,11 +313,11 @@ namespace IngameScript
 
                 // Background
                 Vector2 position = center - new Vector2(width * 0.5f, 0);
-                DrawTexture(SQUARE, position, new Vector2(width, height), 0, BackgroundColor);
+                DrawTexture(SQUARE, position, new Vector2(width, height), 0, ColorMode ? GSorter.BackgroundColor : _defBgColor);
 
                 // Grid
                 float gridHeight = width > height ? width : height;
-                DrawTexture("Grid", position, new Vector2(gridHeight, gridHeight), 0, LabelColor);
+                DrawTexture("Grid", position, new Vector2(gridHeight, gridHeight), 0, GSorter.LabelColor);
 
                 // Set Starting Top Edge
                 Vector2 topLeft;
@@ -366,24 +354,26 @@ namespace IngameScript
             
             void DrawTitles(Vector2 topLeft, float width, float fontSize)
             {
+                Color buttonColor = ColorMode ? GSorter.ButtonColor : _defButtonColor;
+
                 // Title Bar
                 Vector2 position = topLeft + new Vector2(0, fontSize * 15);
-                DrawTexture(SQUARE, position, new Vector2(width, fontSize * 40), 0, ButtonColor * 1.1f);
+                DrawTexture(SQUARE, position, new Vector2(width, fontSize * 40), 0, buttonColor * 1.1f);
 
                 // Menu Title
                 position = topLeft + new Vector2(10, 0);
                 string title = "Menu " + Id;
-                DrawText(title, position, fontSize, TextAlignment.LEFT, LabelColor);
+                DrawText(title, position, fontSize, TextAlignment.LEFT, GSorter.LabelColor);
 
                 // Current Sorter
                 position = topLeft + new Vector2(width * 0.5f, 0);
                 string sortTitle = "Sorter: " + GSorter.Tag;
-                DrawText(sortTitle, position, fontSize, TextAlignment.CENTER, TitleColor);
+                DrawText(sortTitle, position, fontSize, TextAlignment.CENTER, GSorter.TitleColor);
 
                 // Pages
                 position = topLeft + new Vector2(width - 10, 0);
                 string pageTitle = "Page " + CurrentPage + " of " + PageCount;
-                DrawText(pageTitle, position, fontSize, TextAlignment.RIGHT, LabelColor);
+                DrawText(pageTitle, position, fontSize, TextAlignment.RIGHT, GSorter.LabelColor);
             }
 
 
@@ -456,6 +446,7 @@ namespace IngameScript
 
                 Vector2 position = startPosition;
                 Color highlightColor;
+                Color buttonColor = ColorMode ? GSorter.ButtonColor : _defButtonColor;
                 bool whiteList = GSorter.SorterBlock.Mode == MyConveyorSorterMode.Whitelist;
 
                 if (button.Active)
@@ -467,10 +458,10 @@ namespace IngameScript
                 }
                 else
                 {
-                    if(button.Type == MenuButton.ButtonType.BW_LIST)
+                    if (button.Type == MenuButton.ButtonType.BW_LIST)
                         highlightColor = Color.Black;
                     else
-                        highlightColor = ButtonColor * 1.1f;
+                        highlightColor = buttonColor * 1.1f;
                 }
 
                 DrawTexture(SQUARE, position, new Vector2(scale, scale), 0, highlightColor);
@@ -478,26 +469,26 @@ namespace IngameScript
                 switch (button.Type)
                 {
                     case MenuButton.ButtonType.ITEM:
-                        DrawItem(button, position, scale, fontSize, whiteList);
+                        DrawItem(button, position, scale, fontSize, whiteList, buttonColor);
                         break;
                     case MenuButton.ButtonType.BW_LIST:
                         DrawBwToggle(position, scale, fontSize, whiteList);
                         break;
                     case MenuButton.ButtonType.DRAIN:
-                        DrawDrain(position, scale, fontSize, button.Active);
+                        DrawDrain(position, scale, fontSize, button.Active, buttonColor);
                         break;
                 }
 
                 // Number Label
                 position = startPosition + new Vector2(scale * 0.5f, scale * 0.5f - fontSize * 5);//0.45f);
-                DrawText(button.Id.ToString(), position, fontSize * 1.125f, TextAlignment.CENTER, LabelColor);
+                DrawText(button.Id.ToString(), position, fontSize * 1.125f, TextAlignment.CENTER, GSorter.LabelColor);
             }
 
-            void DrawItem(MenuButton button, Vector2 startPosition, float scale, float fontSize, bool whiteList)
+            void DrawItem(MenuButton button, Vector2 startPosition, float scale, float fontSize, bool whiteList, Color buttonColor)
             {
                 Vector2 position = startPosition + new Vector2(scale * 0.05f, 0);
 
-                DrawTexture(SQUARE, position, new Vector2(scale * 0.9f, scale * 0.9f), 0, ButtonColor);
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.9f, scale * 0.9f), 0, buttonColor);
 
                 Color itemColor, labelColor;
 
@@ -505,12 +496,12 @@ namespace IngameScript
                 if (button.Active && whiteList || !button.Active && !whiteList)
                 {
                     itemColor = button.Color;
-                    labelColor = TitleColor;
+                    labelColor = GSorter.TitleColor;
                 }  
                 else
                 {
-                    itemColor = ButtonColor * 0.85f;
-                    labelColor = LabelColor;
+                    itemColor = buttonColor * 0.85f;
+                    labelColor = GSorter.LabelColor;
                 }
 
                 Vector2 vertOffset;
@@ -538,18 +529,18 @@ namespace IngameScript
                 DrawText(button.Label, position, fontSize * fontMod, TextAlignment.RIGHT, labelColor);
             }
 
-            void DrawDrain(Vector2 startPosition, float scale, float fontSize, bool active)
+            void DrawDrain(Vector2 startPosition, float scale, float fontSize, bool active, Color buttonColor)
             {
                 Vector2 position = startPosition + new Vector2(scale * 0.05f, 0);
 
-                DrawTexture(SQUARE, position, new Vector2(scale * 0.9f, scale * 0.9f), 0, ButtonColor);
-                DrawTexture("AH_PullUp", position, new Vector2(scale * 0.9f, scale * -0.9f), 0, ButtonColor);
+                DrawTexture(SQUARE, position, new Vector2(scale * 0.9f, scale * 0.9f), 0, buttonColor);
+                DrawTexture("AH_PullUp", position, new Vector2(scale * 0.9f, scale * -0.9f), 0, buttonColor);
 
                 Color labelColor;
                 if (active)
-                    labelColor = TitleColor;
+                    labelColor = GSorter.TitleColor;
                 else
-                    labelColor = LabelColor;
+                    labelColor = GSorter.LabelColor;
 
                 position = startPosition + new Vector2(scale * 0.9f, scale * -0.4f);
                 DrawText("Drain All", position, fontSize * 0.6f, TextAlignment.RIGHT, labelColor);

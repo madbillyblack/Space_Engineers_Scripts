@@ -7,6 +7,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net.Http.Headers;
+using System.Runtime.Remoting.Messaging;
 using System.Security.Policy;
 using System.Text;
 using VRage;
@@ -32,29 +34,34 @@ namespace IngameScript
         const string MSC_TAG = "MISC";
         const string LIST_KEY = "FilterList";
 
-        public static Dictionary<string, GSorter> _sorters;
+        const string DF_BG = "0,88,151";
+        const string DF_TITLE = "192,192,0";
+        const string DF_LABEL = "179,237,255";
 
+        public static Color _defBgColor;
+        public static Color _defButtonColor;
+        public static Dictionary<string, GSorter> _sorters;
 
         public class GSorter
         {
             public IMyConveyorSorter SorterBlock { get; set; }
-            //public List<SorterMenu> Displays { get; set; }
-
             public string Tag { get; set; }
-
             public string[] Filters { get; set; }
-
             public MyIniHandler IniHandler { get; set; }
+            public Color BackgroundColor { get; set; }
+            public Color TitleColor { get; set; }
+            public Color LabelColor { get; set; }
+            public Color ButtonColor { get; set; }
 
             public GSorter(IMyConveyorSorter sorter, string tag)
             { 
-                //Displays = new List<SorterMenu>();
                 SorterBlock = sorter;
                 Tag = tag;
 
                 IniHandler = new MyIniHandler(sorter);
 
                 AddFilters();
+                InitColors();
             }
 
             private void AddFilters()
@@ -80,6 +87,26 @@ namespace IngameScript
                 {
                     Filters[i] = Filters[i].Trim();
                 }
+            }
+
+            void InitColors()
+            {
+                string cHeader = MAIN_HEADER + " Colors";
+
+                BackgroundColor = ParseColor(IniHandler.GetKey(cHeader, "BackgroundColor", GetBgColor()));
+                ButtonColor = BackgroundColor * 1.12f;
+                TitleColor = ParseColor(IniHandler.GetKey(cHeader, "TitleColor", DF_TITLE));
+                LabelColor = ParseColor(IniHandler.GetKey(cHeader, "LabelColor", DF_LABEL));
+            }
+
+            string GetBgColor()
+            {
+                string sortType = Tag.Split('_')[0].ToUpper();
+
+                if (SorterProfiles.Colors.ContainsKey(sortType))
+                    return SorterProfiles.Colors[sortType];
+                else
+                    return DF_BG;
             }
         }
 

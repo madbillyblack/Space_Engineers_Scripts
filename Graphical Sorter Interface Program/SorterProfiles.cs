@@ -196,7 +196,7 @@ namespace IngameScript
                 {"superconductor",new[]{"Component/Superconductor","SprCnd","127,127,127"}},
                 {"thruster",new[]{"Component/Thrust","Thrust","127,127,127"}},
                 {"canvas",new[]{"Component/Canvas","Canvas","192,32,32"}},
-                {"engineerplushie",new[]{"Component/EngineerPlushie","Plush","180,120,200"}},
+                {"engineerplushie",new[]{"Component/EngineerPlushie","Plush","60,120,200"}},
                 {"sabiroidplushie",new[]{"Component/SabiroidPlushie","SPlush","137,136,106"}},
                 {"ptcircuitry",new[]{"Component/PrototechCircuitry","pCircuit","168,147,1"}},
                 {"ptcapacitor",new[]{"Component/PrototechCapacitor","pCpctr","192,192,150"}},
@@ -213,7 +213,7 @@ namespace IngameScript
                 {"artilleryshell",new[]{"AmmoMagazine/LargeCalibreAmmo","125mm","150,150,150"}},
                 {"srailgunsabot",new[]{"AmmoMagazine/SmallRailgunAmmo","smRail","150,150,150"}},
                 {"lrailgunsabot",new[]{"AmmoMagazine/LargeRailgunAmmo","lgRail","150,150,150"}},
-                {"missile",new[]{"AmmoMagazine/Missile200mm","Missile","96,96,0"}},
+                {"missile",new[]{"AmmoMagazine/Missile200mm","Missile","127,127,0"}},
                 {"fireworksred",new[]{"AmmoMagazine/FireworksBoxRed","Fw:Red","255,64,64"}},
                 {"fireworksyellow",new[]{"AmmoMagazine/FireworksBoxYellow","FwYellow","255,255,64"}},
                 {"fireworksgreen",new[]{"AmmoMagazine/FireworksBoxGreen","Fw:Green","64,127,64"}},
@@ -271,6 +271,16 @@ namespace IngameScript
                 {"zonechip",new[]{"Component/ZoneChip","ZoneChip","64,127,100"}}
             };
 
+            public static readonly Dictionary<string, string> Colors = new Dictionary<string, string> {
+                {ORE_TAG,"64,32,32"},
+                {INGOT_TAG,"16,48,64"},
+                {CMP_TAG,"36,24,48"},
+                {AMMO_TAG,"12,8,6"},
+                {WEP_TAG,"12,16,8"},
+                {TOOL_TAG,"32,32,64"},
+                {MSC_TAG,"151,88,127"}
+            };
+
             public static string[] LookupItem(string item)
             {
                 if (Lookup.ContainsKey(item))
@@ -288,6 +298,8 @@ namespace IngameScript
 
                 return new string []{ item, "", ""};
             }
+
+
         }
     }
 }
