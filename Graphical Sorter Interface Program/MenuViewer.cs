@@ -586,12 +586,24 @@ namespace IngameScript
 
         public void AddMenuViewers()
         {
-            _menuViewers = new Dictionary<int,MenuViewer>();
+            _menuViewers = new Dictionary<int, MenuViewer>();
+
+            if (_sorters.Count < 1)
+            {
+                _logger.LogWarning("No Sorters Added - Please rename sorters to include [SRT] tag or variant.");
+                _logger.LogInfo("If Sorters already tagged, check that Grid ID in Custom Data of Sorter Block matches Grid ID in Custom Data of Progam Block");
+                return;
+            }
 
             List<IMyTerminalBlock> menuBlocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.SearchBlocksOfName(VIEWER_TAG, menuBlocks);
 
-            if (menuBlocks.Count < 1) return;
+            if (menuBlocks.Count < 1)
+            {
+                _logger.LogWarning("No Menus Added - Please rename sorters to include [GSIP] tag.");
+                _logger.LogInfo("If Menus already tagged, check that Grid ID in Custom Data of Menu Block matches Grid ID in Custom Data of Progam Block");
+                return;
+            }
 
             foreach (IMyTerminalBlock block in menuBlocks)
                 AddMenusFromBlock(block);
@@ -688,7 +700,7 @@ namespace IngameScript
         {
             if (_menuViewers.Count < 1) return;
 
-            foreach(int key in _menuViewers.Keys) {
+            foreach (int key in _menuViewers.Keys) {
                 _menuViewers[key].DrawSurface();
             }
         }

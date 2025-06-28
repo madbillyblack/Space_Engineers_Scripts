@@ -44,7 +44,6 @@
     <Compile Include="MainSwitch.cs" />
     <Compile Include="MenuViewer.cs" />
     <Compile Include="SorterProfiles.cs" />
-    <Compile Include="DisplayBlock.cs" />
     <Compile Include="GSorter.cs" />
     <Compile Include="IniKeys.cs" />
     <Compile Include="MDK\Bootstrapper.cs" />
