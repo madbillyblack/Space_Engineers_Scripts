@@ -157,13 +157,16 @@ namespace IngameScript
                 DrawSurface();
             }
 
+            /*
             public void CycleSorter(bool cycleLast = false)
             {
                 if (_sorters.Count < 2) return;
 
-                SetCurrentPage(1);
+                //SetCurrentPage(1);
 
                 List<string> keys = _sorters.Keys.ToList();
+                keys = keys.OrderBy(x => x).ToList();
+
                 int index = keys.IndexOf(GSorter.Tag);
 
                 if (cycleLast)
@@ -176,12 +179,53 @@ namespace IngameScript
                 else if (index >= keys.Count)
                     index = 0;
 
-                GSorter = _sorters[keys[index]];
-                IniHandler.SetKey(Header, "Sorter", GSorter.Tag);
-                SetPageCount();
-                SetMenuPage();
-                DrawSurface();
+                SetSorter(_sorters[keys[index]]);                
+            }*/
+
+            public void CycleSorter(string type, bool cycleLast = false)
+            {
+                if (_sorters.Count < 2) return;
+
+                List<string> keys;
+
+                if(type == "")
+                {
+                    keys = _sorters.Keys.ToList();
+                }
+                else
+                {
+                    keys = new List<string>();
+                    foreach (string key in _sorters.Keys)
+                    {
+                        if (key.Contains(type))
+                            keys.Add(key);
+                    }
+                }
+
+                if(keys.Count < 1)
+                {
+                    _logger.LogWarning("No Sorters of type " + type + " found.");
+                    return;
+                }
+
+                if(cycleLast)
+                    keys = keys.OrderByDescending(x => x).ToList();
+                else
+                    keys =keys.OrderBy(x => x).ToList();
+
+                int index = keys.IndexOf(GSorter.Tag);
+
+                if(index < 0) // If current sorter of different type, set to first
+                    index = 0;
+                else
+                    index++;
+
+                if (index >= keys.Count)
+                    index = 0;
+
+                SetSorter(_sorters[keys[index]]);
             }
+
 
             public void CyclePages(bool cycleLast = false)
             {
@@ -207,6 +251,7 @@ namespace IngameScript
                 DrawSurface();
             }
 
+            #region Private Utilities
             void SetPageCount()
             {
                 if(ButtonCount > 0)
@@ -228,6 +273,16 @@ namespace IngameScript
             void SetMenuPage()
             {
                 MenuPage = new MenuPage(FiltersFromPageNumber(), GSorter.SorterBlock, GSorter.LabelColor * 0.9f, ColorMode);
+            }
+
+            void SetSorter(GSorter sorter)
+            {
+                GSorter = sorter;
+                IniHandler.SetKey(Header, "Sorter", GSorter.Tag);
+                SetCurrentPage(1);
+                SetPageCount();
+                SetMenuPage();
+                DrawSurface();
             }
 
             string[] FiltersFromPageNumber()
@@ -266,7 +321,8 @@ namespace IngameScript
 
                 return filterArray;
             }
-
+            #endregion
+            #region Draw Functions
             // DRAW SURFACE //
             public void DrawSurface()
             {
@@ -289,9 +345,6 @@ namespace IngameScript
 
                 if (height == width)
                     fontSize *= 2;
-                    
-
-
 
                 if (WideScreen)
                 {
@@ -578,6 +631,7 @@ namespace IngameScript
                 position += new Vector2(0, scale * 0.3f);
                 DrawText("LIST", position, fontSize * 0.5f, TextAlignment.CENTER, textColor, "Monospace");
             }
+            #endregion
         }
 
 

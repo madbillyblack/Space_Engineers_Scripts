@@ -76,10 +76,54 @@ namespace IngameScript
                     CyclePage(cmdArg, true);
                     break;
                 case "NEXT_SORTER":
-                    CycleSorter(cmdArg);
+                    CycleSorter(cmdArg, "");
                     break;
                 case "LAST_SORTER":
-                    CycleSorter(cmdArg, true);
+                    CycleSorter(cmdArg, "", true);
+                    break;
+                case "NEXT_ORE":
+                    CycleSorter(cmdArg, ORE_TAG);
+                    break;
+                case "LAST_ORE":
+                    CycleSorter(cmdArg, ORE_TAG, true);
+                    break;
+                case "NEXT_IGT":
+                case "NEXT_INGOT":
+                    CycleSorter(cmdArg, INGOT_TAG);
+                    break;
+                case "LAST_IGT":
+                case "LAST_INGOT":
+                    CycleSorter(cmdArg, INGOT_TAG, true);
+                    break;
+                case "NEXT_CMP":
+                    CycleSorter(cmdArg, CMP_TAG);
+                    break;
+                case "LAST_CMP":
+                    CycleSorter(cmdArg, CMP_TAG, true);
+                    break;
+                case "NEXT_WEP":
+                    CycleSorter(cmdArg, WEP_TAG);
+                    break;
+                case "LAST_WEP":
+                    CycleSorter(cmdArg, WEP_TAG, true);
+                    break;
+                case "NEXT_AMMO":
+                    CycleSorter(cmdArg, AMMO_TAG);
+                    break;
+                case "LAST_AMMO":
+                    CycleSorter(cmdArg, AMMO_TAG, true);
+                    break;
+                case "NEXT_TOOL":
+                    CycleSorter(cmdArg, TOOL_TAG);
+                    break;
+                case "LAST_TOOL":
+                    CycleSorter(cmdArg, TOOL_TAG, true);
+                    break;
+                case "NEXT_MISC":
+                    CycleSorter(cmdArg, MSC_TAG);
+                    break;
+                case "LAST_MISC":
+                    CycleSorter(cmdArg, MSC_TAG, true);
                     break;
                 case "TOGGLE_COLOR":
                     ToggleColor(cmdArg);
@@ -123,12 +167,22 @@ namespace IngameScript
             }
         }
 
+        /*
         public void CycleSorter(string menuId, bool previous = false)
         {
             MenuViewer viewer = GetMenuViewer(menuId);
             if (viewer == null) return;
 
-            viewer.CycleSorter(previous);
+            viewer.CycleSorter("", previous);
+        }
+        */
+
+        public void CycleSorter(string menuId, string type, bool previous = false)
+        {
+            MenuViewer viewer = GetMenuViewer(menuId);
+            if (viewer == null) return;
+
+            viewer.CycleSorter(type, previous);
         }
 
         public void CyclePage(string menuId, bool previous = false)
