@@ -96,6 +96,10 @@ namespace IngameScript
                 case "REFRESH":
                     Build();
                     break;
+                case "SET_GRIDID":
+                case "SET_GRID_ID":
+                    SetGridID(cmdArg);
+                    break;
                 default:
                     _logger.LogError("\nUNRECOGNIZED COMMAND:\n" + argument);
                     break;

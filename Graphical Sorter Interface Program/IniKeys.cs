@@ -151,5 +151,38 @@ namespace IngameScript
             else
                 return false;
         }
+
+
+
+
+
+
+        public void InitializeGridId()
+        {
+            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock> ();
+            GridTerminalSystem.GetBlocks(blocks);
+
+            foreach(IMyTerminalBlock block in blocks)
+            {
+                string gridId = GridIdFromBlock(block);
+
+                if(gridId != "")
+                {
+                    _gridID = gridId;
+                    _programIni.SetKey(SHARED, GRID_KEY, _gridID);
+                    return;
+                }   
+            }
+
+            _gridID = _programIni.GetKey(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+        }
+
+        public string GridIdFromBlock(IMyTerminalBlock block)
+        {
+            if (block.CustomData.Contains(GRID_KEY))
+                return GetKey(block, SHARED, GRID_KEY, "");
+            else
+                return ""; 
+        }
     }
 }

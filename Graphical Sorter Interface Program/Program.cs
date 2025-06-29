@@ -57,8 +57,7 @@ namespace IngameScript
             _me = Me;
             _programIni = new MyIniHandler(Me);
 
-            _gridID = _programIni.GetKey(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
-
+            InitializeGridId();
             AddDataScreen();
             AddSorters();
             AddMenuViewers();
