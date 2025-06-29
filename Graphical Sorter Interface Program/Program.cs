@@ -33,8 +33,10 @@ namespace IngameScript
         const string DASHES = "-------------------";
 
         static IMyTextSurface _dataScreen;
+        static IMyTextSurface _logScreen;
         static Logger _logger;
-
+        static string _basicData;
+        
 
         public Program()
         {
@@ -58,7 +60,7 @@ namespace IngameScript
             _programIni = new MyIniHandler(Me);
 
             InitializeGridId();
-            AddDataScreen();
+            AddDataScreens();
             AddSorters();
             AddMenuViewers();
             DrawAllMenus();
@@ -66,96 +68,89 @@ namespace IngameScript
         }
 
 
-        // ADD DATA SCREEN //
-        public void AddDataScreen()
+        // ADD DATA SCREENS //
+        public void AddDataScreens()
         {
-            string screenIndex = _programIni.GetKey(MAIN_HEADER, "DataScreen", "0");
+            _dataScreen = GetProgramScreen(_programIni.GetKey(MAIN_HEADER, "DataScreen", "0"));
+            
+            if(_dataScreen != null)
+                _dataScreen.ContentType = ContentType.TEXT_AND_IMAGE;
 
-            switch (screenIndex)
-            {
-                case "0":
-                    _dataScreen = _me.GetSurface(0);
-                    break;
-                case "1":
-                    _dataScreen = _me.GetSurface(1);
-                    break;
-                default:
-                    _dataScreen = null;
-                    return;
-            }
+            _logScreen = GetProgramScreen(_programIni.GetKey(MAIN_HEADER, "LogScreen", "1"));
 
-            _dataScreen.ContentType = ContentType.TEXT_AND_IMAGE;
+            if(_logScreen != null)
+                _logScreen.ContentType = ContentType.TEXT_AND_IMAGE;
         }
 
+        IMyTextSurface GetProgramScreen(string screenIndex)
+        {
+            switch(screenIndex)
+            {
+                case "0":
+                    return _me.GetSurface(0);
+                case "1":
+                    return _me.GetSurface(1);
+                default:
+                    return null;
+            }
+        }
 
         // SHOW DATA //
         public void ShowData()
         {
-            string data = "// GSIP " + SLASHES + SLASHES + "\n";
+            UpdateData();
 
-            data += "   Sorter Count: " + _sorters.Count + "\n"
-                  + "   Viewer Count: " + _menuViewers.Count;
+            string logData = _logger.PrintMessages();
+            string allData = _basicData + "\n" + logData;
 
-            if(_sorters.Count > 0)
+            Echo(allData);
+
+            if(_dataScreen != null && _logScreen != null)
             {
-                data += "\nSORTERS:";
-                foreach(string key in _sorters.Keys)
-                {
-                    data += "\n * " + key + " - " +_sorters[key].SorterBlock.CustomName;
-                }
+                _dataScreen.WriteText(_basicData);
+                _logScreen.WriteText(logData);
             }
-
-            if(_menuViewers.Count > 0)
+            else if (_dataScreen != null)
             {
-                data += "\nMENU VIEWERS:";
-                foreach(int key in _menuViewers.Keys)
+                _dataScreen.WriteText(allData);
+            }
+            else if(_logScreen != null)
+            {
+                _logScreen.WriteText(logData);
+            }
+        }
+
+        void UpdateData()
+        {
+            _basicData = "// GSIP " + SLASHES + SLASHES + "\n"
+                + "   Sorter Count: " + _sorters.Count + "  -  Viewer Count: " + _menuViewers.Count;
+
+            if (_menuViewers.Count > 0)
+            {
+                _basicData += "\n\nMENU VIEWERS:";
+                foreach (int key in _menuViewers.Keys)
                 {
                     MenuViewer viewer = _menuViewers[key];
-                    data += "\n * " + key + ": viewing sorter " + viewer.GSorter.Tag + " - Page " + viewer.CurrentPage + " of " + viewer.PageCount;
-                    data += "\n   " + viewer.Viewport.Width + " x " + viewer.Viewport.Height + " - ";
-
-                    /*
-                    if (viewer.WideScreen)
-                        data += "Widescreen\n";
-                    else
-                        data += "Fullscreen\n";
-
-                    
-                    if (viewer.MenuPage == null || viewer.MenuPage.Buttons.Count == 0) continue;
-
-                    for (int i = 1; i <= viewer.ButtonCount; i++)
-                    {
-                        MenuButton button = viewer.MenuPage.Buttons[i];
-                        string active = button.Active ? "On " : "Off ";
-                        data += "\n    [" + (i) + "] " + active + button.Filter;
-                    }
-                    */
+                    _basicData += "\n * " + key + ": viewing sorter " + viewer.GSorter.Tag + " - Page " + viewer.CurrentPage + " of " + viewer.PageCount;
+                    //_basicData += " - " + viewer.Viewport.Width + " x " + viewer.Viewport.Height + " - ";
                 }
             }
 
-            /*
             if (_sorters.Count > 0)
             {
+                _basicData += "\n\nSORTERS:";
                 foreach (string key in _sorters.Keys)
                 {
                     GSorter sorter = _sorters[key];
-                    data += "\n* " + sorter.SorterBlock.CustomName;
 
-                    if(sorter.Filters.Length < 1) { continue; }
+                    List<MyInventoryItemFilter> currentFilters = new List<MyInventoryItemFilter>();
+                    sorter.SorterBlock.GetFilterList(currentFilters);
 
-                    for(int i = 0; i < sorter.Filters.Length; i++)
-                    {
-                        data += "\n  - " + sorter.Filters[i]; 
-                    }
+                    string mode = sorter.SorterBlock.Mode.ToString();
+
+                    _basicData += "\n * " + key + " - " + sorter.SorterBlock.CustomName + "  -  " + mode + " - Active Filters: " + sorter.ActiveFilterCount();
                 }
             }
-            */
-
-            data += "\n" + _logger.PrintMessages();
-
-            Echo(data);
-
-            _dataScreen.WriteText(data);
         }
     }
 }

@@ -98,14 +98,6 @@ namespace IngameScript
                         Type = ButtonType.ITEM;
                         break;
                 }
-
-                /*
-                // If Filter Is not contained in the lookup, use entire provided filter.
-                // For custom/missing item types
-                string [] lookup = SorterProfiles.LookupItem(filter);
-                Filter = lookup[0];
-                Label = lookup[1];
-                */
             }
 
             public void Initialize(List<MyInventoryItemFilter> filterList)
@@ -122,17 +114,14 @@ namespace IngameScript
                         Active = false;
                         break;
                     case ButtonType.ITEM:
-                        Active = IsFilterActive(filterList);
+                        Active = IsFilterActive(Filter, filterList);
                         break;
                 }
                 
             }
-
+            /*
             bool IsFilterActive(List<MyInventoryItemFilter> filterList)
             {
-
-                //string item = SorterProfiles.LookupItem(Filter);
-
                 try
                 {
                     MyDefinitionId defId = MyDefinitionId.Parse(Filter);
@@ -146,7 +135,7 @@ namespace IngameScript
                     _logger.LogError("Could not parse filter " + Filter);
                     return false;
                 }
-            }
+            }*/
 
             public void ToggleDrainAll()
             {
@@ -200,5 +189,23 @@ namespace IngameScript
                 }
             }
         }
+
+        static bool IsFilterActive(string filter, List<MyInventoryItemFilter> filterList)
+        {
+            try
+            {
+                MyDefinitionId defId = MyDefinitionId.Parse(filter);
+                MyInventoryItemFilter itemFilter = new MyInventoryItemFilter(defId);
+
+                return filterList.Contains(itemFilter);
+            }
+            catch
+            {
+                _logger.LogError("Could not parse filter " + filter);
+                return false;
+            }
+        }
+
+
     }
 }

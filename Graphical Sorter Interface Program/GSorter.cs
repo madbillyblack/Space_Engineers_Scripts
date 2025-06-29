@@ -64,6 +64,23 @@ namespace IngameScript
                 InitColors();
             }
 
+            public int ActiveFilterCount()
+            {
+                if(Filters.Length < 1) return 0;
+
+                int count = 0;
+                List<MyInventoryItemFilter> filters = new List<MyInventoryItemFilter>();
+                SorterBlock.GetFilterList(filters);
+
+                foreach (string filter in Filters)
+                {
+                    if(IsFilterActive(SorterProfiles.LookupItem(filter)[0], filters))
+                        count++;
+                }
+
+                return count;
+            }
+
             private void AddFilters()
             {
                 string filterList;
