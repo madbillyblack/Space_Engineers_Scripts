@@ -580,7 +580,7 @@ namespace IngameScript
 
             // If no perfect match found, choose first controller in list.
             _cockpit = controllers[0];
-            _programIniHandler.SetKey(INI_HEAD, "Cockpit", _cockpit.CustomName);
+            _programIniHandler.SetKey(CRUISE_HEADER, "Cockpit", _cockpit.CustomName);
         }
 
 

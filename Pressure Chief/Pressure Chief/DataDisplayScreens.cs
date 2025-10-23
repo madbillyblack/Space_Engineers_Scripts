@@ -187,7 +187,7 @@ namespace IngameScript
 		// PRINT DATA
 		void PrintData()
         {
-			Echo(_dataDisplays.Count.ToString());
+			Echo("Data Displays: " +_dataDisplays.Count.ToString());
 			if (_dataDisplays.Count < 1)
 				return;
 
