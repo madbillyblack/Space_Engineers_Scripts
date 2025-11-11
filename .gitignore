@@ -1,6 +1,7 @@
 #files
 *.suo
 *.vsidx
+*.local.ini
 
 #directories
 *bin/
