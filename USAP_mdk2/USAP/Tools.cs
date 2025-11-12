@@ -90,15 +90,14 @@ namespace IngameScript
 
 
         // GET BRACED INFO //
-        static string GetBracedInfo(string arg)
+        static string GetBracedInfo(string arg, char opener = '{', char closer = '}')
         {
             string info = "";
 
-            if (arg.Contains("{") && arg.Contains("}"))
+            if (arg.Contains(opener) && arg.Contains(closer))
             {
-                int open = arg.IndexOf('{');
-                int close = arg.IndexOf('}') - 1;
-
+                int open = arg.IndexOf(opener);
+                int close = arg.IndexOf(closer) - 1;
 
                 if (open < close)
                 {

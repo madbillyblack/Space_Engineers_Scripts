@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -59,6 +60,7 @@ namespace IngameScript
         {
             public int Number { get; set; }
             public string Name { get; set; }
+            public Dictionary<string, IMyProjector> Projectors { get; set; }
             public List<IMyDoor> Doors { get; set; }
             public List<IMyShipWelder> Welders { get; set;}
             public IMyTimerBlock FiringTimer {  get; set; }
@@ -76,12 +78,26 @@ namespace IngameScript
 
                 Doors = new List<IMyDoor>();
                 Welders = new List<IMyShipWelder>();
+                Projectors = new Dictionary<string, IMyProjector>();
             }
 
             public void AddFiringTimer(IMyTimerBlock timer)
             {
                 FiringTimer = timer;
                 iniHandler = new MyIniHandler(timer);
+            }
+
+            private bool opened()
+            {
+                if (Doors.Count < 1) return true;
+
+                foreach (IMyDoor door in Doors)
+                {
+                    if(door.OpenRatio < 1)
+                        return false;
+                }
+
+                return true;
             }
         }
 
@@ -138,9 +154,32 @@ namespace IngameScript
             }
 
             group.GetBlocksOfType<IMyDoor>(bay.Doors);
-
-            List<IMyShipWelder> welders = new List<IMyShipWelder>();
             group.GetBlocksOfType<IMyShipWelder>(bay.Welders);
+
+            List<IMyProjector> projectors = new List<IMyProjector>();
+            group.GetBlocksOfType<IMyProjector>(projectors);
+
+            if (projectors.Count > 0)
+            {
+                foreach (IMyProjector projector in projectors)
+                {
+                    string key = GetBracedInfo(projector.CustomName);
+
+                    if (bay.Projectors.ContainsKey(key))
+                    {
+                        _statusMessage += "WARNING: Group " + bay.Name + " contains multiple projectors with loadout {" + key + "}\n";
+                        continue;
+                    }
+
+                    bay.Projectors.Add(key, projector);
+                }
+
+                // If no properly tagged projectors, add the first
+                if(bay.Projectors.Count < 1)
+                {
+                    bay.Projectors.Add("default", projectors[0]);
+                }
+            }
 
             return bay;
         }
@@ -186,7 +225,8 @@ namespace IngameScript
             {
                 foreach (int key in _launchSystem.Bays.Keys)
                 {
-                    Echo("* " + _launchSystem.Bays[key].Name);
+                    Bay bay = _launchSystem.Bays[key];
+                    Echo("* " + bay.Name + " ... " + bay.Projectors.Count + " projectors");
                 }
             }
         }
