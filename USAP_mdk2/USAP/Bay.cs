@@ -32,9 +32,12 @@ namespace IngameScript
         {
             public string BayType { get; set; }
             public Dictionary<int, Bay> Bays { get; set; }
+
+            private List<Bay> baysToCheck;
             public LaunchSystem()
             {
                 Bays = new Dictionary<int, Bay>();
+                baysToCheck = new List<Bay>();
 
                 BayType = _programIniHandler.GetKey(INI_HEAD, BAY_TYPE, "Bay");
                 _programIniHandler.EnsureComment(INI_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
@@ -63,6 +66,7 @@ namespace IngameScript
             public Dictionary<string, IMyProjector> Projectors { get; set; }
             public List<IMyDoor> Doors { get; set; }
             public List<IMyShipWelder> Welders { get; set;}
+            public List<IMyShipMergeBlock> MergeBlocks { get; set; }
             public IMyTimerBlock FiringTimer {  get; set; }
             public IMyTimerBlock ReloadTimer { get; set; }
             public bool Loaded { get; set; }
@@ -78,6 +82,7 @@ namespace IngameScript
 
                 Doors = new List<IMyDoor>();
                 Welders = new List<IMyShipWelder>();
+                MergeBlocks = new List<IMyShipMergeBlock>();
                 Projectors = new Dictionary<string, IMyProjector>();
             }
 
@@ -86,6 +91,20 @@ namespace IngameScript
                 FiringTimer = timer;
                 iniHandler = new MyIniHandler(timer);
             }
+
+            public void Open()
+            {
+                //TODO
+            }
+
+
+            public void Close()
+            {
+                //TODO
+            }
+
+
+
 
             private bool opened()
             {
@@ -98,6 +117,21 @@ namespace IngameScript
                 }
 
                 return true;
+            }
+
+
+            private bool loaded()
+            {
+                if (MergeBlocks.Count > 0)
+                {
+                    foreach (IMyShipMergeBlock block in MergeBlocks)
+                    {
+                        if (block.IsConnected)
+                            return true;
+                    }
+                }
+
+                return false;
             }
         }
 
@@ -155,6 +189,7 @@ namespace IngameScript
 
             group.GetBlocksOfType<IMyDoor>(bay.Doors);
             group.GetBlocksOfType<IMyShipWelder>(bay.Welders);
+            group.GetBlocksOfType<IMyShipMergeBlock>(bay.MergeBlocks);
 
             List<IMyProjector> projectors = new List<IMyProjector>();
             group.GetBlocksOfType<IMyProjector>(projectors);
@@ -226,7 +261,7 @@ namespace IngameScript
                 foreach (int key in _launchSystem.Bays.Keys)
                 {
                     Bay bay = _launchSystem.Bays[key];
-                    Echo("* " + bay.Name + " ... " + bay.Projectors.Count + " projectors");
+                    Echo("* " + bay.Name);// + "\n - Projectors: " + bay.Projectors.Count + "\n - Loaded: " + bay.loaded().ToString());
                 }
             }
         }
