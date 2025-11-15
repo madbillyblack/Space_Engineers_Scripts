@@ -25,9 +25,8 @@ namespace IngameScript
         const string SHARED = "Shared Data";
         const string GRID_KEY = "Grid_ID";
         static string _gridID;
-        //static MyIni _programIni;
 
-        static MyIniHandler _programIniHandler;
+        static MyIniHandler _programIni;
 
         public class MyIniHandler
         {
@@ -66,7 +65,7 @@ namespace IngameScript
 
             public void EnsureComment(string header, string keyName, string comment)
             {
-                if(String.IsNullOrEmpty(Ini.GetComment(header, keyName)))
+                if (String.IsNullOrEmpty(Ini.GetComment(header, keyName)))
                     Ini.SetComment(header, keyName, comment);
             }
         }
@@ -167,7 +166,7 @@ namespace IngameScript
 
 
         // SAME GRID ID // - By default unassigned blocks will be given current Grid's ID.
-        bool SameGridID(IMyTerminalBlock block, bool useDefaultValue=true)
+        bool SameGridID(IMyTerminalBlock block, bool useDefaultValue = true)
         {
             if (!useDefaultValue && !block.CustomData.Contains(SHARED))
                 return false;

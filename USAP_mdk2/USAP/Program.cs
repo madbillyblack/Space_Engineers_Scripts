@@ -50,9 +50,6 @@ namespace IngameScript
 
         const char COMMS_SEPARATOR = ';'; // Separator for broadcast message data.  Needs to be a character that isn't used in your messages!
 
-        const string SLASHES = "///////////////";
-        const string DASHES = " ------------------- ";
-
         const string FIRE_TAG = "[FIRE ";
         const string RELOAD_TAG = "[RELOAD ";
 
@@ -398,7 +395,7 @@ namespace IngameScript
                 // Get a timer name/tag from the INI and try to activate the nearest timer with that name.
                 if(Me.CustomData.Contains(triggerKey))
                 {
-                    string timerName = _programIniHandler.GetKey(TRIGGER_HEAD, triggerKey, "");
+                    string timerName = _programIni.GetKey(TRIGGER_HEAD, triggerKey, "");
 
                     if (timerName == "")
                         _statusMessage += "No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.\n";
@@ -572,7 +569,7 @@ namespace IngameScript
                 return;
             }
 
-            string name = _programIniHandler.GetKey(CRUISE_HEADER, "Cockpit", "");
+            string name = _programIni.GetKey(CRUISE_HEADER, "Cockpit", "");
 
             foreach (IMyShipController controller in controllers)
             {
@@ -585,7 +582,7 @@ namespace IngameScript
 
             // If no perfect match found, choose first controller in list.
             _cockpit = controllers[0];
-            _programIniHandler.SetKey(CRUISE_HEADER, "Cockpit", _cockpit.CustomName);
+            _programIni.SetKey(CRUISE_HEADER, "Cockpit", _cockpit.CustomName);
         }
 
 
@@ -613,17 +610,17 @@ namespace IngameScript
             _breath = 0;
 
             //_programIni = GetIni(Me);
-            _programIniHandler = new MyIniHandler(Me);
+            _programIni = new MyIniHandler(Me);
 
             _statusMessage = "";
-            _gridID = _programIniHandler.GetKey(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
+            _gridID = _programIni.GetKey(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
             //_unloadPossible = false;
             _hasComponentCargo = false;
             _runningNumber = 0;
             _currentPower = "OFF";
 
             // Establish user defined reference block.  If none, set program block as reference.
-            string refTag = _programIniHandler.GetKey(INI_HEAD, "Reference", Me.CustomName);
+            string refTag = _programIni.GetKey(INI_HEAD, "Reference", Me.CustomName);
             try
             {
                 _refBlock = GridTerminalSystem.GetBlockWithName(refTag);
@@ -638,7 +635,7 @@ namespace IngameScript
 
 
             // Ensure Default Trigger Call Parameter
-            _programIniHandler.EnsureKey(TRIGGER_HEAD, "Trigger_Door", "Door Timer");
+            _programIni.EnsureKey(TRIGGER_HEAD, "Trigger_Door", "Door Timer");
 
             // Create inventory lists
             _magazines = new List<IMyTerminalBlock>();
@@ -660,7 +657,7 @@ namespace IngameScript
             // Make sure that any construction cargos have a profile in custom data.
             if (_hasComponentCargo)
             {
-                _activeProfile = _programIniHandler.GetKey(INI_HEAD, "Profiles", PROFILE_LIST).Split(',')[0];
+                _activeProfile = _programIni.GetKey(INI_HEAD, "Profiles", PROFILE_LIST).Split(',')[0];
                 EnsureProfiles();
             }
 
@@ -671,17 +668,17 @@ namespace IngameScript
             if (_cruiseThrusters.Count > 0)
             {
                 AssignCockpit();
-                _maxSpeed = ParseFloat(_programIniHandler.GetKey(CRUISE_HEADER, "Max Speed", "100"), 100);
+                _maxSpeed = ParseFloat(_programIni.GetKey(CRUISE_HEADER, "Max Speed", "100"), 100);
 
-                //_Kp = (double)ParseFloat(_programIniHandler.GetKey(CRUISE_HEADER, "P-Gain", KP.ToString()), (float) KP);
+                //_Kp = (double)ParseFloat(_programIni.GetKey(CRUISE_HEADER, "P-Gain", KP.ToString()), (float) KP);
                 SetThrustWeightRatio();
                 SetGain();
 
-                _safetyElevation = ParseInt(_programIniHandler.GetKey(CRUISE_HEADER, "Safety Height", "1000"), 1000);
+                _safetyElevation = ParseInt(_programIni.GetKey(CRUISE_HEADER, "Safety Height", "1000"), 1000);
                 if (_safetyElevation < 0)
                     _safetyElevation *= -1;
 
-                _gravityDisengage = ParseBool(_programIniHandler.GetKey(CRUISE_HEADER, "Zero-G Disable", "True"));
+                _gravityDisengage = ParseBool(_programIni.GetKey(CRUISE_HEADER, "Zero-G Disable", "True"));
 
                 
                 Echo("Max Thrust:\n" + _totalThrust.ToString("0.0") + "N\n" );
@@ -778,7 +775,7 @@ namespace IngameScript
         // ENSURE PROFILES // Ensure that program block has construction profiles
         public void EnsureProfiles()
         {
-            string [] profiles = _programIniHandler.GetKey(PROFILE_HEAD, "Profiles", PROFILE_LIST).Split(',');
+            string [] profiles = _programIni.GetKey(PROFILE_HEAD, "Profiles", PROFILE_LIST).Split(',');
 
             if (profiles.Length < 1)
                 return;
@@ -832,12 +829,12 @@ namespace IngameScript
         // GET ACTIVE PROFILE // - Returns Active Profile as 2D array
         public string [][] GetActiveProfile()
         {
-            string[] profiles = _programIniHandler.GetKey(PROFILE_HEAD, "Profiles", PROFILE_LIST).Split(',');
+            string[] profiles = _programIni.GetKey(PROFILE_HEAD, "Profiles", PROFILE_LIST).Split(',');
 
             if (profiles.Length > 0)
             {
                 string activeProfile = "Profile: " + profiles[0].Trim();
-                return StringTo2DArray(_programIniHandler.GetKey(activeProfile, LOADOUT, DEFAULT_BASIC), '\n', ':');
+                return StringTo2DArray(_programIni.GetKey(activeProfile, LOADOUT, DEFAULT_BASIC), '\n', ':');
             }
             else
             {
@@ -849,7 +846,7 @@ namespace IngameScript
         // SET ACTIVE PROFILE // - Designate Active Profile by making it the first entry in the Profile Key List.
         public void SetActiveProfile(string profileName)
         {
-            string[] profiles = _programIniHandler.GetKey(PROFILE_HEAD, "Profiles", "").Split(',');
+            string[] profiles = _programIni.GetKey(PROFILE_HEAD, "Profiles", "").Split(',');
             if (profiles.Length < 2)
                 return;
 

@@ -25,8 +25,9 @@ namespace IngameScript
         const string SHARED = "Shared Data";
         const string GRID_KEY = "Grid_ID";
         static string _gridID;
+        //static MyIni _programIni;
 
-        static MyIniHandler _programIni;
+        static MyIniHandler _programIniHandler;
 
         public class MyIniHandler
         {
@@ -63,9 +64,10 @@ namespace IngameScript
                 return GetKey(SHARED, GRID_KEY, _gridID) == _gridID;
             }
 
-            public bool HasKey(string header, string key)
+            public void EnsureComment(string header, string keyName, string comment)
             {
-                return Ini.ContainsKey(header, key);
+                if(String.IsNullOrEmpty(Ini.GetComment(header, keyName)))
+                    Ini.SetComment(header, keyName, comment);
             }
         }
 
@@ -114,6 +116,30 @@ namespace IngameScript
             return iniOuti;
         }
 
+        /*
+        // GET PROGRAM KEY //
+        static string GetProgramKey(string keyName, string defaultString)
+        {
+            EnsureProgramKey(keyName, defaultString);
+            return _programIni.Get(INI_HEAD, keyName).ToString();
+        }
+
+
+        // SET PROGRAM KEY //
+        static void SetProgramKey(string keyName, string inputString)
+        {
+            _programIni.Set(INI_HEAD, keyName, inputString);
+            _Me.CustomData = _programIni.ToString();
+        }
+
+
+        // ENSURE PROGRAM KEY //
+        static void EnsureProgramKey(string keyName, string defaultString)
+        {
+            if (!_programIni.ContainsKey(INI_HEAD, keyName))
+                SetProgramKey(keyName, defaultString);
+        }
+        */
 
         // SET GRID ID // Updates Grid ID parameter for all designated blocks in Grid, then rebuilds the grid.
         void SetGridID(string arg)
@@ -150,29 +176,6 @@ namespace IngameScript
                 return true;
             else
                 return false;
-        }
-
-        public void InitializeGridId()
-        {
-            string defaultId = SearchExistingGridIds();
-            if (defaultId == "")
-                defaultId = Me.CubeGrid.EntityId.ToString();
-            
-            _gridID = _programIni.GetKey(SHARED, "Grid_ID", defaultId);
-        }
-
-        public string SearchExistingGridIds()
-        {
-            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-            GridTerminalSystem.GetBlocks(blocks);
-
-            foreach (IMyTerminalBlock block in blocks)
-            {
-                if (block.CustomData.Contains(GRID_KEY))
-                    return GetKey(block, SHARED, GRID_KEY, Me.CubeGrid.EntityId.ToString());
-            }
-
-            return ""; 
         }
     }
 }

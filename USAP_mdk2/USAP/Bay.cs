@@ -39,8 +39,8 @@ namespace IngameScript
                 Bays = new Dictionary<int, Bay>();
                 baysToCheck = new List<Bay>();
 
-                BayType = _programIniHandler.GetKey(INI_HEAD, BAY_TYPE, "Bay");
-                _programIniHandler.EnsureComment(INI_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
+                BayType = _programIni.GetKey(INI_HEAD, BAY_TYPE, "Bay");
+                _programIni.EnsureComment(INI_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
             }
 
             public void OpenAll()
@@ -103,7 +103,10 @@ namespace IngameScript
                 //TODO
             }
 
-
+            public void SelectLoadOut(string selection)
+            {
+                //TODO
+            }
 
 
             private bool opened()

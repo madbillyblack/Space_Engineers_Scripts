@@ -217,7 +217,7 @@ namespace IngameScript
         void AssignThrusters()
         {
             _cruiseThrusters = new List<IMyThrust>();
-            _cruiseTag = _programIniHandler.GetKey(CRUISE_HEADER, "Cruise Thrusters", "");     
+            _cruiseTag = _programIni.GetKey(CRUISE_HEADER, "Cruise Thrusters", "");     
 
             if (_cruiseTag == "")
                 return;
@@ -233,7 +233,7 @@ namespace IngameScript
             cruiseGroup.GetBlocksOfType<IMyThrust>(_cruiseThrusters);
             _statusMessage += "CRUISE THRUSTERS: " + _cruiseTag + "\nThruster Count: " + _cruiseThrusters.Count + "\n";
 
-            float[] gains = GainsFromString(_programIniHandler.GetKey(CRUISE_HEADER, "Cruise Gains", "1,0,0"));
+            float[] gains = GainsFromString(_programIni.GetKey(CRUISE_HEADER, "Cruise Gains", "1,0,0"));
 
             // Set user gain factors
             _cruiseFactor = gains[0];
