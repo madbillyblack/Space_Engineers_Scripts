@@ -194,7 +194,7 @@ namespace IngameScript
             {
                 if(_channels.Count < 1)
                 {
-                    _statusMessage += "No Channels Detected!\n";
+                    _log.LogInfo("No Channels Detected!");
                     return;
                 }
 
@@ -308,7 +308,7 @@ namespace IngameScript
                 }
                 catch (Exception ex)
                 {
-                    _statusMessage += "Error Adding "+ Block.CustomName +"\n At: " + channel + "\n" + ex.Message + "\n";
+                    _log.LogError("Cannot add " + Block.CustomName + "\n At: " + channel + "\n" + ex.Message);
                 }
             }
 
@@ -429,7 +429,7 @@ namespace IngameScript
             }
             catch (Exception ex)
             {
-                _statusMessage += ex.Message + "\n";
+                _log.LogError(ex.Message);
             }
         }
 
@@ -500,7 +500,7 @@ namespace IngameScript
         public LcdRecieverScreen GetReceiver(int receiverId)
         {
             if(_receiverScreens.Count < 1) {
-                _statusMessage += "No Recievers Detected!\n";
+                _log.LogWarning("No Recievers Detected!");
                 return null;
             }
 
@@ -510,7 +510,7 @@ namespace IngameScript
             if (_receiverScreens.Keys.Contains(receiverId))
                 return _receiverScreens[receiverId] as LcdRecieverScreen;
 
-            _statusMessage += "Receiver " + receiverId + " Not Found!\n";
+            _log.LogWarning("Receiver " + receiverId + " Not Found!");
 
             return null;
         }

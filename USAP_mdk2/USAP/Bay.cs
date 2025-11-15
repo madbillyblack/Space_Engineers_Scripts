@@ -151,7 +151,7 @@ namespace IngameScript
             int bayNumber = ParseInt(numPart, -1);
             if (bayNumber < 0)
             {
-                //_statusMessage += "WARNING: Could not get bay number from group name " + group.Name + "\n";
+                _log.LogWarning("Could not get bay number from group name " + group.Name);
                 return null;
             }
 
@@ -163,11 +163,11 @@ namespace IngameScript
 
             if(timers.Count < 1)
             {
-                _statusMessage += "ERROR: Group " + group.Name + " contains no timers!\n";
+                _log.LogError("Group \" + group.Name + \" contains no timers!");
                 return null;
             }
 
-            _statusMessage += "Group: " + group.Name + "\n";
+            _log.LogInfo("Group: " + group.Name);
 
             foreach (IMyTimerBlock timer in timers)
             {
@@ -186,7 +186,7 @@ namespace IngameScript
 
             if(bay.FiringTimer == null)
             {
-                _statusMessage += "ERROR: Group " + group.Name + " contains no timers with the tag " + FIRE_TAG + "\n";
+                _log.LogError("Group " + group.Name + " contains no timers with the tag " + FIRE_TAG);
                 return null;
             }
 
@@ -205,7 +205,7 @@ namespace IngameScript
 
                     if (bay.Projectors.ContainsKey(key))
                     {
-                        _statusMessage += "WARNING: Group " + bay.Name + " contains multiple projectors with loadout {" + key + "}\n";
+                        _log.LogWarning("Group " + bay.Name + " contains multiple projectors with loadout {" + key + "}");
                         continue;
                     }
 
@@ -244,7 +244,7 @@ namespace IngameScript
                     int key = bay.Number;
                     if (_launchSystem.Bays.ContainsKey(key))
                     {
-                        _statusMessage += "ERROR: Cannot add " + group.Name + ". Launch systems already contains key " + key + "\n";  
+                        _log.LogError("Cannot add " + group.Name + ". Launch systems already contains key " + key);  
                     }
                     else
                     {

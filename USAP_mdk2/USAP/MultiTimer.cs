@@ -156,7 +156,7 @@ namespace IngameScript
             {
                 if (Block.IsCountingDown && !IsInterruptible)
                 {
-                    _statusMessage += "\nMulti-Timer " + Tag + " cannot be interrupted!";
+                    _log.LogWarning("Multi-Timer " + Tag + " cannot be interrupted!");
                     return false;
                 }
 
@@ -249,7 +249,7 @@ namespace IngameScript
                         }
                         catch
                         {
-                            _statusMessage += block.CustomName + " cannot perform action \"" + Action + "\"!\n";
+                            _log.LogError(block.CustomName + " cannot perform action \"" + Action + "\"!");
                         }
                     }
                 }
@@ -286,8 +286,7 @@ namespace IngameScript
                     string tag = multiTimer.Tag;
                     if(_multiTimers.Keys.Contains<string>(tag))
                     {
-                        _statusMessage += "\nERROR: Cannot add Multitimer from block:\n  " + multiTimer.Block.CustomName +
-                                           "\n  => Tag already in use.";
+                        _log.LogError("Cannot add Multitimer from block: " + multiTimer.Block.CustomName + "\n  => Tag already in use.");
                     }
                     else if(multiTimer.Tag != ERROR)
                     {
@@ -386,12 +385,11 @@ namespace IngameScript
         // ACTION BLOCK FROM BLOCK NAME //
         ActionBlock ActionBlockFromBlockName(string blockName, string action)
         {
-            //_statusMessage += "\n Getting Block: " + blockName;
             IMyTerminalBlock block = GridTerminalSystem.GetBlockWithName(blockName);
 
             if (block == null)
             {
-                _statusMessage += "\nBlock Not Found: " + blockName;
+                _log.LogError("Block Not Found: " + blockName);
                 return null;
             }
             else
@@ -439,7 +437,7 @@ namespace IngameScript
 
             if(timer == null)
             {
-                _statusMessage += "No Timer with tag \"" + tag + "\" found!";
+                _log.LogError("No Timer with tag \"" + tag + "\" found!");
                 return;
             }
 
@@ -454,7 +452,8 @@ namespace IngameScript
             string[] data = phaseData.Split(' ');
             if(data.Length < 2)
             {
-                _statusMessage += "\nINSUFFICIENT PHASE DATA!";
+                _log.LogError("Insufficient Phase Data");
+                return;
             }
 
             string phaseName = data[0];
@@ -467,14 +466,14 @@ namespace IngameScript
             MultiTimer timer = GetMultiTimer(tag.Trim());
             if(timer == null)
             {
-                _statusMessage += "No Timer with tag \"" + tag + "\" found!";
+                _log.LogError("No timer with tag \"" + tag + "\" found!");
                 return;
             }
 
             Phase phase = PhaseFromName(timer, phaseName);
             if(phase == null)
             {
-                _statusMessage += "No Phase with name \"" + phaseName + "\" found!";
+                _log.LogError("No phase with name \"" + phaseName + "\" found!");
                 return;
             }
 

@@ -114,7 +114,7 @@ namespace IngameScript
 
                 if (ShowStatus)
                 {
-                    output += _statusMessage + "\n";
+                    output += _log.PrintMessages() + "\n";
                     p++;
                 }
                     
@@ -181,7 +181,7 @@ namespace IngameScript
             int surfaceCount = (block as IMyTextSurfaceProvider).SurfaceCount;
             if (surfaceCount < 1)
             {
-                _statusMessage += "BLOCK HAS NO TEXT SURFACES:\n" + block.CustomName + "\n";
+                _log.LogError("Block " + block.CustomName + " has no text surfaces.");
                 return;
             }
             else if (surfaceCount == 1)

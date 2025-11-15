@@ -24,6 +24,7 @@ namespace IngameScript
     {
         const string SLASHES = "///////////////";
         const string DASHES = "-------------------";
+        static Logger _log;
 
         public class Logger
         {

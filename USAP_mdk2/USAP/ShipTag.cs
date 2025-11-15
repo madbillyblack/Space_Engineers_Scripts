@@ -190,7 +190,7 @@ namespace IngameScript
         {
             if (tags.Length < 3)
             {
-                _statusMessage = "Insufficient arguments for TAG REPLACEMENT.\n * Be sure to include the old tag to be replaced as well as the new tag.";
+                _log.LogError("Insufficient arguments for TAG REPLACEMENT.\n * Be sure to include the old tag to be replaced as well as the new tag.");
                 return;
             }
 

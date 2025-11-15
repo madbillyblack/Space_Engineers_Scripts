@@ -169,7 +169,6 @@ namespace IngameScript
         const string FUEL = "Uranium";
 
         const int RUN_CAP = 10;
-        static string _statusMessage;
 
         const float PI = (float)Math.PI;
         static IMyProgrammableBlock _Me;
@@ -212,6 +211,8 @@ namespace IngameScript
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
         {
+            _log = new Logger();
+
             if (Storage.Length > 0)
             {
                 string[] storageData = Storage.Split(';');
@@ -291,7 +292,7 @@ namespace IngameScript
             }
 
 
-            Echo("STATUS: " + _statusMessage);
+            Echo("LOG: " + _log.PrintMessages());
             Echo("Displays: " + _displays.Count);
             Echo("Turrets: " + _turretString);
             ShowBroadcastData();
@@ -354,7 +355,7 @@ namespace IngameScript
 
             if (triggerTimers.Count < 1)
 			{
-                _statusMessage = "No Timers of name " + trigger + " found.";
+                _log.LogError("No Timers of name " + trigger + " found.");
                 return;
             }
 
@@ -373,7 +374,7 @@ namespace IngameScript
             }
 
             timerToTrigger.GetActionWithName("TriggerNow").Apply(timerToTrigger);
-            _statusMessage += "Activating: " + timerToTrigger.CustomName +"\n";
+            _log.LogInfo("Activating: " + timerToTrigger.CustomName);
         }
 
 
@@ -387,7 +388,7 @@ namespace IngameScript
                 string[] args = arg.Split('_');
                 if(args.Length < 2)
 				{
-                    _statusMessage = "Invalid Trigger Command: " + arg;
+                    _log.LogError("Invalid Trigger Command: " + arg);
                     return;
 				}
                 string triggerKey = "Trigger_" + args[1];
@@ -398,20 +399,20 @@ namespace IngameScript
                     string timerName = _programIni.GetKey(TRIGGER_HEAD, triggerKey, "");
 
                     if (timerName == "")
-                        _statusMessage += "No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.\n";
+                        _log.LogError("No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.");
                     else
                         Activate(timerName);
                 }
                 else
                 {
-                    _statusMessage += "No defined Trigger \"" + triggerKey + "\" found!\n  Please check case and spelling.\n";
+                    _log.LogError("No defined Trigger \"" + triggerKey + "\" found!\n  Please check case and spelling.");
                 }
 
                 // Leave function so default error isn't called.
                 return;
 			}
 
-            _statusMessage = "UNRECOGNIZED COMMAND: " + arg;
+            _log.LogError("Unrecognized command: " + arg);
         }
 
 
@@ -565,7 +566,7 @@ namespace IngameScript
             
             if(controllers.Count < 1)
             {
-                _statusMessage += "NO CONTROLLERS FOUND!\n";
+                _log.LogWarning("No reference controllers found");
                 return;
             }
 
@@ -612,7 +613,6 @@ namespace IngameScript
             //_programIni = GetIni(Me);
             _programIni = new MyIniHandler(Me);
 
-            _statusMessage = "";
             _gridID = _programIni.GetKey(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
             //_unloadPossible = false;
             _hasComponentCargo = false;
@@ -815,7 +815,7 @@ namespace IngameScript
             // Search for profile in 
             if (profileName == "" || !Me.CustomData.ToLower().Contains(profileName.ToLower() + "]"))
             {
-                _statusMessage = "No Profile named \"" + profileName + "\" found!";
+                _log.LogError("No Profile named \"" + profileName + "\" found!");
                 return;
             }
 
@@ -967,7 +967,6 @@ namespace IngameScript
             Echo("Length: " + length);
             tag = tag.Substring(0, length);//Length of tag
             Echo(tag);
-            //_statusMessage = tag;
 
             return tag;
         }
@@ -1021,7 +1020,7 @@ namespace IngameScript
                 // If there's still the same number in the container after attempting to transfer, STOP.
                 if (numberOfItemInContainer(dest, itemType) == initialSupply)
                 {
-                    _statusMessage = "WARNING: Failed to transfer item of type " + itemType + "!";
+                    _log.LogWarning("Failed to transfer item of type " + itemType);
                     return;
                 }
             }

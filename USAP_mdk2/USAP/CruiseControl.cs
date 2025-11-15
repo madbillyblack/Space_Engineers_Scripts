@@ -74,7 +74,7 @@ namespace IngameScript
             if (value > 0)
             {
                 _targetThrottle += value;
-                
+
                 if (_targetThrottle > _maxSpeed)
                     _targetThrottle = _maxSpeed;
 
@@ -82,7 +82,9 @@ namespace IngameScript
                     CruiseThrustersOn();
             }
             else
-                _statusMessage += "INVALID THROTTLE ARGUMENT:\n\"" + arg + "\"\n";      
+            {
+                _log.LogError("Invalid Throttle Argument: " + arg);
+            }
         }
 
         
@@ -106,7 +108,9 @@ namespace IngameScript
                 }
             }
             else
-                _statusMessage += "INVALID THROTTLE ARGUMENT:\n\"" + arg + "\"\n";
+            {
+                _log.LogError("Invalid Throttle Argument: " + arg);
+            }
         }
 
 
@@ -180,7 +184,7 @@ namespace IngameScript
             if (_gravityDisengage && _cockpit.GetNaturalGravity().Length() < 0.04)
             {
                 CruiseThrustersOff();
-                _statusMessage += "GRAVITY WELL VACATED\nThrusters Disengaged\n";
+                _log.LogInfo("Gravity well vacated. Cruise disengaged.");
             }
         }
 
@@ -205,7 +209,7 @@ namespace IngameScript
                         if (cos > 0.707) // If angle is within 45 degrees of gravity vector, disengage cruise thrusters
                         {
                             CruiseThrustersOff();
-                            _statusMessage += "SAFETY THRUSTER DISENGAGE!\n";
+                            _log.LogWarning("CRUISE SAFETY DISENGAGE!");
                         }
                     }
                 }
@@ -217,21 +221,18 @@ namespace IngameScript
         void AssignThrusters()
         {
             _cruiseThrusters = new List<IMyThrust>();
-            _cruiseTag = _programIni.GetKey(CRUISE_HEADER, "Cruise Thrusters", "");     
-
+            _cruiseTag = _programIni.GetKey(CRUISE_HEADER, "Cruise Thrusters", "");
             if (_cruiseTag == "")
                 return;
 
             IMyBlockGroup cruiseGroup = GridTerminalSystem.GetBlockGroupWithName(_cruiseTag);
-
             if (cruiseGroup == null)
             {
-                _statusMessage += "NO GROUP WITH NAME \"" + _cruiseTag + "\" FOUND!\n";
+                _log.LogWarning("No group with name " + _cruiseTag + " found.");
                 return;
             }
-
             cruiseGroup.GetBlocksOfType<IMyThrust>(_cruiseThrusters);
-            _statusMessage += "CRUISE THRUSTERS: " + _cruiseTag + "\nThruster Count: " + _cruiseThrusters.Count + "\n";
+            _log.LogInfo("Cruise Thusters: " + _cruiseTag + "\n - Thruster Count: " + _cruiseThrusters.Count);
 
             float[] gains = GainsFromString(_programIni.GetKey(CRUISE_HEADER, "Cruise Gains", "1,0,0"));
 
