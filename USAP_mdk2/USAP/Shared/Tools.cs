@@ -135,5 +135,24 @@ namespace IngameScript
             else
                 return degrees + 360;
         }
+
+
+        static void Activate(IMyTerminalBlock block)
+        {
+            block.GetActionWithName("OnOff_On").Apply(block);
+        }
+
+        static void Deactivate(IMyTerminalBlock block)
+        {
+            block.GetActionWithName("OnOff_Off").Apply(block);
+        }
+
+        static void Toggle(IMyTerminalBlock block)
+        {
+            if(block.IsWorking)
+                Activate(block);
+            else
+                Deactivate(block);
+        }
     }
 }

@@ -449,7 +449,8 @@ namespace IngameScript
         // ENGAGE STATOR // - For use when assembly is in motion
         static void EngageStator(IMyMotorStator stator, bool extending)
         {
-            stator.GetActionWithName("OnOff_On").Apply(stator);
+            Activate(stator);
+            //stator.GetActionWithName("OnOff_On").Apply(stator);
             stator.RotorLock = false;
 
             if (_landingGear.IsExtended)
@@ -465,7 +466,7 @@ namespace IngameScript
             stator.TargetVelocityRPM = 0;
 
             if (ParseBool(GetKey(stator, INI_HEAD, "Off When Stationary", "false")))
-                stator.GetActionWithName("OnOff_Off").Apply(stator);
+                Deactivate(stator);
             else
                 stator.RotorLock = true;
         }
@@ -474,7 +475,8 @@ namespace IngameScript
         // ENGAGE PISTON //
         static void EngagePiston(IMyPistonBase piston, bool extending)
         {
-            piston.GetActionWithName("OnOff_On").Apply(piston);
+            Activate(piston);
+            //piston.GetActionWithName("OnOff_On").Apply(piston);
 
             if (extending)
                 piston.Velocity = ParseFloat(GetKey(piston, INI_HEAD, "Extend Velocity", "0"), 0);
@@ -489,7 +491,7 @@ namespace IngameScript
             piston.Velocity = 0;
 
             if (ParseBool(GetKey(piston, INI_HEAD, "Off When Stationary", "false")))
-                piston.GetActionWithName("OnOff_Off").Apply(piston);
+                Deactivate(piston);
         }
 
 
@@ -506,7 +508,7 @@ namespace IngameScript
         // DISENGAGE LANDING PLATE // - For use when gear assembly is in motion (extending or retracting)
         static void DisengageLandingPlate(IMyLandingGear landingGear)
         {
-            landingGear.GetActionWithName("OnOff_On").Apply(landingGear);
+            Activate(landingGear);
             landingGear.Unlock();
             landingGear.AutoLock = false;
         }
@@ -545,7 +547,7 @@ namespace IngameScript
                     case "OFF":
                     case "TURNOFF":
                     case "TURN OFF":
-                        landingGear.GetActionWithName("OnOff_Off").Apply(landingGear);
+                        Deactivate(landingGear);
                         break;
                 }
             }
@@ -576,7 +578,8 @@ namespace IngameScript
         static void EngageMergeBlock(IMyShipMergeBlock mergeBlock)
         {
             if (ParseBool(GetKey(mergeBlock, INI_HEAD, "Enable When Stopped", "True")))
-                mergeBlock.GetActionWithName("OnOff_On").Apply(mergeBlock);
+                Activate(mergeBlock);
+                //mergeBlock.GetActionWithName("OnOff_On").Apply(mergeBlock);
         }
 
         // SET RETRACT BEHAVIOR //

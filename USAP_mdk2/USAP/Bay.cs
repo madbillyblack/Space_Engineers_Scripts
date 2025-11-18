@@ -3,6 +3,7 @@ using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI.Ingame;
 using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -24,6 +25,9 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         const string BAY_TYPE = "BayType";
+        const string BAY_HEAD = "USAP: Missile Bay";
+        const string STATUS_KEY = "Status";
+        const string RELOAD_KEY = "Reload Time";
 
         public LaunchSystem _launchSystem;
         public string _missileBayString;
@@ -39,8 +43,8 @@ namespace IngameScript
                 Bays = new Dictionary<int, Bay>();
                 baysToCheck = new List<Bay>();
 
-                BayType = _programIni.GetKey(INI_HEAD, BAY_TYPE, "Bay");
-                _programIni.EnsureComment(INI_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
+                BayType = _programIni.GetKey(BAY_HEAD, BAY_TYPE, "Bay");
+                _programIni.EnsureComment(BAY_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
             }
 
             public void OpenAll()
@@ -63,7 +67,8 @@ namespace IngameScript
         {
             public int Number { get; set; }
             public string Name { get; set; }
-            public Dictionary<string, IMyProjector> Projectors { get; set; }
+            //public Dictionary<string, IMyProjector> Projectors { get; set; }
+            public Dictionary<string, Loadout> Loadouts { get; set; }
             public List<IMyDoor> Doors { get; set; }
             public List<IMyShipWelder> Welders { get; set;}
             public List<IMyShipMergeBlock> MergeBlocks { get; set; }
@@ -83,13 +88,15 @@ namespace IngameScript
                 Doors = new List<IMyDoor>();
                 Welders = new List<IMyShipWelder>();
                 MergeBlocks = new List<IMyShipMergeBlock>();
-                Projectors = new Dictionary<string, IMyProjector>();
+                Loadouts = new Dictionary<string,Loadout>();
             }
 
             public void AddFiringTimer(IMyTimerBlock timer)
             {
                 FiringTimer = timer;
                 iniHandler = new MyIniHandler(timer);
+
+                Status = ParseStatus(iniHandler.GetKey(BAY_HEAD, STATUS_KEY, "OPEN"));
             }
 
             public void Open()
@@ -138,9 +145,44 @@ namespace IngameScript
             }
         }
 
-        public enum  BayStatus
+        public class Loadout
         {
-            Opening, Open, Closed, Closing, Reloading
+            public IMyProjector Projector { get; set; }
+            public float ReloadTime { get; set; }
+            private MyIniHandler iniHandler;
+
+            public Loadout(IMyProjector projector)
+            {
+                Projector = projector;
+                iniHandler = new MyIniHandler(Projector);
+
+                ReloadTime = ParseFloat(iniHandler.GetKey(BAY_HEAD, RELOAD_KEY, "10"), 10);
+            }
+        }
+
+
+        public enum BayStatus
+        {
+            Opening, Open, Closed, Closing, Reloading, Error
+        }
+
+        public static BayStatus ParseStatus(string status)
+        {
+            switch (status.ToUpper())
+            {
+                case "OPENING":
+                    return BayStatus.Opening;
+                case "OPEN":
+                    return BayStatus.Open;
+                case "CLOSED":
+                    return BayStatus.Closed;
+                case "CLOSING":
+                    return BayStatus.Closing;
+                case "RELOADING":
+                    return BayStatus.Reloading;
+                default:
+                    return BayStatus.Error;
+            }
         }
 
         public Bay BayFromGroup(IMyBlockGroup group)
@@ -203,19 +245,19 @@ namespace IngameScript
                 {
                     string key = GetBracedInfo(projector.CustomName);
 
-                    if (bay.Projectors.ContainsKey(key))
+                    if (bay.Loadouts.ContainsKey(key))
                     {
                         _log.LogWarning("Group " + bay.Name + " contains multiple projectors with loadout {" + key + "}");
                         continue;
                     }
 
-                    bay.Projectors.Add(key, projector);
+                    bay.Loadouts.Add(key, new Loadout(projector));
                 }
 
                 // If no properly tagged projectors, add the first
-                if(bay.Projectors.Count < 1)
+                if(bay.Loadouts.Count < 1)
                 {
-                    bay.Projectors.Add("default", projectors[0]);
+                    bay.Loadouts.Add("default", new Loadout(projectors[0]));
                 }
             }
 
