@@ -106,12 +106,17 @@ namespace IngameScript
                     case "REARM":
                         ReloadAmmo();
                         break;
+                    case "DISARM":
+                        ReloadAmmo(true);
+                        break;
+                    case "SHOW_COUNTS":
+                        ShowCounts();
+                        break;
                     default:
                         _surface.WriteText("UNRECOGNIZED COMMAND", true);
                         break;
                 }
             }
-
         }
 
 
@@ -124,6 +129,17 @@ namespace IngameScript
             _gridID = _programIniHandler.GetKey(SHARED, "Grid_ID", Me.CubeGrid.EntityId.ToString());
 
             AddMagazines();
+        }
+
+        public void ShowCounts()
+        {
+            foreach(DestInventory mag in _magazines)
+            {
+                List<MyInventoryItem> items = new List<MyInventoryItem>();
+                mag.Inventory.GetItems(items);
+
+                _surface.WriteText(mag.Block.CustomName + "  \n Items: " + items.Count + "\n", true);
+            }
         }
 
 
@@ -217,7 +233,7 @@ namespace IngameScript
         }
 
 
-        public void ReloadAmmo()
+        public void ReloadAmmo(bool unload = false)
         {
             if(_magazines.Count < 1)
             {
@@ -233,12 +249,24 @@ namespace IngameScript
 
             foreach (DestInventory mag in _magazines)
             {
-                if (mag.Refill(sources))
-                    _surface.WriteText("RELOADED: " + mag.Block.CustomName + "\n", true);
+                if (unload)
+                {
+                    if (mag.Unload(sources))
+                        _surface.WriteText("UNLOADED: " + mag.Block.CustomName + "\n", true);
+                    else
+                        _surface.WriteText("UNLOAD ERROR: " + mag.Block.CustomName + "\n", true);
+                }
                 else
-                    _surface.WriteText("RELOAD ERROR: " + mag.Block.CustomName + "\n", true);
+                {
+                    if (mag.Refill(sources))
+                        _surface.WriteText("RELOADED: " + mag.Block.CustomName + "\n", true);
+                    else
+                        _surface.WriteText("RELOAD ERROR: " + mag.Block.CustomName + "\n", true);
+                }
             }
         }
+
+
 
         public List<IMyInventory> GetSourceInventories(string tag)
         {
