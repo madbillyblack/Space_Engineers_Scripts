@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36705.20 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Clipboard_MDK2", "Clipboard_MDK2\Clipboard_MDK2.csproj", "{C982CF2D-80C3-4988-814F-EE5128C27028}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C982CF2D-80C3-4988-814F-EE5128C27028}.Debug|x64.ActiveCfg = Debug|x64
+		{C982CF2D-80C3-4988-814F-EE5128C27028}.Debug|x64.Build.0 = Debug|x64
+		{C982CF2D-80C3-4988-814F-EE5128C27028}.Release|x64.ActiveCfg = Release|x64
+		{C982CF2D-80C3-4988-814F-EE5128C27028}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A88375B5-ABDE-4128-94DD-A88E1316B64F}
+	EndGlobalSection
+EndGlobal
