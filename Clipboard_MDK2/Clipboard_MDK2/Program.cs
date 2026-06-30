@@ -247,6 +247,8 @@ namespace IngameScript
                 return;
             }
 
+            _surface.WriteText("Source Inventories: " + sources.Count() + "\n", true);
+
             foreach (DestInventory mag in _magazines)
             {
                 if (unload)

@@ -59,7 +59,10 @@ namespace IngameScript
 
             public bool Refill(List<IMyInventory> sources)
             {
-                if(ItemTypes.Keys.Count < 1) { return true; }
+                if(ItemTypes.Keys.Count < 1) {
+                    _surface.WriteText("WARNING: No item keys loaded for " + Block.CustomName, true);
+                    return true;
+                }
 
                 int unstocked = 0;
 
@@ -67,9 +70,31 @@ namespace IngameScript
                 {
                     int targetCount = ItemAmmounts[key];
                     MyItemType itemType = ItemTypes[key];
-                    bool restocked = false;
 
-                    if (targetCount > 0)
+                    int missingCount = targetCount - Inventory.GetItemAmount(itemType).ToIntSafe();
+                    
+                    foreach (IMyInventory source in sources)
+                    {
+                        if (missingCount > 0)
+                        {
+                            missingCount = targetCount - RestockItem(itemType, source, missingCount);
+
+                            _surface.WriteText("  Untransferred: " + missingCount + "\n", true);
+                            /*
+                            // Check if transfer was incomplete due to lack of space
+                            if (missingCount > 0 & !Inventory.CanItemsBeAdded(missingCount, itemType))
+                            {
+                                _surface.WriteText("-- WARNING: The requested amount for item " + key + "\n in " + Block.CustomName + " exceeds capacity!\n");
+                                missingCount = 0;
+                            }
+                            */
+                        }
+                    }
+
+                    if (missingCount > 0) { unstocked++; }
+                }
+/*
+                        if (missingCount > 0)
                     {
                         foreach (IMyInventory source in sources)
                         {
@@ -102,7 +127,7 @@ namespace IngameScript
                     if (!restocked)
                         unstocked++;
                 }
-
+            */
                 // If all inventories fully stocked, return true
                 return unstocked < 1;
             }
@@ -141,7 +166,7 @@ namespace IngameScript
                 {
                     int currentAmount = Inventory.GetItemAmount(item.Type).ToIntSafe();
                     int transferred = targetCount - currentAmount;
-                    _surface.WriteText(transferred + "x " + item.Type.ToString() + "\n", true);
+                    _surface.WriteText(transferred + "x " + GetItemName(item.Type.ToString()) + "transferred from " + Block.CustomName +"\n", true);
 
                     return currentAmount;
                 }
@@ -152,11 +177,27 @@ namespace IngameScript
             }
 
 
-            private bool RestockItem(MyItemType itemType, int targetAmmount, IMyInventory source)
+            private int RestockItem(MyItemType itemType, IMyInventory source, int targetCount)
             {
-                int currentCount = Inventory.GetItemAmount(itemType).ToIntSafe();
+                _surface.WriteText("Requested: " + targetCount + "x " + GetItemName(itemType.ToString()) + " in " + Block.CustomName + "\n", true);
+                MyInventoryItem? item = source.FindItem(itemType);
+                if (item != null && Inventory.TransferItemFrom(source, (MyInventoryItem) item, targetCount))
+                {
+                    int currentAmount = Inventory.GetItemAmount(itemType).ToIntSafe();                
+
+                    return currentAmount;
+                }
+                else
+                {
+                    _surface.WriteText("Unable to transfer requested item to " + Block.CustomName + "\n", true);
+                    return Inventory.GetItemAmount(itemType).ToIntSafe();
+                }
+
+
+                /*
+                    int currentCount = Inventory.GetItemAmount(itemType).ToIntSafe();
    
-                int amountToTransfer = targetAmmount - currentCount;
+                int amountToTransfer = targetCount - currentCount;
                 if (amountToTransfer < 1) { return true; } // Item already stocked
 
                 MyInventoryItem? item = source.FindItem(itemType);
@@ -166,6 +207,7 @@ namespace IngameScript
                 }
 
                 return false;
+                */
             }
 
 
@@ -208,8 +250,11 @@ namespace IngameScript
         }
 
         public enum DestType { MAGAZINE, CONSTRUCTION, REACTOR, ICEBOX, ROCKBOX }
+
+        public static string GetItemName(string longName)
+        {
+            int index = longName.IndexOf('/');
+            return longName.Substring(index + 1);
+        }
     }
-
-
-
 }

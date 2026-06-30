@@ -106,6 +106,50 @@ namespace IngameScript
                 return unstocked < 1;
             }
 
+            public bool Unload(List<IMyInventory> destinations)
+            {
+                List<MyInventoryItem> items = new List<MyInventoryItem>();
+                Inventory.GetItems(items);
+
+                bool noLeftovers = true;
+
+                foreach (MyInventoryItem item in items)
+                {
+                    int currentCount = Inventory.GetItemAmount(item.Type).ToIntSafe();
+
+                    foreach (IMyInventory destination in destinations)
+                    {
+                        if (currentCount > 0)
+                        {
+                            currentCount = UnloadItem(item, destination, currentCount);
+                        }
+                    }
+
+                    // If untransferred items set return to false, and continue transfers.
+                    if (currentCount > 0)
+                        noLeftovers = false;
+                }
+
+                return noLeftovers;
+            }
+
+            // Transfers specific item to inventory. Returns remaining amount to transfer
+            private int UnloadItem(MyInventoryItem item, IMyInventory destination, int targetCount)
+            {
+                if (Inventory.TransferItemTo(destination, item, targetCount))
+                {
+                    int currentAmount = Inventory.GetItemAmount(item.Type).ToIntSafe();
+                    int transferred = targetCount - currentAmount;
+                    _log.LogInfo(transferred + "x " + item.Type.ToString() + "\n");
+
+                    return currentAmount;
+                }
+                else
+                {
+                    return targetCount;
+                }
+            }
+
             private bool RestockItem(MyItemType itemType, int targetAmmount, IMyInventory source)
             {
                 int currentCount = Inventory.GetItemAmount(itemType).ToIntSafe();
