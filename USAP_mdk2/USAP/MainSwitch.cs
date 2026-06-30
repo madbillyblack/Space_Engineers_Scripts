@@ -48,20 +48,29 @@ namespace IngameScript
                         Build();
                         break;
                     case "UNLOAD":
-                        Unstock(_miningCargos, ORE_DEST, false);
-                        Unstock(_constructionCargos, COMP_SUPPLY, true);
+                        Unload(_miningCargos, ORE_DEST);//, false);
+                        Unload(_constructionCargos, COMP_SUPPLY);//, true);
                         break;
-                    case "RELOAD":
+                    case "RESTOCK":
                         Restock(_magazines, AMMO_SUPPLY);
                         Restock(_reactors, FUEL_SUPPLY);
                         Restock(_o2Generators, ICE_SUPPLY);
+                        Restock(_constructionCargos, COMP_SUPPLY);
+                        break;
+                    case "RELOAD":
+                        Restock(_magazines, AMMO_SUPPLY);
+                        //Restock(_reactors, FUEL_SUPPLY);
+                        //Restock(_o2Generators, ICE_SUPPLY);
+                        break;
+                    case "DISARM":
+                        Unload(_magazines, AMMO_SUPPLY);
                         break;
                     case "REFUEL":
                         Restock(_reactors, FUEL_SUPPLY);
                         Restock(_o2Generators, ICE_SUPPLY);
                         break;
                     case "RESUPPLY":
-                        Unstock(_constructionCargos, COMP_SUPPLY, true);
+                        //Unload(_constructionCargos, COMP_SUPPLY);//, true);
                         Restock(_constructionCargos, COMP_SUPPLY);
                         break;
                     case "CRUISE_ON":
@@ -187,6 +196,9 @@ namespace IngameScript
                     case "LAST_SUBCHANNEL":
                     case "PREVIOUS_SUBCHANNEL":
                         CycleReceiverSubChannel(cmdArg, true);
+                        break;
+                    case "CLEAR":
+                        _log.Clear();
                         break;
                     default:
                         TriggerCall(argument);

@@ -192,11 +192,11 @@ namespace IngameScript
 
         public IMyTerminalBlock _refBlock;
 
-        List<IMyTerminalBlock> _magazines;
-        List<IMyTerminalBlock> _reactors;
-        static List<IMyTerminalBlock> _miningCargos;
-        static List<IMyTerminalBlock> _constructionCargos;
-        List<IMyTerminalBlock> _o2Generators;
+        List<LocalInventory> _magazines;
+        List<LocalInventory> _reactors;
+        static List<LocalInventory> _miningCargos;
+        static List<LocalInventory> _constructionCargos;
+        List<LocalInventory> _o2Generators;
         static List<Display> _displays;
         static LandingGearAssembly _landingGear;
 
@@ -444,53 +444,8 @@ namespace IngameScript
         }
 
         /*
-        // REFUEL //Finds all reactors containing defined tag, and loads them with defined amounts of fuel. 
-        void Refuel()
-        {
-            if (_reactors.Count < 1)
-                return;
-
-            List<IMyTerminalBlock> fuelSupplies = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(FUEL_SUPPLY, fuelSupplies);
-
-            if (fuelSupplies.Count < 1)
-                return;
-
-            foreach(IMyTerminalBlock reactor in _reactors)
-            {
-                IMyInventory destInv = reactor.GetInventory(0);
-                int fuel_qty = ParseInt(GetKey(reactor, INI_HEAD, "Uranium", "50"), 50);
-
-                foreach (IMyReactor fuelSupply in fuelSupplies)
-                {
-                    IMyInventory sourceInv = fuelSupply.GetInventory(0);
-                    ensureMinimumAmount(sourceInv, destInv, FUEL, fuel_qty);
-                }
-            }
-        }
-        */
-
-        // RESTOCK //
-        void Restock(List<IMyTerminalBlock> destBlocks, string sourceTag)
-        {
-            if (destBlocks.Count < 1)
-                return;
-
-            List<IMyTerminalBlock> sourceBlocks = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(sourceTag, sourceBlocks);
-            if (sourceBlocks.Count < 1)
-                return;
-
-            foreach (IMyTerminalBlock destBlock in destBlocks)
-            {
-                Echo("Resupply: " + destBlock.CustomName);
-                Reload(destBlock, sourceBlocks);
-            } 
-        }
-
-
         // UNSTOCK //
-        void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag, bool includeComponents)
+        void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag, bool includeComponents) //void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag, bool includeComponents)
         {
             if (sourceBlocks.Count < 1)
                 return;
@@ -504,7 +459,7 @@ namespace IngameScript
             }
         }
 
-
+        
         // UNLOAD //
         void Unload(IMyTerminalBlock payload, List<IMyTerminalBlock> destBlocks, bool includeComponents)
         {
@@ -540,7 +495,7 @@ namespace IngameScript
                 }
             }
         }
-
+        */
 
          // SET LOAD COUNT //
         void SetLoadCount(string arg)
@@ -637,12 +592,14 @@ namespace IngameScript
             // Ensure Default Trigger Call Parameter
             _programIni.EnsureKey(TRIGGER_HEAD, "Trigger_Door", "Door Timer");
 
+            
             // Create inventory lists
-            _magazines = new List<IMyTerminalBlock>();
-            _reactors = new List<IMyTerminalBlock>();
-            _constructionCargos = new List<IMyTerminalBlock>();
-            _miningCargos = new List<IMyTerminalBlock>();
-            _o2Generators = new List<IMyTerminalBlock>();
+            _magazines = new List<LocalInventory>();
+            _reactors = new List<LocalInventory>();
+            _constructionCargos = new List<LocalInventory>();
+            _miningCargos = new List<LocalInventory>();
+            _o2Generators = new List<LocalInventory>();
+
             _displays = new List<Display>();
 
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
@@ -821,7 +778,8 @@ namespace IngameScript
 
             SetActiveProfile(profileName);
             UpdateProfiles();
-            Unstock(_constructionCargos, COMP_SUPPLY, true);
+            //Unstock(_constructionCargos, COMP_SUPPLY, true);
+            Unload(_constructionCargos, COMP_SUPPLY);
             Restock(_constructionCargos, COMP_SUPPLY);
         }
 
@@ -883,8 +841,10 @@ namespace IngameScript
 
             string[][] profileData = GetActiveProfile();
 
-            foreach (IMyTerminalBlock block in _constructionCargos)
+            foreach (LocalInventory cargo in _constructionCargos)
             {
+                IMyTerminalBlock block = cargo.Block;
+
                 if (block.CustomName.Contains(COMP_TAG) && ParseBool(GetKey(block, INI_HEAD, "Sync_To_Profiles", "false")))
                 {
                     //Get Ratio of container's volume to reference container size
@@ -915,40 +875,6 @@ namespace IngameScript
                 return true;
             else
                 return false;
-        }
-
-        // ADD TO INVENTORIES //
-        public void AddToInventories(IMyTerminalBlock block)
-        {
-            string name = block.CustomName;
-
-            if (name.Contains(PAYLOAD))
-            {
-                //_unloadPossible = true;
-                _miningCargos.Add(block);
-            }
-            else if (name.Contains(MAG_TAG))
-            {
-                SetMagAmounts(block);
-                _magazines.Add(block);
-            }
-            else if (name.Contains(COMP_TAG))
-            {
-                EnsureKey(block, INI_HEAD, "Sync_To_Profiles", "True");
-                EnsureKey(block, INI_HEAD, LOADOUT, DEFAULT_PROFILE);
-                _hasComponentCargo = true;
-                _constructionCargos.Add(block);
-            }
-            else if (name.Contains(REACTOR) && block.BlockDefinition.TypeIdString.ToLower().Contains("reactor"))
-            {
-                EnsureKey(block, INI_HEAD, LOADOUT, "Ingot/Uranium:100");
-                _reactors.Add(block);
-            }
-            else if (name.Contains(GAS_TAG) && block.BlockDefinition.TypeIdString.ToLower().Contains("oxygengenerator"))
-            {
-                EnsureKey(block, INI_HEAD, LOADOUT, "Ore/Ice:2702");
-                _o2Generators.Add(block);
-            }
         }
 
 
