@@ -26,8 +26,6 @@ namespace IngameScript
 
         public class Display
         {
-
-
             IMyTextSurfaceProvider SurfaceProvider;
             IMyTextSurface Surface;
             bool ShowHeader;

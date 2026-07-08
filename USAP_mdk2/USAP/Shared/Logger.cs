@@ -95,7 +95,7 @@ namespace IngameScript
                 if (!String.IsNullOrEmpty(Command))
                     output += " CMD: " + Command+ "\n";
 
-                output += "-- Message Log " + DASHES + DASHES;
+                output += "-- Message Log " + DASHES + " " + DASHES;
 
                 if (Messages.Count < 1) return output;
 
@@ -104,7 +104,7 @@ namespace IngameScript
                     output += "\n" + Messages[i].ToString();
                 }
                 
-                return output + "\n" + DASHES + DASHES + DASHES;
+                return output + "\n" + DASHES + " " + DASHES + " " + DASHES;
             }
         }
     }

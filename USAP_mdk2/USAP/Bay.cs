@@ -28,6 +28,7 @@ namespace IngameScript
         const string BAY_HEAD = "USAP: Missile Bay";
         const string STATUS_KEY = "Status";
         const string RELOAD_KEY = "Reload Time";
+        const string PROGRAM_KEY = "Launch Program";
 
         public LaunchSystem _launchSystem;
         public string _missileBayString;
@@ -36,10 +37,12 @@ namespace IngameScript
         {
             public string BayType { get; set; }
             public Dictionary<int, Bay> Bays { get; set; }
+            public IMyProgrammableBlock Program {  get; set; }
 
             private List<Bay> baysToCheck;
-            public LaunchSystem()
+            public LaunchSystem(IMyProgrammableBlock launchProgram)
             {
+                Program = launchProgram;
                 Bays = new Dictionary<int, Bay>();
                 baysToCheck = new List<Bay>();
 
@@ -72,18 +75,24 @@ namespace IngameScript
             public List<IMyDoor> Doors { get; set; }
             public List<IMyShipWelder> Welders { get; set;}
             public List<IMyShipMergeBlock> MergeBlocks { get; set; }
-            public IMyTimerBlock FiringTimer {  get; set; }
-            public IMyTimerBlock ReloadTimer { get; set; }
+
+            public IMyTimerBlock Timer {  get; set; }
+            //public IMyTimerBlock FiringTimer {  get; set; }
+            //public IMyTimerBlock ReloadTimer { get; set; }
             public bool Loaded { get; set; }
             public string MissileName { get; set; }
             public BayStatus Status { get; set; }
 
             public MyIniHandler iniHandler;
 
-            public Bay (int number, string name)
+            public Bay (int number, string name, IMyTimerBlock timer)
             {
                 Number = number;
                 Name = name;
+
+                Timer = timer;
+                iniHandler = new MyIniHandler(timer);
+                Status = ParseStatus(iniHandler.GetKey(BAY_HEAD, STATUS_KEY, "OPEN"));
 
                 Doors = new List<IMyDoor>();
                 Welders = new List<IMyShipWelder>();
@@ -91,6 +100,7 @@ namespace IngameScript
                 Loadouts = new Dictionary<string,Loadout>();
             }
 
+            /*
             public void AddFiringTimer(IMyTimerBlock timer)
             {
                 FiringTimer = timer;
@@ -98,7 +108,7 @@ namespace IngameScript
 
                 Status = ParseStatus(iniHandler.GetKey(BAY_HEAD, STATUS_KEY, "OPEN"));
             }
-
+            */
             public void Open()
             {
                 //TODO
@@ -193,24 +203,30 @@ namespace IngameScript
             int bayNumber = ParseInt(numPart, -1);
             if (bayNumber < 0)
             {
-                _log.LogWarning("Could not get bay number from group name " + group.Name);
+                _log.LogWarning("Can't get bay number from group:\n  " + group.Name);
                 return null;
             }
 
-            Bay bay = new Bay(bayNumber, group.Name);
+            
 
             // Get Timers
             List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
             group.GetBlocksOfType<IMyTimerBlock>(timers);
 
-            if(timers.Count < 1)
+            if (timers.Count < 1)
             {
-                _log.LogError("Group \" + group.Name + \" contains no timers!");
+                _log.LogError("Group \"" + group.Name + "\" contains no timers!");
                 return null;
             }
 
-            _log.LogInfo("Group: " + group.Name);
+            Bay bay = new Bay(bayNumber, group.Name, timers[0]);
 
+            if (timers.Count > 1)
+            {
+                _log.LogWarning("Group \"" + group.Name + "\" has multiple timers.\n  Timer \" "+ bay.Timer.CustomName +"\" has been selected.");
+            }
+
+            /*
             foreach (IMyTimerBlock timer in timers)
             {
                 
@@ -231,6 +247,7 @@ namespace IngameScript
                 _log.LogError("Group " + group.Name + " contains no timers with the tag " + FIRE_TAG);
                 return null;
             }
+            */
 
             group.GetBlocksOfType<IMyDoor>(bay.Doors);
             group.GetBlocksOfType<IMyShipWelder>(bay.Welders);
@@ -268,7 +285,10 @@ namespace IngameScript
         {
             Echo("Adding Missile Bays");
 
-            _launchSystem = new LaunchSystem();
+            IMyProgrammableBlock launchProgram = GetLaunchProgram();
+            if (launchProgram == null){ return; }
+            _launchSystem = new LaunchSystem(launchProgram);
+
             List<IMyBlockGroup> groups = new List<IMyBlockGroup>();
             GridTerminalSystem.GetBlockGroups(groups);
             if (groups.Count < 1)
@@ -296,6 +316,36 @@ namespace IngameScript
             }
         }
 
+        public IMyProgrammableBlock GetLaunchProgram()
+        {
+            List<IMyProgrammableBlock> programs = new List<IMyProgrammableBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyProgrammableBlock>(programs);
+
+            // If this is the only program block stop looking
+            if (programs.Count < 2) { return null; }
+
+            string progamName = _programIni.GetKey(BAY_HEAD, PROGRAM_KEY, "").Trim();
+
+            foreach(IMyProgrammableBlock program in programs)
+            {
+                string blockName = program.CustomName.Trim();
+
+                if (progamName == "" && blockName.Contains("LAMP"))
+                {
+                    _programIni.SetKey(BAY_HEAD, PROGRAM_KEY, blockName);
+                    return program;
+                }
+
+                if (blockName.ToUpper() == progamName.ToUpper())
+                {
+                    return program;
+                }
+            }            
+
+            return null;
+        }
+
+
         public void ShowMissileBayData()
         {
             int count = _launchSystem.Bays.Count;
@@ -306,7 +356,7 @@ namespace IngameScript
                 foreach (int key in _launchSystem.Bays.Keys)
                 {
                     Bay bay = _launchSystem.Bays[key];
-                    Echo("* " + bay.Name);// + "\n - Projectors: " + bay.Projectors.Count + "\n - Loaded: " + bay.loaded().ToString());
+                    Echo("* " + bay.Name + " - " + bay.Status.ToString());// + "\n - Projectors: " + bay.Projectors.Count + "\n - Loaded: " + bay.loaded().ToString());
                 }
             }
         }

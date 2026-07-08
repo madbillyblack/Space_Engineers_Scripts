@@ -291,12 +291,10 @@ namespace IngameScript
                 ExecuteComms(updateSource);
             }
 
-
-            Echo("LOG: " + _log.PrintMessages());
             Echo("Displays: " + _displays.Count);
             Echo("Turrets: " + _turretString);
             ShowBroadcastData();
-
+            Echo(_log.PrintMessages());
 
             //MenuDebug();
             //MultiTimerDebug();
@@ -614,7 +612,7 @@ namespace IngameScript
             // Make sure that any construction cargos have a profile in custom data.
             if (_hasComponentCargo)
             {
-                _activeProfile = _programIni.GetKey(INI_HEAD, "Profiles", PROFILE_LIST).Split(',')[0];
+                _activeProfile = _programIni.GetKey(PROFILE_HEAD, "Profiles", PROFILE_LIST).Split(',')[0];
                 EnsureProfiles();
             }
 

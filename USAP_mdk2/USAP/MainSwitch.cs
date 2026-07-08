@@ -45,6 +45,7 @@ namespace IngameScript
                 switch (arg)
                 {
                     case "REFRESH":
+                        _log.Clear();
                         Build();
                         break;
                     case "UNLOAD":
@@ -196,6 +197,12 @@ namespace IngameScript
                     case "LAST_SUBCHANNEL":
                     case "PREVIOUS_SUBCHANNEL":
                         CycleReceiverSubChannel(cmdArg, true);
+                        break;
+                    case "SCROLL_DOWN":
+                        _log.Scroll();
+                        break;
+                    case "SCROLL_UP":
+                        _log.Scroll(true);
                         break;
                     case "CLEAR":
                         _log.Clear();
