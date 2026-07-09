@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Security.Cryptography;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -19,6 +20,7 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
+using static IngameScript.Program;
 
 namespace IngameScript
 {
@@ -27,8 +29,15 @@ namespace IngameScript
         const string BAY_TYPE = "BayType";
         const string BAY_HEAD = "USAP: Missile Bay";
         const string STATUS_KEY = "Status";
-        const string RELOAD_KEY = "Reload Time";
+        const string RELOAD_KEY = "Reload Delay";
+        const string DOOR_KEY = "Door Delay";
+        const string AUTO_CLOSE = "Close Doors On Reload";
         const string PROGRAM_KEY = "Launch Program";
+        const string SALVO_KEY = "Salvo Delay";
+        const float DEF_RELOAD = 43; // Default Reload Time in seconds
+        const float DEF_DOOR = 11; // Default Door Open/Close Time in seconds
+        const float RECHECK_DELAY = 3;
+        const float DEF_SALVO = 3;
 
         public LaunchSystem _launchSystem;
         public string _missileBayString;
@@ -38,31 +47,78 @@ namespace IngameScript
             public string BayType { get; set; }
             public Dictionary<int, Bay> Bays { get; set; }
             public IMyProgrammableBlock Program {  get; set; }
+            public float SalvoDelay {  get; set; }
 
-            private List<Bay> baysToCheck;
+            //private List<Bay> baysToCheck;
             public LaunchSystem(IMyProgrammableBlock launchProgram)
             {
                 Program = launchProgram;
                 Bays = new Dictionary<int, Bay>();
-                baysToCheck = new List<Bay>();
+                //baysToCheck = new List<Bay>();
 
                 BayType = _programIni.GetKey(BAY_HEAD, BAY_TYPE, "Bay");
+                SalvoDelay = ParseFloat(_programIni.GetKey(BAY_HEAD, SALVO_KEY, DEF_SALVO.ToString()), DEF_SALVO);
                 _programIni.EnsureComment(BAY_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
+            }
+
+            public void OpenBay(string bay)
+            {
+                int bayNumber = bayNumberFromString(bay);
+
+                if (bayNumber > -1)
+                    Bays[bayNumber].Open();
+            }
+
+            public void CloseBay(string bay)
+            {
+                int bayNumber = bayNumberFromString(bay);
+
+                if (bayNumber > -1)
+                    Bays[bayNumber].Close();
             }
 
             public void OpenAll()
             {
-                //TODO
+                foreach(int key in Bays.Keys) {  Bays[key].Open(); }
             }
 
             public void CloseAll()
             {
-                //TODO
+                foreach (int key in Bays.Keys) { Bays[key].Close(); }
             }
 
             public void ReloadAll()
             {
                 //TODO
+            }
+
+            public void BayCheck(string bay)
+            {
+                int bayNumber = bayNumberFromString(bay);
+
+                if (bayNumber > -1)
+                    Bays[bayNumber].ManualCheck();
+            }
+
+            public void BayTimerCall(string bay)
+            {
+                int bayNumber = bayNumberFromString(bay);
+
+                if(bayNumber > -1)
+                    Bays[bayNumber].BayTimerCall();
+            }
+
+            private int bayNumberFromString(string bayString)
+            {
+                int number = ParseInt(bayString, -1);
+
+                if (!Bays.ContainsKey(number))
+                    number = -1;
+
+                if (number < 0)
+                    _log.LogError("Unrecognized bay number: \"" + bayString + "\"");
+
+                return number;
             }
         }
 
@@ -83,6 +139,9 @@ namespace IngameScript
             public string MissileName { get; set; }
             public BayStatus Status { get; set; }
 
+            public float DoorDelay { get; set; }
+            public float ReloadDelay { get; set; }
+
             public MyIniHandler iniHandler;
 
             public Bay (int number, string name, IMyTimerBlock timer)
@@ -92,7 +151,8 @@ namespace IngameScript
 
                 Timer = timer;
                 iniHandler = new MyIniHandler(timer);
-                Status = ParseStatus(iniHandler.GetKey(BAY_HEAD, STATUS_KEY, "OPEN"));
+                Status = ParseStatus(iniHandler.GetKey(BAY_HEAD, STATUS_KEY, "UNSET"));
+                ReloadDelay = ParseFloat(iniHandler.GetKey(BAY_HEAD, RELOAD_KEY, DEF_RELOAD.ToString()), DEF_RELOAD);
 
                 Doors = new List<IMyDoor>();
                 Welders = new List<IMyShipWelder>();
@@ -111,20 +171,101 @@ namespace IngameScript
             */
             public void Open()
             {
-                //TODO
+                if (Doors.Count < 1 || opened() || timerLockout()) { return; }
+
+                setStatus(BayStatus.Opening);
+                foreach (IMyDoor door in Doors)
+                {
+                    door.OpenDoor();
+                }
+                
+                startCountDown(DoorDelay);
             }
 
 
             public void Close()
             {
+                if (Doors.Count < 1 || !opened() || timerLockout()) { return; }
+
+                setStatus(BayStatus.Closing);
+                foreach (IMyDoor door in Doors)
+                {
+                    door.CloseDoor();
+                }
+
+                startCountDown(DoorDelay);
+            }
+
+            public void BayTimerCall()
+            {
+                switch (Status)
+                { 
+                    case BayStatus.Opening:
+                        check();                            
+                        break;
+                    case BayStatus.Closing:
+                        setStatus(BayStatus.Closed);
+                        break;
+                }
+
                 //TODO
             }
+
 
             public void SelectLoadOut(string selection)
             {
                 //TODO
             }
 
+            public void ManualCheck()
+            {
+                if(Status != BayStatus.Unset && Status != BayStatus.Error)
+                {
+                    _log.LogWarning(Name + "\n- Checks only run on initial setup and errors.");
+                    return;
+                }
+
+                if(Timer.IsCountingDown)
+                {
+                    _log.LogWarning(Name + "\n- Checks can't be run during timer countdown.");
+                    return;
+                }
+
+                check();
+
+                _log.LogInfo(Name + " is set to " + Status.ToString());
+            }
+
+            private void startCountDown(float delay)
+            {
+                Timer.TriggerDelay = delay;
+                Timer.StartCountdown();
+            }
+
+            private void check(bool opening = false)
+            {
+                bool closed = !opened();
+                bool empty = !loaded();
+
+                if (opening && closed)
+                {
+                    startCountDown(RECHECK_DELAY);
+                    return;
+                }
+
+                if(closed)
+                    setStatus(BayStatus.Closed);
+                else if(empty)
+                    setStatus(BayStatus.Empty);
+                else
+                    setStatus(BayStatus.Ready);
+            }
+
+            private void setStatus(BayStatus status)
+            {
+                Status = status;
+                iniHandler.SetKey(BAY_HEAD, STATUS_KEY, Status.ToString());
+            }
 
             private bool opened()
             {
@@ -139,7 +280,6 @@ namespace IngameScript
                 return true;
             }
 
-
             private bool loaded()
             {
                 if (MergeBlocks.Count > 0)
@@ -149,6 +289,17 @@ namespace IngameScript
                         if (block.IsConnected)
                             return true;
                     }
+                }
+
+                return false;
+            }
+
+            private bool timerLockout()
+            {
+                if (Timer.IsCountingDown)
+                {
+                    _log.LogError(Name + "\n- Can't perform action during timer countdown.");
+                    return true;
                 }
 
                 return false;
@@ -173,7 +324,7 @@ namespace IngameScript
 
         public enum BayStatus
         {
-            Opening, Open, Closed, Closing, Reloading, Error
+            Opening, Ready, Closed, Closing, Empty, Reloading, RLClosing, RLOpening, Unset, Error
         }
 
         public static BayStatus ParseStatus(string status)
@@ -182,14 +333,22 @@ namespace IngameScript
             {
                 case "OPENING":
                     return BayStatus.Opening;
-                case "OPEN":
-                    return BayStatus.Open;
+                case "READY":
+                    return BayStatus.Ready;
                 case "CLOSED":
                     return BayStatus.Closed;
                 case "CLOSING":
                     return BayStatus.Closing;
                 case "RELOADING":
                     return BayStatus.Reloading;
+                case "RL_CLOSING":
+                    return BayStatus.RLClosing;
+                case "RL_OPENING":
+                    return BayStatus.RLOpening;
+                case "EMPTY":
+                    return BayStatus.Empty;
+                case "UNSET":
+                    return BayStatus.Unset;
                 default:
                     return BayStatus.Error;
             }
@@ -207,24 +366,10 @@ namespace IngameScript
                 return null;
             }
 
-            
+            IMyTimerBlock timer = GetSameGridTimer(group);
+            if(timer == null) { return null; }
 
-            // Get Timers
-            List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
-            group.GetBlocksOfType<IMyTimerBlock>(timers);
-
-            if (timers.Count < 1)
-            {
-                _log.LogError("Group \"" + group.Name + "\" contains no timers!");
-                return null;
-            }
-
-            Bay bay = new Bay(bayNumber, group.Name, timers[0]);
-
-            if (timers.Count > 1)
-            {
-                _log.LogWarning("Group \"" + group.Name + "\" has multiple timers.\n  Timer \" "+ bay.Timer.CustomName +"\" has been selected.");
-            }
+            Bay bay = new Bay(bayNumber, group.Name, timer);
 
             /*
             foreach (IMyTimerBlock timer in timers)
@@ -250,6 +395,11 @@ namespace IngameScript
             */
 
             group.GetBlocksOfType<IMyDoor>(bay.Doors);
+            if (bay.Doors.Count > 0)
+                bay.DoorDelay = ParseFloat(bay.iniHandler.GetKey(BAY_HEAD, DOOR_KEY, DEF_DOOR.ToString()), DEF_DOOR);
+            else
+                bay.DoorDelay = 0;
+
             group.GetBlocksOfType<IMyShipWelder>(bay.Welders);
             group.GetBlocksOfType<IMyShipMergeBlock>(bay.MergeBlocks);
 
@@ -359,6 +509,26 @@ namespace IngameScript
                     Echo("* " + bay.Name + " - " + bay.Status.ToString());// + "\n - Projectors: " + bay.Projectors.Count + "\n - Loaded: " + bay.loaded().ToString());
                 }
             }
+        }
+
+        public IMyTimerBlock GetSameGridTimer(IMyBlockGroup group)
+        {
+            List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
+            group.GetBlocksOfType<IMyTimerBlock>(timers);
+
+            if (timers.Count < 1)
+            {
+                _log.LogError("Group \"" + group.Name + "\" contains no timers!");
+                return null;
+            }
+
+            foreach (IMyTimerBlock timer in timers)
+            {
+                if (SameGridID(timer)) { return timer; }
+            }
+
+            _log.LogError("No timers from group \"" + group.Name + "\" found on the same grid.");
+            return null;
         }
     }
 }

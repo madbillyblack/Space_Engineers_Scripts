@@ -198,6 +198,24 @@ namespace IngameScript
                     case "PREVIOUS_SUBCHANNEL":
                         CycleReceiverSubChannel(cmdArg, true);
                         break;
+                    case "BAY_TIMER":
+                        _launchSystem.BayTimerCall(cmdArg);
+                        break;
+                    case "OPEN_BAY":
+                        _launchSystem.OpenBay(cmdArg);
+                        break;
+                    case "CLOSE_BAY":
+                        _launchSystem.CloseBay(cmdArg);
+                        break;
+                    case "OPEN_BAYS":
+                        _launchSystem.OpenAll();
+                        break;
+                    case "CLOSE_BAYS":
+                        _launchSystem.CloseAll();
+                        break;
+                    case "BAY_CHECK":
+                        _launchSystem.BayCheck(cmdArg);
+                        break;
                     case "SCROLL_DOWN":
                         _log.Scroll();
                         break;
