@@ -216,6 +216,15 @@ namespace IngameScript
                     case "BAY_CHECK":
                         _launchSystem.BayCheck(cmdArg);
                         break;
+                    case "FIRE":
+                        _launchSystem.Fire(cmdArg);
+                        break;
+                    case "FIRE_RANGE":
+                        _launchSystem.FireRange(cmdArg);
+                        break;
+                    case "FIRE_COUNT":
+                        _launchSystem.FireCount(cmdArg);
+                        break;
                     case "SCROLL_DOWN":
                         _log.Scroll();
                         break;

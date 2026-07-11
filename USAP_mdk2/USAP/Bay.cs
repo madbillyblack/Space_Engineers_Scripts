@@ -39,13 +39,13 @@ namespace IngameScript
         const float RECHECK_DELAY = 3;
         const float DEF_SALVO = 3;
 
-        public LaunchSystem _launchSystem;
+        public static LaunchSystem _launchSystem;
         public string _missileBayString;
 
         public class LaunchSystem
         {
             public string BayType { get; set; }
-            public Dictionary<int, Bay> Bays { get; set; }
+            public SortedDictionary<int, Bay> Bays { get; set; }
             public IMyProgrammableBlock Program {  get; set; }
             public float SalvoDelay {  get; set; }
 
@@ -53,12 +53,74 @@ namespace IngameScript
             public LaunchSystem(IMyProgrammableBlock launchProgram)
             {
                 Program = launchProgram;
-                Bays = new Dictionary<int, Bay>();
+                Bays = new SortedDictionary<int, Bay>();
                 //baysToCheck = new List<Bay>();
 
                 BayType = _programIni.GetKey(BAY_HEAD, BAY_TYPE, "Bay");
                 SalvoDelay = ParseFloat(_programIni.GetKey(BAY_HEAD, SALVO_KEY, DEF_SALVO.ToString()), DEF_SALVO);
                 _programIni.EnsureComment(BAY_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
+            }
+
+            public void Fire(string bay)
+            {
+                if(bay == "")
+                {
+                    fireNext();
+                    return;
+                }
+
+                int bayNumber = bayNumberFromString(bay);
+
+                if (bayNumber > -1)
+                    Bays[bayNumber].Fire();
+            }
+
+
+            public void FireRange(string range)
+            {
+                List<Bay> salvo = new List<Bay>();
+                int [] vals = RangeFromString(range);
+
+                foreach (int key in Bays.Keys)
+                {
+                    Bay bay = Bays[key];
+                    if (WithinRange(vals, bay.Number) && bay.IsReady())
+                        salvo.Add(bay);
+                }
+
+                fireSalvo(salvo);
+            }
+
+
+            public void FireCount(string count)
+            {
+                int requested = ParseInt(count, -1);
+                if(requested < 1)
+                {
+                    _log.LogError("Invalid count argument: \"" + count + "\"");
+                    return;
+                }
+
+                List<Bay> salvo = new List<Bay>();
+                int toFire = requested;
+
+                foreach (int key in Bays.Keys)
+                {
+                    Bay bay = (Bay) Bays[key];
+                    if(toFire > 0 && bay.IsReady())
+                    {
+                        salvo.Add(bay);
+                        toFire--;
+                    }
+                }
+
+                if(toFire > 0)
+                {
+                    int fired = requested - toFire;
+                    _log.LogWarning(String.Format("Only able to fire {0} of {1} missiles.", fired, requested));
+                }
+
+                fireSalvo(salvo);
             }
 
             public void OpenBay(string bay)
@@ -107,6 +169,39 @@ namespace IngameScript
                 if(bayNumber > -1)
                     Bays[bayNumber].BayTimerCall();
             }
+
+            private void fireSalvo(List<Bay> bays)
+            {
+                if (bays.Count < 1) 
+                {
+                    _log.LogError("No bays in Salvo");
+                    return;
+                }
+
+                float delay = 0.1f;
+
+                foreach(Bay bay in bays)
+                {
+                    bay.QueueToFire(delay);
+                    delay += SalvoDelay;
+                }
+            }
+
+            private void fireNext()
+            {
+                foreach(int key in Bays.Keys)
+                {
+                    Bay bay = Bays[key];
+                    if (bay.IsReady())
+                    {
+                        bay.Fire();
+                        return;
+                    }  
+                }
+
+                _log.LogError("Can't fire. No bays ready.");
+            }
+
 
             private int bayNumberFromString(string bayString)
             {
@@ -169,6 +264,24 @@ namespace IngameScript
                 Status = ParseStatus(iniHandler.GetKey(BAY_HEAD, STATUS_KEY, "OPEN"));
             }
             */
+            public void Fire()
+            {
+                if(_launchSystem.Program == null) { return; }
+
+                if (IsReady() || Status == BayStatus.Queued)
+                {
+                    setStatus(BayStatus.Firing);
+                    string command = "fire --range " + Number + " " +Number;
+                    _launchSystem.Program.TryRun(command);
+                    startCountDown(RECHECK_DELAY);
+                }
+                else
+                {
+                    _log.LogError(Name + " - is not ready.");
+                }
+            }
+
+
             public void Open()
             {
                 if (Doors.Count < 1 || opened() || timerLockout()) { return; }
@@ -182,6 +295,14 @@ namespace IngameScript
                 startCountDown(DoorDelay);
             }
 
+            public void QueueToFire(float delay)
+            {
+                if (IsReady())
+                {
+                    setStatus(BayStatus.Queued);
+                    startCountDown(delay);
+                }
+            }
 
             public void Close()
             {
@@ -201,7 +322,11 @@ namespace IngameScript
                 switch (Status)
                 { 
                     case BayStatus.Opening:
+                    case BayStatus.Firing:
                         check();                            
+                        break;
+                    case BayStatus.Queued:
+                        Fire();
                         break;
                     case BayStatus.Closing:
                         setStatus(BayStatus.Closed);
@@ -235,6 +360,12 @@ namespace IngameScript
 
                 _log.LogInfo(Name + " is set to " + Status.ToString());
             }
+
+            public bool IsReady()
+            {
+                return Status == BayStatus.Ready;
+            }
+
 
             private void startCountDown(float delay)
             {
@@ -324,7 +455,7 @@ namespace IngameScript
 
         public enum BayStatus
         {
-            Opening, Ready, Closed, Closing, Empty, Reloading, RLClosing, RLOpening, Unset, Error
+            Opening, Ready, Closed, Closing, Empty, Reloading, RLClosing, RLOpening, Unset, Error, Firing, Queued
         }
 
         public static BayStatus ParseStatus(string status)
@@ -349,6 +480,10 @@ namespace IngameScript
                     return BayStatus.Empty;
                 case "UNSET":
                     return BayStatus.Unset;
+                case "FIRING":
+                    return BayStatus.Firing;
+                case "QUEUED":
+                    return BayStatus.Queued;
                 default:
                     return BayStatus.Error;
             }
@@ -436,8 +571,9 @@ namespace IngameScript
             Echo("Adding Missile Bays");
 
             IMyProgrammableBlock launchProgram = GetLaunchProgram();
-            if (launchProgram == null){ return; }
             _launchSystem = new LaunchSystem(launchProgram);
+
+            if (launchProgram == null) { return; }
 
             List<IMyBlockGroup> groups = new List<IMyBlockGroup>();
             GridTerminalSystem.GetBlockGroups(groups);
@@ -529,6 +665,31 @@ namespace IngameScript
 
             _log.LogError("No timers from group \"" + group.Name + "\" found on the same grid.");
             return null;
+        }
+
+
+        public static int[] RangeFromString(string range)
+        {
+            int [] minMax = { -1, -1 };
+
+            string[] args = range.Split('-');
+
+            if(args.Length == 2)
+            {
+                minMax[0] = ParseInt(args[0].Trim(), -1);
+                minMax[1] = ParseInt(args[1].Trim(), -1);
+            }
+            else
+            {
+                _log.LogError("Invalid range argument:\n \"" + range + "\"");
+            }
+
+            return minMax;
+        }
+
+        public static bool WithinRange(int[] range, int valueToCheck)
+        {
+            return valueToCheck >= range[0] && valueToCheck <= range[1];
         }
     }
 }
