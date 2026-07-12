@@ -128,12 +128,31 @@ namespace IngameScript
 
             public void Reload(string bay)
             {
+
                 int bayNumber = bayNumberFromString(bay);
 
                 if (bayNumber > -1)
                     Bays[bayNumber].Reload();
             }
 
+            public void ReloadAll()
+            {
+                float delay = 0.1f;
+
+                foreach (int key in Bays.Keys)
+                {
+                    Bay bay = Bays[key];
+
+                    if(!bay.IsCounting() && !bay.IsReady() && bay.Status != BayStatus.Loaded)
+                    {
+                        Loadout loadout = bay.GetActiveLoadout();
+                        if(loadout == null) { return; }
+
+                        bay.QueueToReload(delay);
+                        delay += loadout.ReloadTime;
+                    } 
+                }
+            }
 
             public void OpenBay(string bay)
             {
@@ -159,11 +178,6 @@ namespace IngameScript
             public void CloseAll()
             {
                 foreach (int key in Bays.Keys) { Bays[key].Close(); }
-            }
-
-            public void ReloadAll()
-            {
-                //TODO
             }
 
             public void BayCheck(string arg)
@@ -230,19 +244,6 @@ namespace IngameScript
 
                 return number;
             }
-
-            private bool reloading()
-            {
-                foreach(int key in Bays.Keys)
-                {
-                    BayStatus status = Bays[key].Status;
-
-                    if (status == BayStatus.Reloading || status == BayStatus.RLOpening || status == BayStatus.RLClosing)
-                        return true;
-                }
-                    
-                return false;
-            }
         }
 
         public class Bay
@@ -259,12 +260,12 @@ namespace IngameScript
             public IMyTimerBlock Timer {  get; set; }
             //public IMyTimerBlock FiringTimer {  get; set; }
             //public IMyTimerBlock ReloadTimer { get; set; }
-            public bool CloseDoorsOnReload { get; set; }
+            //public bool CloseDoorsOnReload { get; set; }
             public string ActiveLoadout { get; set; }
             public BayStatus Status { get; set; }
 
             public float DoorDelay { get; set; }
-            public float ReloadDelay { get; set; }
+            //public float ReloadDelay { get; set; }
 
             public MyIniHandler IniHandler;
 
@@ -276,7 +277,7 @@ namespace IngameScript
                 Timer = timer;
                 IniHandler = new MyIniHandler(timer);
                 Status = ParseStatus(IniHandler.GetKey(BAY_HEAD, STATUS_KEY, "UNSET"));
-                ReloadDelay = ParseFloat(IniHandler.GetKey(BAY_HEAD, RELOAD_KEY, DEF_RELOAD.ToString()), DEF_RELOAD);
+                //ReloadDelay = ParseFloat(IniHandler.GetKey(BAY_HEAD, RELOAD_KEY, DEF_RELOAD.ToString()), DEF_RELOAD);
 
 
 
@@ -313,16 +314,7 @@ namespace IngameScript
                     return;
                 }
 
-                if(CloseDoorsOnReload && opened())
-                {
-
-                }
-
-
-
-
-
-
+                activateReload(true);
             }
 
             public void QueueToFire(float delay)
@@ -334,6 +326,11 @@ namespace IngameScript
                 }
             }
 
+            public void QueueToReload(float delay)
+            {
+                Status = BayStatus.RLQueued;
+                startCountDown(delay);
+            }
 
             public void Open()
             {
@@ -377,6 +374,12 @@ namespace IngameScript
                             setStatus(BayStatus.Loaded);
                         else
                             setStatus(BayStatus.Empty);
+                        break;
+                    case BayStatus.Reloading:
+                        activateReload(false);
+                        break;
+                    case BayStatus.RLQueued:
+                        activateReload(true);
                         break;
                 }
 
@@ -422,6 +425,13 @@ namespace IngameScript
             {
                 return Timer.IsCountingDown;
             }
+
+            public Loadout GetActiveLoadout()
+            {
+                if (Loadouts.Count < 1 || string.IsNullOrEmpty(ActiveLoadout)) { return null; }
+                return Loadouts[ActiveLoadout];
+            }
+
 
             private void startCountDown(float delay)
             {
@@ -496,8 +506,42 @@ namespace IngameScript
 
             private void activateReload(bool setActive)
             {
+                Loadout loadout = GetActiveLoadout();
+                if (loadout == null || loadout.Projector == null)
+                {
+                    _log.LogError(Name + ": Could not get active loadout");
+                    return;
+                }
 
+                if (Welders.Count < 1 & !setActive)
+                {
+                    _log.LogError(Name + ": No Welders available!");
+                    return;
+                }
+
+                string action;
+                if (setActive)
+                {
+                    action = "OnOff_On";
+                    setStatus(BayStatus.Reloading);
+                    startCountDown(loadout.ReloadTime);
+                }
+                else
+                {
+                    action = "OnOff_Off";
+                    check();
+                }
+
+                IMyProjector projector = loadout.Projector;
+                projector.GetActionWithName(action).Apply(projector);
+
+                foreach (IMyShipWelder welder in Welders)
+                {
+                    welder.GetActionWithName(action).Apply(welder);
+                }
             }
+
+
         }
 
         public class Loadout
@@ -511,15 +555,16 @@ namespace IngameScript
                 Projector = projector;
                 iniHandler = new MyIniHandler(Projector);
 
-                ReloadTime = ParseFloat(iniHandler.GetKey(BAY_HEAD, RELOAD_KEY, "10"), 10);
+                ReloadTime = ParseFloat(iniHandler.GetKey(BAY_HEAD, RELOAD_KEY, DEF_RELOAD.ToString()), 43);
             }
         }
 
 
         public enum BayStatus
         {
-            Opening, Open, Ready, Closing, Empty, Reloading, RLClosing, RLOpening, Unset, Error, Firing, Queued, RLQueued, Loaded
+            Opening, Open, Ready, Closing, Empty, Reloading, RLClosing, RLOpening, Unset, Error, Firing, Queued, RLQueued, Loaded, Loading
         }
+
 
         public static BayStatus ParseStatus(string status)
         {
@@ -541,6 +586,8 @@ namespace IngameScript
                     return BayStatus.RLOpening;
                 case "RLQUEUED":
                     return BayStatus.RLQueued;
+                case "LOADING":
+                    return BayStatus.Loading; // Applies to loading while closed
                 case "EMPTY":
                     return BayStatus.Empty;
                 case "UNSET":

@@ -219,11 +219,18 @@ namespace IngameScript
                     case "FIRE":
                         _launchSystem.Fire(cmdArg);
                         break;
+                    case "FIRE_BAYS":
                     case "FIRE_RANGE":
                         _launchSystem.FireRange(cmdArg);
                         break;
                     case "FIRE_COUNT":
                         _launchSystem.FireCount(cmdArg);
+                        break;
+                    case "RELOAD_BAY":
+                        _launchSystem.Reload(cmdArg);
+                        break;
+                    case "RELOAD_BAYS":
+                        _launchSystem.ReloadAll();
                         break;
                     case "SCROLL_DOWN":
                         _log.Scroll();
