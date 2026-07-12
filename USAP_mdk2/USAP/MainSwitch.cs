@@ -214,7 +214,7 @@ namespace IngameScript
                         _launchSystem.CloseAll();
                         break;
                     case "BAY_CHECK":
-                        _launchSystem.BayCheck(cmdArg);
+                        _launchSystem.BayCheck(cmdArg); // INCLUDE extra arg "FORCE" to override manual lockouts
                         break;
                     case "FIRE":
                         _launchSystem.Fire(cmdArg);
