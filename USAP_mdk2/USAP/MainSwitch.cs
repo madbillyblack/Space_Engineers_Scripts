@@ -26,6 +26,7 @@ namespace IngameScript
         {
             if (!string.IsNullOrEmpty(argument))
             {
+                _log.Command = argument;
                 Echo("CMD: " + argument);
 
                 string[] args = argument.Split(' ');

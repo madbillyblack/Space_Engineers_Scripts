@@ -1,0 +1,27 @@
+Toggle block On/Off:   OnOff
+Toggle block On:   OnOff_On
+Toggle block Off:   OnOff_Off
+Show on HUD On/Off:   ShowOnHUD
+Show on HUD On:   ShowOnHUD_On
+Show on HUD Off:   ShowOnHUD_Off
+Increase Font Size:   IncreaseFontSize
+Decrease Font Size:   DecreaseFontSize
+Increase Text Padding:   IncreaseTextPaddingSlider
+Decrease Text Padding:   DecreaseTextPaddingSlider
+Increase Image change interval:   IncreaseChangeIntervalSlider
+Decrease Image change interval:   DecreaseChangeIntervalSlider
+Preserve aspect ratio On/Off:   PreserveAspectRatio
+Enable Everyone:   BroadcastTargetEveryone
+Enable Owner Only:   BroadcastTargetOwner
+Enable Faction Only:   BroadcastTargetFaction
+Use Antenna On/Off:   UseAntenna
+Transmit Message 1:   Transmit Message 1
+Transmit Message 2:   Transmit Message 2
+Transmit Message 3:   Transmit Message 3
+Transmit Message 4:   Transmit Message 4
+Transmit Message 5:   Transmit Message 5
+Transmit Message 6:   Transmit Message 6
+Transmit Message 7:   Transmit Message 7
+Transmit Message 8:   Transmit Message 8
+Send Random Message:   TransmitRandomMessage
+Send GPS:   SendGps

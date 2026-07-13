@@ -38,6 +38,7 @@ namespace IngameScript
             bool ShowParked;
             bool ShowTurrets;
             bool ShowActionRelays;
+            bool ShowMissileBays;
 
             public Display(IMyTextSurfaceProvider surfaceProvider, int surfaceIndex, string iniHeader)
             {
@@ -91,6 +92,11 @@ namespace IngameScript
                 {
                     ShowActionRelays = ParseBool(GetKey(block, iniHeader, "Show Action Relays", "True"));
                 }
+
+                if (_launchSystem != null && _launchSystem.Bays.Count > 0)
+                {
+                    ShowMissileBays = ParseBool(GetKey(block, iniHeader, "Show Missile Bays", "True"));
+                }
             }
 
 
@@ -122,30 +128,36 @@ namespace IngameScript
                     p++;
                 }
                     
-                if (ShowTargetSpeed)
-                {
-                    output += "Target Speed: " + _targetThrottle.ToString("0.0") + " m/s\n";
-                    p++;
-                }
-                    
-                if (ShowCruiseThrust)
-                {
-                    output += "Auto-Throttle: " + _currentPower + "\n";
-                    p++;
-                }
-                    
                 if (ShowActiveProfile)
                 {
                     output += "Active Profile: " + _activeProfile + "\n";
                     p++;
                 }
-                    
+
+                if (ShowTurrets)
+                {
+                    output += _turretString.Trim() + "\n";
+                    p++;
+                }
+
+                if (ShowMissileBays)
+                {
+                    output += _launchSystem.BayData.Trim() + "\n";
+                    p++;
+                }
+
+                if (ShowActionRelays)
+                {
+                    output += _relayString.Trim() + "\n";
+                    p++;
+                }
+
                 if (ShowLandingGear && _landingGear != null)
                 {
                     output += "Gear: " + _landingGear.Status + "\n";
                     p++;
                 }
-                    
+
                 if (ShowParked && _landingGear != null)
                 {
                     if (_landingGear.IsParked())
@@ -156,17 +168,18 @@ namespace IngameScript
                     p++;
                 }
 
-                if (ShowTurrets)
+                if (ShowTargetSpeed)
                 {
-                    output += _turretString.Trim() + "\n";
+                    output += "Target Speed: " + _targetThrottle.ToString("0.0") + " m/s\n";
                     p++;
                 }
 
-                if (ShowActionRelays)
+                if (ShowCruiseThrust)
                 {
-                    output += _relayString.Trim() + "\n";
+                    output += "Auto-Throttle: " + _currentPower + "\n";
                     p++;
                 }
+
 
                 if (p > 0)
                     Surface.WriteText(output.Trim());

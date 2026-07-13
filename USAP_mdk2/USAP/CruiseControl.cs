@@ -232,7 +232,7 @@ namespace IngameScript
                 return;
             }
             cruiseGroup.GetBlocksOfType<IMyThrust>(_cruiseThrusters);
-            _log.LogInfo("Cruise Thusters: " + _cruiseTag + "\n - Thruster Count: " + _cruiseThrusters.Count);
+            //_log.LogInfo("Cruise Thusters: " + _cruiseTag + "\n - Thruster Count: " + _cruiseThrusters.Count);
 
             float[] gains = GainsFromString(_programIni.GetKey(CRUISE_HEADER, "Cruise Gains", "1,0,0"));
 

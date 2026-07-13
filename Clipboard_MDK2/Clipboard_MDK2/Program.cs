@@ -7,6 +7,7 @@ using System.Text;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
+using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI.Ingame;
 using VRage;
 using VRage.Collections;
@@ -42,6 +43,7 @@ namespace IngameScript
 
         #region Test Variables (Can be deleted)
         List<DestInventory> _magazines;
+        IMyBroadcastController _bcController;
 
         const string INI_HEAD = "USAP";
         const string MAG_TAG = "[MAG";
@@ -66,6 +68,15 @@ namespace IngameScript
             //_ini = GetIni(Me);
             _surface = Me.GetSurface(0);
             _surface.ContentType = ContentType.TEXT_AND_IMAGE;
+
+            List<IMyBroadcastController> bcControllers = new List<IMyBroadcastController>();
+            GridTerminalSystem.GetBlocksOfType<IMyBroadcastController>(bcControllers);
+
+            if (bcControllers.Count > 0)
+            {
+                _bcController = bcControllers[0];
+            }
+            else { _bcController = null; }
 
 
 
@@ -94,6 +105,25 @@ namespace IngameScript
 
         public void Main(string argument, UpdateType updateSource)
         {
+            if (_bcController != null)
+            {
+                List<ITerminalAction> actions = new List<ITerminalAction>();
+                _bcController.GetActions(actions);
+                _surface.WriteText("");
+
+                _bcController.GetActionWithName("Transmit Message 8").Apply(_bcController);
+
+                foreach (ITerminalAction action in actions)
+                {
+                    _surface.WriteText(action.Name + ":   " + action.Id + "\n", true);
+                }
+            }
+            else
+            {
+                _surface.WriteText("No Broadcast controllers found");
+            }
+
+/*
             if (!string.IsNullOrEmpty(argument))
             {
                 _surface.WriteText(updateSource.ToString() + "\nCMD: " + argument + "\n");
@@ -117,6 +147,7 @@ namespace IngameScript
                         break;
                 }
             }
+*/
         }
 
 

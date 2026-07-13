@@ -191,6 +191,7 @@ namespace IngameScript
         int _safetyElevation;
 
         public IMyTerminalBlock _refBlock;
+        public IMyBroadcastController _bcController;
 
         List<LocalInventory> _magazines;
         List<LocalInventory> _reactors;
@@ -206,12 +207,15 @@ namespace IngameScript
         readonly static string[] _breather = {"|", "/","--", "\\", "|", "/", "--", "\\"};
         static Byte _breath;
 
+
+
         static bool _autoCycle; // TRUE if script is continuously running. FALSE if single execute.
 
         // INIT // ----------------------------------------------------------------------------------------------------------------------------------------
         public Program()
         {
             _log = new Logger();
+            
 
             if (Storage.Length > 0)
             {
@@ -413,7 +417,7 @@ namespace IngameScript
             _log.LogError("Unrecognized command: " + arg);
         }
 
-
+/*
         // RELOAD // - Finds all inventories containing defined tag, and loads them with defined amounts of ammo.
         void Reload(IMyTerminalBlock destination, List<IMyTerminalBlock> supplyBlocks)
         {
@@ -440,60 +444,7 @@ namespace IngameScript
                 }
             }
         }
-
-        /*
-        // UNSTOCK //
-        void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag, bool includeComponents) //void Unstock(List<IMyTerminalBlock> sourceBlocks, string destTag, bool includeComponents)
-        {
-            if (sourceBlocks.Count < 1)
-                return;
-
-            List<IMyTerminalBlock> destBlocks = new List<IMyTerminalBlock>();
-            GridTerminalSystem.SearchBlocksOfName(destTag, destBlocks);
-
-            foreach(IMyTerminalBlock sourceBlock in sourceBlocks)
-            {
-                Unload(sourceBlock, destBlocks, includeComponents);
-            }
-        }
-
-        
-        // UNLOAD //
-        void Unload(IMyTerminalBlock payload, List<IMyTerminalBlock> destBlocks, bool includeComponents)
-        {
-             if (destBlocks.Count < 1)
-                return;
-
-            Echo("Unloading " + payload.CustomName);
-
-            var sourceInv = payload.GetInventory(0);
-            foreach(IMyTerminalBlock container in destBlocks)
-            {
-                Echo("Destination: " + container.CustomName);
-                if (container.HasInventory)
-                {
-                    var destInv = container.GetInventory(0);
-                    if (!destInv.IsFull)
-                    {
-                        List<MyInventoryItem> items = new List<MyInventoryItem>();
-                        sourceInv.GetItems(items);
-                        if(items.Count > 0)
-						{
-                            foreach (MyInventoryItem item in items)
-                            {
-                                //Echo(item.Type.ToString());
-                                if (item.Type.ToString().Contains("MyObjectBuilder_Ore") || (includeComponents && item.Type.ToString().Contains("MyObjectBuilder_Component")))
-                                {
-                                    sourceInv.TransferItemTo(destInv, 0, null, true, null);
-                                    _unloaded = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        */
+*/
 
          // SET LOAD COUNT //
         void SetLoadCount(string arg)
@@ -862,7 +813,7 @@ namespace IngameScript
             }  
         }
 
-
+/*
         // CONNECTED TO COMPONENT SUPPLY // - True if ship is connected to station with designated COMP SUPPLY inventories
         public bool ConnectedToComponentSupply()
         {
@@ -874,7 +825,7 @@ namespace IngameScript
             else
                 return false;
         }
-
+*/
 
         // TAG FROM NAME //  Gets specific tag from MAG name.
         public string TagFromName(string name)
@@ -895,7 +846,22 @@ namespace IngameScript
             return tag;
         }
 
+        void AssignBroadCastController()
+        {
+            List<IMyBroadcastController> bcControllers = new List<IMyBroadcastController>();
+            GridTerminalSystem.GetBlocksOfType<IMyBroadcastController>(bcControllers);
 
+            foreach (IMyBroadcastController bcController in bcControllers)
+            {
+                if(SameGridID(bcController) && bcController.CustomName.Contains(INI_HEAD))
+                {
+                    _bcController = bcController;
+                    return;
+                }
+            }
+        }
+
+/*
         // ENSURE LOADOUT // -  Ensures that inventory block has loadout parameters
         public void EnsureLoadout(IMyTerminalBlock block, int[] amounts)
         {
@@ -910,7 +876,7 @@ namespace IngameScript
             EnsureKey(block, INI_HEAD, "LargeRailgunAmmo", amounts[5].ToString());
             EnsureKey(block, INI_HEAD, "SmallRailgunAmmo", amounts[6].ToString());
         }
-
+*/
 
         // BORROWED FUNCTIONS // -------------------------------------------------------------------------------------------------------------------------
         public string[][] StringTo2DArray(string source, char separatorOuter, char separatorInner)
@@ -922,6 +888,7 @@ namespace IngameScript
         }
 
 
+/*
         //---------------------------------------------------------------------------------//
         //ALL CODE BELOW THIS POINT WRITTEN BY PILOTERROR42//
         //---------------------------------------------------------------------------------//
@@ -987,5 +954,6 @@ namespace IngameScript
             }
             return null;
         }
+*/
     }
 }

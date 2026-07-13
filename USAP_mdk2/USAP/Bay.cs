@@ -52,6 +52,8 @@ namespace IngameScript
             public float SalvoDelay {  get; set; }
             public bool StaggerReload { get; set; }
 
+            public string BayData {  get; set; }
+
             //private List<Bay> baysToCheck;
             public LaunchSystem(IMyProgrammableBlock launchProgram)
             {
@@ -75,7 +77,10 @@ namespace IngameScript
                 int bayNumber = bayNumberFromString(bay);
 
                 if (bayNumber > -1)
+                {
                     Bays[bayNumber].Fire();
+                    UpdateBayData();
+                }
             }
 
 
@@ -92,6 +97,7 @@ namespace IngameScript
                 }
 
                 fireSalvo(salvo);
+                UpdateBayData();
             }
 
 
@@ -124,6 +130,7 @@ namespace IngameScript
                 }
 
                 fireSalvo(salvo);
+                UpdateBayData();
             }
 
             public void Reload(string bay)
@@ -132,7 +139,10 @@ namespace IngameScript
                 int bayNumber = bayNumberFromString(bay);
 
                 if (bayNumber > -1)
+                {
                     Bays[bayNumber].Reload();
+                    UpdateBayData();
+                }
             }
 
             public void ReloadAll()
@@ -146,12 +156,14 @@ namespace IngameScript
                     if(!bay.IsCounting() && !bay.IsReady() && bay.Status != BayStatus.Loaded)
                     {
                         Loadout loadout = bay.GetActiveLoadout();
-                        if(loadout == null) { return; }
+                        if(loadout == null) { continue; }
 
                         bay.QueueToReload(delay);
                         delay += loadout.ReloadTime;
                     } 
                 }
+
+                UpdateBayData();
             }
 
             public void OpenBay(string bay)
@@ -159,7 +171,10 @@ namespace IngameScript
                 int bayNumber = bayNumberFromString(bay);
 
                 if (bayNumber > -1)
+                {
                     Bays[bayNumber].Open();
+                    UpdateBayData();
+                }
             }
 
             public void CloseBay(string bay)
@@ -167,17 +182,24 @@ namespace IngameScript
                 int bayNumber = bayNumberFromString(bay);
 
                 if (bayNumber > -1)
+                {
                     Bays[bayNumber].Close();
+                    UpdateBayData();
+                }
             }
 
             public void OpenAll()
             {
                 foreach(int key in Bays.Keys) {  Bays[key].Open(); }
+
+                UpdateBayData();
             }
 
             public void CloseAll()
             {
                 foreach (int key in Bays.Keys) { Bays[key].Close(); }
+
+                UpdateBayData();
             }
 
             public void BayCheck(string arg)
@@ -189,7 +211,10 @@ namespace IngameScript
                 int bayNumber = bayNumberFromString(bay);
 
                 if (bayNumber > -1)
+                {
                     Bays[bayNumber].ManualCheck(force);
+                    UpdateBayData();
+                }
             }
 
             public void BayTimerCall(string bay)
@@ -197,8 +222,27 @@ namespace IngameScript
                 int bayNumber = bayNumberFromString(bay);
 
                 if(bayNumber > -1)
+                {
                     Bays[bayNumber].BayTimerCall();
+                    UpdateBayData();
+                }
             }
+
+            public void UpdateBayData()
+            {
+                int count = _launchSystem.Bays.Count;
+                BayData = "Missile Bay Count: " + count;
+
+                if (count > 0)
+                {
+                    foreach (int key in _launchSystem.Bays.Keys)
+                    {
+                        Bay bay = _launchSystem.Bays[key];
+                        BayData += "\n* " + bay.Name + " - " + bay.Status.ToString();
+                    }
+                }
+            }
+
 
             private void fireSalvo(List<Bay> bays)
             {
@@ -663,6 +707,8 @@ namespace IngameScript
                     }
                 }
             }
+
+            _launchSystem.UpdateBayData();
         }
 
         public IMyProgrammableBlock GetLaunchProgram()
@@ -782,22 +828,6 @@ namespace IngameScript
             }
         }
 
-
-        public void ShowMissileBayData()
-        {
-            int count = _launchSystem.Bays.Count;
-            Echo("Missile Bay Count: " + count);
-
-            if (count > 0)
-            {
-                foreach (int key in _launchSystem.Bays.Keys)
-                {
-                    Bay bay = _launchSystem.Bays[key];
-                    Echo("* " + bay.Name + " - " + bay.Status.ToString());// + "\n - Projectors: " + bay.Projectors.Count + "\n - Loaded: " + bay.loaded().ToString());
-                }
-            }
-        }
-
         public IMyTimerBlock GetSameGridTimer(IMyBlockGroup group)
         {
             List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
@@ -841,6 +871,13 @@ namespace IngameScript
         public static bool WithinRange(int[] range, int valueToCheck)
         {
             return valueToCheck >= range[0] && valueToCheck <= range[1];
+        }
+
+
+        public void ShowMissileBayData()
+        {
+            if(_launchSystem != null)
+                Echo(_launchSystem.BayData);
         }
     }
 }
