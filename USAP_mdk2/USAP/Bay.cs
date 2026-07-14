@@ -41,6 +41,17 @@ namespace IngameScript
         const float RECHECK_DELAY = 3;
         const float DEF_SALVO = 3;
 
+        // Bay Broadcast Message Constants
+        const int FIRE = 1;
+        const int LOADING = 2;
+        const int LOADED = 3;
+        const int CLOSING = 4;
+        const int CLOSED = 5;
+        const int OPENING = 6;
+        const int OPENED = 7;
+        const int ERR = 8; // Error Message number
+
+
         public static LaunchSystem _launchSystem;
         public string _missileBayString;
 
@@ -294,26 +305,23 @@ namespace IngameScript
         {
             public int Number { get; set; }
             public string Name { get; set; }
-            //public Dictionary<string, IMyProjector> Projectors { get; set; }
+            public string ActiveLoadout { get; set; }
+            public float DoorDelay { get; set; }
+            public IMyTimerBlock Timer { get; set; }
+            public IMyBroadcastController Broadcaster { get; set; }
+            public BayStatus Status { get; set; }
+
+            public MyIniHandler IniHandler;
+
             public Dictionary<string, Loadout> Loadouts { get; set; }
             public List<IMyDoor> Doors { get; set; }
             public List<IMyShipWelder> Welders { get; set;}
             public List<IMyShipMergeBlock> MergeBlocks { get; set; }
             public List<IMyShipConnector> Connectors { get; set; }
+            private bool canBroadcast;
 
-            public IMyTimerBlock Timer {  get; set; }
-            //public IMyTimerBlock FiringTimer {  get; set; }
-            //public IMyTimerBlock ReloadTimer { get; set; }
-            //public bool CloseDoorsOnReload { get; set; }
-            public string ActiveLoadout { get; set; }
-            public BayStatus Status { get; set; }
 
-            public float DoorDelay { get; set; }
-            //public float ReloadDelay { get; set; }
-
-            public MyIniHandler IniHandler;
-
-            public Bay (int number, string name, IMyTimerBlock timer)
+            public Bay (int number, string name, IMyTimerBlock timer, IMyBroadcastController broadcaster)
             {
                 Number = number;
                 Name = name;
@@ -321,9 +329,9 @@ namespace IngameScript
                 Timer = timer;
                 IniHandler = new MyIniHandler(timer);
                 Status = ParseStatus(IniHandler.GetKey(BAY_HEAD, STATUS_KEY, "UNSET"));
-                //ReloadDelay = ParseFloat(IniHandler.GetKey(BAY_HEAD, RELOAD_KEY, DEF_RELOAD.ToString()), DEF_RELOAD);
 
-
+                Broadcaster = broadcaster;
+                canBroadcast = broadcaster != null;
 
                 Doors = new List<IMyDoor>();
                 Welders = new List<IMyShipWelder>();
@@ -341,10 +349,13 @@ namespace IngameScript
                     string command = "fire --range " + Number + " " +Number;
                     _launchSystem.Program.TryRun(command);
                     startCountDown(RECHECK_DELAY);
+
+                    sendMessage(FIRE);
                 }
                 else
                 {
                     _log.LogError(Name + " - is not ready.");
+                    sendMessage(ERR);
                 }
             }
 
@@ -355,6 +366,7 @@ namespace IngameScript
                 if (Status == BayStatus.Ready || Status == BayStatus.Loaded)
                 {
                     _log.LogError(Name + " is already loaded.");
+                    sendMessage(ERR);
                     return;
                 }
 
@@ -387,6 +399,7 @@ namespace IngameScript
                 }
                 
                 startCountDown(DoorDelay);
+                sendMessage(OPENING);
             }
 
             public void Close()
@@ -400,24 +413,28 @@ namespace IngameScript
                 }
 
                 startCountDown(DoorDelay);
+                sendMessage(CLOSING);
             }
 
             public void BayTimerCall()
             {
                 switch (Status)
                 { 
-                    case BayStatus.Opening:
                     case BayStatus.Firing:
                         check();                            
                         break;
                     case BayStatus.Queued:
                         Fire();
                         break;
+                    case BayStatus.Opening:
+                        check();
+                        if (opened()) { sendMessage(OPENED); }
+                        else { sendMessage(ERR); }
+                        break;
                     case BayStatus.Closing:
-                        if (loaded())
-                            setStatus(BayStatus.Loaded);
-                        else
-                            setStatus(BayStatus.Empty);
+                        if (loaded()) { setStatus(BayStatus.Loaded); }
+                        else { setStatus(BayStatus.Empty); }
+                        sendMessage(CLOSED);
                         break;
                     case BayStatus.Reloading:
                         activateReload(false);
@@ -426,8 +443,6 @@ namespace IngameScript
                         activateReload(true);
                         break;
                 }
-
-                //TODO
             }
 
 
@@ -569,11 +584,17 @@ namespace IngameScript
                     action = "OnOff_On";
                     setStatus(BayStatus.Reloading);
                     startCountDown(loadout.ReloadTime);
+                    sendMessage(LOADING);
                 }
                 else
                 {
                     action = "OnOff_Off";
                     check();
+
+                    if(loaded())
+                        sendMessage(LOADED);
+                    else
+                        sendMessage(ERR);
                 }
 
                 IMyProjector projector = loadout.Projector;
@@ -585,7 +606,14 @@ namespace IngameScript
                 }
             }
 
-
+            private void sendMessage(int msgNumber)
+            {
+                if (canBroadcast)
+                {
+                    string message = String.Format("Transmit Message {0}", msgNumber.ToString());
+                    Broadcaster.GetActionWithName(message).Apply(Broadcaster);
+                }
+            }
         }
 
         public class Loadout
@@ -602,7 +630,6 @@ namespace IngameScript
                 ReloadTime = ParseFloat(iniHandler.GetKey(BAY_HEAD, RELOAD_KEY, DEF_RELOAD.ToString()), 43);
             }
         }
-
 
         public enum BayStatus
         {
@@ -662,7 +689,9 @@ namespace IngameScript
             IMyTimerBlock timer = GetSameGridTimer(group);
             if(timer == null) { return null; }
 
-            Bay bay = new Bay(bayNumber, group.Name, timer);
+            IMyBroadcastController broadcaster = GetSameGridBroadcaster(group);
+
+            Bay bay = new Bay(bayNumber, group.Name, timer, broadcaster);
 
             AddDoors(bay, group);
             AddWelders(bay, group);
@@ -672,6 +701,8 @@ namespace IngameScript
 
             return bay;
         }
+
+        
 
         public void AssembleMissileBays()
         {
@@ -845,6 +876,22 @@ namespace IngameScript
             }
 
             _log.LogError("No timers from group \"" + group.Name + "\" found on the same grid.");
+            return null;
+        }
+
+        public IMyBroadcastController GetSameGridBroadcaster(IMyBlockGroup group)
+        {
+            List<IMyBroadcastController> broadcasters = new List<IMyBroadcastController>();
+            group.GetBlocksOfType<IMyBroadcastController>(broadcasters);
+
+            foreach (IMyBroadcastController broadcaster in broadcasters)
+            {
+                if (SameGridID(broadcaster))
+                {
+                    return broadcaster;
+                }
+            }
+
             return null;
         }
 

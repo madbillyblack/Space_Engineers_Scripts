@@ -856,6 +856,8 @@ namespace IngameScript
                 if(SameGridID(bcController) && bcController.CustomName.Contains(INI_HEAD))
                 {
                     _bcController = bcController;
+
+
                     return;
                 }
             }

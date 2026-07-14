@@ -1,0 +1,72 @@
+[Shared Data]
+Grid_ID=112326133155841173
+
+[ -------------------  USAP: Multi-Timer  ------------------- ]
+Phase Count=5
+Current Phase=2
+Interrupt with trigger=False
+Interrupt with command=False
+
+[ -------------------  Timer Phase 0  ------------------- ]
+Name=Depressurize
+Duration=10
+Action Count=1
+Start Next Phase=True
+
+[Timer Phase 0 Actions]
+Block 0=MDS North Hangar Sliding Door
+Action 0=Open_Off
+
+[ -------------------  Timer Phase 1  ------------------- ]
+Name=Open
+Duration=5
+Action Count=6
+Start Next Phase=False
+
+[Timer Phase 1 Actions]
+Block 0=G:MDS North Hangar Pistons
+Action 0=Extend
+Block 1=G:MDS North Hangar Door
+Action 1=Open_On
+Block 2=MDS North Hangar Merge B
+Action 2=OnOff_Off
+Block 3=MDS North Hangar Rotor
+Action 3=Reverse
+Block 4=MDS North Hangar Hinge 1 (Close)
+Action 4=OnOff_Off
+Block 5=MDS North Hangar Hinge 2 (Open)
+Action 5=OnOff_On
+
+[ -------------------  Timer Phase 2  ------------------- ]
+Name=Retract
+Duration=5
+Action Count=1
+Start Next Phase=True
+
+[Timer Phase 2 Actions]
+Block 0=G:MDS North Hangar Pistons
+Action 0=Retract
+
+[ -------------------  Timer Phase 3  ------------------- ]
+Name=Close
+Duration=5
+Action Count=3
+Start Next Phase=True
+
+[Timer Phase 3 Actions]
+Block 0=G:MDS North Hangar Door
+Action 0=Open_Off
+Block 1=MDS North Hangar Hinge 1 (Close)
+Action 1=OnOff_On
+Block 2=MDS North Hangar Hinge 2 (Open)
+Action 2=OnOff_Off
+
+[ -------------------  Timer Phase 4  ------------------- ]
+Name=Seal
+Duration=6
+Action Count=1
+Start Next Phase=False
+
+[Timer Phase 4 Actions]
+Block 0=MDS North Hangar Merge B
+Action 0=OnOff_On
