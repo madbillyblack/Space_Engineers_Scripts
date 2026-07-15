@@ -208,11 +208,17 @@ namespace IngameScript
                     case "CLOSE_BAY":
                         _launchSystem.CloseBay(cmdArg);
                         break;
+                    case "TOGGLE_BAY":
+                        _launchSystem.ToggleBay(cmdArg);
+                        break;
                     case "OPEN_BAYS":
                         _launchSystem.OpenAll();
                         break;
                     case "CLOSE_BAYS":
                         _launchSystem.CloseAll();
+                        break;
+                    case "TOGGLE_BAYS":
+                        _launchSystem.ToggleAll();
                         break;
                     case "BAY_CHECK":
                         _launchSystem.BayCheck(cmdArg); // INCLUDE extra arg "FORCE" to override manual lockouts

@@ -22,6 +22,7 @@ using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
 using static IngameScript.Program;
+//using static System.Collections.Specialized.BitVector32;
 
 namespace IngameScript
 {
@@ -36,6 +37,8 @@ namespace IngameScript
         const string PROGRAM_KEY = "Launch Program";
         const string SALVO_KEY = "Salvo Delay";
         const string LOADOUT_KEY = "Active Loadout";
+        const string DEF_TOGGLE = "[TOGGLE]";
+        const string TOGGLE_KEY = "Toggle Block Tag";
         const float DEF_RELOAD = 43; // Default Reload Time in seconds
         const float DEF_DOOR = 11; // Default Door Open/Close Time in seconds
         const float RECHECK_DELAY = 3;
@@ -54,6 +57,7 @@ namespace IngameScript
 
         public static LaunchSystem _launchSystem;
         public string _missileBayString;
+        public static string _toggleTag;
 
         public class LaunchSystem
         {
@@ -73,6 +77,7 @@ namespace IngameScript
                 //baysToCheck = new List<Bay>();
 
                 BayType = _programIni.GetKey(BAY_HEAD, BAY_TYPE, "Bay");
+                _toggleTag = _programIni.GetKey(BAY_HEAD, TOGGLE_KEY, DEF_TOGGLE);
                 SalvoDelay = ParseFloat(_programIni.GetKey(BAY_HEAD, SALVO_KEY, DEF_SALVO.ToString()), DEF_SALVO);
                 _programIni.EnsureComment(BAY_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
             }
@@ -111,7 +116,7 @@ namespace IngameScript
                 UpdateBayData();
             }
 
-
+            /* Fires a vailable missiles up to the specified quantity */
             public void FireCount(string count)
             {
                 int requested = ParseInt(count, -1);
@@ -199,6 +204,17 @@ namespace IngameScript
                 }
             }
 
+            public void ToggleBay(string bay)
+            {
+                int bayNumber = bayNumberFromString(bay);
+
+                if (bayNumber > -1)
+                {
+                    Bays[bayNumber].Toggle();
+                    UpdateBayData();
+                }
+            }
+
             public void OpenAll()
             {
                 foreach(int key in Bays.Keys) {  Bays[key].Open(); }
@@ -209,6 +225,13 @@ namespace IngameScript
             public void CloseAll()
             {
                 foreach (int key in Bays.Keys) { Bays[key].Close(); }
+
+                UpdateBayData();
+            }
+
+            public void ToggleAll()
+            {
+                foreach (int key in Bays.Keys) { Bays[key].Toggle(); }
 
                 UpdateBayData();
             }
@@ -309,6 +332,7 @@ namespace IngameScript
             public float DoorDelay { get; set; }
             public IMyTimerBlock Timer { get; set; }
             public IMyBroadcastController Broadcaster { get; set; }
+            
             public BayStatus Status { get; set; }
 
             public MyIniHandler IniHandler;
@@ -318,7 +342,10 @@ namespace IngameScript
             public List<IMyShipWelder> Welders { get; set;}
             public List<IMyShipMergeBlock> MergeBlocks { get; set; }
             public List<IMyShipConnector> Connectors { get; set; }
+
+            public List<ToggleBlock> ToggleBlocks { get; set; }// Optional blocks that are powered on when ready to fire
             private bool canBroadcast;
+            public bool HasToggle;
 
 
             public Bay (int number, string name, IMyTimerBlock timer, IMyBroadcastController broadcaster)
@@ -336,7 +363,8 @@ namespace IngameScript
                 Doors = new List<IMyDoor>();
                 Welders = new List<IMyShipWelder>();
                 MergeBlocks = new List<IMyShipMergeBlock>();
-                Loadouts = new Dictionary<string,Loadout>();
+                Loadouts = new Dictionary<string, Loadout>();
+                ToggleBlocks = new List<ToggleBlock>();
             }
 
             public void Fire()
@@ -414,6 +442,14 @@ namespace IngameScript
 
                 startCountDown(DoorDelay);
                 sendMessage(CLOSING);
+            }
+
+            public void Toggle()
+            {
+                if (opened())
+                    Close();
+                else
+                    Open();
             }
 
             public void BayTimerCall()
@@ -523,6 +559,11 @@ namespace IngameScript
             {
                 Status = status;
                 IniHandler.SetKey(BAY_HEAD, STATUS_KEY, Status.ToString());
+
+                if(Status == BayStatus.Ready)
+                    activateToggleBlock(true);
+                else
+                    activateToggleBlock(false);
             }
 
             private bool opened()
@@ -614,6 +655,16 @@ namespace IngameScript
                     Broadcaster.GetActionWithName(message).Apply(Broadcaster);
                 }
             }
+
+            private void activateToggleBlock(bool setActive)
+            {
+                if (!HasToggle) { return; }
+
+                foreach(ToggleBlock toggle in ToggleBlocks)
+                {
+                    toggle.Activate(setActive);
+                }
+            }
         }
 
         public class Loadout
@@ -630,6 +681,38 @@ namespace IngameScript
                 ReloadTime = ParseFloat(iniHandler.GetKey(BAY_HEAD, RELOAD_KEY, DEF_RELOAD.ToString()), 43);
             }
         }
+
+        public class ToggleBlock
+        {
+            private IMyTerminalBlock block;
+            private bool inverted;
+            private MyIniHandler iniHandler;
+
+            public ToggleBlock(IMyTerminalBlock block)
+            {
+                this.block = block;
+                iniHandler = new MyIniHandler(this.block);
+                inverted = ParseBool(iniHandler.GetKey(BAY_HEAD, "Inverted", "false"));
+            }
+
+            public void Activate(bool setActive)
+            {
+                bool turnOn;
+                if (inverted)
+                    turnOn = !setActive;
+                else
+                    turnOn = setActive;
+
+                string action;
+                if (turnOn)
+                    action = "OnOff_On";
+                else
+                    action = "OnOff_Off";
+
+                block.GetActionWithName(action).Apply(block);
+            }
+        }
+
 
         public enum BayStatus
         {
@@ -698,6 +781,7 @@ namespace IngameScript
             AddMergeBlocks(bay, group);
             AddConnectors(bay, group);
             AddLoadouts(bay, group);
+            AddToggles(bay, group);
 
             return bay;
         }
@@ -711,7 +795,10 @@ namespace IngameScript
             IMyProgrammableBlock launchProgram = GetLaunchProgram();
             _launchSystem = new LaunchSystem(launchProgram);
 
-            if (launchProgram == null) { return; }
+            if (launchProgram == null) {
+                _toggleTag = DEF_TOGGLE;
+                return;
+            }
 
             List<IMyBlockGroup> groups = new List<IMyBlockGroup>();
             GridTerminalSystem.GetBlockGroups(groups);
@@ -859,6 +946,24 @@ namespace IngameScript
             }
         }
 
+
+        public void AddToggles(Bay bay, IMyBlockGroup group)
+        {
+            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+            group.GetBlocksOfType<IMyTerminalBlock>(blocks);
+
+            foreach (IMyTerminalBlock block in blocks)
+            {
+                if(SameGridID(block) && block.CustomName.Contains(_toggleTag))
+                {
+                    ToggleBlock toggle = new ToggleBlock(block);
+                    bay.ToggleBlocks.Add(toggle);
+                    bay.HasToggle = true;
+                }
+            }
+        }
+
+
         public IMyTimerBlock GetSameGridTimer(IMyBlockGroup group)
         {
             List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
@@ -872,7 +977,8 @@ namespace IngameScript
 
             foreach (IMyTimerBlock timer in timers)
             {
-                if (SameGridID(timer)) { return timer; }
+                // Exclude timers with TOGGLE_TAG (main timer should always be active)
+                if (SameGridID(timer) &! timer.CustomName.Contains(_toggleTag)) { return timer; }
             }
 
             _log.LogError("No timers from group \"" + group.Name + "\" found on the same grid.");
