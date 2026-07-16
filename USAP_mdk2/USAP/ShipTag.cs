@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program
     {
         // ADD PREFIX //
-        public void AddPrefix(IMyTerminalBlock block, string prefix)
+        void AddPrefix(IMyTerminalBlock block, string prefix)
         {
             string temp_name = block.CustomName;
             if (block.IsSameConstructAs(Me) && !temp_name.StartsWith(prefix))
@@ -32,7 +32,7 @@ namespace IngameScript
 
 
         // ADD SUFFIX //
-        public void AddSuffix(IMyTerminalBlock block, string suffix)
+        void AddSuffix(IMyTerminalBlock block, string suffix)
         {
             string temp_name = block.CustomName;
             if (block.IsSameConstructAs(Me) && !temp_name.EndsWith(suffix))
@@ -42,7 +42,7 @@ namespace IngameScript
 
 
         // DELETE PREFIX //
-        public void DeletePrefix(IMyTerminalBlock block, string prefix)
+        void DeletePrefix(IMyTerminalBlock block, string prefix)
         {
             if(block.CustomName.StartsWith(prefix))
             {
@@ -66,7 +66,7 @@ namespace IngameScript
 
 
         // DELETE SUFFIX //
-        public void DeleteSuffix(IMyTerminalBlock block, string suffix)
+        void DeleteSuffix(IMyTerminalBlock block, string suffix)
         {
             if (block.CustomName.EndsWith(suffix))
             {
@@ -90,7 +90,7 @@ namespace IngameScript
 
 
         // REPLACE PREFIX //
-        public void ReplacePrefix(IMyTerminalBlock block, string oldTag, string newTag)
+        void ReplacePrefix(IMyTerminalBlock block, string oldTag, string newTag)
         {
             DeletePrefix(block, oldTag);
             AddPrefix(block, newTag);
@@ -98,13 +98,13 @@ namespace IngameScript
 
 
         // REPLACE SUFFIX //
-        public void ReplaceSuffix(IMyTerminalBlock block, string oldTag, string newTag)
+        void ReplaceSuffix(IMyTerminalBlock block, string oldTag, string newTag)
         {
             DeleteSuffix(block, oldTag);
             AddSuffix(block, newTag);
         }
 
-
+        /*
         // SWAP TAG //
         public void SwapTag (IMyTerminalBlock block, string tag, bool swapToPrefix)
         {
@@ -119,10 +119,10 @@ namespace IngameScript
                 AddSuffix(block, tag);
             }
         }
-
+        */
 
         // ADD TAGS //
-        public void AddTags(string tag, bool toPrefix)
+        void AddTags(string tag, bool toPrefix)
         {
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocks(blocks);
@@ -141,7 +141,7 @@ namespace IngameScript
 
 
         // REMOVE TAGS //
-        public void RemoveTags(string tag, bool fromPrefix)
+        void RemoveTags(string tag, bool fromPrefix)
         {
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocks(blocks);
@@ -160,7 +160,7 @@ namespace IngameScript
 
 
         // SWAP TAGS //
-        public void SwapTags(string tag, bool toPrefix)
+        void SwapTags(string tag, bool toPrefix)
         {
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocks(blocks);
@@ -186,11 +186,11 @@ namespace IngameScript
 
 
         // REPLACE TAGS //
-        public void ReplaceTags(string [] tags, bool replacePrefix)
+        void ReplaceTags(string [] tags, bool replacePrefix)
         {
             if (tags.Length < 3)
             {
-                _log.LogError("Insufficient arguments for TAG REPLACEMENT.\n * Be sure to include the old tag to be replaced as well as the new tag.");
+                _log.Error("Insufficient arguments for TAG REPLACEMENT.\n * Be sure to include the old tag to be replaced as well as the new tag.");
                 return;
             }
 

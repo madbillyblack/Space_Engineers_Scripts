@@ -61,7 +61,7 @@ namespace IngameScript
             {
                 if (ItemTypes.Keys.Count < 1)
                 {
-                    _log.LogWarning("No item keys loaded for " + Block.CustomName);
+                    _log.Warning("No item keys loaded for " + Block.CustomName);
                     return true;
                 }
 
@@ -122,13 +122,12 @@ namespace IngameScript
                 {
                     int currentAmount = Inventory.GetItemAmount(item.Type).ToIntSafe();
                     int transferred = targetCount - currentAmount;
-                    //_log.LogInfo(transferred + "x " + GetItemName(item.Type.ToString()) + "transferred from " + Block.CustomName);
 
                     return currentAmount;
                 }
                 else
                 {
-                    _log.LogWarning("Unable to transfer requested " + GetItemName(item.Type.ToString()) + " from " + Block.CustomName);
+                    _log.Warning("Unable to transfer requested " + GetItemName(item.Type.ToString()) + " from " + Block.CustomName);
                     return targetCount;
                 }
             }
@@ -136,7 +135,6 @@ namespace IngameScript
 
             private int RestockItem(MyItemType itemType, IMyInventory source, int targetCount)
             {
-                //_log.LogInfo("Requested: " + targetCount + "x " + GetItemName(itemType.ToString()) + " in " + Block.CustomName);
                 MyInventoryItem? item = source.FindItem(itemType);
                 if (item != null && Inventory.TransferItemFrom(source, (MyInventoryItem)item, targetCount))
                 {
@@ -146,7 +144,7 @@ namespace IngameScript
                 }
                 else
                 {
-                    _log.LogWarning("Unable to transfer requested item " + GetItemName(itemType.ToString()) + " to " + Block.CustomName);
+                    _log.Warning("Unable to transfer requested item " + GetItemName(itemType.ToString()) + " to " + Block.CustomName);
                     return Inventory.GetItemAmount(itemType).ToIntSafe();
                 }
             }
@@ -193,7 +191,7 @@ namespace IngameScript
 
         #region Global Functions
         // ADD TO INVENTORIES //
-        public void AddToInventories(IMyTerminalBlock block)
+        void AddToInventories(IMyTerminalBlock block)
         {
             string name = block.CustomName;
 
@@ -245,8 +243,8 @@ namespace IngameScript
             */
 
             List<IMyInventory> sources = GetRemoteInventories(sourceTag);
-            _log.LogInfo("Reloading from inventories with tag " + sourceTag);
-            _log.LogInfo("Source Count: " + sources.Count);
+            _log.Info("Reloading from inventories with tag " + sourceTag);
+            _log.Info("Source Count: " + sources.Count);
 
             foreach (LocalInventory dest in destInventories)
             {
@@ -261,8 +259,8 @@ namespace IngameScript
             if (localInventories.Count < 1) return;
 
             List<IMyInventory> destinations = GetRemoteInventories(destTag);
-            _log.LogInfo("Unloading to inventories with tag " + destTag);
-            _log.LogInfo("Destination Count: " + destinations.Count);
+            _log.Info("Unloading to inventories with tag " + destTag);
+            _log.Info("Destination Count: " + destinations.Count);
 
             foreach (LocalInventory source in localInventories)
             {
@@ -273,9 +271,9 @@ namespace IngameScript
         #endregion
 
         #region Utility Functions
-        public enum InventoryType { MAGAZINE, CONSTRUCTION, REACTOR, ICEBOX, ROCKBOX }
+        enum InventoryType { MAGAZINE, CONSTRUCTION, REACTOR, ICEBOX, ROCKBOX }
 
-        public List<IMyInventory> GetRemoteInventories(string tag)
+        List<IMyInventory> GetRemoteInventories(string tag)
         {
             List<IMyInventory> sources = new List<IMyInventory>();
             List<IMyTerminalBlock> sourceBlocks = new List<IMyTerminalBlock>();
@@ -286,17 +284,17 @@ namespace IngameScript
 
             foreach (IMyTerminalBlock block in sourceBlocks)
             {
-                _log.LogInfo("Adding inventory from " + block.CustomName);
+                _log.Info("Adding inventory from " + block.CustomName);
                 if (block.HasInventory)
                     sources.Add(block.GetInventory());
                 else
-                    _log.LogWarning(block.CustomName + " has no valid inventories.");
+                    _log.Warning(block.CustomName + " has no valid inventories.");
             }
 
             return sources;
         }
 
-        public static string GetItemName(string longName)
+        static string GetItemName(string longName)
         {
             int index = longName.IndexOf('/');
             return longName.Substring(index + 1);

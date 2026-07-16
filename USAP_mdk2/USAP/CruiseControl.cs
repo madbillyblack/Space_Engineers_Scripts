@@ -83,7 +83,7 @@ namespace IngameScript
             }
             else
             {
-                _log.LogError("Invalid Throttle Argument: " + arg);
+                _log.Error("Invalid Throttle Argument: " + arg);
             }
         }
 
@@ -109,7 +109,7 @@ namespace IngameScript
             }
             else
             {
-                _log.LogError("Invalid Throttle Argument: " + arg);
+                _log.Error("Invalid Throttle Argument: " + arg);
             }
         }
 
@@ -157,7 +157,7 @@ namespace IngameScript
 
 
         // GET FORWARD VELOCITY //
-        public double GetForwardVelocity()
+        double GetForwardVelocity()
         {
             return Vector3D.Dot(_cockpit.WorldMatrix.Forward, _cockpit.GetShipVelocities().LinearVelocity);
         }
@@ -184,7 +184,7 @@ namespace IngameScript
             if (_gravityDisengage && _cockpit.GetNaturalGravity().Length() < 0.04)
             {
                 CruiseThrustersOff();
-                _log.LogInfo("Gravity well vacated. Cruise disengaged.");
+                _log.Info("Gravity well vacated. Cruise disengaged.");
             }
         }
 
@@ -209,7 +209,7 @@ namespace IngameScript
                         if (cos > 0.707) // If angle is within 45 degrees of gravity vector, disengage cruise thrusters
                         {
                             CruiseThrustersOff();
-                            _log.LogWarning("CRUISE SAFETY DISENGAGE!");
+                            _log.Warning("CRUISE SAFETY DISENGAGE!");
                         }
                     }
                 }
@@ -228,11 +228,10 @@ namespace IngameScript
             IMyBlockGroup cruiseGroup = GridTerminalSystem.GetBlockGroupWithName(_cruiseTag);
             if (cruiseGroup == null)
             {
-                _log.LogWarning("No group with name " + _cruiseTag + " found.");
+                _log.Warning("No group with name " + _cruiseTag + " found.");
                 return;
             }
             cruiseGroup.GetBlocksOfType<IMyThrust>(_cruiseThrusters);
-            //_log.LogInfo("Cruise Thusters: " + _cruiseTag + "\n - Thruster Count: " + _cruiseThrusters.Count);
 
             float[] gains = GainsFromString(_programIni.GetKey(CRUISE_HEADER, "Cruise Gains", "1,0,0"));
 

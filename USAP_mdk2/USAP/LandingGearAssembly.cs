@@ -22,7 +22,7 @@ namespace IngameScript
 {
     partial class Program
     {
-        public class LandingGearAssembly
+        class LandingGearAssembly
         {
             public List<IMyPistonBase> Pistons;
             public List<IMyMotorStator> Stators;

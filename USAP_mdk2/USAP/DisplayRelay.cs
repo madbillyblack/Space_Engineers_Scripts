@@ -23,10 +23,10 @@ namespace IngameScript
 {
     partial class Program
     {
-        public static List<DisplayRelay> _transponders;
-        public static string _relayString;
+        static List<DisplayRelay> _transponders;
+        static string _relayString;
 
-        public class DisplayRelay
+        class DisplayRelay
         {
             public IMyTransponder Transponder { get; set; }
             public MyIniHandler IniHandler { get; set; }
@@ -40,7 +40,7 @@ namespace IngameScript
             }
         }
 
-        public void AssignDisplayRelays()
+        void AssignDisplayRelays()
         {
             _transponders = new List<DisplayRelay>();
 
@@ -62,7 +62,7 @@ namespace IngameScript
         }
 
 
-        public void AssignDisplayRelay(IMyTransponder transponderBlock)
+        void AssignDisplayRelay(IMyTransponder transponderBlock)
         {
             MyIniHandler iniHandler = new MyIniHandler(transponderBlock);
 
@@ -85,7 +85,7 @@ namespace IngameScript
         }
 
 
-        public static void UpdateRelayString()
+        static void UpdateRelayString()
         {
             if (_transponders.Count < 1) return;
 

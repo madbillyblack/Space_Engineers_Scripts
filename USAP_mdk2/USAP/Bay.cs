@@ -39,6 +39,11 @@ namespace IngameScript
         const string LOADOUT_KEY = "Active Loadout";
         const string DEF_TOGGLE = "[TOGGLE]";
         const string TOGGLE_KEY = "Toggle Block Tag";
+        const string MAIN_BC_KEY = "Main Broadcaster";
+        const string TARGET_KEY = "Target Mode";
+        const string CAMERA_CMD = "mode_camera";
+        const string TURRET_CMD = "mode_turret";
+        const string BEAM_CMD = "mode_beamride";
         const float DEF_RELOAD = 43; // Default Reload Time in seconds
         const float DEF_DOOR = 11; // Default Door Open/Close Time in seconds
         const float RECHECK_DELAY = 3;
@@ -53,26 +58,28 @@ namespace IngameScript
         const int OPENING = 6;
         const int OPENED = 7;
         const int ERR = 8; // Error Message number
+        const int CAM_MODE = 6;
+        const int TURRET_MODE = 7;
+        const int BEAM_RIDE = 8;
 
 
-        public static LaunchSystem _launchSystem;
-        public string _missileBayString;
-        public static string _toggleTag;
+        static LaunchSystem _launchSystem;
+        static string _toggleTag;
 
-        public class LaunchSystem
+        class LaunchSystem
         {
             public string BayType { get; set; }
             public SortedDictionary<int, Bay> Bays { get; set; }
-            public IMyProgrammableBlock Program {  get; set; }
+            public IMyProgrammableBlock LaunchProgram {  get; set; }
+            public IMyBroadcastController Broadcaster { get; set; }
             public float SalvoDelay {  get; set; }
-            public bool StaggerReload { get; set; }
-
             public string BayData {  get; set; }
+            public TargetMode Mode { get; set; }
 
             //private List<Bay> baysToCheck;
             public LaunchSystem(IMyProgrammableBlock launchProgram)
             {
-                Program = launchProgram;
+                LaunchProgram = launchProgram;
                 Bays = new SortedDictionary<int, Bay>();
                 //baysToCheck = new List<Bay>();
 
@@ -80,6 +87,8 @@ namespace IngameScript
                 _toggleTag = _programIni.GetKey(BAY_HEAD, TOGGLE_KEY, DEF_TOGGLE);
                 SalvoDelay = ParseFloat(_programIni.GetKey(BAY_HEAD, SALVO_KEY, DEF_SALVO.ToString()), DEF_SALVO);
                 _programIni.EnsureComment(BAY_HEAD, BAY_TYPE, "How missile bay groups will be named: i.e. Bay, Silo, Tube, etc. Can include spaces.");
+
+                initTargetMode();                
             }
 
             public void Fire(string bay)
@@ -122,7 +131,7 @@ namespace IngameScript
                 int requested = ParseInt(count, -1);
                 if(requested < 1)
                 {
-                    _log.LogError("Invalid count argument: \"" + count + "\"");
+                    _log.Error("Invalid count argument: \"" + count + "\"");
                     return;
                 }
 
@@ -142,7 +151,7 @@ namespace IngameScript
                 if(toFire > 0)
                 {
                     int fired = requested - toFire;
-                    _log.LogWarning(String.Format("Only able to fire {0} of {1} missiles.", fired, requested));
+                    _log.Warning(String.Format("Only able to fire {0} of {1} missiles.", fired, requested));
                 }
 
                 fireSalvo(salvo);
@@ -277,12 +286,59 @@ namespace IngameScript
                 }
             }
 
+            public void CameraMode()
+            {
+                Mode = TargetMode.Camera;
+                LaunchProgram.TryRun(CAMERA_CMD);
+                _programIni.SetKey(BAY_HEAD, TARGET_KEY, TargetMode.Camera.ToString());
+                broadcast(CAM_MODE);
+            }
+
+            public void TurretMode()
+            {
+                Mode = TargetMode.Turret;
+                LaunchProgram.TryRun(TURRET_CMD);
+                _programIni.SetKey(BAY_HEAD, TARGET_KEY, TargetMode.Turret.ToString());
+                broadcast(TURRET_MODE);
+            }
+
+            public void BeamRide()
+            {
+                Mode = TargetMode.BeamRide;
+                LaunchProgram.TryRun(BEAM_CMD);
+                _programIni.SetKey(BAY_HEAD, TARGET_KEY, TargetMode.BeamRide.ToString());
+                broadcast(BEAM_RIDE);
+            }
+
+            public void CycleMode()
+            {
+                switch (Mode)
+                {
+                    case TargetMode.Camera:
+                        TurretMode();
+                        break;
+                    case TargetMode.Turret:
+                        BeamRide();
+                        break;
+                    default:
+                        CameraMode();
+                        break;
+                }
+            }
+
+            private void broadcast(int msgNumber)
+            {
+                if(Broadcaster == null) { return; }
+
+                string message = String.Format("Transmit Message {0}", msgNumber.ToString());
+                Broadcaster.GetActionWithName(message).Apply(Broadcaster);
+            }
 
             private void fireSalvo(List<Bay> bays)
             {
                 if (bays.Count < 1) 
                 {
-                    _log.LogError("No bays in Salvo");
+                    _log.Error("No bays in Salvo");
                     return;
                 }
 
@@ -307,7 +363,7 @@ namespace IngameScript
                     }  
                 }
 
-                _log.LogError("Can't fire. No bays ready.");
+                _log.Error("Can't fire. No bays ready.");
             }
 
             private int bayNumberFromString(string bayString)
@@ -318,13 +374,25 @@ namespace IngameScript
                     number = -1;
 
                 if (number < 0)
-                    _log.LogError("Unrecognized bay number: \"" + bayString + "\"");
+                    _log.Error("Unrecognized bay number: \"" + bayString + "\"");
 
                 return number;
             }
+
+            private void initTargetMode()
+            {
+                Mode = ParseTargetMode(_programIni.GetKey(BAY_HEAD, TARGET_KEY, TargetMode.BeamRide.ToString()));
+
+                if (Mode == TargetMode.Camera)
+                    LaunchProgram.TryRun(CAMERA_CMD);
+                else if (Mode == TargetMode.Turret)
+                    LaunchProgram.TryRun(TURRET_CMD);
+                else
+                    LaunchProgram.TryRun(BEAM_CMD);
+            }
         }
 
-        public class Bay
+        class Bay
         {
             public int Number { get; set; }
             public string Name { get; set; }
@@ -369,20 +437,20 @@ namespace IngameScript
 
             public void Fire()
             {
-                if(_launchSystem.Program == null) { return; }
+                if(_launchSystem.LaunchProgram == null) { return; }
 
                 if (IsReady() || Status == BayStatus.Queued)
                 {
                     setStatus(BayStatus.Firing);
                     string command = "fire --range " + Number + " " +Number;
-                    _launchSystem.Program.TryRun(command);
+                    _launchSystem.LaunchProgram.TryRun(command);
                     startCountDown(RECHECK_DELAY);
 
                     sendMessage(FIRE);
                 }
                 else
                 {
-                    _log.LogError(Name + " - is not ready.");
+                    _log.Error(Name + " - is not ready.");
                     sendMessage(ERR);
                 }
             }
@@ -393,7 +461,7 @@ namespace IngameScript
                 if(timerLockout()){ return; }
                 if (Status == BayStatus.Ready || Status == BayStatus.Loaded)
                 {
-                    _log.LogError(Name + " is already loaded.");
+                    _log.Error(Name + " is already loaded.");
                     sendMessage(ERR);
                     return;
                 }
@@ -491,19 +559,19 @@ namespace IngameScript
             {
                 if(!force && Status != BayStatus.Unset && Status != BayStatus.Error)
                 {
-                    _log.LogWarning(Name + "\n- Checks only run on initial setup and errors.");
+                    _log.Warning(Name + "\n- Checks only run on initial setup and errors.");
                     return;
                 }
 
                 if(IsCounting())
                 {
-                    _log.LogWarning(Name + "\n- Checks can't be run during timer countdown.");
+                    _log.Warning(Name + "\n- Checks can't be run during timer countdown.");
                     return;
                 }
 
                 check();
 
-                _log.LogInfo(Name + " is set to " + Status.ToString());
+                _log.Info(Name + " is set to " + Status.ToString());
             }
 
             public bool IsReady()
@@ -597,7 +665,7 @@ namespace IngameScript
             {
                 if (IsCounting())
                 {
-                    _log.LogError(Name + "\n- Can't perform action during timer countdown.");
+                    _log.Error(Name + "\n- Can't perform action during timer countdown.");
                     return true;
                 }
 
@@ -609,13 +677,13 @@ namespace IngameScript
                 Loadout loadout = GetActiveLoadout();
                 if (loadout == null || loadout.Projector == null)
                 {
-                    _log.LogError(Name + ": Could not get active loadout");
+                    _log.Error(Name + ": Could not get active loadout");
                     return;
                 }
 
                 if (Welders.Count < 1 & !setActive)
                 {
-                    _log.LogError(Name + ": No Welders available!");
+                    _log.Error(Name + ": No Welders available!");
                     return;
                 }
 
@@ -667,7 +735,7 @@ namespace IngameScript
             }
         }
 
-        public class Loadout
+        class Loadout
         {
             public IMyProjector Projector { get; set; }
             public float ReloadTime { get; set; }
@@ -682,7 +750,7 @@ namespace IngameScript
             }
         }
 
-        public class ToggleBlock
+        class ToggleBlock
         {
             private IMyTerminalBlock block;
             private bool inverted;
@@ -714,13 +782,13 @@ namespace IngameScript
         }
 
 
-        public enum BayStatus
+        enum BayStatus
         {
             Opening, Open, Ready, Closing, Empty, Reloading, RLClosing, RLOpening, Unset, Error, Firing, Queued, RLQueued, Loaded, Loading
         }
 
 
-        public static BayStatus ParseStatus(string status)
+        static BayStatus ParseStatus(string status)
         {
             switch (status.ToUpper())
             {
@@ -757,7 +825,29 @@ namespace IngameScript
             }
         }
 
-        public Bay BayFromGroup(IMyBlockGroup group)
+        enum TargetMode
+        {
+            Camera, Turret, BeamRide
+        }
+
+        static TargetMode ParseTargetMode(string mode)
+        {
+            switch (mode.ToUpper().Trim())
+            {
+                case "CAMERA":
+                    return TargetMode.Camera;
+                case "TURRET":
+                    return TargetMode.Turret;
+                case "BEAMRIDE":
+                default:
+                    return TargetMode.BeamRide;
+
+            }
+        }
+
+
+
+        Bay BayFromGroup(IMyBlockGroup group)
         {
             string[] nameParts = group.Name.Split(' ');
             string numPart = nameParts[nameParts.Length-1];
@@ -765,7 +855,7 @@ namespace IngameScript
             int bayNumber = ParseInt(numPart, -1);
             if (bayNumber < 0)
             {
-                _log.LogWarning("Can't get bay number from group:\n  " + group.Name);
+                _log.Warning("Can't get bay number from group:\n  " + group.Name);
                 return null;
             }
 
@@ -788,9 +878,9 @@ namespace IngameScript
 
         
 
-        public void AssembleMissileBays()
+        void AssembleMissileBays()
         {
-            Echo("Adding Missile Bays");
+            //Echo("Adding Missile Bays");
 
             IMyProgrammableBlock launchProgram = GetLaunchProgram();
             _launchSystem = new LaunchSystem(launchProgram);
@@ -799,6 +889,10 @@ namespace IngameScript
                 _toggleTag = DEF_TOGGLE;
                 return;
             }
+
+            AddMainBroadcaster();
+            
+
 
             List<IMyBlockGroup> groups = new List<IMyBlockGroup>();
             GridTerminalSystem.GetBlockGroups(groups);
@@ -817,7 +911,7 @@ namespace IngameScript
                     int key = bay.Number;
                     if (_launchSystem.Bays.ContainsKey(key))
                     {
-                        _log.LogError("Cannot add " + group.Name + ". Launch systems already contains key " + key);  
+                        _log.Error("Cannot add " + group.Name + ". Launch systems already contains key " + key);  
                     }
                     else
                     {
@@ -829,7 +923,7 @@ namespace IngameScript
             _launchSystem.UpdateBayData();
         }
 
-        public IMyProgrammableBlock GetLaunchProgram()
+        IMyProgrammableBlock GetLaunchProgram()
         {
             List<IMyProgrammableBlock> programs = new List<IMyProgrammableBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyProgrammableBlock>(programs);
@@ -858,7 +952,36 @@ namespace IngameScript
             return null;
         }
 
-        public void AddDoors(Bay bay, IMyBlockGroup group)
+        void AddMainBroadcaster()
+        {
+            string bcName = _programIni.GetKey(BAY_HEAD, MAIN_BC_KEY, "");
+
+            if(bcName == "")
+            {
+                bcName = GetDefaultBCName();
+                if(bcName == "") { return; }
+            }
+
+            _launchSystem.Broadcaster = GridTerminalSystem.GetBlockWithName(bcName) as IMyBroadcastController;
+        }
+
+
+        string GetDefaultBCName()
+        {
+            List<IMyBroadcastController> broadcasters = new List<IMyBroadcastController>();
+            GridTerminalSystem.GetBlocksOfType<IMyBroadcastController>(broadcasters);
+
+            foreach(IMyBroadcastController broadcaster in broadcasters)
+            {
+                if(broadcaster.CustomName.Contains(INI_HEAD) && SameGridID(broadcaster))
+                    return broadcaster.CustomName;
+            }
+
+            return "";
+        }
+
+
+        void AddDoors(Bay bay, IMyBlockGroup group)
         {
             List<IMyDoor> doors = new List<IMyDoor>();
             group.GetBlocksOfType<IMyDoor>(doors);
@@ -875,7 +998,7 @@ namespace IngameScript
                 bay.DoorDelay = 0;
         }
 
-        public void AddWelders(Bay bay, IMyBlockGroup group)
+        void AddWelders(Bay bay, IMyBlockGroup group)
         {
             List<IMyShipWelder> welders = new List<IMyShipWelder>();
             group.GetBlocksOfType<IMyShipWelder>(welders);
@@ -887,7 +1010,7 @@ namespace IngameScript
             }
         }
 
-        public void AddMergeBlocks(Bay bay, IMyBlockGroup group)
+        void AddMergeBlocks(Bay bay, IMyBlockGroup group)
         {
             List<IMyShipMergeBlock> mergeBlocks = new List<IMyShipMergeBlock>();
             group.GetBlocksOfType<IMyShipMergeBlock>(mergeBlocks);
@@ -899,7 +1022,7 @@ namespace IngameScript
             }
         }
 
-        public void AddConnectors(Bay bay, IMyBlockGroup group)
+        void AddConnectors(Bay bay, IMyBlockGroup group)
         {
             List<IMyShipConnector> connectors = new List<IMyShipConnector>();
             group.GetBlocksOfType<IMyShipConnector>(connectors);
@@ -911,7 +1034,7 @@ namespace IngameScript
             }
         }
 
-        public void AddLoadouts(Bay bay, IMyBlockGroup group)
+        void AddLoadouts(Bay bay, IMyBlockGroup group)
         {
             List<IMyProjector> projectors = new List<IMyProjector>();
             group.GetBlocksOfType<IMyProjector>(projectors);
@@ -925,7 +1048,7 @@ namespace IngameScript
 
                     if (bay.Loadouts.ContainsKey(key))
                     {
-                        _log.LogWarning("Group " + bay.Name + " contains multiple projectors with loadout {" + key + "}");
+                        _log.Warning("Group " + bay.Name + " contains multiple projectors with loadout {" + key + "}");
                         continue;
                     }
 
@@ -947,7 +1070,7 @@ namespace IngameScript
         }
 
 
-        public void AddToggles(Bay bay, IMyBlockGroup group)
+        void AddToggles(Bay bay, IMyBlockGroup group)
         {
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
             group.GetBlocksOfType<IMyTerminalBlock>(blocks);
@@ -964,14 +1087,14 @@ namespace IngameScript
         }
 
 
-        public IMyTimerBlock GetSameGridTimer(IMyBlockGroup group)
+        IMyTimerBlock GetSameGridTimer(IMyBlockGroup group)
         {
             List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
             group.GetBlocksOfType<IMyTimerBlock>(timers);
 
             if (timers.Count < 1)
             {
-                _log.LogError("Group \"" + group.Name + "\" contains no timers!");
+                _log.Error("Group \"" + group.Name + "\" contains no timers!");
                 return null;
             }
 
@@ -981,11 +1104,11 @@ namespace IngameScript
                 if (SameGridID(timer) &! timer.CustomName.Contains(_toggleTag)) { return timer; }
             }
 
-            _log.LogError("No timers from group \"" + group.Name + "\" found on the same grid.");
+            _log.Error("No timers from group \"" + group.Name + "\" found on the same grid.");
             return null;
         }
 
-        public IMyBroadcastController GetSameGridBroadcaster(IMyBlockGroup group)
+        IMyBroadcastController GetSameGridBroadcaster(IMyBlockGroup group)
         {
             List<IMyBroadcastController> broadcasters = new List<IMyBroadcastController>();
             group.GetBlocksOfType<IMyBroadcastController>(broadcasters);
@@ -1001,8 +1124,7 @@ namespace IngameScript
             return null;
         }
 
-
-        public static int[] RangeFromString(string range)
+        static int[] RangeFromString(string range)
         {
             int [] minMax = { -1, -1 };
 
@@ -1015,19 +1137,19 @@ namespace IngameScript
             }
             else
             {
-                _log.LogError("Invalid range argument:\n \"" + range + "\"");
+                _log.Error("Invalid range argument:\n \"" + range + "\"");
             }
 
             return minMax;
         }
 
-        public static bool WithinRange(int[] range, int valueToCheck)
+        static bool WithinRange(int[] range, int valueToCheck)
         {
             return valueToCheck >= range[0] && valueToCheck <= range[1];
         }
 
 
-        public void ShowMissileBayData()
+        void ShowMissileBayData()
         {
             if(_launchSystem != null)
                 Echo(_launchSystem.BayData);

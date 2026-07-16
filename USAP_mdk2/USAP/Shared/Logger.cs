@@ -41,9 +41,9 @@ namespace IngameScript
                 Command = "";
             }
 
-            public void LogInfo(string msg) { LogMessage(Level.INFO, msg); }
-            public void LogWarning(string msg) { LogMessage(Level.WARNING, msg); }
-            public void LogError(string msg) { LogMessage(Level.ERROR, msg); }
+            public void Info(string msg) { LogMessage(Level.INFO, msg); }
+            public void Warning(string msg) { LogMessage(Level.WARNING, msg); }
+            public void Error(string msg) { LogMessage(Level.ERROR, msg); }
 
             private void LogMessage(Level level, string message)
             {

@@ -44,22 +44,22 @@ namespace IngameScript
         //IMyBroadcastListener _listener;
         bool _commsEnabled;
 
-        public static Dictionary<int, ICommsScreen> _receiverScreens;
-        public static Dictionary<string, ICommsScreen> _broadcasterScreens;
+        static Dictionary<int, ICommsScreen> _receiverScreens;
+        static Dictionary<string, ICommsScreen> _broadcasterScreens;
 
-        public static List<string> _broadcasterKeys;
-        public static List<int> _receiverKeys;
+        static List<string> _broadcasterKeys;
+        static List<int> _receiverKeys;
 
-        public int _currentBcScreen = 0;
-        public int _currentRcScreen = 0;
-        public int _broadcastTick = -1; // Tick on which messages will be broadcast
+        int _currentBcScreen = 0;
+        int _currentRcScreen = 0;
+        int _broadcastTick = -1; // Tick on which messages will be broadcast
 
-        public static int _listenerTimeOut = 20;
+        static int _listenerTimeOut = 20;
 
         static string _bcID;
 
         // ICOMMSSCREEN //
-        public interface ICommsScreen
+        interface ICommsScreen
         {
             IMyTextSurface TextSurface { get; set; }
 
@@ -67,7 +67,7 @@ namespace IngameScript
         }
 
         // LCD RECEIVER SCREEN //
-        public class LcdRecieverScreen : ICommsScreen
+        class LcdRecieverScreen : ICommsScreen
         {
             public IMyTextSurface TextSurface { get; set; }
             public DateTime LastLcdReceipt { get; set; }
@@ -194,7 +194,7 @@ namespace IngameScript
             {
                 if(_channels.Count < 1)
                 {
-                    _log.LogInfo("No Channels Detected!");
+                    _log.Info("No Channels Detected!");
                     return;
                 }
 
@@ -210,7 +210,7 @@ namespace IngameScript
 
 
         // LCD BROADCASTER SCREEN //
-        public class LcdBroadcasterScreen : ICommsScreen
+        class LcdBroadcasterScreen : ICommsScreen
         {
             public IMyTextSurface TextSurface { get; set; }
             public string ChannelTag { get; set; }
@@ -224,7 +224,7 @@ namespace IngameScript
         }
 
 
-        public class CommsScreenBlock
+        class CommsScreenBlock
         {
             public IMyTerminalBlock Block { get; set; }
             public MyIniHandler IniHandler { get; set; }
@@ -308,7 +308,7 @@ namespace IngameScript
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError("Cannot add " + Block.CustomName + "\n At: " + channel + "\n" + ex.Message);
+                    _log.Error("Cannot add " + Block.CustomName + "\n At: " + channel + "\n" + ex.Message);
                 }
             }
 
@@ -328,7 +328,7 @@ namespace IngameScript
         }
 
 
-        public void AssignComms()
+        void AssignComms()
         {
             _receiverScreens = new Dictionary<int, ICommsScreen>();
             _broadcasterScreens = new Dictionary<string, ICommsScreen>();
@@ -365,7 +365,7 @@ namespace IngameScript
                 AssignChannels();
         }
 
-        public void ExecuteComms(UpdateType updateSource)
+        void ExecuteComms(UpdateType updateSource)
         {
             if ((updateSource & UpdateType.IGC) > 0)
             {
@@ -380,7 +380,7 @@ namespace IngameScript
         }
 
 
-        public void ShowBroadcastData()
+        void ShowBroadcastData()
         {
             if(!_commsEnabled) return;
 
@@ -392,7 +392,7 @@ namespace IngameScript
                 Echo("BROADCASTING");
         }
 
-        public int GetCurrentBroadCasterIndex()
+        int GetCurrentBroadCasterIndex()
         {
             _currentBcScreen++;
             if(_currentBcScreen >= _broadcasterScreens.Count)
@@ -402,7 +402,7 @@ namespace IngameScript
         }
 
 
-        public int GetCurrentRecieverKey()
+        int GetCurrentRecieverKey()
         {
             _currentRcScreen++;
             if(_currentRcScreen >= _receiverKeys.Count)
@@ -412,7 +412,7 @@ namespace IngameScript
         }
 
 
-        public void BroadcastCurrentScreen()
+        void BroadcastCurrentScreen()
         {
             try
             {
@@ -429,26 +429,36 @@ namespace IngameScript
             }
             catch (Exception ex)
             {
-                _log.LogError(ex.Message);
+                _log.Error(ex.Message);
             }
         }
 
 
-        public void ReceiveMessages()
+        void ReceiveMessages()
         {
             if( _receiverScreens.Count < 1 || _channels.Count < 1) return;
+            //Echo("Receive Messages");
 
             foreach (Channel Channel in _channels.Values)
             {
+                //Echo(Channel.Name);
                 while (Channel.Listener.HasPendingMessage)
                 {
+
                     MyIGCMessage rawMessage = Channel.Listener.AcceptMessage();
 
                     string [] data = rawMessage.Data.ToString().Split(COMMS_SEPARATOR);
+                    if (data.Length < 3){ return;}
+
+
+                    //Echo("Data length: " + data.Length);
 
                     string key = data[0];
+                    //Echo("Key: " + key);
                     string name = data[1];
+                    //Echo("Name: " + name);
                     string message = data[2];
+                    //Echo("Msg: " + message);
 
                     if (Channel.SubChannels.ContainsKey(key))
                         Channel.SubChannels[key].ReceiveMessage(message);
@@ -459,7 +469,7 @@ namespace IngameScript
         }
 
 
-        public void UpdateCurrentReceiver()
+        void UpdateCurrentReceiver()
         {
             if (_receiverScreens.Count < 1) return;
 
@@ -497,10 +507,10 @@ namespace IngameScript
             screen.MessageToScreen(subChannel.Message, subChannel.DisplayName);
         }
 
-        public LcdRecieverScreen GetReceiver(int receiverId)
+        LcdRecieverScreen GetReceiver(int receiverId)
         {
             if(_receiverScreens.Count < 1) {
-                _log.LogWarning("No Recievers Detected!");
+                _log.Warning("No Recievers Detected!");
                 return null;
             }
 
@@ -510,13 +520,13 @@ namespace IngameScript
             if (_receiverScreens.Keys.Contains(receiverId))
                 return _receiverScreens[receiverId] as LcdRecieverScreen;
 
-            _log.LogWarning("Receiver " + receiverId + " Not Found!");
+            _log.Warning("Receiver " + receiverId + " Not Found!");
 
             return null;
         }
 
 
-        public LcdRecieverScreen GetRecieverByArg(string receiverId)
+        LcdRecieverScreen GetRecieverByArg(string receiverId)
         {
             int id;
 
@@ -529,7 +539,7 @@ namespace IngameScript
         }
 
 
-        public void CycleReceiverChannel(string receiverId, bool previous)
+        void CycleReceiverChannel(string receiverId, bool previous)
         {
             LcdRecieverScreen receiverScreen = GetRecieverByArg(receiverId);
             if (receiverScreen == null) return;
@@ -538,7 +548,7 @@ namespace IngameScript
         }
 
 
-        public void CycleReceiverSubChannel(string receiverId, bool previous)
+        void CycleReceiverSubChannel(string receiverId, bool previous)
         {
             LcdRecieverScreen receiverScreen = GetRecieverByArg(receiverId);
             if (receiverScreen == null) return;

@@ -25,9 +25,9 @@ namespace IngameScript
         const string DISPLAY_KEY = "Display as";
         public static string _turretString;
 
-        public static List<DisplayTurret> _turrets;
+        static List<DisplayTurret> _turrets;
 
-        public class DisplayTurret
+        class DisplayTurret
         {
             public string DisplayName { get; set; }
             MyIniHandler IniHandler {  get; set; }
@@ -72,7 +72,7 @@ namespace IngameScript
             }
         }
 
-        public void AssignDisplayTurrets()
+        void AssignDisplayTurrets()
         {
             _turrets = new List<DisplayTurret>();
 
@@ -103,7 +103,7 @@ namespace IngameScript
         }
 
         
-        public void AssignDisplayTurret(IMyTerminalBlock block, bool isController = false)
+        void AssignDisplayTurret(IMyTerminalBlock block, bool isController = false)
         {
             MyIniHandler iniHandler = new MyIniHandler(block);
 
@@ -128,7 +128,7 @@ namespace IngameScript
         }
 
 
-        public static void UpdateTurretString()
+        static void UpdateTurretString()
         {
             if (_turrets.Count < 1) return;
 

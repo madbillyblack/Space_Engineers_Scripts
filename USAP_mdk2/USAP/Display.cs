@@ -24,7 +24,7 @@ namespace IngameScript
     {
         const string DISPLAY_HEAD = "USAP Display Screens";
 
-        public class Display
+        class Display
         {
             IMyTextSurfaceProvider SurfaceProvider;
             IMyTextSurface Surface;
@@ -192,7 +192,7 @@ namespace IngameScript
             int surfaceCount = (block as IMyTextSurfaceProvider).SurfaceCount;
             if (surfaceCount < 1)
             {
-                _log.LogError("Block " + block.CustomName + " has no text surfaces.");
+                _log.Error("Block " + block.CustomName + " has no text surfaces.");
                 return;
             }
             else if (surfaceCount == 1)

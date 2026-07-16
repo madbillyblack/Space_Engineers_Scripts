@@ -239,6 +239,18 @@ namespace IngameScript
                     case "RELOAD_BAYS":
                         _launchSystem.ReloadAll();
                         break;
+                    case "TARGET_MODE":
+                        _launchSystem.CycleMode();
+                        break;
+                    case "CAMERA_MODE":
+                        _launchSystem.CameraMode();
+                        break;
+                    case "TURRET_MODE":
+                        _launchSystem.TurretMode();
+                        break;
+                    case "BEAM_RIDE":
+                        _launchSystem.BeamRide();
+                        break;
                     case "SCROLL_DOWN":
                         _log.Scroll();
                         break;
@@ -253,10 +265,12 @@ namespace IngameScript
                         break;
                 }
             }
+            /*
             else if (!_cruiseThrustersOn)
             {
                 Echo("NO ARGUMENT");
             }
+            */
         }
     }
 }

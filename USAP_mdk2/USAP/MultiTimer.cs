@@ -32,7 +32,7 @@ namespace IngameScript
         static string _nextCommand;
 
         // MULTI TIMER //
-        public class MultiTimer
+        class MultiTimer
         {
             public IMyTimerBlock Block;
             public string Tag;
@@ -156,7 +156,7 @@ namespace IngameScript
             {
                 if (Block.IsCountingDown && !IsInterruptible)
                 {
-                    _log.LogWarning("Multi-Timer " + Tag + " cannot be interrupted!");
+                    _log.Warning("Multi-Timer " + Tag + " cannot be interrupted!");
                     return false;
                 }
 
@@ -166,7 +166,7 @@ namespace IngameScript
 
 
         // PHASE //
-        public class Phase
+        class Phase
         {
             public int Number;
             public int ActionCount;
@@ -204,7 +204,7 @@ namespace IngameScript
 
 
         // ACTION BLOCK //
-        public class ActionBlock
+        class ActionBlock
         {
             public List<IMyTerminalBlock> Blocks;
             public IMyProgrammableBlock ProgramBlock;
@@ -249,7 +249,7 @@ namespace IngameScript
                         }
                         catch
                         {
-                            _log.LogError(block.CustomName + " cannot perform action \"" + Action + "\"!");
+                            _log.Error(block.CustomName + " cannot perform action \"" + Action + "\"!");
                         }
                     }
                 }
@@ -286,7 +286,7 @@ namespace IngameScript
                     string tag = multiTimer.Tag;
                     if(_multiTimers.Keys.Contains<string>(tag))
                     {
-                        _log.LogError("Cannot add Multitimer from block: " + multiTimer.Block.CustomName + "\n  => Tag already in use.");
+                        _log.Error("Cannot add Multitimer from block: " + multiTimer.Block.CustomName + "\n  => Tag already in use.");
                     }
                     else if(multiTimer.Tag != ERROR)
                     {
@@ -389,7 +389,7 @@ namespace IngameScript
 
             if (block == null)
             {
-                _log.LogError("Block Not Found: " + blockName);
+                _log.Error("Block Not Found: " + blockName);
                 return null;
             }
             else
@@ -437,7 +437,7 @@ namespace IngameScript
 
             if(timer == null)
             {
-                _log.LogError("No Timer with tag \"" + tag + "\" found!");
+                _log.Error("No Timer with tag \"" + tag + "\" found!");
                 return;
             }
 
@@ -452,7 +452,7 @@ namespace IngameScript
             string[] data = phaseData.Split(' ');
             if(data.Length < 2)
             {
-                _log.LogError("Insufficient Phase Data");
+                _log.Error("Insufficient Phase Data");
                 return;
             }
 
@@ -466,14 +466,14 @@ namespace IngameScript
             MultiTimer timer = GetMultiTimer(tag.Trim());
             if(timer == null)
             {
-                _log.LogError("No timer with tag \"" + tag + "\" found!");
+                _log.Error("No timer with tag \"" + tag + "\" found!");
                 return;
             }
 
             Phase phase = PhaseFromName(timer, phaseName);
             if(phase == null)
             {
-                _log.LogError("No phase with name \"" + phaseName + "\" found!");
+                _log.Error("No phase with name \"" + phaseName + "\" found!");
                 return;
             }
 

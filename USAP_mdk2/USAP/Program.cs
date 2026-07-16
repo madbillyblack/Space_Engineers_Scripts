@@ -341,7 +341,7 @@ namespace IngameScript
         // FUNCTIONS // ---------------------------------------------------------------------------------------------------------------------
 
         // ACTIVATE // - Finds and activates "Timer Block A" which is linked to detaching mechanisms. 
-        public void Activate(string trigger)
+        void Activate(string trigger)
         {
             List<IMyTimerBlock> timers = new List<IMyTimerBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTimerBlock>(timers);
@@ -357,7 +357,7 @@ namespace IngameScript
 
             if (triggerTimers.Count < 1)
 			{
-                _log.LogError("No Timers of name " + trigger + " found.");
+                _log.Error("No Timers of name " + trigger + " found.");
                 return;
             }
 
@@ -376,12 +376,12 @@ namespace IngameScript
             }
 
             timerToTrigger.GetActionWithName("TriggerNow").Apply(timerToTrigger);
-            _log.LogInfo("Activating: " + timerToTrigger.CustomName);
+            _log.Info("Activating: " + timerToTrigger.CustomName);
         }
 
 
         // TRIGGER CALL //
-        public void TriggerCall(string arg)
+        void TriggerCall(string arg)
 		{
             if(arg.ToUpper().StartsWith("TRIGGER_"))
 			{
@@ -390,7 +390,7 @@ namespace IngameScript
                 string[] args = arg.Split('_');
                 if(args.Length < 2)
 				{
-                    _log.LogError("Invalid Trigger Command: " + arg);
+                    _log.Error("Invalid Trigger Command: " + arg);
                     return;
 				}
                 string triggerKey = "Trigger_" + args[1];
@@ -401,50 +401,21 @@ namespace IngameScript
                     string timerName = _programIni.GetKey(TRIGGER_HEAD, triggerKey, "");
 
                     if (timerName == "")
-                        _log.LogError("No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.");
+                        _log.Error("No timer name provided for Trigger Command \"" + triggerKey + "\"!\n  Please check Custom Data.");
                     else
                         Activate(timerName);
                 }
                 else
                 {
-                    _log.LogError("No defined Trigger \"" + triggerKey + "\" found!\n  Please check case and spelling.");
+                    _log.Error("No defined Trigger \"" + triggerKey + "\" found!\n  Please check case and spelling.");
                 }
 
                 // Leave function so default error isn't called.
                 return;
 			}
 
-            _log.LogError("Unrecognized command: " + arg);
+            _log.Error("Unrecognized command: " + arg);
         }
-
-/*
-        // RELOAD // - Finds all inventories containing defined tag, and loads them with defined amounts of ammo.
-        void Reload(IMyTerminalBlock destination, List<IMyTerminalBlock> supplyBlocks)
-        {
-            // Convert Loadout Key into 2D array of format [Ammotype][AmmoQty]
-            string[][] loadouts = StringTo2DArray(GetKey(destination, INI_HEAD, LOADOUT, ""), '\n', ':');
-
-            if (supplyBlocks.Count < 1 || !destination.HasInventory || loadouts.Length < 1)
-            {
-                return;
-            }
-
-            IMyInventory magInv = destination.GetInventory(0);
-
-            foreach (IMyTerminalBlock supply in supplyBlocks)
-            {
-                if (supply.HasInventory)
-                {
-                    IMyInventory supplyInv = supply.GetInventory(0);
-
-                    for (int i = 0; i < loadouts.Length; i++)
-                    {
-                        ensureMinimumAmount(supplyInv, magInv, loadouts[i][0], ParseInt(loadouts[i][1], 1));
-                    }
-                }
-            }
-        }
-*/
 
          // SET LOAD COUNT //
         void SetLoadCount(string arg)
@@ -470,7 +441,7 @@ namespace IngameScript
             
             if(controllers.Count < 1)
             {
-                _log.LogWarning("No reference controllers found");
+                _log.Warning("No reference controllers found");
                 return;
             }
 
@@ -491,9 +462,6 @@ namespace IngameScript
         }
 
 
-
-
-
         // INIT FUNCTIONS // --------------------------------------------------------------------------------------------------------------------------
 
         // PRINT HEADER //
@@ -508,7 +476,7 @@ namespace IngameScript
 
 
         // BUILD //
-        public void Build()
+        void Build()
         {
             // Set static instance of this program block
             _Me = Me;
@@ -541,7 +509,6 @@ namespace IngameScript
             // Ensure Default Trigger Call Parameter
             _programIni.EnsureKey(TRIGGER_HEAD, "Trigger_Door", "Door Timer");
 
-            
             // Create inventory lists
             _magazines = new List<LocalInventory>();
             _reactors = new List<LocalInventory>();
@@ -617,7 +584,7 @@ namespace IngameScript
 
 
         // SET UPDATE FREQUENCY //
-        public void SetUpdateFrequency()
+        void SetUpdateFrequency()
         {
             if(_cruiseThrusters.Count > 0 || _landingGear != null || _commsEnabled || (_turrets.Count > 0 && _displays.Count > 0))
             {
@@ -631,7 +598,7 @@ namespace IngameScript
 
 
         // SET MAG AMMOUNTS //
-        public void SetMagAmounts(IMyTerminalBlock block)
+        void SetMagAmounts(IMyTerminalBlock block)
         {
             string name = block.CustomName;
             if ((!name.Contains(MAG_TAG + "]") && !name.Contains(":")) || GetKey(block, SHARED, "Grid_ID", _gridID) != _gridID)
@@ -679,7 +646,7 @@ namespace IngameScript
 
 
         // ENSURE PROFILES // Ensure that program block has construction profiles
-        public void EnsureProfiles()
+        void EnsureProfiles()
         {
             string [] profiles = _programIni.GetKey(PROFILE_HEAD, "Profiles", PROFILE_LIST).Split(',');
 
@@ -716,12 +683,12 @@ namespace IngameScript
 
 
         // SELECT PROFILE // - Internal function for choosing profile
-        public void SelectProfile(string profileName)
+        void SelectProfile(string profileName)
         {
             // Search for profile in 
             if (profileName == "" || !Me.CustomData.ToLower().Contains(profileName.ToLower() + "]"))
             {
-                _log.LogError("No Profile named \"" + profileName + "\" found!");
+                _log.Error("No Profile named \"" + profileName + "\" found!");
                 return;
             }
 
@@ -734,7 +701,7 @@ namespace IngameScript
 
 
         // GET ACTIVE PROFILE // - Returns Active Profile as 2D array
-        public string [][] GetActiveProfile()
+        string [][] GetActiveProfile()
         {
             string[] profiles = _programIni.GetKey(PROFILE_HEAD, "Profiles", PROFILE_LIST).Split(',');
 
@@ -751,7 +718,7 @@ namespace IngameScript
 
 
         // SET ACTIVE PROFILE // - Designate Active Profile by making it the first entry in the Profile Key List.
-        public void SetActiveProfile(string profileName)
+        void SetActiveProfile(string profileName)
         {
             string[] profiles = _programIni.GetKey(PROFILE_HEAD, "Profiles", "").Split(',');
             if (profiles.Length < 2)
@@ -783,7 +750,7 @@ namespace IngameScript
 
         // UPDATE PROFILES // - Set profiles of all component cargoes, based on profile template saved in program block.
                             // Profiles are proportional to large grid small cargo container: 15,625 L
-        public void UpdateProfiles()
+        void UpdateProfiles()
         {
             if (_constructionCargos.Count < 1 || !_hasComponentCargo)
                 return;
@@ -828,7 +795,7 @@ namespace IngameScript
 */
 
         // TAG FROM NAME //  Gets specific tag from MAG name.
-        public string TagFromName(string name)
+        string TagFromName(string name)
         {
             string tag = "";
             if (name.Contains(MAG_TAG + "]"))
@@ -863,99 +830,13 @@ namespace IngameScript
             }
         }
 
-/*
-        // ENSURE LOADOUT // -  Ensures that inventory block has loadout parameters
-        public void EnsureLoadout(IMyTerminalBlock block, int[] amounts)
-        {
-            if (amounts.Length < 7)
-                amounts = new int[] { 0, 0, 0, 0, 0, 0, 0 };
-
-            EnsureKey(block, INI_HEAD, "NATO_25x184mm", amounts[0].ToString());
-            EnsureKey(block, INI_HEAD, "Missile200mm", amounts[1].ToString());
-            EnsureKey(block, INI_HEAD, "LargeCalibreAmmo", amounts[2].ToString());
-            EnsureKey(block, INI_HEAD, "MediumCalibreAmmo", amounts[3].ToString());
-            EnsureKey(block, INI_HEAD, "AutocannonClip", amounts[4].ToString());
-            EnsureKey(block, INI_HEAD, "LargeRailgunAmmo", amounts[5].ToString());
-            EnsureKey(block, INI_HEAD, "SmallRailgunAmmo", amounts[6].ToString());
-        }
-*/
-
         // BORROWED FUNCTIONS // -------------------------------------------------------------------------------------------------------------------------
-        public string[][] StringTo2DArray(string source, char separatorOuter, char separatorInner)
+        string[][] StringTo2DArray(string source, char separatorOuter, char separatorInner)
         {
             return source
                    .Split(separatorOuter)
                    .Select(x => x.Split(separatorInner))
                    .ToArray();
         }
-
-
-/*
-        //---------------------------------------------------------------------------------//
-        //ALL CODE BELOW THIS POINT WRITTEN BY PILOTERROR42//
-        //---------------------------------------------------------------------------------//
-
-        void ensureMinimumAmount(IMyInventory source, IMyInventory dest, string itemType, int num)
-        {
-            if (num < 1)
-                return;
-
-            int initialSupply = numberOfItemInContainer(dest, itemType);
-
-            while (!hasEnoughOfItem(dest, itemType, num))
-            {
-                int? index = indexOfItem(source, itemType);
-                if (index == null)
-                    return;
-
-                source.TransferItemTo(dest, (int)index, null, true, num - numberOfItemInContainer(dest, itemType));
-
-                // If there's still the same number in the container after attempting to transfer, STOP.
-                if (numberOfItemInContainer(dest, itemType) == initialSupply)
-                {
-                    _log.LogWarning("Failed to transfer item of type " + itemType);
-                    return;
-                }
-            }
-        }
-
-
-        bool hasEnoughOfItem(IMyInventory inventoryToSearch, string itemName, int minAmount)
-        {
-            return numberOfItemInContainer(inventoryToSearch, itemName) >= minAmount;
-        }
-
-
-        int numberOfItemInContainer(IMyInventory inventoryToSearch, string itemName)
-        {
-            int total = 0;
-            List<MyInventoryItem> items = new List<MyInventoryItem>();
-            inventoryToSearch.GetItems(items);
-
-            for (int c = 0; c < items.Count; c++)
-            {
-                if (items[c].Type.ToString().Contains(itemName))
-                {
-                    total += (int)(items[c].Amount);
-                }
-            }
-            return total;
-        }
-
-
-        Nullable<int> indexOfItem(IMyInventory source, string item)
-        {
-            List<MyInventoryItem> items = new List<MyInventoryItem>();
-            source.GetItems(items);
-            for (int c = 0; c < items.Count; c++)
-            {
-                if (items[c].Type.ToString().Contains(item))
-                {
-                    return c;
-                }
-            }
-            return null;
-        }
-*/
     }
 }

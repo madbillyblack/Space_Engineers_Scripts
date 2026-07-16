@@ -33,7 +33,7 @@ namespace IngameScript
                                 DF_LCD_COMTAG + "3\n" +
                                 DF_LCD_COMTAG + "4";
 
-        public class SubChannel
+        class SubChannel
         {
             public string BroadcastID { get; set; }
             public string DisplayName { get; set; }
@@ -63,7 +63,7 @@ namespace IngameScript
         }
 
 
-        public class Channel
+        class Channel
         {
             public string Name { get; set; }
             public IMyBroadcastListener Listener { get; set; }
@@ -109,14 +109,14 @@ namespace IngameScript
         }
 
 
-        public void RegisterListener(Channel channel)
+        void RegisterListener(Channel channel)
         {
             channel.Listener = IGC.RegisterBroadcastListener(channel.Name);
             channel.Listener.SetMessageCallback(channel.Name);
         }
 
 
-        public void AssignChannels()
+        void AssignChannels()
         {
             _channels = new Dictionary<string, Channel>();
             string [] channels = _programIni.GetKey(COMMS_HEADER,LISTENER_KEY, _defaultChannels).Split('\n');
