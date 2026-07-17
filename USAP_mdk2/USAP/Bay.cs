@@ -281,7 +281,7 @@ namespace IngameScript
                     foreach (int key in _launchSystem.Bays.Keys)
                     {
                         Bay bay = _launchSystem.Bays[key];
-                        BayData += "\n* " + bay.Name + " - " + bay.Status.ToString();
+                        BayData += "\n* " + bay.Name + " - " + StatusToString(bay.Status);
                     }
                 }
             }
@@ -290,7 +290,7 @@ namespace IngameScript
             {
                 Mode = TargetMode.Camera;
                 LaunchProgram.TryRun(CAMERA_CMD);
-                _programIni.SetKey(BAY_HEAD, TARGET_KEY, TargetMode.Camera.ToString());
+                _programIni.SetKey(BAY_HEAD, TARGET_KEY, "Camera");
                 broadcast(CAM_MODE);
             }
 
@@ -298,7 +298,7 @@ namespace IngameScript
             {
                 Mode = TargetMode.Turret;
                 LaunchProgram.TryRun(TURRET_CMD);
-                _programIni.SetKey(BAY_HEAD, TARGET_KEY, TargetMode.Turret.ToString());
+                _programIni.SetKey(BAY_HEAD, TARGET_KEY, "Turret");
                 broadcast(TURRET_MODE);
             }
 
@@ -306,7 +306,7 @@ namespace IngameScript
             {
                 Mode = TargetMode.BeamRide;
                 LaunchProgram.TryRun(BEAM_CMD);
-                _programIni.SetKey(BAY_HEAD, TARGET_KEY, TargetMode.BeamRide.ToString());
+                _programIni.SetKey(BAY_HEAD, TARGET_KEY, "BeamRide");
                 broadcast(BEAM_RIDE);
             }
 
@@ -381,7 +381,7 @@ namespace IngameScript
 
             private void initTargetMode()
             {
-                Mode = ParseTargetMode(_programIni.GetKey(BAY_HEAD, TARGET_KEY, TargetMode.BeamRide.ToString()));
+                Mode = ParseTargetMode(_programIni.GetKey(BAY_HEAD, TARGET_KEY, "BeamRide"));
 
                 if (Mode == TargetMode.Camera)
                     LaunchProgram.TryRun(CAMERA_CMD);
@@ -571,7 +571,7 @@ namespace IngameScript
 
                 check();
 
-                _log.Info(Name + " is set to " + Status.ToString());
+                _log.Info(Name + " is set to " + StatusToString(Status));
             }
 
             public bool IsReady()
@@ -626,7 +626,7 @@ namespace IngameScript
             private void setStatus(BayStatus status)
             {
                 Status = status;
-                IniHandler.SetKey(BAY_HEAD, STATUS_KEY, Status.ToString());
+                IniHandler.SetKey(BAY_HEAD, STATUS_KEY, StatusToString(Status));
 
                 if(Status == BayStatus.Ready)
                     activateToggleBlock(true);
@@ -825,6 +825,43 @@ namespace IngameScript
             }
         }
 
+        static string StatusToString(BayStatus status)
+        {
+            switch (status)
+            {
+                case BayStatus.Opening:
+                    return "Opening";
+                case BayStatus.Ready:
+                    return "Ready";
+                case BayStatus.Open:
+                    return "Open";
+                case BayStatus.Closing:
+                    return "Closing";
+                case BayStatus.Reloading:
+                    return "Reloading";
+                case BayStatus.RLClosing:
+                    return "RLClosing";
+                case BayStatus.RLOpening:
+                    return "RLOpening";
+                case BayStatus.RLQueued:
+                    return "RLQueued";
+                case BayStatus.Loading:
+                    return "Loading";
+                case BayStatus.Empty:
+                    return "Empty";
+                case BayStatus.Unset:
+                    return "Unset";
+                case BayStatus.Firing:
+                    return "Firing";
+                case BayStatus.Queued:
+                    return "Queued";
+                case BayStatus.Loaded:
+                    return "Loaded";
+                default:
+                    return "Error";
+            }
+        }
+
         enum TargetMode
         {
             Camera, Turret, BeamRide
@@ -845,7 +882,21 @@ namespace IngameScript
             }
         }
 
+        /*
+        static string TargetModeToString(TargetMode mode)
+        {
+            switch (mode)
+            {
+                case TargetMode.Camera:
+                    return "Camera";
+                case TargetMode.Turret:
+                    return "Turret";
+                default:
+                    return "BeamRide";
 
+            }
+        }
+        */
 
         Bay BayFromGroup(IMyBlockGroup group)
         {
