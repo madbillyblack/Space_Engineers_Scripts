@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Remoting;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -23,11 +24,13 @@ namespace IngameScript
     partial class Program
     {
         const string DISPLAY_HEAD = "USAP Display Screens";
+        const string CUSTOM_KEY = "Custom Header";
 
         class Display
         {
             IMyTextSurfaceProvider SurfaceProvider;
             IMyTextSurface Surface;
+            string CustomHeader;
             bool ShowHeader;
             bool ShowStatus;
             bool ShowLoadCount;
@@ -55,8 +58,10 @@ namespace IngameScript
                 else
                     isProgram = "False";
 
+                CustomHeader = GetKey(block, iniHeader, CUSTOM_KEY, "");
                 ShowHeader = ParseBool(GetKey(block, iniHeader, "Show Header", isProgram));
                 ShowStatus = ParseBool(GetKey(block, iniHeader, "Show Status", isProgram));
+
 
                 // Set boolean strings to true depending on populated lists.
                 if (_miningCargos.Count > 0)
@@ -113,6 +118,12 @@ namespace IngameScript
                         output += _breather[_breath];
 
                     output += "\n";
+                    p++;
+                }
+
+                if(CustomHeader != "")
+                {
+                    output += CustomHeader + "\n";
                     p++;
                 }
 

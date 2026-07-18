@@ -943,8 +943,6 @@ namespace IngameScript
 
             AddMainBroadcaster();
             
-
-
             List<IMyBlockGroup> groups = new List<IMyBlockGroup>();
             GridTerminalSystem.GetBlockGroups(groups);
             if (groups.Count < 1)
